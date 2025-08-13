@@ -1,6 +1,4 @@
-# TubeGenius - Django & Next.js <!-- omit from toc -->
-
-Turbo is a simple bootstrap template for Django and Next.js, combining both frameworks under one monorepository, including best practices.
+# TubeGenius - Django & Next.js Boilerplate <!-- omit from toc -->
 
 ## Features <!-- omit from toc -->
 
@@ -12,9 +10,9 @@ Turbo is a simple bootstrap template for Django and Next.js, combining both fram
 - **Auth system**: incorporated user authentication based on JWT tokens
 - **Profile management**: update profile information from the front end
 - **Registrations**: creation of new user accounts (activation not included)
-- **Admin theme**: Unfold admin theme with user & group management
+- **Admin theme**: modern admin theme with user & group management
 - **Custom user model**: extended default Django user model
-- **Visual Studio Code**: project already constains VS Code containers and tasks
+- **Visual Studio Code**: project already contains VS Code containers and tasks
 
 ## Table of contents <!-- omit from toc -->
 
@@ -40,11 +38,11 @@ Turbo is a simple bootstrap template for Django and Next.js, combining both fram
 
 ## Quickstart
 
-To start using Turbo, it is needed to clone the repository to your local machine and then run `docker compose`, which will take care about the installation process. The only prerequisite for starting Turbo template is to have `docker compose` installed and preconfiguring files with environment variables.
+To start using TubeGenius, clone the repository to your local machine and run `docker compose`, which will handle the installation process. The only prerequisite is having `docker compose` installed and configuring environment variable files.
 
 ```bash
-git clone https://github.com/unfoldadmin/turbo.git
-cd turbo
+git clone https://github.com/Mr-Hassaan-Tariq/Tubegenius
+cd Tubegenius
 ```
 
 ### Environment files configuration
@@ -58,7 +56,7 @@ cp .env.frontend.template .env.frontend # set NEXTAUTH_SECRET to a value "openss
 
 For more advanced environment variables configuration for the front end, it is recommended to read official [Next.js documentation](https://nextjs.org/docs/pages/building-your-application/configuring/environment-variables) about environment variables where it is possible to configure specific variables for each microsite.
 
-On the backend it is possible to use third party libraries for loading environment variables. In case that loading variables through `os.environ` is not fulfilling the requriements, we recommend using [django-environ](https://github.com/joke2k/django-environ) application.
+On the backend it is possible to use third party libraries for loading environment variables. In case that loading variables through `os.environ` is not fulfilling the requirements, we recommend using [django-environ](https://github.com/joke2k/django-environ) application.
 
 ### Running docker compose
 
@@ -72,7 +70,7 @@ After successful installation, it will be possible to access both front end (htt
 
 ## Included dependencies
 
-The general rule when it comes to dependencies is to have minimum of third party applications or plugins to avoid future problems updating the project and keep the maintenance of applications is minimal.
+The general rule when it comes to dependencies is to have minimum of third party applications or plugins to avoid future problems updating the project and keep the maintenance of applications minimal.
 
 ### Backend dependencies
 
@@ -112,7 +110,7 @@ docker compose exec web pnpm --filter web add react-hook-form
 
 ## Front end project structure
 
-Project structure on the front end, it is quite different from the directory hierarchy in the backend. Turbo counts with an option that front end have multiple front ends available on various domains or ports.
+Project structure on the front end, it is quite different from the directory hierarchy in the backend. TubeGenius counts with an option that front end have multiple front ends available on various domains or ports.
 
 ```text
 frontend
@@ -152,7 +150,7 @@ new_microsite:
 
 ## Authentication
 
-For the authentication, Turbo uses **django-simplejwt** and **next-auth** package to provide simple REST based JWT authentication. On the backend, there is no configuraton related to django-simplejwt so everything is set to default values.
+For the authentication, TubeGenius uses **django-simplejwt** and **next-auth** package to provide simple REST based JWT authentication. On the backend, there is no configuration related to django-simplejwt so everything is set to default values.
 
 On the front end, next-auth is used to provide credentials authentication. The most important file on the front end related to authentication is `frontend/web/lib/auth.ts` which is containing whole business logic behind authentication.
 
@@ -172,7 +170,7 @@ There are two ways how to create new user account in the backend. First option i
 docker compose exec api uv run -- python manage.py createsuperuser
 ```
 
-The second option how to create new user account is to register it on the front end. Turbo provides simple registration form. After account registration, it will be not possible to log in because account is inactive. Superuser needs to access Django admin and activate an account. This is a default behavior provided by Turbo, implementation of special way of account activation is currently out the scope of the project.
+The second option how to create new user account is to register it on the front end. TubeGenius provides simple registration form. After account registration, it will be not possible to log in because account is inactive. Superuser needs to access Django admin and activate an account. This is a default behavior provided by TubeGenius, implementation of special way of account activation is currently out the scope of the project.
 
 ### Authenticated paths on frontend
 
@@ -222,11 +220,11 @@ export default AuthenticatedLayout;
 
 ## API calls to backend
 
-Currently Turbo implements Next.js server actions in folder `frontend/apps/web/actions/` responsible for communication with the backend. When the server action is hit from the client, it fetches required data from Django API backend.
+Currently TubeGenius implements Next.js server actions in folder `frontend/apps/web/actions/` responsible for communication with the backend. When the server action is hit from the client, it fetches required data from Django API backend.
 
 ### API Client
 
-The query between server action and Django backend is handled by using an API client generated by `openapi-typescript-codegen` package. In Turbo, there is a function `getApiClient` available in `frontend/apps/web/lib/api.ts` which already implements default options and authentication tokens.
+The query between server action and Django backend is handled by using an API client generated by `openapi-typescript-codegen` package. In TubeGenius, there is a function `getApiClient` available in `frontend/apps/web/lib/api.ts` which already implements default options and authentication tokens.
 
 ### Updating OpenAPI schema
 
@@ -238,15 +236,15 @@ docker compose exec web pnpm openapi:generate
 
 ### Swagger
 
-By default, Turbo includes Swagger for API schema which is available here `http://localhost:8000/api/schema/swagger-ui/`. Swagger can be disabled by editing `urls.py` and removing `SpectacularSwaggerView`.
+By default, TubeGenius includes Swagger for API schema which is available here `http://localhost:8000/api/schema/swagger-ui/`. Swagger can be disabled by editing `urls.py` and removing `SpectacularSwaggerView`.
 
 ### Client side requests
 
-At the moment, Turbo does not contain any examples of client side requests towards the backend. All the requests are handled by server actions. For client side requests, it is recommended to use [react-query](https://github.com/TanStack/query).
+At the moment, TubeGenius does not contain any examples of client side requests towards the backend. All the requests are handled by server actions. For client side requests, it is recommended to use [react-query](https://github.com/TanStack/query).
 
 ## Test suite
 
-Project contains test suite for backend part. For testing it was used library called [pytest](https://docs.pytest.org/en/latest/) along with some additinal libraries extending functionality of pytest:
+Project contains test suite for backend part. For testing it was used library called [pytest](https://docs.pytest.org/en/latest/) along with some additional libraries extending functionality of pytest:
 
 - [pytest-django](https://pytest-django.readthedocs.io/en/latest/) - for testing django applications
 - [pytest-factoryboy](https://pytest-factoryboy.readthedocs.io/en/latest/) - for creating test data
@@ -263,7 +261,7 @@ To run tests, use the command below which will collect all the tests available i
 docker compose exec api uv run -- pytest .
 ```
 
-Tu run tests available only in one specific file run:
+To run tests available only in one specific file run:
 
 ```bash
 docker compose exec api uv run -- pytest api/tests/test_api.py
@@ -277,4 +275,4 @@ docker compose exec api uv run -- pytest api/tests/test_api.py -k "test_api_user
 
 ## Developing in VS Code
 
-The project contains configuration files for devcontainers so it is possible to directly work inside the container within VS Code. When the project opens in the VS Code the popup will appear to reopen the project in container. An action **Dev Containers: Reopen in Container** is available as well. Click on the reopen button and select the container which you want to work on. When you want to switch from the frontend to the backend project run **Dev Containers: Switch container** action. In case you are done and you want to work in the parent folder run **Dev Containers: Reopen Folder Locally** action
+The project contains configuration files for devcontainers so it is possible to directly work inside the container within VS Code. When the project opens in VS Code the popup will appear to reopen the project in container. An action **Dev Containers: Reopen in Container** is available as well. Click on the reopen button and select the container which you want to work on. When you want to switch from the frontend to the backend project run **Dev Containers: Switch container** action. In case you are done and you want to work in the parent folder run **Dev Containers: Reopen Folder Locally** action
