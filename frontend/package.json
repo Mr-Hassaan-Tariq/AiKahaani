@@ -1,40 +1,52 @@
 {
   "name": "frontend",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
-  "packageManager": "pnpm@8.15.9",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next",
     "build": "next build",
+    "vercel-build": "next build",
     "start": "next start",
+    "type-check": "tsc",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run type-check && npm run lint && npm run format:check",
+    "fix": "npm run lint:fix && npm run format",
     "prettier:check": "prettier --check .",
-    "prettier:fix": "prettier --write .",
-    "format": "npm run prettier:fix && npm run lint:fix",
-    "type-check": "tsc --noEmit"
+    "prettier:fix": "prettier --write ."
   },
   "dependencies": {
-    "next": "15.4.6",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "@biomejs/biome": "1.9.4",
+    "@t3-oss/env-nextjs": "^0.11.1",
+    "@tanstack/react-query": "^5.61.0",
+    "next": "^15.3.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.5.4",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.4.6",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-jsx-a11y": "^6.8.0",
-    "eslint-plugin-react": "^7.34.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "lint-staged": "^15.4.3",
-    "prettier": "^3.6.2",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@tanstack/react-query-devtools": "^5.61.0",
+    "@types/node": "^22.9.3",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "autoprefixer": "^10.4.20",
+    "eslint-config-next": "15.3.1",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.0",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.9"
+  },
+  "packageManager": "pnpm@9.14.2+sha256.06e65a4965baff6d6097f9c8f75c35f6d420974dbc03d775009056a69edfd271",
+  "engines": {
+    "node": ">=20.18.0",
+    "pnpm": ">=9.14.0"
   }
 }
