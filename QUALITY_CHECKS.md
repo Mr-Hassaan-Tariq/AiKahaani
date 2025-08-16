@@ -1,39 +1,14 @@
-# Quality Checks & Pre-commit Hooks
+# Quality Checks
 
-This document describes the comprehensive quality assurance setup for the TubeGenius project.
+This document describes the quality assurance setup for the TubeGenius project.
 
 ## 🎯 Overview
 
-The project uses a multi-layered approach to ensure code quality:
+The project uses a simplified approach to ensure code quality:
 
-1. **Pre-commit hooks** - Basic file checks before each commit
-2. **Local development checks** - Comprehensive quality validation on your machine
-3. **CI/CD integration** - Automated checks in GitHub Actions
-4. **VS Code integration** - Real-time feedback during development
-
-## 🔧 Pre-commit Hooks
-
-Pre-commit hooks run automatically before each commit and ensure:
-
-### General File Checks
-- ✅ **Case conflicts** - Check for files with case conflicts
-- ✅ **JSON validation** - Validate JSON files
-- ✅ **Merge conflicts** - Detect unresolved merge conflicts
-- ✅ **Symlinks** - Check for broken symlinks
-- ✅ **TOML validation** - Validate TOML files
-- ✅ **YAML validation** - Validate YAML files
-- ✅ **End of files** - Ensure files end with newline
-- ✅ **Trailing whitespace** - Remove trailing whitespace
-- ✅ **Large files** - Prevent large files from being committed
-- ✅ **Debug statements** - Remove debug statements from Python
-- ✅ **Docstring first** - Ensure docstrings come first in Python files
-
-### Python Backend Checks
-- ✅ **Ruff linting** - Fast Python linting with auto-fix
-- ✅ **Ruff formatting** - Consistent Python code formatting
-
-### Commit Message Formatting
-- ✅ **Conventional commits** - Ensure commit messages follow conventional format
+1. **Local development checks** - Comprehensive quality validation on your machine
+2. **CI/CD integration** - Automated checks in GitHub Actions
+3. **VS Code integration** - Real-time feedback during development
 
 ## 🚀 Local Quality Checks
 
@@ -52,41 +27,18 @@ npm run check
 | Script | Description |
 |--------|-------------|
 | `npm run check` | Run all quality checks |
-| `npm run check:pre-commit` | Run pre-commit hooks only |
 | `npm run check:frontend` | Frontend checks only |
 | `npm run check:backend` | Backend checks only |
-| `npm run format` | Format all code |
-| `npm run install:hooks` | Install pre-commit hooks |
-| `npm run update:hooks` | Update pre-commit hooks |
+| `npm run format` | Format frontend code |
 
 ## 🔄 CI/CD Integration
 
-GitHub Actions provides comprehensive automated checks:
+GitHub Actions provides automated checks:
 
-### Workflows
-
-1. **Lint Workflow** (`.github/workflows/lint.yml`)
-   - Fast basic checks using pre-commit hooks
-   - Runs on every push and PR
-   - No external dependencies required
-
-2. **CI Workflow** (`.github/workflows/ci.yml`)
-   - Comprehensive checks split into jobs:
-     - **Pre-commit**: Basic file checks
-     - **Frontend**: ESLint, Prettier, TypeScript, Build
-     - **Backend**: Ruff, Bandit, Django migrations
-     - **Security**: npm audit, safety checks
-
-### CI vs Local Checks
-
-| Check Type | Local | CI | Notes |
-|------------|-------|----|-------|
-| Pre-commit hooks | ✅ | ✅ | Basic file checks |
-| Frontend linting | ✅ | ✅ | ESLint, Prettier, TypeScript |
-| Frontend build | ✅ | ✅ | Production build verification |
-| Backend linting | ✅ | ✅ | Ruff linting and formatting |
-| Security scanning | ✅ | ✅ | Bandit for Python, npm audit |
-| Dependency checks | ✅ | ✅ | Lockfile validation |
+### Frontend Checks Workflow (`.github/workflows/lint.yml`)
+- **ESLint**: Code quality and style
+- **Prettier**: Code formatting
+- **Build**: Production build verification
 
 ## 📋 What Gets Checked
 
@@ -94,7 +46,6 @@ GitHub Actions provides comprehensive automated checks:
 - **ESLint**: Code quality and style
 - **Prettier**: Code formatting
 - **TypeScript**: Type safety
-- **Dependencies**: Package.json validation
 - **Build**: Production build verification
 
 ### Backend (Django/Python)
@@ -104,20 +55,11 @@ GitHub Actions provides comprehensive automated checks:
 - **Tests**: Test suite execution (optional)
 - **Dependencies**: UV lockfile validation
 
-### General
-- **File integrity**: JSON, YAML, TOML validation
-- **Code style**: Consistent formatting across all files
-- **Security**: Vulnerability scanning
-- **Documentation**: Docstring requirements
-
 ## 🛠️ Setup Instructions
 
 ### 1. Install Dependencies
 
 ```bash
-# Install pre-commit
-pip install pre-commit --break-system-packages
-
 # Install frontend dependencies
 cd frontend && pnpm install
 
@@ -125,17 +67,7 @@ cd frontend && pnpm install
 cd backend && uv sync
 ```
 
-### 2. Install Pre-commit Hooks
-
-```bash
-# Install hooks
-pre-commit install
-
-# Or use npm script
-npm run install:hooks
-```
-
-### 3. VS Code Setup
+### 2. VS Code Setup
 
 Install recommended extensions:
 - **Prettier** - Code formatting
@@ -149,23 +81,9 @@ Install recommended extensions:
 
 1. **Write code** with VS Code providing real-time feedback
 2. **Save files** - Auto-formatting applied
-3. **Stage changes** - `git add .`
-4. **Commit** - Pre-commit hooks run automatically
-5. **Push** - CI/CD runs comprehensive checks
-
-### Pre-commit Hook Flow
-
-```
-git commit
-    ↓
-Pre-commit hooks run
-    ↓
-General file checks
-    ↓
-Python linting & formatting
-    ↓
-Commit proceeds (if all pass)
-```
+3. **Run checks** - `./scripts/check-all.sh` or `npm run check`
+4. **Commit** - Code is ready for deployment
+5. **Push** - CI/CD runs automated checks
 
 ### CI/CD Flow
 
@@ -174,17 +92,15 @@ Push to GitHub
     ↓
 GitHub Actions triggered
     ↓
-Lint workflow (fast)
+Frontend Checks workflow
     ↓
-CI workflow (comprehensive)
+Install dependencies
     ↓
-Pre-commit job
+Run ESLint
     ↓
-Frontend job
+Run Prettier check
     ↓
-Backend job
-    ↓
-Security job
+Build frontend
     ↓
 All checks pass ✅
 ```
@@ -193,33 +109,29 @@ All checks pass ✅
 
 ### Common Issues
 
-#### Pre-commit Hooks Fail
+#### Frontend Build Fails
+- Check Node.js version compatibility
+- Verify all dependencies are installed
+- Review ESLint and TypeScript errors
+
+#### Backend Checks Fail
 ```bash
-# Run hooks manually to see detailed output
-pre-commit run --all-files
+# Install missing dependencies
+cd backend && uv sync
 
-# Fix formatting issues
-npm run format
-
-# Update hooks if needed
-npm run update:hooks
+# Run specific checks
+uv run ruff check .
+uv run ruff format --check .
 ```
 
 #### CI/CD Failures
-- **Lint workflow fails**: Check basic file formatting and Python code
-- **Frontend job fails**: Check ESLint, Prettier, TypeScript, or build issues
-- **Backend job fails**: Check Ruff, Bandit, or Django migration issues
-- **Security job fails**: Check for security vulnerabilities in dependencies
-
-#### Local vs CI Differences
-- **Local checks pass, CI fails**: Usually due to missing dependencies or environment differences
-- **CI passes, local fails**: Check if you have all required tools installed locally
+- **ESLint fails**: Check for code quality issues
+- **Prettier fails**: Check for formatting issues
+- **Build fails**: Check for TypeScript or dependency issues
 
 ### Configuration Files
 
-- **`.pre-commit-config.yaml`** - Pre-commit hook configuration
-- **`.github/workflows/lint.yml`** - Fast CI checks
-- **`.github/workflows/ci.yml`** - Comprehensive CI checks
+- **`.github/workflows/lint.yml`** - Frontend CI checks
 - **`scripts/check-all.sh`** - Manual check script
 - **`package.json`** - Root npm scripts
 - **`frontend/eslint.config.mjs`** - ESLint configuration
@@ -230,8 +142,6 @@ npm run update:hooks
 
 The setup ensures:
 
-- **100%** of commits pass basic quality checks
-- **Comprehensive** CI/CD validation for all code
 - **Consistent** code formatting across the project
 - **Type safety** for frontend code
 - **Security** scanning for backend code

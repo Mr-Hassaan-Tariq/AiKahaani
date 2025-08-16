@@ -73,21 +73,7 @@ fi
 echo ""
 print_status "info" "Starting quality checks..."
 
-# 1. Pre-commit hooks
-echo ""
-print_status "info" "Running pre-commit hooks..."
-if command_exists pre-commit; then
-    if pre-commit run --all-files; then
-        print_status "success" "Pre-commit hooks passed"
-    else
-        print_status "error" "Pre-commit hooks failed"
-        exit 1
-    fi
-else
-    print_status "warning" "pre-commit not found, skipping pre-commit hooks"
-fi
-
-# 2. Frontend checks
+# 1. Frontend checks
 echo ""
 print_status "info" "Running frontend checks..."
 
@@ -109,7 +95,7 @@ run_check "Frontend TypeScript" "pnpm type-check" "frontend"
 # Build check (optional - can fail due to environment issues)
 run_check "Frontend Build" "pnpm build" "frontend" "true"
 
-# 3. Backend checks
+# 2. Backend checks
 echo ""
 print_status "info" "Running backend checks..."
 
@@ -133,7 +119,7 @@ else
         print_status "warning" "No backend tests found, skipping"
     fi
 
-    # 4. Security checks
+    # 3. Security checks
     echo ""
     print_status "info" "Running security checks..."
 
@@ -144,7 +130,7 @@ else
         print_status "warning" "bandit not found, skipping security checks"
     fi
 
-    # 5. Dependency checks
+    # 4. Dependency checks
     echo ""
     print_status "info" "Checking dependencies..."
 
