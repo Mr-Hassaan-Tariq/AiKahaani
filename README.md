@@ -1,278 +1,477 @@
-# TubeGenius - Django & Next.js Boilerplate <!-- omit from toc -->
+# TubeGenius - Full-Stack Django & Next.js Platform
 
-## Features <!-- omit from toc -->
+A modern, scalable full-stack web platform built with Django REST Framework and Next.js 15. TubeGenius provides a robust foundation for building web applications with microsite architecture, type-safe API integration, and comprehensive development tooling.
 
-- **Microsites**: supports several front ends connected to API backend
-- **API typesafety**: exported types from backend stored in shared front end package
-- **Server actions**: handling form submissions in server part of Next project
-- **Tailwind CSS**: built-in support for all front end packages and sites
-- **Docker Compose**: start both front end and backend by running `docker compose up`
-- **Auth system**: incorporated user authentication based on JWT tokens
-- **Profile management**: update profile information from the front end
-- **Registrations**: creation of new user accounts (activation not included)
-- **Admin theme**: modern admin theme with user & group management
-- **Custom user model**: extended default Django user model
-- **Visual Studio Code**: project already contains VS Code containers and tasks
+## 🚀 Features
 
-## Table of contents <!-- omit from toc -->
+### **Backend (Django)**
+- **Django REST Framework** - Robust API development
+- **JWT Authentication** - Secure token-based authentication
+- **OpenAPI/Swagger** - Auto-generated API documentation
+- **Custom User Model** - Extended Django user with profile management
+- **Modern Admin Theme** - Django Unfold for beautiful admin interface
+- **Comprehensive Testing** - pytest with factory-boy for test data
+- **Database Management** - PostgreSQL with migrations
 
-- [Quickstart](#quickstart)
-  - [Environment files configuration](#environment-files-configuration)
-  - [Running docker compose](#running-docker-compose)
-- [Included dependencies](#included-dependencies)
-  - [Backend dependencies](#backend-dependencies)
-  - [Front end dependencies](#front-end-dependencies)
-- [Front end project structure](#front-end-project-structure)
-  - [Adding microsite to docker-compose.yaml](#adding-microsite-to-docker-composeyaml)
-- [Authentication](#authentication)
-  - [Configuring env variables](#configuring-env-variables)
-  - [User accounts on the backend](#user-accounts-on-the-backend)
-  - [Authenticated paths on frontend](#authenticated-paths-on-frontend)
-- [API calls to backend](#api-calls-to-backend)
-  - [API Client](#api-client)
-  - [Updating OpenAPI schema](#updating-openapi-schema)
-  - [Swagger](#swagger)
-  - [Client side requests](#client-side-requests)
-- [Test suite](#test-suite)
-- [Developing in VS Code](#developing-in-vs-code)
+### **Frontend (Next.js)**
+- **Next.js 15** - Latest React framework with App Router
+- **React 19** - Latest React features and performance improvements
+- **TypeScript** - Type-safe development experience
+- **Microsite Architecture** - Multiple frontend applications sharing common packages
+- **API Type Safety** - Generated TypeScript types from Django backend
+- **Server Actions** - Form handling and API communication
+- **Tailwind CSS v4** - Modern utility-first CSS framework
+- **Authentication** - NextAuth.js with JWT integration
+- **Code Quality** - ESLint, Prettier, and comprehensive linting setup
 
-## Quickstart
+### **Development & DevOps**
+- **Docker Compose** - One-command full-stack development
+- **VS Code Integration** - Dev containers and pre-configured tasks
+- **Hot Reloading** - Fast development with Turbopack
+- **Environment Management** - Flexible configuration system
+- **Package Management** - pnpm workspaces for frontend, uv for backend
 
-To start using TubeGenius, clone the repository to your local machine and run `docker compose`, which will handle the installation process. The only prerequisite is having `docker compose` installed and configuring environment variable files.
+## 📋 Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Docker & Docker Compose** (v2.0+)
+- **Git**
+- **VS Code** (recommended with Dev Containers extension)
+
+## 🛠️ Quick Start
+
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Mr-Hassaan-Tariq/Tubegenius
 cd Tubegenius
 ```
 
-### Environment files configuration
+### 2. Configure Environment Variables
 
-Before you can run `docker compose up`, you have to set up two files with environment variables. Both files are loaded via `docker compose` and variables are available within docker containers.
+Set up environment files for both backend and frontend:
 
 ```bash
-cp .env.backend.template .env.backend # set SECRET_KEY and DEBUG=1 for debug mode on
-cp .env.frontend.template .env.frontend # set NEXTAUTH_SECRET to a value "openssl rand -base64 32"
+# Backend environment
+cp .env.backend.template .env.backend
+
+# Frontend environment
+cp .env.frontend.template .env.frontend
 ```
 
-For more advanced environment variables configuration for the front end, it is recommended to read official [Next.js documentation](https://nextjs.org/docs/pages/building-your-application/configuring/environment-variables) about environment variables where it is possible to configure specific variables for each microsite.
+**Important**: Update the following in your environment files:
 
-On the backend it is possible to use third party libraries for loading environment variables. In case that loading variables through `os.environ` is not fulfilling the requirements, we recommend using [django-environ](https://github.com/joke2k/django-environ) application.
+- **Backend** (`.env.backend`):
+  - `SECRET_KEY` - Django secret key
+  - `DEBUG=1` - Enable debug mode
+  - `DATABASE_PASSWORD` - PostgreSQL password
 
-### Running docker compose
+- **Frontend** (`.env.frontend`):
+  - `NEXTAUTH_SECRET` - Generate with: `openssl rand -base64 32`
+
+### 3. Start the Application
 
 ```bash
 docker compose up
 ```
 
-After successful installation, it will be possible to access both front end (http://localhost:3000) and backend (http://localhost:8000) part of the system from the browsers.
+### 4. Access the Application
 
-**NOTE**: Don't forget to change database credentials in docker-compose.yaml and in .env.backend by configuring `DATABASE_PASSWORD`.
+After successful startup, access the following services:
 
-## Included dependencies
+- **Frontend Application**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Documentation (Swagger)**: http://localhost:8000/api/schema/swagger-ui/
+- **Django Admin**: http://localhost:8000/admin/
 
-The general rule when it comes to dependencies is to have minimum of third party applications or plugins to avoid future problems updating the project and keep the maintenance of applications minimal.
-
-### Backend dependencies
-
-For dependency management in Django application we are using `uv`. When starting the project through the `docker compose` command, it is checked for new dependencies as well. In the case they are not installed, docker will install them before running development server.
-
-- **[djangorestframework](https://github.com/encode/django-rest-framework)** - REST API support
-- **[djangorestframework-simplejwt](https://github.com/jazzband/djangorestframework-simplejwt)** - JWT auth for REST API
-- **[drf-spectacular](https://github.com/tfranzel/drf-spectacular)** - OpenAPI schema generator
-- **[django-unfold](https://github.com/unfoldadmin/django-unfold)** - Admin theme for Django admin panel
-
-Below, you can find a command to install new dependency into backend project.
-
-```bash
-docker compose exec api uv add djangorestframework
-```
-
-### Front end dependencies
-
-For the frontend project, it is bit more complicated to maintain front end dependencies than in backend part. Dependencies, can be split into two parts. First part are general dependencies available for all projects under packages and apps folders. The second part are dependencies, which are project specific.
-
-- **[next-auth](https://github.com/nextauthjs/next-auth)** - Next.js authentication
-- **[react-hook-form](https://github.com/react-hook-form/react-hook-form)** - Handling of React forms
-- **[tailwind-merge](https://github.com/dcastil/tailwind-merge)** - Tailwind CSS class names helper
-- **[zod](https://github.com/colinhacks/zod)** - Schema validation
-
-To install a global dependency for all packages and apps, use `-w` parameter. In case of development package, add `-D` argument to install it into development dependencies.
-
-```bash
-docker compose exec web pnpm add react-hook-form -w
-```
-
-To install a dependency for specific app or package, use `--filter` to specify particular package.
-
-```bash
-docker compose exec web pnpm --filter web add react-hook-form
-```
-
-## Front end project structure
-
-Project structure on the front end, it is quite different from the directory hierarchy in the backend. TubeGenius counts with an option that front end have multiple front ends available on various domains or ports.
-
-```text
-frontend
-| - apps       // available sites
-|   - web      // available next.js project
-| - packages   // shared packages between sites
-|   - types    // exported types from backend - api
-|   - ui       // general ui components
-```
-
-The general rule here is, if you want to have some shared code, create new package under packages/ folder. After adding new package and making it available for your website, it is needed to install the new package into website project by running a command below.
-
-```bash
-docker compose exec web pnpm --filter web add @frontend/ui
-```
-
-### Adding microsite to docker-compose.yaml
-
-If you want to have new website facing customers, create new project under apps/ directory. Keep in mind that `docker-compose.yaml` file must be adjusted to start a new project with appropriate new port.
-
-```yaml
-new_microsite:
-  command: bash -c "pnpm install -r && pnpm --filter new_microsite dev"
-  build:
-    context: frontend # Dockerfile can be same
-  volumes:
-    - ./frontend:/app
-  expose:
-    - "3001" # different port
-  ports:
-    - "3001:3001" # different port
-  env_file:
-    - .env.frontend
-  depends_on:
-    - api
-```
-
-## Authentication
-
-For the authentication, TubeGenius uses **django-simplejwt** and **next-auth** package to provide simple REST based JWT authentication. On the backend, there is no configuration related to django-simplejwt so everything is set to default values.
-
-On the front end, next-auth is used to provide credentials authentication. The most important file on the front end related to authentication is `frontend/web/lib/auth.ts` which is containing whole business logic behind authentication.
-
-### Configuring env variables
-
-Before starting using authentication, it is crucial to configure environment variable `NEXTAUTH_SECRET` in .env.frontend file. You can set the value to the output of the command below.
-
-```bash
-openssl rand -base64 32
-```
-
-### User accounts on the backend
-
-There are two ways how to create new user account in the backend. First option is to run managed command responsible for creating superuser. It is more or less required, if you want to have an access to the Django admin. After running the command below, it will be possible to log in on the front end part of the application.
+### 5. Create Superuser
 
 ```bash
 docker compose exec api uv run -- python manage.py createsuperuser
 ```
 
-The second option how to create new user account is to register it on the front end. TubeGenius provides simple registration form. After account registration, it will be not possible to log in because account is inactive. Superuser needs to access Django admin and activate an account. This is a default behavior provided by TubeGenius, implementation of special way of account activation is currently out the scope of the project.
+## 🏗️ Project Structure
 
-### Authenticated paths on frontend
-
-To ensure path is only for authenticated users, it is possible to use `getServerSession` to check the status of user.
-
-This function accepts an argument with authentication options, which can be imported from `@/lib/auth` and contains credentials authentication business logic.
-
-```tsx
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
-
-const SomePageForAuthenticatedUsers = async () => {
-  const session = await getServerSession(authOptions);
-
-  if (session === null) {
-    return redirect("/");
-  }
-
-  return <>content</>;
-};
+```
+Tubegenius/
+├── backend/                 # Django REST API
+│   ├── api/                # Django application
+│   │   ├── models.py       # Database models
+│   │   ├── serializers.py  # API serializers
+│   │   ├── views.py        # API views
+│   │   ├── urls.py         # URL routing
+│   │   └── tests/          # Test suite
+│   ├── manage.py           # Django management
+│   └── pyproject.toml      # Python dependencies
+├── frontend/               # Next.js applications
+│   ├── apps/              # Microsite applications
+│   │   └── web/           # Main web application
+│   ├── packages/          # Shared packages
+│   │   ├── types/         # Generated API types
+│   │   └── ui/            # Shared UI components
+│   └── package.json       # Node.js dependencies
+├── docker-compose.yaml     # Container orchestration
+└── README.md              # This file
 ```
 
-To require authenticated user account on multiple pages, similar business logic can be applied in `layouts.tsx`.
+## 🔧 Development
 
-```tsx
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+### Backend Development
 
-const AuthenticatedLayout = async ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  const session = await getServerSession(authOptions);
+#### Adding Dependencies
 
-  if (session === null) {
-    return redirect("/");
-  }
+```bash
+# Add new Python package
+docker compose exec api uv add package-name
 
-  return <>{children}</>;
-};
-
-export default AuthenticatedLayout;
+# Add development dependency
+docker compose exec api uv add --dev package-name
 ```
 
-## API calls to backend
+#### Running Tests
 
-Currently TubeGenius implements Next.js server actions in folder `frontend/apps/web/actions/` responsible for communication with the backend. When the server action is hit from the client, it fetches required data from Django API backend.
+```bash
+# Run all tests
+docker compose exec api uv run -- pytest .
+
+# Run specific test file
+docker compose exec api uv run -- pytest api/tests/test_api.py
+
+# Run specific test
+docker compose exec api uv run -- pytest api/tests/test_api.py -k "test_name"
+```
+
+#### Database Operations
+
+```bash
+# Create migrations
+docker compose exec api uv run -- python manage.py makemigrations
+
+# Apply migrations
+docker compose exec api uv run -- python manage.py migrate
+
+# Create superuser
+docker compose exec api uv run -- python manage.py createsuperuser
+```
+
+### Frontend Development
+
+#### Package Management
+
+```bash
+# Add global dependency (shared across all microsites)
+docker compose exec web pnpm add package-name -w
+
+# Add site-specific dependency
+docker compose exec web pnpm --filter web add package-name
+
+# Add development dependency
+docker compose exec web pnpm add -D package-name -w
+```
+
+#### Code Quality
+
+```bash
+# Lint code
+docker compose exec web pnpm lint
+
+# Fix linting issues
+docker compose exec web pnpm lint:fix
+
+# Format code
+docker compose exec web pnpm prettier:fix
+
+# Type checking
+docker compose exec web pnpm type-check
+
+# Generate API types
+docker compose exec web pnpm openapi:generate
+```
+
+#### Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start development server |
+| `pnpm build` | Build for production |
+| `pnpm start` | Start production server |
+| `pnpm lint` | Check for linting errors |
+| `pnpm lint:fix` | Auto-fix linting issues |
+| `pnpm format` | Format code and fix issues |
+| `pnpm type-check` | Run TypeScript checking |
+| `pnpm openapi:generate` | Generate API types |
+
+## 🔐 Authentication
+
+TubeGenius uses JWT-based authentication with Django Simple JWT on the backend and NextAuth.js on the frontend.
+
+### Backend Authentication
+
+- **JWT Tokens**: Access and refresh token system
+- **User Model**: Extended Django user with profile fields
+- **Admin Interface**: Modern admin theme with user management
+
+### Frontend Authentication
+
+- **NextAuth.js**: Credentials provider with JWT
+- **Protected Routes**: Server-side session validation
+- **User Registration**: Account creation with admin activation
+
+### Environment Configuration
+
+```env
+# Backend (.env.backend)
+SECRET_KEY=your-django-secret-key
+DEBUG=1
+
+# Frontend (.env.frontend)
+NEXTAUTH_SECRET=your-nextauth-secret
+NEXTAUTH_URL=http://localhost:3000
+```
+
+## 🔌 API Integration
+
+### Server Actions
+
+The frontend uses Next.js Server Actions for API communication:
+
+```typescript
+// Example server action
+export async function fetchUserData() {
+  const client = getApiClient();
+  const response = await client.users.usersMeRetrieve();
+  return response.data;
+}
+```
 
 ### API Client
 
-The query between server action and Django backend is handled by using an API client generated by `openapi-typescript-codegen` package. In TubeGenius, there is a function `getApiClient` available in `frontend/apps/web/lib/api.ts` which already implements default options and authentication tokens.
+- **Generated Client**: TypeScript client from OpenAPI schema
+- **Type Safety**: Full type coverage for API responses
+- **Authentication**: Automatic token handling
 
-### Updating OpenAPI schema
+### Updating API Types
 
-After changes on the backend, for example adding new fields into serializers, it is required to update typescript schema on the frontend. The schema can be updated by running command below. In VS Code, there is prepared task which will update definition.
+After backend changes, regenerate TypeScript types:
 
 ```bash
 docker compose exec web pnpm openapi:generate
 ```
 
-### Swagger
+## 🧪 Testing
 
-By default, TubeGenius includes Swagger for API schema which is available here `http://localhost:8000/api/schema/swagger-ui/`. Swagger can be disabled by editing `urls.py` and removing `SpectacularSwaggerView`.
+### Backend Testing
 
-### Client side requests
+The project uses pytest with comprehensive test setup:
 
-At the moment, TubeGenius does not contain any examples of client side requests towards the backend. All the requests are handled by server actions. For client side requests, it is recommended to use [react-query](https://github.com/TanStack/query).
+- **pytest-django**: Django testing utilities
+- **pytest-factoryboy**: Test data generation
+- **Test Structure**: Organized in `backend/api/tests/`
 
-## Test suite
-
-Project contains test suite for backend part. For testing it was used library called [pytest](https://docs.pytest.org/en/latest/) along with some additional libraries extending functionality of pytest:
-
-- [pytest-django](https://pytest-django.readthedocs.io/en/latest/) - for testing django applications
-- [pytest-factoryboy](https://pytest-factoryboy.readthedocs.io/en/latest/) - for creating test data
-
-All these libraries mentioned above are already preconfigured in `backend/api/tests` directory.
-
-- `conftest.py` - for configuring pytest
-- `factories.py` - for generating reusable test objects using factory_boy, which creates model instances with default values that can be customized as needed
-- `fixtures.py` - for creating pytest fixtures that provide test data or resources that can be shared and reused across multiple tests
-
-To run tests, use the command below which will collect all the tests available in backend/api/tests folder:
+### Running Tests
 
 ```bash
+# All tests
 docker compose exec api uv run -- pytest .
-```
 
-To run tests available only in one specific file run:
-
-```bash
+# Specific file
 docker compose exec api uv run -- pytest api/tests/test_api.py
+
+# Specific test
+docker compose exec api uv run -- pytest -k "test_name"
 ```
 
-To run one specific test, use the command below:
+## 🐳 Docker Development
+
+### Container Management
 
 ```bash
-docker compose exec api uv run -- pytest api/tests/test_api.py -k "test_api_users_me_authorized"
+# Start all services
+docker compose up
+
+# Start in background
+docker compose up -d
+
+# Stop all services
+docker compose down
+
+# Rebuild containers
+docker compose up --build
+
+# View logs
+docker compose logs -f
 ```
 
-## Developing in VS Code
+### Individual Services
 
-The project contains configuration files for devcontainers so it is possible to directly work inside the container within VS Code. When the project opens in VS Code the popup will appear to reopen the project in container. An action **Dev Containers: Reopen in Container** is available as well. Click on the reopen button and select the container which you want to work on. When you want to switch from the frontend to the backend project run **Dev Containers: Switch container** action. In case you are done and you want to work in the parent folder run **Dev Containers: Reopen Folder Locally** action
+```bash
+# Backend only
+docker compose up api
+
+# Frontend only
+docker compose up web
+
+# Database only
+docker compose up db
+```
+
+## 💻 VS Code Development
+
+The project includes comprehensive VS Code configuration:
+
+### Dev Containers
+
+- **Backend Container**: Python development environment
+- **Frontend Container**: Node.js development environment
+- **Automatic Setup**: Pre-configured extensions and settings
+
+### Features
+
+- **Hot Reloading**: Automatic code reloading
+- **IntelliSense**: Full TypeScript and Python support
+- **Debugging**: Pre-configured debug configurations
+- **Tasks**: Automated development tasks
+
+### Getting Started
+
+1. Open the project in VS Code
+2. Install the "Dev Containers" extension
+3. Click "Reopen in Container" when prompted
+4. Select your preferred development container
+
+## 🚀 Deployment
+
+### Production Build
+
+```bash
+# Build frontend
+docker compose exec web pnpm build
+
+# Collect static files (backend)
+docker compose exec api uv run -- python manage.py collectstatic
+
+# Run migrations
+docker compose exec api uv run -- python manage.py migrate
+```
+
+### Environment Variables
+
+Configure production environment variables:
+
+```env
+# Production settings
+DEBUG=0
+ALLOWED_HOSTS=your-domain.com
+DATABASE_URL=postgresql://user:pass@host:port/db
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these guidelines:
+
+### Development Workflow
+
+1. **Fork the repository**
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. **Make your changes**
+4. **Run quality checks**
+   ```bash
+   # Backend
+   docker compose exec api uv run -- pytest
+
+   # Frontend
+   docker compose exec web pnpm lint
+   docker compose exec web pnpm type-check
+   ```
+5. **Commit your changes**
+   ```bash
+   git commit -m 'feat: add amazing feature'
+   ```
+6. **Push to the branch**
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+7. **Open a Pull Request**
+
+### Code Quality Standards
+
+- **Backend**: Follow PEP 8 and Django conventions
+- **Frontend**: Use ESLint and Prettier configurations
+- **Testing**: Maintain test coverage
+- **Documentation**: Update relevant documentation
+
+## 📚 Documentation
+
+- [Frontend README](./frontend/README.md) - Detailed frontend documentation
+- [Linting Guide](./frontend/LINTING.md) - Code quality setup
+- [Django Documentation](https://docs.djangoproject.com/) - Django framework guide
+- [Next.js Documentation](https://nextjs.org/docs) - Next.js framework guide
+- [Docker Documentation](https://docs.docker.com/) - Container platform guide
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Docker Issues**
+```bash
+# Container not starting
+docker compose down
+docker compose up --build
+
+# Permission issues
+sudo chown -R $USER:$USER .
+```
+
+**Database Issues**
+```bash
+# Reset database
+docker compose down -v
+docker compose up
+```
+
+**Frontend Issues**
+```bash
+# Clear node modules
+docker compose exec web rm -rf node_modules pnpm-lock.yaml
+docker compose exec web pnpm install
+```
+
+**Backend Issues**
+```bash
+# Clear Python cache
+docker compose exec api find . -type d -name "__pycache__" -exec rm -r {} +
+```
+
+### Performance Optimization
+
+- **Frontend**: Use Turbopack for faster builds
+- **Backend**: Enable database query optimization
+- **Docker**: Use volume caching for dependencies
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
+
+## 🙏 Acknowledgments
+
+- [Django](https://www.djangoproject.com/) - Web framework
+- [Next.js](https://nextjs.org/) - React framework
+- [Docker](https://www.docker.com/) - Container platform
+- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+
+## 📞 Support
+
+For support and questions:
+
+- **Issues**: Create an issue in the repository
+- **Documentation**: Check the documentation links above
+- **Community**: Join our development community
+
+---
+
+**Built with ❤️ using Django, Next.js, and modern web technologies**

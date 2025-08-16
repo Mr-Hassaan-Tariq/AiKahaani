@@ -1,0 +1,25 @@
+{
+  "name": "tubegenius",
+  "version": "1.0.0",
+  "description": "Full-stack Django & Next.js platform with comprehensive quality checks",
+  "private": true,
+  "scripts": {
+    "check": "./scripts/check-all.sh",
+    "check:pre-commit": "pre-commit run --all-files",
+    "check:frontend": "cd frontend && pnpm lint && pnpm prettier:check && pnpm type-check",
+    "check:backend": "cd backend && uv run ruff check . && uv run ruff format --check .",
+    "format": "pre-commit run --all-files",
+    "install:hooks": "pre-commit install",
+    "update:hooks": "pre-commit autoupdate"
+  },
+  "devDependencies": {
+    "pre-commit": "^4.3.0"
+  },
+  "engines": {
+    "node": ">=18.17.0",
+    "pnpm": ">=8.0.0"
+  },
+  "workspaces": [
+    "frontend"
+  ]
+}
