@@ -99,6 +99,12 @@ run_check "Frontend Build" "pnpm build" "frontend" "true"
 echo ""
 print_status "info" "Running backend checks..."
 
+# Frontend platform checks
+run_check "Frontend Platform ESLint" "pnpm lint" "frontend-platform"
+run_check "Frontend Platform Prettier" "pnpm prettier:check" "frontend-platform"
+run_check "Frontend Platform TypeScript" "pnpm type-check" "frontend-platform"
+run_check "Frontend Platform Build" "pnpm build" "frontend-platform" "true"
+
 # Check if uv exists
 if ! command_exists uv; then
     print_status "warning" "uv not found, skipping backend checks"
@@ -136,9 +142,13 @@ else
 
     # Frontend dependencies
     run_check "Frontend Dependencies" "pnpm install --frozen-lockfile" "frontend"
+    run_check "Frontend Platform Dependencies" "pnpm install --frozen-lockfile" "frontend-platform"
 
     # Backend dependencies
     run_check "Backend Dependencies" "uv sync" "backend"
+
+    # Frontend platform dependencies
+    run_check "Frontend Platform Dependencies" "pnpm install --frozen-lockfile" "frontend-platform"
 fi
 
 echo ""

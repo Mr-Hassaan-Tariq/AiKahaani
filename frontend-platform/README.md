@@ -1,6 +1,6 @@
-# TubeGenius Frontend
+# TubeGenius Platform Frontend
 
-A modern, high-performance frontend application built with Next.js 15, React 19, and TypeScript. This frontend supports multiple microsites connected to a Django API backend, providing a scalable architecture for the TubeGenius platform.
+A modern, high-performance platform-specific frontend application built with Next.js 15, React 19, and TypeScript. This frontend serves as a dedicated platform interface for the TubeGenius ecosystem, providing specialized features and functionality separate from the main application.
 
 ## 🚀 Features
 
@@ -8,6 +8,7 @@ A modern, high-performance frontend application built with Next.js 15, React 19,
 - **React 19** - Latest React features and performance improvements
 - **TypeScript** - Type-safe development experience
 - **Tailwind CSS v4** - Modern utility-first CSS framework
+- **Platform-Specific Features** - Dedicated functionality for platform management
 - **Microsite Architecture** - Multiple frontend applications sharing common packages
 - **API Type Safety** - Generated TypeScript types from Django backend
 - **Server Actions** - Form handling and API communication
@@ -15,6 +16,7 @@ A modern, high-performance frontend application built with Next.js 15, React 19,
 - **Turbopack** - Fast development builds
 - **Responsive Design** - Mobile-first approach
 - **Authentication** - JWT-based auth with NextAuth.js
+- **Independent Deployment** - Can be deployed separately from main frontend
 
 ## 📋 Prerequisites
 
@@ -27,7 +29,7 @@ Before you begin, ensure you have the following installed:
 
 ## 🛠️ Installation
 
-### Option 1: Full Stack with Docker (Recommended)
+### Option 1: Full Stack with Docker (Main Frontend)
 
 1. **Clone the repository**
 
@@ -50,16 +52,16 @@ Before you begin, ensure you have the following installed:
    ```
 
    Access the application at:
-   - Frontend: http://localhost:3000
+   - Main Frontend: http://localhost:3000
    - Backend API: http://localhost:8000
    - Swagger UI: http://localhost:8000/api/schema/swagger-ui/
 
-### Option 2: Frontend Only Development
+### Option 2: Platform Frontend Development (This Application)
 
-1. **Navigate to frontend directory**
+1. **Navigate to platform frontend directory**
 
    ```bash
-   cd frontend
+   cd frontend-platform
    ```
 
 2. **Install dependencies**
@@ -76,20 +78,23 @@ Before you begin, ensure you have the following installed:
    ```
 
 4. **Start development server**
+
    ```bash
    pnpm dev
    ```
 
+   Access the platform frontend at: http://localhost:3000
+
 ## 🏗️ Project Structure
 
 ```
-frontend/
+frontend-platform/
 ├── apps/                    # Microsite applications
-│   └── web/                # Main web application
+│   └── web/                # Platform web application
 │       ├── app/            # Next.js App Router pages
 │       ├── actions/        # Server actions for API calls
 │       ├── lib/            # Utility functions and configurations
-│       └── components/     # Site-specific components
+│       └── components/     # Platform-specific components
 ├── packages/               # Shared packages between microsites
 │   ├── types/             # Generated TypeScript types from backend
 │   └── ui/                # Shared UI component library
@@ -106,15 +111,15 @@ frontend/
 ### Starting the Development Server
 
 ```bash
-# With Docker (recommended)
-docker compose exec web pnpm dev
-
-# Local development
-cd frontend
+# Local development (recommended for platform frontend)
+cd frontend-platform
 pnpm dev
+
+# With Docker (for main frontend)
+docker compose exec web pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the platform frontend.
 
 ### Available Scripts
 
@@ -130,6 +135,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 | `pnpm format`           | Format code and fix linting issues         |
 | `pnpm type-check`       | Run TypeScript type checking               |
 | `pnpm openapi:generate` | Generate TypeScript types from backend API |
+
+**Note**: This platform frontend runs independently and can be configured to use different ports or domains as needed.
 
 ## 🎨 Code Quality
 
@@ -223,12 +230,12 @@ export async function fetchUserData() {
 After backend changes, regenerate TypeScript types:
 
 ```bash
-# With Docker
-docker compose exec web pnpm openapi:generate
-
-# Local development
-cd frontend
+# Local development (platform frontend)
+cd frontend-platform
 pnpm openapi:generate
+
+# With Docker (main frontend)
+docker compose exec web pnpm openapi:generate
 ```
 
 ## 🔐 Authentication
@@ -276,12 +283,12 @@ export default async function ProtectedPage() {
 For dependencies shared across all microsites:
 
 ```bash
-# With Docker
-docker compose exec web pnpm add package-name -w
-
-# Local development
-cd frontend
+# Local development (platform frontend)
+cd frontend-platform
 pnpm add package-name -w
+
+# With Docker (main frontend)
+docker compose exec web pnpm add package-name -w
 ```
 
 ### Adding Site-Specific Dependencies
@@ -289,12 +296,12 @@ pnpm add package-name -w
 For dependencies specific to a microsite:
 
 ```bash
-# With Docker
-docker compose exec web pnpm --filter web add package-name
-
-# Local development
-cd frontend
+# Local development (platform frontend)
+cd frontend-platform
 pnpm --filter web add package-name
+
+# With Docker (main frontend)
+docker compose exec web pnpm --filter web add package-name
 ```
 
 ### Using Shared Packages
@@ -302,12 +309,12 @@ pnpm --filter web add package-name
 Install shared packages in microsites:
 
 ```bash
-# With Docker
-docker compose exec web pnpm --filter web add @frontend/ui
-
-# Local development
-cd frontend
+# Local development (platform frontend)
+cd frontend-platform
 pnpm --filter web add @frontend/ui
+
+# With Docker (main frontend)
+docker compose exec web pnpm --filter web add @frontend/ui
 ```
 
 ## 🚀 Deployment
@@ -315,14 +322,14 @@ pnpm --filter web add @frontend/ui
 ### Production Build
 
 ```bash
-# With Docker
-docker compose exec web pnpm build
-docker compose exec web pnpm start
-
-# Local development
-cd frontend
+# Local development (platform frontend)
+cd frontend-platform
 pnpm build
 pnpm start
+
+# With Docker (main frontend)
+docker compose exec web pnpm build
+docker compose exec web pnpm start
 ```
 
 ### Environment Variables
@@ -374,7 +381,8 @@ NEXT_PUBLIC_GA_ID=your-ga-id
 ## 📚 Documentation
 
 - [Linting Guide](./LINTING.md) - Detailed linting configuration and usage
-- [Main Project README](../README.md) - Full project documentation
+- [Main Project README](../README.md) - Full project documentation and dual frontend architecture
+- [Main Frontend README](../frontend/README.md) - Main frontend application documentation
 - [Next.js Documentation](https://nextjs.org/docs) - Next.js features and API
 - [React Documentation](https://react.dev) - React features and best practices
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/) - TypeScript guide
@@ -404,14 +412,25 @@ pnpm type-check
 **Dependencies issues**
 
 ```bash
+# Platform frontend
+cd frontend-platform
 rm -rf node_modules pnpm-lock.yaml
 pnpm install
+
+# Main frontend (Docker)
+docker compose exec web rm -rf node_modules pnpm-lock.yaml
+docker compose exec web pnpm install
 ```
 
 **API types out of sync**
 
 ```bash
+# Platform frontend
+cd frontend-platform
 pnpm openapi:generate
+
+# Main frontend (Docker)
+docker compose exec web pnpm openapi:generate
 ```
 
 ### Performance Issues
@@ -455,7 +474,18 @@ For support and questions:
 - Check the documentation in the `docs/` folder
 - Review the troubleshooting section above
 - Refer to the [main project README](../README.md) for full-stack guidance
+- Check the [main frontend README](../frontend/README.md) for main application details
+
+## 🔄 Platform Frontend vs Main Frontend
+
+This platform frontend is designed to run independently from the main frontend application:
+
+- **Independent Development**: Can be developed and deployed separately
+- **Different Use Cases**: Platform-specific features and functionality
+- **Flexible Configuration**: Can be configured for different ports, domains, or environments
+- **Shared Backend**: Both frontends connect to the same Django API backend
+- **Code Sharing**: Can share common packages and utilities with the main frontend
 
 ---
 
-**Built with ❤️ using Next.js, React, and TypeScript**
+**Built with ❤️ using Next.js, React, and TypeScript for the TubeGenius Platform**
