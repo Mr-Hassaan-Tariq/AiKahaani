@@ -14,6 +14,7 @@ A modern, scalable full-stack web platform built with Django REST Framework and 
 - **Database Management** - PostgreSQL with migrations
 
 ### **Frontend (Next.js)**
+- **Dual Frontend Architecture** - Separate applications for main site and platform
 - **Next.js 15** - Latest React framework with App Router
 - **React 19** - Latest React features and performance improvements
 - **TypeScript** - Type-safe development experience
@@ -50,14 +51,17 @@ cd Tubegenius
 
 ### 2. Configure Environment Variables
 
-Set up environment files for both backend and frontend:
+Set up environment files for backend and frontend applications:
 
 ```bash
 # Backend environment
 cp .env.backend.template .env.backend
 
-# Frontend environment
+# Main frontend environment
 cp .env.frontend.template .env.frontend
+
+# Platform frontend environment (if needed)
+cp .env.frontend-platform.template .env.frontend-platform
 ```
 
 **Important**: Update the following in your environment files:
@@ -67,7 +71,10 @@ cp .env.frontend.template .env.frontend
   - `DEBUG=1` - Enable debug mode
   - `DATABASE_PASSWORD` - PostgreSQL password
 
-- **Frontend** (`.env.frontend`):
+- **Main Frontend** (`.env.frontend`):
+  - `NEXTAUTH_SECRET` - Generate with: `openssl rand -base64 32`
+
+- **Platform Frontend** (`.env.frontend-platform`):
   - `NEXTAUTH_SECRET` - Generate with: `openssl rand -base64 32`
 
 ### 3. Start the Application
@@ -80,7 +87,8 @@ docker compose up
 
 After successful startup, access the following services:
 
-- **Frontend Application**: http://localhost:3000
+- **Main Frontend Application**: http://localhost:3000
+- **Platform Frontend Application**: http://localhost:3001 (if configured)
 - **Backend API**: http://localhost:8000
 - **API Documentation (Swagger)**: http://localhost:8000/api/schema/swagger-ui/
 - **Django Admin**: http://localhost:8000/admin/
@@ -104,9 +112,16 @@ Tubegenius/
 │   │   └── tests/          # Test suite
 │   ├── manage.py           # Django management
 │   └── pyproject.toml      # Python dependencies
-├── frontend/               # Next.js applications
+├── frontend/               # Main Next.js application
 │   ├── apps/              # Microsite applications
 │   │   └── web/           # Main web application
+│   ├── packages/          # Shared packages
+│   │   ├── types/         # Generated API types
+│   │   └── ui/            # Shared UI components
+│   └── package.json       # Node.js dependencies
+├── frontend-platform/      # Platform-specific Next.js application
+│   ├── apps/              # Microsite applications
+│   │   └── web/           # Platform web application
 │   ├── packages/          # Shared packages
 │   │   ├── types/         # Generated API types
 │   │   └── ui/            # Shared UI components
@@ -157,39 +172,55 @@ docker compose exec api uv run -- python manage.py createsuperuser
 
 ### Frontend Development
 
+The project includes two separate frontend applications:
+
+- **`frontend/`** - Main application (runs on port 3000)
+- **`frontend-platform/`** - Platform-specific application (can be configured for different ports)
+
 #### Package Management
 
 ```bash
-# Add global dependency (shared across all microsites)
+# Main frontend - Add global dependency (shared across all microsites)
 docker compose exec web pnpm add package-name -w
 
-# Add site-specific dependency
+# Main frontend - Add site-specific dependency
 docker compose exec web pnpm --filter web add package-name
 
-# Add development dependency
+# Main frontend - Add development dependency
 docker compose exec web pnpm add -D package-name -w
+
+# Platform frontend - Add dependencies (run from frontend-platform directory)
+cd frontend-platform
+pnpm add package-name
 ```
 
 #### Code Quality
 
 ```bash
-# Lint code
+# Main frontend - Lint code
 docker compose exec web pnpm lint
 
-# Fix linting issues
+# Main frontend - Fix linting issues
 docker compose exec web pnpm lint:fix
 
-# Format code
+# Main frontend - Format code
 docker compose exec web pnpm prettier:fix
 
-# Type checking
+# Main frontend - Type checking
 docker compose exec web pnpm type-check
 
-# Generate API types
+# Main frontend - Generate API types
 docker compose exec web pnpm openapi:generate
+
+# Platform frontend - Run quality checks (from frontend-platform directory)
+cd frontend-platform
+pnpm lint
+pnpm type-check
 ```
 
 #### Available Scripts
+
+**Main Frontend (`frontend/`)** - Available via Docker:
 
 | Command | Description |
 |---------|-------------|
@@ -201,6 +232,18 @@ docker compose exec web pnpm openapi:generate
 | `pnpm format` | Format code and fix issues |
 | `pnpm type-check` | Run TypeScript checking |
 | `pnpm openapi:generate` | Generate API types |
+
+**Platform Frontend (`frontend-platform/`)** - Run locally:
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start development server |
+| `pnpm build` | Build for production |
+| `pnpm start` | Start production server |
+| `pnpm lint` | Check for linting errors |
+| `pnpm lint:fix` | Auto-fix linting issues |
+| `pnpm format` | Format code and fix issues |
+| `pnpm type-check` | Run TypeScript checking |
 
 ## 🔐 Authentication
 
@@ -309,11 +352,15 @@ docker compose logs -f
 # Backend only
 docker compose up api
 
-# Frontend only
+# Main frontend only
 docker compose up web
 
 # Database only
 docker compose up db
+
+# Platform frontend (run locally)
+cd frontend-platform
+pnpm dev
 ```
 
 ## 💻 VS Code Development
@@ -345,8 +392,12 @@ The project includes comprehensive VS Code configuration:
 ### Production Build
 
 ```bash
-# Build frontend
+# Build main frontend
 docker compose exec web pnpm build
+
+# Build platform frontend (run locally)
+cd frontend-platform
+pnpm build
 
 # Collect static files (backend)
 docker compose exec api uv run -- python manage.py collectstatic
@@ -435,9 +486,14 @@ docker compose up
 
 **Frontend Issues**
 ```bash
-# Clear node modules
+# Clear main frontend node modules
 docker compose exec web rm -rf node_modules pnpm-lock.yaml
 docker compose exec web pnpm install
+
+# Clear platform frontend node modules (run locally)
+cd frontend-platform
+rm -rf node_modules pnpm-lock.yaml
+pnpm install
 ```
 
 **Backend Issues**

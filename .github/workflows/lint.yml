@@ -1,13 +1,22 @@
-name: Frontend Checks
+name: Frontend Quality Checks
 
 on:
   push:
     branches: [main, develop]
+    paths:
+      - "frontend/**"
+      - "frontend-platform/**"
+      - ".github/workflows/lint.yml"
   pull_request:
     branches: [main, develop]
+    paths:
+      - "frontend/**"
+      - "frontend-platform/**"
+      - ".github/workflows/lint.yml"
 
 jobs:
-  frontend:
+  frontend-platform:
+    name: Platform Frontend Checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -23,10 +32,79 @@ jobs:
         with:
           version: 9.14.0
 
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            node_modules
+            */*/node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: |
+          cd frontend-platform
+          pnpm install
+
+      - name: Run TypeScript check
+        run: |
+          cd frontend-platform
+          pnpm type-check
+
+      - name: Run ESLint
+        run: |
+          cd frontend-platform
+          pnpm lint
+
+      - name: Run Prettier check
+        run: |
+          cd frontend-platform
+          pnpm prettier:check
+
+      - name: Build platform frontend
+        run: |
+          cd frontend-platform
+          pnpm build
+
+  frontend:
+    name: Main Frontend Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.18.0"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.14.0
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            node_modules
+            */*/node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
       - name: Install dependencies
         run: |
           cd frontend
-          pnpm install --no-frozen-lockfile
+          pnpm install
+
+      - name: Run TypeScript check
+        run: |
+          cd frontend
+          pnpm type-check
 
       - name: Run ESLint
         run: |
@@ -38,7 +116,7 @@ jobs:
           cd frontend
           pnpm prettier:check
 
-      - name: Build frontend
+      - name: Build main frontend
         run: |
           cd frontend
           pnpm build

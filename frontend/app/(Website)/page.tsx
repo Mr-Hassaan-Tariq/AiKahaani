@@ -1,11 +1,11 @@
-import Navbar from "./_component/Navbar";
-import Hero from "./_component/Hero";
-import HowItWorks from "./_component/HowItWorks";
-import InsideCards from "./_component/InsideCards";
+import Hero from './_component/Hero';
+import HowItWorks from './_component/HowItWorks';
+import InsideCards from './_component/InsideCards';
+import Navbar from './_component/Navbar';
 
 export default function Home() {
   return (
-    <div >
+    <div>
       <Navbar />
       <Hero />
       <HowItWorks />
