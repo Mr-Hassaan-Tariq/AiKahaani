@@ -19,7 +19,7 @@ SECRET_KEY = environ.get("SECRET_KEY", get_random_secret_key())
 
 DEBUG = environ.get("DEBUG", "") == "1"
 
-ALLOWED_HOSTS = ["localhost", "api"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "api"]
 
 WSGI_APPLICATION = "api.wsgi.application"
 
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "drf_spectacular",
     "api",
+    "users",
 ]
 
 ######################################################################
@@ -96,7 +97,7 @@ DATABASES = {
 ######################################################################
 # Authentication
 ######################################################################
-AUTH_USER_MODEL = "api.User"
+AUTH_USER_MODEL = "users.User"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -162,7 +163,7 @@ UNFOLD = {
                     {
                         "title": _("Users"),
                         "icon": "person",
-                        "link": reverse_lazy("admin:api_user_changelist"),
+                        "link": reverse_lazy("admin:users_user_changelist"),
                     },
                     {
                         "title": _("Groups"),
