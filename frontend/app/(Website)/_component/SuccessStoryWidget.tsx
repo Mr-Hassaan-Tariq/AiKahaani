@@ -20,7 +20,7 @@ import {
 
 export default function SuccessStoryWidget() {
   return (
-    <Col className="gap-16 bg-brand-black pb-20 font-figtree">
+    <Col className="gap-16 bg-black pb-20 font-figtree">
       {/* heading */}
       <Col className="gap-4">
         <div className="mx-auto max-w-xl text-center">
@@ -42,7 +42,7 @@ export default function SuccessStoryWidget() {
 type SuccessStory = (typeof successStories)[number];
 
 function CarouselWidget() {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(1);
 
   return (
     <div className="relative mx-auto w-full overflow-hidden">
@@ -51,6 +51,7 @@ function CarouselWidget() {
         opts={{
           align: 'center',
           containScroll: false,
+          startIndex: 1,
         }}
         setApi={(api) => {
           if (api) {
@@ -64,6 +65,7 @@ function CarouselWidget() {
           {successStories.map((story, index) => (
             <CarouselItem
               key={story.id}
+              defaultChecked={index === 1}
               className="flex basis-full items-center md:basis-1/2 md:pl-4 lg:basis-1/3"
             >
               <SuccessStoryCard story={story} isActive={index === activeIndex} />
@@ -85,9 +87,9 @@ function SuccessStoryCard({ story, isActive }: { story: SuccessStory; isActive: 
   return (
     <div
       className={cn(
-        'relative h-[500px] w-full transform overflow-hidden rounded-3xl border border-[#BAFF38]/10 bg-brand-black p-8 transition-all duration-500',
+        'relative h-[500px] w-full transform overflow-hidden rounded-3xl border border-brand-green/10 bg-brand-black p-8 transition-all duration-500',
         isActive &&
-          'scale-110 border-[#BAFF38]/30 bg-gradient-to-br from-transparent to-[#BAFF38]/5'
+          'scale-110 border-brand-green/30 bg-gradient-to-br from-transparent to-brand-green/5'
       )}
       style={{
         transition: 'all 500ms ease-in-out',
@@ -111,7 +113,7 @@ function SuccessStoryCard({ story, isActive }: { story: SuccessStory; isActive: 
           )}
         />
         <Row>
-          <Row className="gap-2 rounded-[8px] border border-[#BAFF38]/10 bg-white/10 p-2 shadow-[0.242px_35.999px_132px_0_rgba(255,255,255,0.04),_0.048px_7.2px_21.45px_0_rgba(255,255,255,0.02)]">
+          <Row className="gap-2 rounded-[8px] border border-brand-green/10 bg-white/10 p-2 shadow-[0.242px_35.999px_132px_0_rgba(255,255,255,0.04),_0.048px_7.2px_21.45px_0_rgba(255,255,255,0.02)]">
             <PlaneIcon />
             <Text variant="xs" className="text-white">
               {story.category}

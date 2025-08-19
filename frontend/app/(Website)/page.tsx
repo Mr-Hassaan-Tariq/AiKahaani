@@ -1,3 +1,5 @@
+import AffiliateProgram from './_component/AffiliateProgram';
+import FooterWidget from './_component/FooterWidget';
 import Hero from './_component/Hero';
 import HowItWorks from './_component/HowItWorks';
 import InsideCards from './_component/InsideCards';
@@ -14,6 +16,8 @@ export default function Home() {
       <InsideCards />
       <SuccessStoryWidget />
       <QuestionWidget />
+      <AffiliateProgram />
+      <FooterWidget />
     </div>
   );
 }

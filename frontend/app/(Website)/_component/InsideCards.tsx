@@ -1,6 +1,6 @@
 const WhatsInside = () => {
   return (
-    <section className="bg-black px-6 py-20 text-white md:px-16">
+    <section className="bg-black px-6 pt-20 text-white md:px-16">
       {/* Heading */}
       <div className="mb-16 text-center">
         <h2 className="text-3xl font-bold md:text-4xl">What’s inside</h2>

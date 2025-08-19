@@ -72,3 +72,13 @@ export const questions = [
       'Not at all. TubeGenius is beginner-friendly. You simply choose your format, answer a few prompts, and our AI delivers a ready-to-use script and title suggestions.',
   },
 ];
+
+export const footerData = [
+  'How it works',
+  'Features',
+  'Success stories',
+  'FAQ',
+  'Privacy Policy',
+  'Terms of Service',
+  'Contact',
+];

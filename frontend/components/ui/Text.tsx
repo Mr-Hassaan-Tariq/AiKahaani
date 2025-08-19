@@ -11,7 +11,7 @@ type TypographyProps = {
 const baseStyles = {
   xs: 'text-xs leading-3.5',
   sm: 'text-sm leading-4',
-  base: 'text-base',
+  base: 'text-base leading-6',
   lg: 'text-lg leading-7 tracking-[-0.2px]',
   xl: 'text-xl font-medium leading-6 tracking-[-0.2px]',
   '2xl': 'text-2xl leading-7 tracking-[-0.2px] font-semibold',

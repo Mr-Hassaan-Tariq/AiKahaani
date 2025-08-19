@@ -16,7 +16,7 @@ import {
 
 export default function QuestionWidget() {
   return (
-    <Col className="gap-16 bg-brand-black pb-20 font-figtree">
+    <Col className="gap-16 bg-black px-6 font-figtree lg:px-32">
       {/* heading */}
       <Col className="gap-4">
         <div className="mx-auto max-w-xl text-center">
@@ -28,7 +28,7 @@ export default function QuestionWidget() {
           {"We've got you covered."}
         </Text>
       </Col>
-      <div className="mx-auto w-full max-w-4xl px-4">
+      <div className="mx-auto w-full">
         <AccordionWidget />
       </div>
     </Col>
@@ -51,14 +51,14 @@ export function AccordionWidget() {
           key={question.id}
           value={question.id.toString()}
           className={cn(
-            'overflow-hidden rounded-[32px] border border-[#BAFF38]/10 bg-transparent p-12',
+            'overflow-hidden rounded-[32px] border border-brand-green/10 bg-brand-black p-12',
             openItem === question.id.toString() &&
-              'bg-gradient-to-br from-transparent to-[#BAFF38]/5'
+              'bg-gradient-to-r from-transparent via-brand-green/[0.02] to-brand-green/[0.02]'
           )}
         >
           <AccordionTrigger
             isIcon={false}
-            className="text-left text-white transition-colors hover:no-underline"
+            className="py-0 text-left text-white transition-colors hover:no-underline"
           >
             <div className="flex w-full items-center justify-between">
               <Text variant="2xl">{question.question}</Text>
