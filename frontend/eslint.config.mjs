@@ -83,7 +83,7 @@ const eslintConfig = [
       'no-duplicate-imports': 'error',
       'no-multiple-empty-lines': ['error', { max: 2, maxEOF: 1 }],
       'eol-last': 'error',
-      'comma-dangle': ['error', 'always-multiline'],
+      'comma-dangle': 'off',
       quotes: ['error', 'single', { avoidEscape: true }],
       semi: ['error', 'always'],
 

@@ -30,7 +30,7 @@ export const ErrorComponent: FC<IErrorComponentProps> = ({ error, reset }) => (
           </div>
           <button onClick={() => reset()} className="mt-5 rounded-full" />
           <div className="mt-14 pl-3 text-sm font-medium md:text-base">Cause</div>
-          <div className="rounded-lg border bg-slate-100 p-3 font-poppins text-sm text-gray-500 md:text-base">
+          <div className="font-poppins rounded-lg border bg-slate-100 p-3 text-sm text-gray-500 md:text-base">
             {error.toString()}
           </div>
         </div>

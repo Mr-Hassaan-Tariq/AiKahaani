@@ -4,6 +4,7 @@
   "description": "Full-stack Django & Next.js platform with comprehensive quality checks",
   "private": true,
   "scripts": {
+    "frontend": "pnpm --filter frontend dev",
     "check": "./scripts/check-all.sh",
     "check:frontend": "cd frontend && pnpm lint && pnpm prettier:check && pnpm type-check",
     "check:frontend-platform": "cd frontend-platform && pnpm lint && pnpm prettier:check && pnpm type-check",

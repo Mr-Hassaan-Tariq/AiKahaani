@@ -32,17 +32,17 @@
     "@tailwindcss/container-queries": "^0.1.1",
     "@tanstack/react-query-devtools": "^5.61.0",
     "@types/node": "^22.9.3",
-    "@types/react": "^19.0.0",
+    "@types/react": "^19.1.10",
     "@types/react-dom": "^19.0.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "autoprefixer": "^10.4.20",
     "eslint-config-next": "15.3.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.0",
     "prettier": "^3.4.2",
-    "prettier-plugin-tailwindcss": "^0.6.9"
+    "prettier-plugin-tailwindcss": "^0.6.9",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.0"
   },
   "packageManager": "pnpm@9.14.2+sha256.06e65a4965baff6d6097f9c8f75c35f6d420974dbc03d775009056a69edfd271",
   "engines": {
