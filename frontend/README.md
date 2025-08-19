@@ -50,9 +50,9 @@ Before you begin, ensure you have the following installed:
    ```
 
    Access the application at:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - Swagger UI: http://localhost:8000/api/schema/swagger-ui/
+   - Frontend: <http://localhost:3000>
+   - Backend API: <http://localhost:8000>
+   - Swagger UI: <http://localhost:8000/api/schema/swagger-ui/>
 
 ### Option 2: Frontend Only Development
 
@@ -76,6 +76,7 @@ Before you begin, ensure you have the following installed:
    ```
 
 4. **Start development server**
+
    ```bash
    pnpm dev
    ```
@@ -245,6 +246,7 @@ The frontend uses NextAuth.js for authentication with JWT tokens from the Django
    ```
 
 2. **Generate secret key**:
+
    ```bash
    openssl rand -base64 32
    ```
@@ -345,24 +347,32 @@ NEXT_PUBLIC_GA_ID=your-ga-id
 
 1. **Fork the repository**
 2. **Create a feature branch**
+
    ```bash
    git checkout -b feature/amazing-feature
    ```
+
 3. **Make your changes**
 4. **Run quality checks**
+
    ```bash
    pnpm format
    pnpm lint
    pnpm type-check
    ```
+
 5. **Commit your changes**
+
    ```bash
    git commit -m 'Add amazing feature'
    ```
+
 6. **Push to the branch**
+
    ```bash
    git push origin feature/amazing-feature
    ```
+
 7. **Open a Pull Request**
 
 ### Commit Guidelines

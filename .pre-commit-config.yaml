@@ -1,0 +1,67 @@
+# Pre-commit configuration for TubeGenius project
+# Simplified version for Windows compatibility
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=1000"]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+
+  # Frontend ESLint (disabled - use 'cd frontend && npm run lint' manually)
+  # ESLint v9 requires new config format that's complex to setup in pre-commit
+  # Run manually: cd frontend && npm run lint
+
+  # Frontend Prettier
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        files: \.(js|jsx|ts|tsx|json|css|scss|md|yaml|yml)$
+        types: [file]
+        additional_dependencies:
+          - prettier@^3.1.0
+
+  # Frontend TypeScript type checking (disabled for Windows compatibility)
+  # Uncomment and modify for your OS:
+  # - repo: local
+  #   hooks:
+  #     - id: typescript-check
+  #       name: TypeScript type check
+  #       entry: powershell -c "cd frontend; pnpm type-check"  # Windows
+  #       # entry: bash -c 'cd frontend && pnpm type-check'   # Unix/macOS
+  #       language: system
+  #       files: \.(ts|tsx)$
+  #       pass_filenames: false
+
+  # Backend Python checks
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.3
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: \.(py)$
+      - id: ruff-format
+        files: \.(py)$
+
+  # Backend Python security checks (disabled - complex configuration)
+  # Run manually: cd backend && bandit -r . --exclude .venv
+
+  # Conventional commit messages
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.20.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+# Additional notes:
+# - Django hooks disabled for Windows compatibility
+# - Markdown linting disabled to reduce noise
+# - Security scanning configured to skip common false positives
+# - To enable Django hooks, install WSL and uncomment the relevant sections

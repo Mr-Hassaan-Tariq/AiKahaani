@@ -4,11 +4,16 @@ from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
+from dotenv import load_dotenv
 
 ######################################################################
 # General
 ######################################################################
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env files
+load_dotenv(BASE_DIR / ".env.backend")
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = environ.get("SECRET_KEY", get_random_secret_key())
 
@@ -81,7 +86,7 @@ DATABASES = {
         "PASSWORD": environ.get("DATABASE_PASSWORD", "change-password"),
         "NAME": environ.get("DATABASE_NAME", "db"),
         "HOST": environ.get("DATABASE_HOST", "db"),
-        "PORT": "5432",
+        "PORT": environ.get("DATABASE_PORT", "5432"),
         "TEST": {
             "NAME": "test",
         },

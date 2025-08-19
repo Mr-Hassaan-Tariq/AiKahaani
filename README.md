@@ -5,6 +5,18 @@ A modern, scalable full-stack web platform built with Django REST Framework and 
 ## 🚀 Features
 
 ### **Backend (Django)**
+
+- **Django 5.1+** - Latest Django framework with modern features
+- **Django REST Framework 3.15+** - Robust API development with ViewSets and serializers
+- **JWT Authentication** - djangorestframework-simplejwt for secure token-based auth
+- **OpenAPI/Swagger** - drf-spectacular for auto-generated API documentation
+- **Custom User Model** - Extended AbstractUser with timestamps and profile management
+- **Modern Admin Interface** - Django Unfold 0.43+ for beautiful, modern admin theme
+- **PostgreSQL Database** - Production-ready database with psycopg3 adapter
+- **Comprehensive Testing** - pytest-django with factory-boy for robust test coverage
+- **Code Quality** - Ruff linting and formatting with strict configuration
+- **Python 3.13** - Latest Python version with modern language features
+- **UV Package Manager** - Fast, modern Python package and project management
 - **Django REST Framework** - Robust API development
 - **JWT Authentication** - Secure token-based authentication
 - **OpenAPI/Swagger** - Auto-generated API documentation
@@ -13,8 +25,8 @@ A modern, scalable full-stack web platform built with Django REST Framework and 
 - **Comprehensive Testing** - pytest with factory-boy for test data
 - **Database Management** - PostgreSQL with migrations
 
+
 ### **Frontend (Next.js)**
-- **Dual Frontend Architecture** - Separate applications for main site and platform
 - **Next.js 15** - Latest React framework with App Router
 - **React 19** - Latest React features and performance improvements
 - **TypeScript** - Type-safe development experience
@@ -26,6 +38,7 @@ A modern, scalable full-stack web platform built with Django REST Framework and 
 - **Code Quality** - ESLint, Prettier, and comprehensive linting setup
 
 ### **Development & DevOps**
+
 - **Docker Compose** - One-command full-stack development
 - **VS Code Integration** - Dev containers and pre-configured tasks
 - **Hot Reloading** - Fast development with Turbopack
@@ -67,6 +80,7 @@ cp .env.frontend-platform.template .env.frontend-platform
 **Important**: Update the following in your environment files:
 
 - **Backend** (`.env.backend`):
+
   - `SECRET_KEY` - Django secret key
   - `DEBUG=1` - Enable debug mode
   - `DATABASE_PASSWORD` - PostgreSQL password
@@ -104,35 +118,87 @@ docker compose exec api uv run -- python manage.py createsuperuser
 ```
 Tubegenius/
 ├── backend/                 # Django REST API
-│   ├── api/                # Django application
-│   │   ├── models.py       # Database models
-│   │   ├── serializers.py  # API serializers
-│   │   ├── views.py        # API views
+│   ├── api/                # Main Django application
+│   │   ├── __init__.py     # Package initialization
+│   │   ├── admin.py        # Django admin configuration
+│   │   ├── api.py          # API ViewSets and endpoints
+│   │   ├── asgi.py         # ASGI configuration
+│   │   ├── models.py       # Database models (Custom User)
+│   │   ├── serializers.py  # DRF serializers
+│   │   ├── settings.py     # Django settings
 │   │   ├── urls.py         # URL routing
-│   │   └── tests/          # Test suite
-│   ├── manage.py           # Django management
-│   └── pyproject.toml      # Python dependencies
-├── frontend/               # Main Next.js application
-│   ├── apps/              # Microsite applications
-│   │   └── web/           # Main web application
-│   ├── packages/          # Shared packages
-│   │   ├── types/         # Generated API types
-│   │   └── ui/            # Shared UI components
-│   └── package.json       # Node.js dependencies
-├── frontend-platform/      # Platform-specific Next.js application
-│   ├── apps/              # Microsite applications
-│   │   └── web/           # Platform web application
-│   ├── packages/          # Shared packages
-│   │   ├── types/         # Generated API types
-│   │   └── ui/            # Shared UI components
-│   └── package.json       # Node.js dependencies
+│   │   ├── wsgi.py         # WSGI configuration
+│   │   ├── migrations/     # Database migrations
+│   │   └── tests/          # Test suite with pytest
+│   │       ├── conftest.py    # Test configuration
+│   │       ├── factories.py   # Test data factories
+│   │       ├── fixtures.py    # Test fixtures
+│   │       └── test_api.py    # API tests
+│   ├── manage.py           # Django management script
+│   ├── pyproject.toml      # Python dependencies (UV)
+│   ├── uv.lock            # UV lock file
+│   └── Dockerfile         # Backend container config
+├── frontend/               # Next.js 15 application
+│   ├── app/               # Next.js App Router
+│   │   ├── layout.tsx     # Root layout
+│   │   ├── page.tsx       # Home page
+│   │   ├── globals.css    # Global styles
+│   │   └── ...            # Additional pages
+│   ├── lib/               # Shared utilities
+│   │   ├── api/           # API client
+│   │   ├── constants.ts   # App constants
+│   │   └── reactQuery/    # React Query provider
+│   ├── public/            # Static assets
+│   ├── styles/            # Styling files
+│   ├── package.json       # Node.js dependencies
+│   ├── tsconfig.json      # TypeScript config
+│   └── tailwind.config.js # Tailwind CSS config
 ├── docker-compose.yaml     # Container orchestration
-└── README.md              # This file
+├── scripts/               # Development scripts
+└── README.md              # This documentation
 ```
 
 ## 🔧 Development
 
 ### Backend Development
+
+#### API Endpoints
+
+The backend provides the following REST API endpoints:
+
+**Authentication Endpoints:**
+
+- `POST /api/token/` - Obtain JWT access and refresh tokens
+- `POST /api/token/refresh/` - Refresh JWT access token
+
+**User Management Endpoints:**
+
+- `POST /api/users/` - User registration (public)
+- `GET /api/users/me/` - Get current user profile
+- `PUT /api/users/me/` - Update current user profile (full update)
+- `PATCH /api/users/me/` - Update current user profile (partial update)
+- `POST /api/users/change-password/` - Change user password
+- `DELETE /api/users/delete-account/` - Delete user account
+
+**API Documentation:**
+
+- `GET /api/schema/` - OpenAPI schema (JSON)
+- `GET /api/schema/swagger-ui/` - Interactive Swagger UI documentation
+
+**Admin Interface:**
+
+- `/admin/` - Django Unfold admin interface with custom navigation
+
+#### Backend Features
+
+- **Custom User Model**: Extended Django AbstractUser with created_at/modified_at timestamps
+- **JWT Authentication**: Access and refresh token system with djangorestframework-simplejwt
+- **User Registration**: New users are created as inactive by default (requires admin activation)
+- **Password Management**: Secure password change with validation
+- **Account Management**: Users can delete their own accounts
+- **Admin Interface**: Modern Django Unfold theme with custom sidebar navigation
+- **API Documentation**: Auto-generated OpenAPI schema with Swagger UI
+- **Database**: PostgreSQL with proper migrations and health checks
 
 #### Adding Dependencies
 
@@ -247,19 +313,30 @@ pnpm type-check
 
 ## 🔐 Authentication
 
-TubeGenius uses JWT-based authentication with Django Simple JWT on the backend and NextAuth.js on the frontend.
+TubeGenius uses JWT-based authentication with Django REST Framework Simple JWT on the backend and NextAuth.js on the frontend.
 
 ### Backend Authentication
 
-- **JWT Tokens**: Access and refresh token system
-- **User Model**: Extended Django user with profile fields
-- **Admin Interface**: Modern admin theme with user management
+- **JWT Tokens**: Access and refresh token system using djangorestframework-simplejwt
+- **Custom User Model**: Extended Django AbstractUser with timestamps (created_at, modified_at)
+- **User Registration**: New users are created as inactive, requiring admin activation
+- **Password Security**: Django's built-in password validation and hashing
+- **Admin Interface**: Django Unfold admin theme with custom user and group management
+- **Session Authentication**: Supports both JWT and session-based authentication
+
+### Authentication Flow
+
+1. **User Registration**: `POST /api/users/` creates inactive user account
+2. **Admin Activation**: Admin activates user through Django admin interface
+3. **Token Acquisition**: `POST /api/token/` returns access and refresh tokens
+4. **Token Refresh**: `POST /api/token/refresh/` extends session with new access token
+5. **Authenticated Requests**: Include `Authorization: Bearer <access_token>` header
 
 ### Frontend Authentication
 
-- **NextAuth.js**: Credentials provider with JWT
+- **NextAuth.js**: Credentials provider with JWT integration
 - **Protected Routes**: Server-side session validation
-- **User Registration**: Account creation with admin activation
+- **User Registration**: Account creation with admin activation workflow
 
 ### Environment Configuration
 
@@ -267,6 +344,10 @@ TubeGenius uses JWT-based authentication with Django Simple JWT on the backend a
 # Backend (.env.backend)
 SECRET_KEY=your-django-secret-key
 DEBUG=1
+DATABASE_USER=postgres
+DATABASE_PASSWORD=change-password
+DATABASE_NAME=db
+DATABASE_HOST=db
 
 # Frontend (.env.frontend)
 NEXTAUTH_SECRET=your-nextauth-secret
@@ -308,9 +389,16 @@ docker compose exec web pnpm openapi:generate
 
 The project uses pytest with comprehensive test setup:
 
-- **pytest-django**: Django testing utilities
-- **pytest-factoryboy**: Test data generation
+- **pytest-django 4.9+**: Django testing utilities and fixtures
+- **pytest-factoryboy 2.7+**: Test data generation with factory-boy
+- **Test Configuration**: Custom pytest configuration in `pyproject.toml`
 - **Test Structure**: Organized in `backend/api/tests/`
+  - `conftest.py`: Pytest configuration and fixtures
+  - `factories.py`: Factory-boy model factories for test data
+  - `fixtures.py`: Custom test fixtures
+  - `test_api.py`: API endpoint tests
+- **Test Database**: Separate test database configuration
+- **Settings**: Custom test settings with `--ds=api.settings`
 
 ### Running Tests
 
@@ -425,11 +513,14 @@ We welcome contributions! Please follow these guidelines:
 
 1. **Fork the repository**
 2. **Create a feature branch**
+
    ```bash
    git checkout -b feature/amazing-feature
    ```
+
 3. **Make your changes**
 4. **Run quality checks**
+
    ```bash
    # Backend
    docker compose exec api uv run -- pytest
@@ -438,14 +529,19 @@ We welcome contributions! Please follow these guidelines:
    docker compose exec web pnpm lint
    docker compose exec web pnpm type-check
    ```
+
 5. **Commit your changes**
+
    ```bash
    git commit -m 'feat: add amazing feature'
    ```
+
 6. **Push to the branch**
+
    ```bash
    git push origin feature/amazing-feature
    ```
+
 7. **Open a Pull Request**
 
 ### Code Quality Standards
@@ -468,6 +564,7 @@ We welcome contributions! Please follow these guidelines:
 ### Common Issues
 
 **Docker Issues**
+
 ```bash
 # Container not starting
 docker compose down
@@ -478,6 +575,7 @@ sudo chown -R $USER:$USER .
 ```
 
 **Database Issues**
+
 ```bash
 # Reset database
 docker compose down -v
@@ -485,6 +583,7 @@ docker compose up
 ```
 
 **Frontend Issues**
+
 ```bash
 # Clear main frontend node modules
 docker compose exec web rm -rf node_modules pnpm-lock.yaml
@@ -497,6 +596,7 @@ pnpm install
 ```
 
 **Backend Issues**
+
 ```bash
 # Clear Python cache
 docker compose exec api find . -type d -name "__pycache__" -exec rm -r {} +

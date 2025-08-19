@@ -6,30 +6,5 @@
   "trailingComma": "es5",
   "semi": true,
   "endOfLine": "lf",
-  "plugins": ["@ianvs/prettier-plugin-sort-imports", "prettier-plugin-tailwindcss"],
-  "importOrder": [
-    "<TYPES>",
-    "^(react/(.*)$)|^(react$)|^(react-native(.*)$)",
-    "^(next/(.*)$)|^(next$)",
-    "^(expo(.*)$)|^(expo$)",
-    "<THIRD_PARTY_MODULES>",
-    "",
-    "<TYPES>^@acme",
-    "^@acme/(.*)$",
-    "",
-    "<TYPES>^[.|..|~]",
-    "^~/",
-    "^[../]",
-    "^[./]",
-    "^lib/(.*)$",
-    "^hooks/(.*)$",
-    "^components/ui/(.*)$",
-    "^components/(.*)$",
-    "^registry/(.*)$",
-    "^app/(.*)$",
-    "",
-    "^(?!.*[.]css$)[./].*$",
-    ".css$"
-  ],
-  "importOrderParserPlugins": ["jsx", "typescript", "classProperties", "decorators-legacy"]
+  "plugins": []
 }

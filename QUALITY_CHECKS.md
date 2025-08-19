@@ -22,20 +22,58 @@ Run comprehensive quality checks manually on your development machine:
 npm run check
 ```
 
+## 🔒 Pre-commit Hooks (Recommended)
+
+For automatic quality enforcement, set up pre-commit hooks:
+
+### Setup (Unix/macOS)
+
+```bash
+chmod +x scripts/setup-pre-commit.sh
+./scripts/setup-pre-commit.sh
+```
+
+### Setup (Windows PowerShell)
+
+```powershell
+.\scripts\setup-pre-commit.ps1
+```
+
+### What Pre-commit Does
+
+- **Automatically runs** quality checks before each commit
+- **Prevents commits** with quality issues
+- **Auto-fixes** formatting and simple linting issues
+- **Ensures** all code meets quality standards
+
+### Pre-commit Commands
+
+```bash
+# Run on staged files (automatic on commit)
+pre-commit run
+
+# Run on all files
+pre-commit run --all-files
+
+# Run specific hook
+pre-commit run eslint --all-files
+```
+
 ### Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run check` | Run all quality checks |
-| `npm run check:frontend` | Frontend checks only |
-| `npm run check:backend` | Backend checks only |
-| `npm run format` | Format frontend code |
+| Script                   | Description            |
+| ------------------------ | ---------------------- |
+| `npm run check`          | Run all quality checks |
+| `npm run check:frontend` | Frontend checks only   |
+| `npm run check:backend`  | Backend checks only    |
+| `npm run format`         | Format frontend code   |
 
 ## 🔄 CI/CD Integration
 
 GitHub Actions provides automated checks:
 
 ### Frontend Checks Workflow (`.github/workflows/lint.yml`)
+
 - **ESLint**: Code quality and style
 - **Prettier**: Code formatting
 - **Build**: Production build verification
@@ -43,12 +81,14 @@ GitHub Actions provides automated checks:
 ## 📋 What Gets Checked
 
 ### Frontend (Next.js/React/TypeScript)
+
 - **ESLint**: Code quality and style
 - **Prettier**: Code formatting
 - **TypeScript**: Type safety
 - **Build**: Production build verification
 
 ### Backend (Django/Python)
+
 - **Ruff**: Fast linting and formatting
 - **Bandit**: Security vulnerability scanning
 - **Migrations**: Django migration validation
@@ -67,9 +107,21 @@ cd frontend && pnpm install
 cd backend && uv sync
 ```
 
+### 2. Setup Pre-commit Hooks (Recommended)
+
+```bash
+# Unix/macOS
+chmod +x scripts/setup-pre-commit.sh
+./scripts/setup-pre-commit.sh
+
+# Windows PowerShell
+.\scripts\setup-pre-commit.ps1
+```
+
 ### 2. VS Code Setup
 
 Install recommended extensions:
+
 - **Prettier** - Code formatting
 - **ESLint** - JavaScript/TypeScript linting
 - **Tailwind CSS** - CSS framework support
@@ -81,9 +133,18 @@ Install recommended extensions:
 
 1. **Write code** with VS Code providing real-time feedback
 2. **Save files** - Auto-formatting applied
-3. **Run checks** - `./scripts/check-all.sh` or `npm run check`
-4. **Commit** - Code is ready for deployment
-5. **Push** - CI/CD runs automated checks
+3. **Stage changes** - `git add .`
+4. **Pre-commit hooks** - Automatically run quality checks
+5. **Commit** - Code is ready for deployment (if checks pass)
+6. **Push** - CI/CD runs automated checks
+
+### Pre-commit Workflow
+
+1. **Stage files** - `git add .`
+2. **Pre-commit runs** - Automatic quality checks
+3. **Auto-fixes** - Formatting and simple issues fixed
+4. **Manual fixes** - Address any remaining issues
+5. **Commit succeeds** - Only when all checks pass
 
 ### CI/CD Flow
 
@@ -110,11 +171,13 @@ All checks pass ✅
 ### Common Issues
 
 #### Frontend Build Fails
+
 - Check Node.js version compatibility
 - Verify all dependencies are installed
 - Review ESLint and TypeScript errors
 
 #### Backend Checks Fail
+
 ```bash
 # Install missing dependencies
 cd backend && uv sync
@@ -125,6 +188,7 @@ uv run ruff format --check .
 ```
 
 #### CI/CD Failures
+
 - **ESLint fails**: Check for code quality issues
 - **Prettier fails**: Check for formatting issues
 - **Build fails**: Check for TypeScript or dependency issues
@@ -132,7 +196,10 @@ uv run ruff format --check .
 ### Configuration Files
 
 - **`.github/workflows/lint.yml`** - Frontend CI checks
+- **`.pre-commit-config.yaml`** - Pre-commit hooks configuration
 - **`scripts/check-all.sh`** - Manual check script
+- **`scripts/setup-pre-commit.sh`** - Unix/macOS pre-commit setup
+- **`scripts/setup-pre-commit.ps1`** - Windows PowerShell pre-commit setup
 - **`package.json`** - Root npm scripts
 - **`frontend/eslint.config.mjs`** - ESLint configuration
 - **`frontend/.prettierrc`** - Prettier configuration

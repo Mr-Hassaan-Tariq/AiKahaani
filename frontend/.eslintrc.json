@@ -17,19 +17,13 @@
     "no-useless-return": "error",
     "no-empty-function": "error",
     "arrow-body-style": ["error", "as-needed"],
-
-    // Disable all import-related rules that conflict with Prettier plugins
     "import/order": "off",
     "import/no-unresolved": "off",
     "import/first": "off",
     "import/newline-after-import": "off",
     "sort-imports": "off",
-
-    // Disable comma-related rules
     "comma-dangle": "off",
     "@typescript-eslint/comma-dangle": "off",
-
-    // Disable other formatting rules handled by Prettier
     "quotes": "off",
     "semi": "off",
     "@typescript-eslint/semi": "off"
