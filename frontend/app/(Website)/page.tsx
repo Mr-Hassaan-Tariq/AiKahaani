@@ -2,6 +2,7 @@ import Hero from './_component/Hero';
 import HowItWorks from './_component/HowItWorks';
 import InsideCards from './_component/InsideCards';
 import Navbar from './_component/Navbar';
+import OfferSection from './_component/offer';
 
 export default function Home() {
   return (
@@ -10,6 +11,7 @@ export default function Home() {
       <Hero />
       <HowItWorks />
       <InsideCards />
+      <OfferSection />
     </div>
   );
 }
