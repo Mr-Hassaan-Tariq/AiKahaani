@@ -84,26 +84,26 @@ if ! command_exists pnpm; then
 fi
 
 # ESLint
-run_check "Frontend ESLint" "pnpm lint" "frontend"
+run_check "Website ESLint" "pnpm lint" "website"
 
 # Prettier
-run_check "Frontend Prettier" "pnpm prettier:check" "frontend"
+run_check "Website Prettier" "pnpm prettier:check" "website"
 
 # TypeScript
-run_check "Frontend TypeScript" "pnpm type-check" "frontend"
+run_check "Website TypeScript" "pnpm type-check" "website"
 
 # Build check (optional - can fail due to environment issues)
-run_check "Frontend Build" "pnpm build" "frontend" "true"
+run_check "Website Build" "pnpm build" "website" "true"
 
 # 2. Backend checks
 echo ""
 print_status "info" "Running backend checks..."
 
 # Frontend platform checks
-run_check "Frontend Platform ESLint" "pnpm lint" "frontend-platform"
-run_check "Frontend Platform Prettier" "pnpm prettier:check" "frontend-platform"
-run_check "Frontend Platform TypeScript" "pnpm type-check" "frontend-platform"
-run_check "Frontend Platform Build" "pnpm build" "frontend-platform" "true"
+run_check "Web App ESLint" "pnpm lint" "web-app"
+run_check "Web App Prettier" "pnpm prettier:check" "web-app"
+run_check "Web App TypeScript" "pnpm type-check" "web-app"
+run_check "Web App Build" "pnpm build" "web-app" "true"
 
 # Check if uv exists
 if ! command_exists uv; then
@@ -141,14 +141,14 @@ else
     print_status "info" "Checking dependencies..."
 
     # Frontend dependencies
-    run_check "Frontend Dependencies" "pnpm install --frozen-lockfile" "frontend"
-    run_check "Frontend Platform Dependencies" "pnpm install --frozen-lockfile" "frontend-platform"
+    run_check "Website Dependencies" "pnpm install --frozen-lockfile" "website"
+    run_check "Web App Dependencies" "pnpm install --frozen-lockfile" "web-app"
 
     # Backend dependencies
     run_check "Backend Dependencies" "uv sync" "backend"
 
-    # Frontend platform dependencies
-    run_check "Frontend Platform Dependencies" "pnpm install --frozen-lockfile" "frontend-platform"
+    # Web App dependencies
+    run_check "Web App Dependencies" "pnpm install --frozen-lockfile" "web-app"
 fi
 
 echo ""

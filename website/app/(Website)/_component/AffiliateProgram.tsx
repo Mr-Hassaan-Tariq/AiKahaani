@@ -38,7 +38,8 @@ export default function AffiliateProgram() {
         <Image
           alt="affiliate-program"
           src="/images/affiliate-program.jpg"
-          placeholder="blur"
+          width={500}
+          height={500}
           className="h-[408px] w-full rounded-t-[32px] bg-white object-cover lg:rounded-r-[32px] lg:rounded-t-none"
         />
       </Col>
