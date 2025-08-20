@@ -44,3 +44,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "email", "username", "fullname", "date_joined", "is_active")
         read_only_fields = ("id", "date_joined", "is_active")
+
+
+class GoogleAuthInputSerializer(serializers.Serializer):
+    id_token = serializers.CharField()

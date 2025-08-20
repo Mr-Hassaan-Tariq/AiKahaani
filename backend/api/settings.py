@@ -88,9 +88,9 @@ DATABASES = {
         "NAME": environ.get("DATABASE_NAME", "db"),
         "HOST": environ.get("DATABASE_HOST", "db"),
         "PORT": environ.get("DATABASE_PORT", "5432"),
-        "TEST": {
-            "NAME": "test",
-        },
+        # "TEST": {
+        #     "NAME": "test",
+        # },
     }
 }
 
@@ -98,6 +98,12 @@ DATABASES = {
 # Authentication
 ######################################################################
 AUTH_USER_MODEL = "users.User"
+
+# Google OAuth Configuration
+GOOGLE_OAUTH2_CLIENT_ID = environ.get("GOOGLE_OAUTH2_CLIENT_ID", "")
+GOOGLE_OAUTH2_CLIENT_SECRET = environ.get("GOOGLE_OAUTH2_CLIENT_SECRET", "")
+GOOGLE_OAUTH2_REDIRECT_URI = environ.get("GOOGLE_OAUTH2_REDIRECT_URI", "http://localhost:3000/")
+# GOOGLE_OAUTH2_PROJECT_ID = environ.get("GOOGLE_OAUTH2_PROJECT_ID", "")
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -175,3 +181,5 @@ UNFOLD = {
         ],
     },
 }
+
+
