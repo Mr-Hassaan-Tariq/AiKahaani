@@ -13,7 +13,17 @@ module.exports = {
       fontFamily: {
         poppins: 'var(--Poppins-font)',
       },
-      colors: {},
+      colors: {
+        brandGradient: 'linear-gradient(to right, #2BFF13, #20BF0E)',
+        black: {
+          100: '#2BFF13',
+          200: '#20BF0E',
+        },
+        green: {
+          100: '#2BFF13',
+          200: '#20BF0E',
+        },
+      },
       keyframes: {
         'pulse-up': {
           '0%': { opacity: 0.3, transform: 'scale(1)' },

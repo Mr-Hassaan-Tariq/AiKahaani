@@ -19,8 +19,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${FIGTREE.variable} font-figtree`}>
-        <ReactQueryProvider>{children}</ReactQueryProvider>
+      <body className={`${FIGTREE.variable} flex justify-center bg-black font-figtree`}>
+        <div className="container">
+          <ReactQueryProvider>{children}</ReactQueryProvider>
+        </div>
       </body>
     </html>
   );
