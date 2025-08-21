@@ -4,7 +4,8 @@
   "description": "Full-stack Django & Next.js platform with comprehensive quality checks",
   "private": true,
   "scripts": {
-    "website": "pnpm --filter website dev",
+    "website": "pnpm --filter=website run dev",
+    "web-app": "pnpm run --filter=web-app dev",
     "check": "./scripts/check-all.sh",
     "check:website": "cd website && pnpm lint && pnpm prettier:check && pnpm type-check",
     "check:web-app": "cd web-app && pnpm lint && pnpm prettier:check && pnpm type-check",
@@ -15,9 +16,5 @@
   "engines": {
     "node": ">=20.18.0",
     "pnpm": ">=9.14.0"
-  },
-  "workspaces": [
-    "web-app",
-    "website"
-  ]
+  }
 }
