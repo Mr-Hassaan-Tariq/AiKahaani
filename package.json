@@ -4,6 +4,10 @@
   "description": "Full-stack Django & Next.js platform with comprehensive quality checks",
   "private": true,
   "scripts": {
+    "website:start": "pnpm --filter=website run start",
+    "web-app:start": "pnpm --filter=web-app run start",
+    "website:build": "pnpm --filter=website run build",
+    "web-app:build": "pnpm --filter=web-app run build",
     "website": "pnpm --filter=website run dev",
     "web-app": "pnpm run --filter=web-app dev",
     "check": "./scripts/check-all.sh",
