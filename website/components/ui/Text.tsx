@@ -2,8 +2,14 @@ import { ReactNode } from 'react';
 
 import { cn } from 'lib/utils';
 
-type TypographyProps = {
-  variant?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+// type TypographyProps = {
+//   variant?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+//   children?: ReactNode;
+//   className?: string;
+// };
+
+type TypographyProps = React.HTMLAttributes<HTMLDivElement> & {
+  variant?: keyof typeof baseStyles;
   children?: ReactNode;
   className?: string;
 };
@@ -20,6 +26,15 @@ const baseStyles = {
   '5xl': 'text-5xl font-semibold leading-[120%] tracking-[-0.72px]',
 } as const;
 
-export default function Text({ variant = 'base', children, className }: Readonly<TypographyProps>) {
-  return <div className={cn('font-figtree', baseStyles[variant], className)}>{children}</div>;
+export default function Text({
+  variant = 'base',
+  children,
+  className,
+  ...props
+}: Readonly<TypographyProps>) {
+  return (
+    <div className={cn('font-figtree', baseStyles[variant], className)} {...props}>
+      {children}
+    </div>
+  );
 }

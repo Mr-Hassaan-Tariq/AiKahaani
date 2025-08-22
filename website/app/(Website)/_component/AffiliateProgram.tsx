@@ -1,20 +1,30 @@
 import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 
 import Col from 'components/ui/Col';
 import Text from 'components/ui/Text';
 
-export default function AffiliateProgram() {
+export default function AffiliateProgram({ id }: { id?: string }) {
   return (
-    <section className="relative overflow-hidden bg-black px-6 pt-40 text-center text-white md:px-32">
+    <section id={id} className="relative overflow-hidden bg-black pt-40 text-center text-white">
       <Col
         className="relative w-full flex-col-reverse gap-6 overflow-hidden rounded-[32px] border border-brand-green/[32%] bg-brand-black lg:flex-row lg:items-center lg:justify-between"
+        // style={{
+        //   backgroundImage: `
+        //     linear-gradient(to right, rgba(43, 255, 19, 0.02), transparent),
+        //     linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        //     linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
+        //   `,
+        //   backgroundSize: '100% 100%, 40px 40px, 40px 40px',
+        // }}
+
         style={{
-          backgroundImage: `
-            linear-gradient(to right, rgba(43, 255, 19, 0.02), transparent),
-            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
-          `,
-          backgroundSize: '100% 100%, 40px 40px, 40px 40px',
+          backgroundImage: "url('/images/offer-bg.png')",
+          backgroundSize: '100% 100%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          objectFit: 'cover',
         }}
       >
         <Col className="my-16 w-full gap-8 pl-16 lg:my-0">
@@ -24,15 +34,17 @@ export default function AffiliateProgram() {
               Join our affiliate program and earn 50% lifetime commission for every user you bring.
             </Text>
           </Col>
-          <button
-            className="flex w-fit items-center gap-2 rounded-full bg-[#2BFF13] pl-4 text-sm text-black active:scale-95"
-            style={{ fontWeight: '600' }}
-          >
-            Learn more
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
-              <Image src="/images/arrow_right.svg" alt="arrow_right" width={20} height={20} />
-            </span>
-          </button>
+          <Link href="/affiliates">
+            <button
+              className="flex w-fit items-center gap-2 rounded-full bg-[#2BFF13] pl-4 text-sm text-black active:scale-95"
+              style={{ fontWeight: '600' }}
+            >
+              Learn more
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
+                <ArrowRight size={20} />
+              </span>
+            </button>
+          </Link>
         </Col>
 
         <Image

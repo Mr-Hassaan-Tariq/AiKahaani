@@ -1,13 +1,22 @@
 import Image from 'next/image';
 
-export default function HowItWorks() {
+import Col from 'components/ui/Col';
+import Text from 'components/ui/Text';
+
+export default function HowItWorks({ id }: { id?: string }) {
   return (
-    <section className="bg-black px-6 py-20 text-center text-white md:px-16">
+    <section id={id} className="py-20 text-center text-white">
       {/* Heading */}
-      <div className="mb-16">
-        <h2 className="text-3xl font-bold md:text-4xl">How it works</h2>
-        <p className="mt-3 text-[#AAACA6]">Create your next YouTube video in 3 simple steps.</p>
-      </div>
+      <Col className="mb-16 gap-4">
+        <div className="mx-auto max-w-xl text-center">
+          <Text variant="5xl" className="text-white">
+            How it works
+          </Text>
+        </div>
+        <Text variant="lg" className="mx-auto max-w-2xl text-center text-[#AAACA6]">
+          Create your next YouTube video in 3 simple steps.
+        </Text>
+      </Col>
 
       {/* Steps */}
       <div className="relative flex flex-col items-center justify-between gap-10 lg:flex-row lg:items-start">

@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
 interface TextFieldProps {
   label?: string;
   placeholder?: string;
@@ -12,7 +10,7 @@ interface TextFieldProps {
 }
 
 export default function TextField(props: TextFieldProps) {
-  const { label, placeholder, type, className, value, onChange } = props;
+  const { label, placeholder, type, value, onChange } = props;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (onChange) {

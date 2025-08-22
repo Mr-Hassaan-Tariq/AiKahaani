@@ -1,25 +1,23 @@
-import FooterWidget from '../_component/FooterWidget';
-import Hero from '../_component/Hero';
+import { Fragment } from 'react';
+
 import InsideCards from '../_component/InsideCards';
-import Navbar from '../_component/Navbar';
-import QuestionWidget from '../_component/QuestionWidget';
-import SuccessStoryWidget from '../_component/SuccessStoryWidget';
+import QuestionWidget from '../../../components/ui/QuestionWidget';
+import SuccessStoryWidget from '../../../components/ui/SuccessStoryWidget';
 import AboutPartnerSection from './_components/AboutPartnerSection';
 import CreatorsCard from './_components/CreatorsCard';
 import UnlockTubeGenius from './_components/UnlockTubeGenius';
+import HeroSection from 'components/ui/HeroSection';
 
 export default function Page() {
   return (
-    <div>
-      <Navbar />
-      <Hero aboutPartner />
-      <AboutPartnerSection />
-      <InsideCards />
-      <CreatorsCard />
-      <SuccessStoryWidget />
-      <QuestionWidget />
+    <Fragment>
+      <HeroSection page="partner" />
+      <AboutPartnerSection id="about-partner" />
+      <InsideCards id="platform" />
+      <CreatorsCard id="benefits" />
+      <SuccessStoryWidget id="success-stories" />
+      <QuestionWidget id="faq" />
       <UnlockTubeGenius />
-      <FooterWidget />
-    </div>
+    </Fragment>
   );
 }

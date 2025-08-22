@@ -24,9 +24,9 @@ const benefits = [
   },
 ];
 
-export default function AffiliateBenefits() {
+export default function AffiliateBenefits({ id }: { id?: string }) {
   return (
-    <section className="w-full bg-black px-6 py-16">
+    <section id={id} className="w-full bg-black py-16">
       <div className="mx-auto max-w-5xl text-center">
         {/* Heading */}
         <h2 className="mb-2 text-2xl font-semibold text-white md:text-3xl">

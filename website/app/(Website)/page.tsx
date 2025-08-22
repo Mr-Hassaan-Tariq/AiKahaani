@@ -1,25 +1,23 @@
+import { Fragment } from 'react';
+
+import QuestionWidget from '../../components/ui/QuestionWidget';
+import SuccessStoryWidget from '../../components/ui/SuccessStoryWidget';
 import AffiliateProgram from './_component/AffiliateProgram';
-import FooterWidget from './_component/FooterWidget';
-import Hero from './_component/Hero';
 import HowItWorks from './_component/HowItWorks';
 import InsideCards from './_component/InsideCards';
-import Navbar from './_component/Navbar';
 import OfferSection from './_component/offer';
-import QuestionWidget from './_component/QuestionWidget';
-import SuccessStoryWidget from './_component/SuccessStoryWidget';
+import HeroSection from 'components/ui/HeroSection';
 
-export default function Home() {
+export default async function Home() {
   return (
-    <div>
-      <Navbar />
-      <Hero />
-      <HowItWorks />
-      <InsideCards />
+    <Fragment>
+      <HeroSection page="home" />
+      <HowItWorks id="how-it-works" />
+      <InsideCards id="features" />
       <OfferSection />
-      <SuccessStoryWidget />
-      <QuestionWidget />
-      <AffiliateProgram />
-      <FooterWidget />
-    </div>
+      <SuccessStoryWidget id="success-stories" />
+      <QuestionWidget id="faq" />
+      <AffiliateProgram id="affiliates" />
+    </Fragment>
   );
 }

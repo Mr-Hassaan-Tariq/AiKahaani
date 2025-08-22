@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 const audience = [
   'YouTube Creators',
   'Marketing Experts',
@@ -11,9 +9,12 @@ const audience = [
   'SaaS Partners',
 ];
 
-export default function Trends() {
+export default function Trends({ id }: { id?: string }) {
   return (
-    <div className="relative flex items-center justify-center overflow-hidden bg-black pb-40 pt-10 text-white">
+    <div
+      id={id}
+      className="relative flex items-center justify-center overflow-hidden bg-black pb-40 pt-10 text-white"
+    >
       <div className="relative z-10 w-full max-w-4xl px-4 text-center">
         {/* Heading */}
         <h2 className="mb-3 text-3xl font-semibold md:text-4xl">Is it for you?</h2>

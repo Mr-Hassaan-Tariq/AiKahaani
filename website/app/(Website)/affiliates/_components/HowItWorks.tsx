@@ -1,8 +1,8 @@
 import Image from 'next/image';
 
-export default function HowItWorks() {
+export default function HowItWorks({ id }: { id: string }) {
   return (
-    <section className="bg-black px-6 py-20 text-center text-white md:px-16">
+    <section id={id} className="bg-black py-20 text-center text-white">
       {/* Heading */}
       <div className="mb-16">
         <h2 className="text-3xl font-bold md:text-4xl">How it works</h2>

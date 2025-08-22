@@ -2,7 +2,7 @@
 
 import { FC } from 'react';
 import Image from 'next/image';
-import { CheckCircle, Shield, Star, XCircle } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const features = [
   {
@@ -27,9 +27,9 @@ const features = [
   },
 ];
 
-const CreatorsCard: FC = () => {
+const CreatorsCard: FC<{ id: string }> = ({ id }) => {
   return (
-    <section className="bg-black px-6 py-16 text-white">
+    <section id={id} className="bg-black px-6 py-16 text-white">
       <div className="mx-auto flex max-w-6xl flex-col items-center text-center">
         {/* Heading */}
         <h2 className="mb-2 text-3xl font-bold md:text-4xl">
@@ -60,7 +60,7 @@ const CreatorsCard: FC = () => {
         >
           Start for $1
           <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white">
-            <Image src="/images/arrow_right.svg" alt="arrow_right" width={20} height={20} />
+            <ArrowRight size={20} />
           </span>
         </button>
       </div>

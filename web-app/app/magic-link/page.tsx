@@ -1,5 +1,7 @@
 'use client';
+
 import Image from 'next/image';
+
 export default function MagicLinkSent() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-3">
@@ -15,7 +17,7 @@ export default function MagicLinkSent() {
 
         {/* Success checkmark */}
         <div className="mt-8 flex items-center justify-center">
-         <Image src="/images/right-check.svg" alt="check" width={100} height={100} />
+          <Image src="/images/right-check.svg" alt="check" width={100} height={100} />
         </div>
 
         {/* Resend */}

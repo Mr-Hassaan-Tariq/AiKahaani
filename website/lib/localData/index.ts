@@ -1,3 +1,5 @@
+import { affiliatesRightSide, homeRightSide, partnerRightSide } from 'components/ui/components';
+
 export const successStories = [
   {
     id: 1,
@@ -74,11 +76,92 @@ export const questions = [
 ];
 
 export const footerData = [
-  'How it works',
-  'Features',
-  'Success stories',
-  'FAQ',
-  'Privacy Policy',
-  'Terms of Service',
-  'Contact',
+  {
+    label: 'Privacy Policy',
+    id: 'privacy-policy',
+  },
+  {
+    label: 'Terms of Service',
+    id: 'terms-of-service',
+  },
+  {
+    label: 'Contact',
+    id: 'contact',
+  },
 ];
+
+export const navItems = [
+  {
+    label: 'How it works',
+    id: 'how-it-works',
+    ref: ['/', '/affiliates'],
+  },
+  {
+    label: 'About partner',
+    id: 'about-partner',
+    ref: ['/about-partner'],
+  },
+  {
+    label: 'Platform',
+    id: 'platform',
+    ref: ['/about-partner'],
+  },
+  {
+    label: 'Benefits',
+    id: 'benefits',
+    ref: ['/affiliates', '/about-partner'],
+  },
+  {
+    label: 'Target audience',
+    id: 'target-audience',
+    ref: ['/affiliates'],
+  },
+
+  {
+    label: 'Features',
+    id: 'features',
+    ref: ['/'],
+  },
+  {
+    label: 'Success stories',
+    id: 'success-stories',
+    ref: ['/', '/about-partner'],
+  },
+  {
+    label: 'FAQ',
+    id: 'faq',
+    ref: ['/', '/affiliates', '/about-partner'],
+  },
+  {
+    label: 'Affiliates',
+    id: 'affiliates',
+    link: '/affiliates',
+  },
+];
+
+export const heroSectionContent = {
+  home: {
+    rightSection: homeRightSide,
+    btnLabel: 'Get Started',
+    label: 'No sign-up hassle. Just your YouTube idea.',
+    title: 'Your Genius AI Assistant for YouTube',
+    description:
+      'Turn your video ideas into ready-to-use scripts, titles, and niche insights — in seconds.',
+  },
+  partner: {
+    rightSection: partnerRightSide,
+    btnLabel: 'Start for $1',
+    label: 'Official TubeGenius Partner',
+    title: 'Unlock Your YouTube Potential with [Partner Name]',
+    description:
+      'Join TubeGenius through this exclusive partnership and start your journey for just $1.',
+  },
+  affiliates: {
+    rightSection: affiliatesRightSide,
+    btnLabel: 'Join with your email',
+    label: 'Try TubeGenius for just $1 and start earning today',
+    title: 'Earn with TubeGenius. Share AI video creation',
+    description:
+      'Join our affiliate program and get paid for helping creators script better videos with AI.',
+  },
+};

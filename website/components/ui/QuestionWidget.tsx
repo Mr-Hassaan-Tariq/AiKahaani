@@ -14,9 +14,9 @@ import {
   AccordionTrigger,
 } from 'components/shadcn_ui/accordion';
 
-export default function QuestionWidget() {
+export default function QuestionWidget({ id }: { id?: string }) {
   return (
-    <Col className="gap-16 bg-black px-6 font-figtree lg:px-32">
+    <Col id={id} className="gap-16 bg-black font-figtree">
       {/* heading */}
       <Col className="gap-4">
         <div className="mx-auto max-w-xl text-center">

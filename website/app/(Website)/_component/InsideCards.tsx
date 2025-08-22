@@ -2,9 +2,12 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Clock, ExternalLink, Info, Users } from 'lucide-react';
 
-const WhatsInside = () => {
+import { WEB_APP_URL } from '../../../lib/constants';
+
+const WhatsInside = ({ id }: { id?: string }) => {
   const [value, setValue] = useState<number>(500);
 
   interface Card {
@@ -38,7 +41,7 @@ const WhatsInside = () => {
   ];
 
   return (
-    <section className="bg-black px-6 py-20 text-white md:px-16">
+    <section id={id} className="bg-black py-20 text-white">
       {/* Heading */}
       <div className="mb-10 text-center">
         <h2 className="text-3xl font-bold md:text-4xl">What’s inside</h2>
@@ -49,7 +52,7 @@ const WhatsInside = () => {
 
       <div className="flex items-center justify-center bg-black p-6">
         <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-12">
-          <div className="col-span-12 rounded-2xl border border-[#BAFF381F] bg-[#161616] p-8 shadow-lg md:col-span-7">
+          <div className="col-span-12 rounded-2xl border border-[#BAFF381F] bg-gradient-to-br from-[#161616] via-[#161616] to-[#BAFF38]/[0.06] p-8 shadow-lg md:col-span-7">
             <div>
               <h2 className="mb-4 text-lg font-semibold text-gray-300">Choose a template style</h2>
               <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -119,12 +122,14 @@ const WhatsInside = () => {
                 AI writes full YouTube scripts based on your idea.
               </p>
             </div>
-            <button className="flex items-center gap-2 py-2 text-sm text-white">
-              Try now{' '}
-              <span>
-                <Image src="/images/right.svg" alt="arrow-right" width={20} height={20} />
-              </span>
-            </button>
+            <Link href={`${WEB_APP_URL}/signup`} target="_blank">
+              <button className="flex items-center gap-2 py-2 text-sm text-white">
+                Try now{' '}
+                <span>
+                  <Image src="/images/right.svg" alt="arrow-right" width={20} height={20} />
+                </span>
+              </button>
+            </Link>
           </div>
 
           <div className="col-span-12 rounded-2xl border border-[#BAFF381F] bg-[#161616] p-10 shadow-lg md:col-span-5">
@@ -162,12 +167,14 @@ const WhatsInside = () => {
             </div>
 
             {/* Button */}
-            <button className="flex items-center gap-2 py-2 text-sm text-white">
-              Try now{' '}
-              <span>
-                <Image src="/images/right.svg" alt="arrow-right" width={20} height={20} />
-              </span>
-            </button>
+            <Link href={`${WEB_APP_URL}/signup`} target="_blank">
+              <button className="flex items-center gap-2 py-2 text-sm text-white">
+                Try now{' '}
+                <span>
+                  <Image src="/images/right.svg" alt="arrow-right" width={20} height={20} />
+                </span>
+              </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -206,12 +213,14 @@ const WhatsInside = () => {
                 Earn 50% lifetime revenue for every referred <br />
                 creator.
               </p>
-              <button className="mt-3 flex items-center gap-2 text-sm text-white">
-                Try now{' '}
-                <span>
-                  <Image src="/images/right.svg" alt="arrow-right" width={20} height={20} />
-                </span>
-              </button>
+              <Link href={`${WEB_APP_URL}/signup`} target="_blank">
+                <button className="mt-3 flex items-center gap-2 text-sm text-white">
+                  Try now{' '}
+                  <span>
+                    <Image src="/images/right.svg" alt="arrow-right" width={20} height={20} />
+                  </span>
+                </button>
+              </Link>
             </div>
           </div>
 

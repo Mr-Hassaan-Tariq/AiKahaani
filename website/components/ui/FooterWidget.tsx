@@ -1,11 +1,11 @@
-import { footerData } from 'lib/localData';
+import FooterItems from './FooterItems';
 import Col from 'components/ui/Col';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
 export default function FooterWidget() {
   return (
-    <Col className="gap-16 bg-black px-6 pb-20 pt-40 font-figtree md:px-32">
+    <Col className="gap-16 bg-black pb-20 pt-40 font-figtree">
       {/* heading */}
       <Row className="justify-center gap-7">
         {logo}
@@ -15,15 +15,7 @@ export default function FooterWidget() {
       </Row>
 
       <Row className="flex-wrap justify-center gap-9">
-        {footerData.map((item) => (
-          <Text
-            key={item}
-            variant="base"
-            className="cursor-pointer whitespace-nowrap text-[#EAECE5] hover:text-[#20BF0E]"
-          >
-            {item}
-          </Text>
-        ))}
+        <FooterItems />
       </Row>
       <div className="h-[1px] w-full bg-brand-green/[32%]" />
       <Text variant="sm" className="text-center font-medium text-[#AAACA6]">
