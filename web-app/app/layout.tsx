@@ -19,7 +19,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${POPPINS.variable} font-poppins`}>
+      <body className={`${POPPINS.variable} bg-black`}>
         <ReactQueryProvider>{children}</ReactQueryProvider>
       </body>
     </html>

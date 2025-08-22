@@ -29,8 +29,8 @@ export default function Signup() {
         {/* Email input */}
         <div className="mt-6">
           <TextField
-            label="Label"
-            placeholder="placeholder"
+            label="Email"
+            placeholder="Enter your email"
             type="email"
             className="w-full rounded-lg border border-transparent bg-[#2d2d2d] px-4 py-3 text-white placeholder-[#aaaca6] outline-none focus:border-green-500"
             value={email}
