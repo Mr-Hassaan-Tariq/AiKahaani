@@ -20,8 +20,8 @@ export default function AboutPartnerSection() {
 
         <Col className="my-16 w-full gap-8 pl-16 lg:my-0">
           <Col className="max-w-[415px] gap-4 text-left">
-            <Text variant="5xl">About [Partner Name]</Text>
-            <Text variant="xl" className="text-[#AAACA6]">
+            <Text variant="3xl">About [Partner Name]</Text>
+            <Text className="text-[13px] text-[#AAACA6]">
               [Partner Name] is a [niche] creator sharing [type of content] to help viewers [main
               goal of audience].
             </Text>
@@ -29,7 +29,7 @@ export default function AboutPartnerSection() {
           {localData.map((item, index) => (
             <Row key={index} className="justify-normal gap-3">
               {item.icon}
-              <Text variant="lg" className="text-white">
+              <Text variant="sm" className="text-white">
                 {item.title}
               </Text>
             </Row>

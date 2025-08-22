@@ -1,7 +1,7 @@
 import FooterWidget from '../_component/FooterWidget';
-import Hero from '../_component/Hero';
-import HowItWorks from '../_component/HowItWorks';
+import Hero from '../_component/Hero';  
 import InsideCards from '../_component/InsideCards';
+import CreatorsCard from './_components/CreatorsCard';
 import Navbar from '../_component/Navbar';
 import QuestionWidget from '../_component/QuestionWidget';
 import SuccessStoryWidget from '../_component/SuccessStoryWidget';
@@ -14,8 +14,8 @@ export default function Page() {
       <Navbar />
       <Hero aboutPartner />
       <AboutPartnerSection />
-      <HowItWorks />
       <InsideCards />
+      <CreatorsCard />
       <SuccessStoryWidget />
       <QuestionWidget />
       <UnlockTubeGenius />

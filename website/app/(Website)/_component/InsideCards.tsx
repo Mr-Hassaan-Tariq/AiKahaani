@@ -16,14 +16,14 @@ const WhatsInside = () => {
   }
   const cards: Card[] = [
     {
-      img: 'https://placehold.co/600x400/png',
+      img: '/images/inside-card-img.png',
       title: 'Product Review',
       tags: ['Tech', 'Helpful', 'Persuasive'],
       desc: 'Presuasive structure with pros, cons, and clear verdicts.',
       example: 'Marques Brownlee, ijustine',
     },
     {
-      img: 'https://placehold.co/600x400/png',
+      img: '/images/inside-card-img.png',
       title: 'Travel Vlog',
       tags: ['Immersive', 'Emotional', 'Scenic'],
       desc: 'Show local fun or international visuals and recommendations.',
@@ -52,7 +52,7 @@ const WhatsInside = () => {
           <div className="col-span-12 rounded-2xl border border-[#BAFF381F] bg-[#161616] p-8 shadow-lg md:col-span-7">
             <div>
               <h2 className="mb-4 text-lg font-semibold text-gray-300">Choose a template style</h2>
-              <div className="mb-6 grid grid-cols-2 gap-3">
+              <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="rounded-xl bg-[#2d2e2d] p-4 text-sm text-gray-200 hover:border-gray-500">
                   <div className="flex items-center justify-between">
                     <p className="font-medium">Short</p>
@@ -224,8 +224,8 @@ const WhatsInside = () => {
                     key={idx}
                     className="col-span-12 flex flex-col overflow-hidden rounded-xl border border-[#BAFF381F] bg-[#1a1a1a] p-3 transition hover:bg-[#222] md:col-span-6"
                   >
-                    <div className="relative mb-3 h-40 w-full overflow-hidden rounded-lg">
-                      <img src={card.img} alt={card.title} className="h-full w-full object-cover" />
+                    <div className="relative mb-3 h-40 w-full overflow-hidden rounded-md">
+                      <img src={card.img} alt={card.title} className="h-full w-full object-cover rounded-md" />
                     </div>
 
                     {/* Tags */}

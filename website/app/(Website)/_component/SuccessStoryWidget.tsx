@@ -20,7 +20,7 @@ import {
 
 export default function SuccessStoryWidget() {
   return (
-    <Col className="gap-16 bg-black pb-20 font-figtree">
+    <Col className="gap-16 bg-black pb-20 font-figtree max-w-none -mx-4 sm:-mx-6 lg:-mx-8">
       {/* heading */}
       <Col className="gap-4">
         <div className="mx-auto max-w-xl text-center">
@@ -87,7 +87,7 @@ function SuccessStoryCard({ story, isActive }: { story: SuccessStory; isActive: 
   return (
     <div
       className={cn(
-        'relative h-[500px] w-full transform overflow-hidden rounded-3xl border border-brand-green/10 bg-brand-black p-8 transition-all duration-500',
+        'relative w-full transform overflow-hidden rounded-3xl border border-brand-green/10 bg-brand-black p-8 transition-all duration-500 ',
         isActive &&
           'scale-110 border-brand-green/30 bg-gradient-to-br from-transparent to-brand-green/5'
       )}
@@ -122,16 +122,16 @@ function SuccessStoryCard({ story, isActive }: { story: SuccessStory; isActive: 
           <ExportIcon className="cursor-pointer active:scale-90" />
         </Row>
 
-        <Col className="gap-4">
+        <Col className="">
           <Text variant="xl" className="text-white">
             My Secret to Consistent Uploads
           </Text>
-          <Text variant="sm" className="text-[#AAACA6]">
+          <Text variant="sm" className="text-[12px] text-[#AAACA6]">
             {story.description}
           </Text>
         </Col>
 
-        <button className="group flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-white/80">
+        <button className="group flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-white/80 ">
           Try now
           <svg
             className="h-4 w-4 transition-transform group-hover:translate-x-1"
