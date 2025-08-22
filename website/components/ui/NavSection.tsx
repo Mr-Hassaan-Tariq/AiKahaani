@@ -82,7 +82,8 @@ function ItemList({ isDesk }: { isDesk?: boolean }) {
       {itemList.map((e) => (
         <li
           key={e.id}
-          onClick={() => {
+          onClick={(ex) => {
+            ex.preventDefault();
             if (e.link) {
               return router.push(e.link);
             }

@@ -13,7 +13,8 @@ export const env = createEnv({
    * 💡 You'll get type errors if these are not prefixed with NEXT_PUBLIC_.
    */
   client: {
-    NEXT_PUBLIC_API_URL: z.string().url('Must include valid URL to Geviti API'),
+    NEXT_PUBLIC_API_URL: z.string().url('Must include valid URL to Tubegenius API'),
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: z.string(),
   },
   /*
    * Due to how Next.js bundles environment variables on Edge and Client,
@@ -23,5 +24,6 @@ export const env = createEnv({
    */
   runtimeEnv: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
   },
 });

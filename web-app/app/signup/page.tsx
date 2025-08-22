@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { FcGoogle } from 'react-icons/fc';
+import GoogleAuthComponent from '@/signup/_components/GoogleAuthComponent';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { env } from 'env.mjs';
 
 import Button from 'components/common/Button';
 import TextField from 'components/common/TextField';
@@ -17,7 +19,7 @@ export default function Signup() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,#1a2e1d,transparent_40%)] opacity-50" />
 
       {/* Card */}
-      <div className="relative z-10 w-[500px] w-full rounded-2xl bg-[#161616] p-8 shadow-lg">
+      <div className="relative z-10 w-full max-w-xl rounded-2xl bg-[#161616] p-8 shadow-lg">
         {/* Heading */}
         <h1 className="text-center text-3xl font-semibold text-white">Let’s get you creating</h1>
         <p className="mt-1 text-center text-sm text-gray-400">
@@ -53,10 +55,9 @@ export default function Signup() {
         </div>
 
         {/* Google button */}
-        <button className="flex w-full items-center justify-center space-x-2 rounded-full border border-gray-700 bg-[#1a1a1a] py-3 font-medium text-white transition hover:bg-[#222222]">
-          <FcGoogle className="text-xl" />
-          <span>Continue with Google</span>
-        </button>
+        <GoogleOAuthProvider clientId={env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
+          <GoogleAuthComponent />
+        </GoogleOAuthProvider>
       </div>
     </div>
   );

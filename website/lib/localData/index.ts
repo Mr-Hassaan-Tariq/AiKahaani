@@ -128,14 +128,15 @@ export const navItems = [
     ref: ['/', '/about-partner'],
   },
   {
-    label: 'FAQ',
-    id: 'faq',
-    ref: ['/', '/affiliates', '/about-partner'],
-  },
-  {
     label: 'Affiliates',
     id: 'affiliates',
     link: '/affiliates',
+    ref: ['/', '/about-partner'],
+  },
+  {
+    label: 'FAQ',
+    id: 'faq',
+    ref: ['/affiliates', '/about-partner'],
   },
 ];
 

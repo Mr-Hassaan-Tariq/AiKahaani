@@ -1,14 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 import Text from './Text';
 import { footerData, navItems } from 'lib/localData';
 
 export default function FooterItems() {
   const pathname = usePathname();
-
+  const router = useRouter();
   const itemList = useMemo(() => {
     if (['/', '/affiliates', '/about-partner'].includes(pathname)) {
       return navItems.filter((e) => e.ref?.includes(pathname));
@@ -16,10 +16,13 @@ export default function FooterItems() {
     return [];
   }, [pathname]);
 
-  return [...itemList, ...footerData].map((item) => (
+  return [...itemList, ...footerData].map((item: { id: string; label: string; link?: string }) => (
     <Text
       key={item.id}
       onClick={() => {
+        if (item?.link) {
+          return router.push(item?.link);
+        }
         const element = document.getElementById(item.id);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });

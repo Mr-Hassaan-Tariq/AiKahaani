@@ -11,7 +11,7 @@ const POPPINS = Poppins({
 });
 
 export const metadata = {
-  title: 'Geviti',
+  title: 'Tubegenius',
   description:
     "Longevity at the palm of your hand. Access to leading specialists, cutting edge therapies, and the highest quality of care, all available on the Geviti platform. Whether it's TRT, peptide therapy, or nutritional advice, we have you covered. All practices backed by science. Go Geviti, and live a longer, healthier life.",
 };

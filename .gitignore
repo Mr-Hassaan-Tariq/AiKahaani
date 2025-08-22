@@ -122,6 +122,7 @@ next-env.d.ts
 .env.production.local
 .env.frontend
 .env*.local
+.env.frontend.template
 
 # Testing
 coverage/
