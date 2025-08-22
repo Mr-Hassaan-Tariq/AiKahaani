@@ -225,7 +225,11 @@ const WhatsInside = () => {
                     className="col-span-12 flex flex-col overflow-hidden rounded-xl border border-[#BAFF381F] bg-[#1a1a1a] p-3 transition hover:bg-[#222] md:col-span-6"
                   >
                     <div className="relative mb-3 h-40 w-full overflow-hidden rounded-md">
-                      <img src={card.img} alt={card.title} className="h-full w-full object-cover rounded-md" />
+                      <img
+                        src={card.img}
+                        alt={card.title}
+                        className="h-full w-full rounded-md object-cover"
+                      />
                     </div>
 
                     {/* Tags */}

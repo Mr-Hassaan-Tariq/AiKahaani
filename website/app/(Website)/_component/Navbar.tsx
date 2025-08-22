@@ -62,7 +62,9 @@ export default function Navbar() {
             <li className="cursor-pointer transition duration-300 hover:text-green-500">
               Success stories
             </li>
-            <li className="cursor-pointer transition duration-300 hover:text-green-500">Affiliates</li>
+            <li className="cursor-pointer transition duration-300 hover:text-green-500">
+              Affiliates
+            </li>
           </ul>
           <div className="flex flex-col gap-4 p-6">
             <button className="rounded-lg bg-gray-800 px-4 py-2 transition duration-300 hover:bg-gray-700">
