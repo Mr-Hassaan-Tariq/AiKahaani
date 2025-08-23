@@ -4,7 +4,10 @@ import Text from 'components/ui/Text';
 
 export default function AboutPartnerSection({ id }: { id: string }) {
   return (
-    <section id={id} className="relative overflow-hidden bg-black lg:pt-40 pt-10 text-center text-white">
+    <section
+      id={id}
+      className="relative overflow-hidden bg-black pt-10 text-center text-white lg:pt-40"
+    >
       <Col
         className="relative w-full flex-col-reverse gap-6 overflow-hidden rounded-[32px] border border-brand-green/[32%] bg-brand-black lg:flex-row lg:items-center lg:justify-between"
         style={{
@@ -16,10 +19,10 @@ export default function AboutPartnerSection({ id }: { id: string }) {
           backgroundSize: '100% 100%, 40px 40px, 40px 40px',
         }}
       >
-        <div className="lg:mt-10 mt-4 flex h-[408px] w-full flex-shrink-0 flex-col items-center justify-center gap-8 rounded-[32px] border border-[rgba(186,255,56,0.12)] bg-[#181916] p-6 shadow-[inset_-22.09px_-6.18px_37.19px_0_rgba(32,34,31,0.25)] backdrop-blur-[11.2px] md:mt-0 lg:w-1/2" />
+        <div className="mt-4 flex h-[408px] w-full flex-shrink-0 flex-col items-center justify-center gap-8 rounded-[32px] border border-[rgba(186,255,56,0.12)] bg-[#181916] p-6 shadow-[inset_-22.09px_-6.18px_37.19px_0_rgba(32,34,31,0.25)] backdrop-blur-[11.2px] md:mt-0 lg:mt-10 lg:w-1/2" />
 
-        <Col className="lg:my-16 my-8 w-full lg:gap-8 gap-2 lg:pl-16 lg:my-0 flex flex-col items-center lg:items-start">
-          <Col className="lg:max-w-[415px] max-w-[270px] gap-4 text-center lg:text-left">
+        <Col className="my-8 flex w-full flex-col items-center gap-2 lg:my-0 lg:my-16 lg:items-start lg:gap-8 lg:pl-16">
+          <Col className="max-w-[270px] gap-4 text-center lg:max-w-[415px] lg:text-left">
             <Text variant="3xl">About [Partner Name]</Text>
             <Text className="text-[13px] text-[#AAACA6]">
               [Partner Name] is a [niche] creator sharing [type of content] to help viewers [main

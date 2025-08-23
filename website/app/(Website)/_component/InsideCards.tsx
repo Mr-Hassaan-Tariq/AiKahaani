@@ -245,38 +245,38 @@ const WhatsInside = ({ id }: { id?: string }) => {
                 <div className="overflow-x-auto">
                   <div className="mb-4 flex w-[500px] gap-3">
                     {cards.map((card, idx) => (
-                    <div
-                      key={idx}
-                      className="flex w-[260px] flex-col overflow-hidden rounded-xl border border-[#BAFF381F] bg-[#1a1a1a] p-3 transition hover:bg-[#222]"
-                    >
-                      <div className="relative mb-3 h-30 w-full overflow-hidden rounded-md">
-                        <img
-                          src={card.img}
-                          alt={card.title}
-                          className="h-full w-full rounded-md object-cover"
-                        />
-                      </div>
-
-                      <div className="mb-2 flex flex-wrap items-center justify-between text-xs text-gray-300">
-                        <div className="rounded-md border border-[#BAFF381F] bg-[#2a2a2a] p-2">
-                          {card.tags.map((tag, i) => (
-                            <span key={i} className="rounded-md text-white">
-                              {tag}
-                              {i < card.tags.length - 1 && ', '}
-                            </span>
-                          ))}
+                      <div
+                        key={idx}
+                        className="flex w-[260px] flex-col overflow-hidden rounded-xl border border-[#BAFF381F] bg-[#1a1a1a] p-3 transition hover:bg-[#222]"
+                      >
+                        <div className="h-30 relative mb-3 w-full overflow-hidden rounded-md">
+                          <img
+                            src={card.img}
+                            alt={card.title}
+                            className="h-full w-full rounded-md object-cover"
+                          />
                         </div>
-                        <ExternalLink className="h-5 w-5 cursor-pointer text-white" />
+
+                        <div className="mb-2 flex flex-wrap items-center justify-between text-xs text-gray-300">
+                          <div className="rounded-md border border-[#BAFF381F] bg-[#2a2a2a] p-2">
+                            {card.tags.map((tag, i) => (
+                              <span key={i} className="rounded-md text-white">
+                                {tag}
+                                {i < card.tags.length - 1 && ', '}
+                              </span>
+                            ))}
+                          </div>
+                          <ExternalLink className="h-5 w-5 cursor-pointer text-white" />
+                        </div>
+
+                        <h3 className="mb-1 font-medium text-white">{card.title}</h3>
+
+                        <p className="text-[12px] leading-snug text-[#959792]">{card.desc}</p>
+                        <p className="mt-1 text-[12px] leading-snug text-[#959792]">
+                          Examples: {card.example}
+                        </p>
                       </div>
-
-                      <h3 className="mb-1 font-medium text-white">{card.title}</h3>
-
-                      <p className="text-[12px] leading-snug text-[#959792]">{card.desc}</p>
-                      <p className="mt-1 text-[12px] leading-snug text-[#959792]">
-                        Examples: {card.example}
-                      </p>
-                    </div>
-                  ))}
+                    ))}
                   </div>
                 </div>
                 {/* Bottom Section */}
