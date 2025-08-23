@@ -35,7 +35,7 @@ const affiliateNotifications = [
 ];
 
 export const partnerRightSide = (
-  <div className="mt-10 flex h-[592.2px] w-full max-w-[546px] flex-shrink-0 flex-col items-center justify-center gap-8 rounded-[32px] border border-[rgba(186,255,56,0.12)] bg-[#181916] p-6 shadow-[inset_-22.09px_-6.18px_37.19px_0_rgba(32,34,31,0.25)] backdrop-blur-[11.2px] md:mt-0" />
+  <div className="mt-10 flex h-[592.2px] w-[546px] flex-shrink-0 flex-col items-center justify-center gap-8 rounded-[32px] border border-[rgba(186,255,56,0.12)] bg-[#181916] p-6 shadow-[inset_-22.09px_-6.18px_37.19px_0_rgba(32,34,31,0.25)] backdrop-blur-[11.2px] md:mt-0" />
 );
 export const homeRightSide = (
   <div className="relative mt-10 w-full rounded-xl bg-[#181916] p-6 text-center shadow-lg transition duration-300 hover:shadow-green-500/30 md:mt-0 md:w-[461px]">

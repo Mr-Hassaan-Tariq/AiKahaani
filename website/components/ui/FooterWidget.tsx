@@ -5,13 +5,11 @@ import Text from 'components/ui/Text';
 
 export default function FooterWidget() {
   return (
-    <Col className="gap-16 bg-black pb-20 pt-40 font-figtree">
+    <Col className="gap-8 bg-black pb-6 pt-20 font-figtree lg:gap-16 lg:pt-40">
       {/* heading */}
-      <Row className="justify-center gap-7">
+      <Row className="justify-center gap-3 lg:gap-7">
         {logo}
-        <Text variant="5xl" className="text-white">
-          TubeGenius
-        </Text>
+        <Text className="text-3xl text-white lg:text-5xl">TubeGenius</Text>
       </Row>
 
       <Row className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap sm:gap-6 md:gap-9">
@@ -26,7 +24,7 @@ export default function FooterWidget() {
 }
 
 const logo = (
-  <svg xmlns="http://www.w3.org/2000/svg" width="81" height="80" viewBox="0 0 81 80" fill="none">
+  <svg xmlns="http://www.w3.org/2000/svg" width="41" height="40" viewBox="0 0 81 80" fill="none">
     <path
       d="M40.5 60.0003V16.667"
       stroke="#20BF0E"

@@ -17,11 +17,11 @@ import {
 
 export default function SuccessStoryWidget({ id }: { id?: string }) {
   return (
-    <Col id={id} className="gap-16 bg-black pb-20 font-figtree">
+    <Col id={id} className="bg-black pb-10 font-figtree lg:gap-16 lg:pb-20">
       {/* heading */}
       <Col className="gap-4">
         <div className="mx-auto max-w-xl text-center">
-          <Text variant="5xl" className="text-white">
+          <Text className="text-2xl text-white md:text-3xl lg:text-5xl">
             Success stories powered by TubeGenius
           </Text>
         </div>
@@ -56,7 +56,7 @@ function CarouselWidget() {
           }
         }}
       >
-        <CarouselContent className="h-[600px] items-center gap-8">
+        <CarouselContent className="h-[450px] items-center gap-8 lg:h-[600px]">
           {successStories.map((story, index) => (
             <CarouselItem
               key={story.id}

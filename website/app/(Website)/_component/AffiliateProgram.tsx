@@ -7,9 +7,12 @@ import Text from 'components/ui/Text';
 
 export default function AffiliateProgram({ id }: { id?: string }) {
   return (
-    <section id={id} className="relative overflow-hidden bg-black pt-40 text-center text-white">
+    <section
+      id={id}
+      className="relative overflow-hidden bg-black pt-20 text-center text-white lg:pt-40"
+    >
       <Col
-        className="relative w-full flex-col-reverse gap-6 overflow-hidden rounded-[32px] border border-brand-green/[32%] bg-brand-black lg:flex-row lg:items-center lg:justify-between"
+        className="relative w-full gap-6 overflow-hidden rounded-[32px] border border-brand-green/[32%] bg-brand-black lg:flex-row lg:items-center lg:justify-between"
         // style={{
         //   backgroundImage: `
         //     linear-gradient(to right, rgba(43, 255, 19, 0.02), transparent),
@@ -27,9 +30,9 @@ export default function AffiliateProgram({ id }: { id?: string }) {
           objectFit: 'cover',
         }}
       >
-        <Col className="my-16 w-full gap-8 pl-16 lg:my-0">
-          <Col className="max-w-[415px] gap-4 text-left">
-            <Text variant="5xl">Get paid to share TubeGenius</Text>
+        <Col className="my-8 flex w-full flex-col items-center gap-8 lg:my-0 lg:my-16 lg:items-start lg:pl-16">
+          <Col className="max-w-[300px] gap-4 text-center lg:max-w-[415px] lg:text-left">
+            <Text className="text-3xl lg:text-5xl">Get paid to share TubeGenius</Text>
             <Text variant="xl" className="text-[#AAACA6]">
               Join our affiliate program and earn 50% lifetime commission for every user you bring.
             </Text>

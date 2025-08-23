@@ -9,14 +9,18 @@ export default function HeroSection({ page }: { page: 'home' | 'partner' | 'affi
   return (
     <section className="flex flex-col items-center justify-between py-12 text-white md:flex-row">
       {/* Left Side */}
-      <div className="max-w-lg space-y-6">
+      <div className="flex max-w-lg flex-col items-center space-y-6 lg:items-start">
         <span className="flex w-fit items-center gap-2 rounded-full bg-[#292A27] px-3 py-1 text-sm">
           <Image src="/images/magicpen.svg" alt="idea" width={20} height={20} />
           {heroSectionContent[page].label}
         </span>
-        <h1 className="text-4xl font-bold leading-tight">{heroSectionContent[page].title}</h1>
-        <p className="text-[#AAACA6]">{heroSectionContent[page].description}</p>
-        <div className="flex items-center justify-center sm:flex sm:items-center sm:justify-center">
+        <h1 className="text-center text-4xl font-bold leading-tight lg:text-left">
+          {heroSectionContent[page].title}
+        </h1>
+        <p className="text-center text-[#AAACA6] lg:text-left">
+          {heroSectionContent[page].description}
+        </p>
+        <div className="flex items-center justify-center lg:items-start lg:justify-start">
           <Link href={`${WEB_APP_URL}/signup`} target="_blank">
             <button
               className="flex items-center gap-2 rounded-full bg-[#2BFF13] pl-4 text-sm text-black"
