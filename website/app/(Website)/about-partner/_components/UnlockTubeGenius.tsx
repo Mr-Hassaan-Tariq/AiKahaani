@@ -6,9 +6,9 @@ import Text from 'components/ui/Text';
 
 export default function UnlockTubeGenius() {
   return (
-    <section className="relative overflow-hidden bg-black pt-40 text-center text-white">
+    <section className="relative overflow-hidden bg-black lg:pt-40 pt-20 text-center text-white">
       <Row
-        className="relative h-[408px] w-full items-center justify-center rounded-[32px] border border-brand-green/[32%] bg-brand-black"
+        className="relative lg:h-[408px] h-[300px] w-full items-center justify-center rounded-[32px] border border-brand-green/[32%] bg-brand-black"
         style={{
           backgroundImage: `
         linear-gradient(to right, rgba(43, 255, 19, 0.02), transparent),
@@ -20,10 +20,10 @@ export default function UnlockTubeGenius() {
       >
         <Col className="w-fit items-center justify-center gap-8">
           <Col className="max-w-[615px] gap-4 text-left">
-            <Text variant="5xl" className="text-center">
+            <Text className="text-center text-3xl lg:text-5xl">
               Unlock the TubeGenius Advantage for $1
             </Text>
-            <Text variant="xl" className="text-[#AAACA6]">
+            <Text variant="xl" className="text-[#AAACA6] text-center">
               Limited-time offer for my community. Start creating smarter today.
             </Text>
           </Col>

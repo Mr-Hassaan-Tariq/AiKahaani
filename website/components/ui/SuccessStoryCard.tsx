@@ -20,9 +20,9 @@ export default function SuccessStoryCard({ story, isActive }: SuccessStoryCardPr
   return (
     <div
       className={cn(
-        'relative h-[500px] w-full transform overflow-hidden rounded-3xl border border-brand-green/10 bg-brand-black p-8 transition-all duration-500',
+        'relative lg:h-[500px] h-auto w-full transform overflow-hidden rounded-3xl border border-brand-green/10 bg-brand-black lg:p-8 p-4 transition-all duration-500',
         isActive &&
-          'scale-110 border-brand-green/30 bg-gradient-to-br from-transparent to-brand-green/5'
+          'lg:scale-110 md:scale-105 border-brand-green/30 bg-gradient-to-br from-transparent to-brand-green/5'
       )}
       style={{
         transition: 'all 500ms ease-in-out',
@@ -43,7 +43,7 @@ export default function SuccessStoryCard({ story, isActive }: SuccessStoryCardPr
           height={500}
           className={cn(
             'w-full rounded-2xl bg-white object-cover',
-            isActive ? 'h-[240px]' : 'h-[220px]'
+            isActive ? 'lg:h-[240px] h-[160px]' : 'lg:h-[220px] h-[160px]'
           )}
         />
         <Row>

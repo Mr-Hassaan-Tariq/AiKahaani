@@ -20,7 +20,7 @@ export default function QuestionWidget({ id }: { id?: string }) {
       {/* heading */}
       <Col className="gap-4">
         <div className="mx-auto max-w-xl text-center">
-          <Text variant="5xl" className="text-white">
+          <Text className="text-white text-3xl lg:text-5xl">
             Got questions?
           </Text>
         </div>
@@ -51,7 +51,7 @@ export function AccordionWidget() {
           key={question.id}
           value={question.id.toString()}
           className={cn(
-            'overflow-hidden rounded-[32px] border border-brand-green/10 bg-brand-black p-12',
+            'overflow-hidden rounded-[32px] border border-brand-green/10 bg-brand-black lg:p-8 p-4',
             openItem === question.id.toString() &&
               'bg-gradient-to-r from-transparent via-brand-green/[0.02] to-brand-green/[0.02]'
           )}
@@ -61,11 +61,11 @@ export function AccordionWidget() {
             className="py-0 text-left text-white transition-colors hover:no-underline"
           >
             <div className="flex w-full items-center justify-between">
-              <Text variant="2xl">{question.question}</Text>
+              <Text className="text-md lg:text-2xl md:text-xl mr-4">{question.question}</Text>
               <div className="ml-auto flex-shrink-0">
                 <div
                   className={cn(
-                    'flex size-[52px] items-center justify-center rounded-full bg-white/10 transition-all duration-500',
+                    'flex size-[42px] items-center justify-center rounded-full bg-white/10 transition-all duration-500',
                     openItem === question.id.toString() && 'rotate-45 bg-white'
                   )}
                 >

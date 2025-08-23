@@ -4,6 +4,7 @@ import { Figtree } from 'next/font/google';
 
 import FooterWidget from 'components/ui/FooterWidget';
 import NavSection from 'components/ui/NavSection';
+import Image from 'next/image';
 
 const FIGTREE = Figtree({
   variable: '--figtree-font',
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${FIGTREE.variable} bg-black font-figtree`}>
+        <Image src="/images/grid.svg" alt="grid" width={7000} height={7000} className='absolute top-0 left-0' />
         {/* Navbar outside container for mobile */}
         <div className="block rounded-b-3xl border-b-4 border-b-gray-800 px-8 py-4 md:hidden">
           <NavSection />
