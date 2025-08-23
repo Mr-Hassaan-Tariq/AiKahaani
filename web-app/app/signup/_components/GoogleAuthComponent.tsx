@@ -15,7 +15,6 @@ export default function GoogleAuthComponent() {
     scope: 'openid email profile',
     hosted_domain: domain,
     onSuccess: async (response) => {
-      console.log('response auth code', response);
       setLoading(true);
       try {
         const res = await fetch(
@@ -31,11 +30,9 @@ export default function GoogleAuthComponent() {
           },
         );
         const data = await res.json();
-        console.log('success', data);
         alert(JSON.stringify(data));
         router.push('/');
       } catch (error) {
-        console.log('error', error);
         alert(JSON.stringify(error));
       } finally {
         setLoading(false);

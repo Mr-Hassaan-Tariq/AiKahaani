@@ -19,7 +19,7 @@ export default function HowItWorks({ id }: { id?: string }) {
       </Col>
 
       {/* Steps */}
-      <div className="relative flex flex-col items-center justify-between gap-10 lg:flex-row lg:items-start">
+      <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-start">
         {/* Step 1 */}
         <div className="mt-5 flex h-auto w-[330px] flex-col items-center rounded-2xl border-[1px] border-[var(--Stroke-Surface,#BAFF381F)] bg-[#171a16] p-8 text-center shadow-lg lg:h-[250px]">
           <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-[#20BF0E] to-[#26E611] text-lg font-bold text-black">
@@ -30,8 +30,15 @@ export default function HowItWorks({ id }: { id?: string }) {
             Just type the idea of your future video or niche — we’ll take it from there.
           </p>
         </div>
-        <div className="absolute left-[28%] top-[43%] hidden justify-center lg:flex">
-          <Image src="/images/Vector1.svg" alt="step1" width={90} height={100} />
+        {/* Vector 1 */}
+        <div className="flex items-center justify-center self-center">
+          <Image
+            src="/images/Vector1.svg"
+            alt="step1"
+            width={90}
+            height={100}
+            className="rotate-90 lg:rotate-0"
+          />
         </div>
         {/* Step 2 */}
         <div className="mt-5 flex h-auto w-[330px] flex-col items-center rounded-2xl border-[1px] border-[var(--Stroke-Surface,#BAFF381F)] bg-[#171a16] p-8 text-center shadow-lg lg:h-[300px]">
@@ -44,8 +51,15 @@ export default function HowItWorks({ id }: { id?: string }) {
             structure.
           </p>
         </div>
-        <div className="absolute right-[28%] top-[43%] hidden justify-center lg:flex">
-          <Image src="/images/Vector1.svg" alt="step1" width={90} height={100} />
+        {/* Vector 2 */}
+        <div className="flex items-center justify-center self-center">
+          <Image
+            src="/images/Vector1.svg"
+            alt="step2"
+            width={90}
+            height={100}
+            className="rotate-90 lg:rotate-0"
+          />
         </div>
         {/* Step 3 */}
         <div className="flex h-auto w-[330px] flex-col items-center rounded-2xl border-[1px] border-[var(--Stroke-Surface,#BAFF381F)] bg-[#171a16] p-8 text-center shadow-lg lg:h-[300px]">

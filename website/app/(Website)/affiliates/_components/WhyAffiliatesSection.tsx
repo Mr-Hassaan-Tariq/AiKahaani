@@ -1,6 +1,8 @@
 // components/AffiliateBenefits.tsx
 import { CreditCard, DollarSign, Gift, Headphones, Monitor } from 'lucide-react';
 
+import Carousel from 'components/ui/Carousel';
+
 const benefits = [
   {
     icon: <DollarSign className="h-6 w-6 text-green-400" />,
@@ -36,8 +38,29 @@ export default function AffiliateBenefits({ id }: { id?: string }) {
           We built this program to make it simple (and worth it).
         </p>
 
+        <div className="block md:hidden">
+          <Carousel
+            items={benefits.map((item, index) => (
+              <div
+                key={index}
+                className={
+                  'flex flex-col items-center justify-center gap-4 rounded-2xl border border-[#BAFF381F] p-8 text-center shadow-md [background:linear-gradient(180deg,#181916_0%,#292929_50%,#333333_100%)]'
+                }
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1c1c1c] shadow-inner">
+                  {item.icon}
+                </div>
+                <p
+                  className="text-sm text-white md:text-base"
+                  dangerouslySetInnerHTML={{ __html: item.title }}
+                />
+              </div>
+            ))}
+          />
+        </div>
+
         {/* Grid */}
-        <div className="grid grid-cols-12 gap-6">
+        <div className="hidden grid-cols-12 gap-6 md:grid">
           {benefits.map((item, index) => (
             <div
               key={index}

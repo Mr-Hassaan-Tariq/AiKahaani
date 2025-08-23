@@ -12,9 +12,9 @@ export default function HowItWorks({ id }: { id: string }) {
       </div>
 
       {/* Steps */}
-      <div className="relative flex flex-col items-center justify-between gap-10 lg:flex-row lg:items-start">
+      <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-start">
         {/* Step 1 */}
-        <div className="flex h-auto w-[330px] flex-col items-center rounded-2xl border-[1px] border-[var(--Stroke-Surface,#BAFF381F)] bg-[#171a16] p-8 text-center shadow-lg lg:h-[250px]">
+        <div className="mt-5 flex h-auto w-[330px] flex-col items-center rounded-2xl border-[1px] border-[var(--Stroke-Surface,#BAFF381F)] bg-[#171a16] p-8 text-center shadow-lg lg:h-[250px]">
           <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-[#20BF0E] to-[#26E611] text-lg font-bold text-black">
             1
           </div>
@@ -23,8 +23,15 @@ export default function HowItWorks({ id }: { id: string }) {
             Tell us about your channel, <br /> audience or platform
           </p>
         </div>
-        <div className="absolute left-[28%] top-[43%] hidden justify-center lg:flex">
-          <Image src="/images/Vector1.svg" alt="step1" width={90} height={100} />
+        {/* Vector 1 */}
+        <div className="flex items-center justify-center self-center">
+          <Image
+            src="/images/Vector1.svg"
+            alt="step1"
+            width={90}
+            height={100}
+            className="rotate-90 lg:rotate-0"
+          />
         </div>
         {/* Step 2 */}
         <div className="mt-5 flex h-auto w-[330px] flex-col items-center rounded-2xl border-[1px] border-[var(--Stroke-Surface,#BAFF381F)] bg-[#171a16] p-8 text-center shadow-lg lg:h-[240px]">
@@ -36,8 +43,15 @@ export default function HowItWorks({ id }: { id: string }) {
             Share your unique <br /> link or promo code
           </p>
         </div>
-        <div className="absolute right-[28%] top-[43%] hidden justify-center lg:flex">
-          <Image src="/images/Vector1.svg" alt="step1" width={90} height={100} />
+        {/* Vector 2 */}
+        <div className="flex items-center justify-center self-center">
+          <Image
+            src="/images/Vector1.svg"
+            alt="step2"
+            width={90}
+            height={100}
+            className="rotate-90 lg:rotate-0"
+          />
         </div>
         {/* Step 3 */}
         <div className="flex h-auto w-[330px] flex-col items-center rounded-2xl border-[1px] border-[var(--Stroke-Surface,#BAFF381F)] bg-[#171a16] p-8 text-center shadow-lg lg:h-[250px]">

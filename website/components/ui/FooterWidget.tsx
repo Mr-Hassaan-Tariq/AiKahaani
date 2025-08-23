@@ -14,7 +14,7 @@ export default function FooterWidget() {
         </Text>
       </Row>
 
-      <Row className="flex-wrap justify-center gap-9">
+      <Row className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap sm:gap-6 md:gap-9">
         <FooterItems />
       </Row>
       <div className="h-[1px] w-full bg-brand-green/[32%]" />

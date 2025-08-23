@@ -50,13 +50,20 @@ export default function NavSection() {
 
       {/* Mobile Dropdown Menu */}
       {isOpen && (
-        <div className="animate-slideDown absolute left-0 top-16 z-50 w-full border-t border-gray-800 bg-black/95 backdrop-blur-md md:hidden">
+        <div className="animate-slideDown absolute left-0 top-16 z-50 h-screen w-screen border-t border-gray-800 bg-black/95 backdrop-blur-md md:hidden">
           <ItemList />
-          <div className="flex flex-col gap-4 p-6">
-            {loginButton}
+          <div className="flex flex-row gap-4">
             <Link href={`${WEB_APP_URL}/signup`} target="_blank">
-              <Button className="h-10 rounded-lg bg-green-600 transition duration-300 hover:bg-green-600">
-                Get Started →
+              <Button className="flex h-[52px] w-[150px] items-center gap-2.5 rounded-full border bg-[#FFFFFF1A] px-4 font-bold transition-all duration-300 hover:scale-95 hover:bg-[#2BFF13] hover:opacity-80">
+                Login
+              </Button>
+            </Link>
+            <Link href={`${WEB_APP_URL}/signup`} target="_blank">
+              <Button className="flex h-[52px] items-center gap-2.5 rounded-full border border-[#2BFF13] bg-[#2BFF13] px-0 pl-4 font-bold text-black transition-all duration-300 hover:scale-95 hover:bg-[#2BFF13] hover:opacity-80">
+                Get Started
+                <Row className="h-12 w-12 justify-center gap-0 rounded-full bg-white">
+                  <ArrowRight size={20} />
+                </Row>
               </Button>
             </Link>
           </div>
@@ -78,7 +85,11 @@ function ItemList({ isDesk }: { isDesk?: boolean }) {
   }, [pathname]);
 
   return (
-    <ul className={cn(isDesk ? 'hidden gap-8 md:flex' : 'flex flex-col gap-6 p-6 text-lg')}>
+    <ul
+      className={cn(
+        isDesk ? 'hidden gap-8 md:flex' : 'flex flex-col gap-6 p-6 text-center text-lg'
+      )}
+    >
       {itemList.map((e) => (
         <li
           key={e.id}

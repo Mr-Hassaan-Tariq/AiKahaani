@@ -21,8 +21,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${FIGTREE.variable} bg-black font-figtree`}>
-        <div className="container mx-auto px-8 py-8 md:px-12">
+        {/* Navbar outside container for mobile */}
+        <div className="block rounded-b-3xl border-b-4 border-b-gray-800 px-8 py-4 md:hidden">
           <NavSection />
+        </div>
+
+        <div className="container mx-auto px-8 py-8 md:px-12">
+          {/* Navbar inside container for desktop */}
+          <div className="hidden md:block">
+            <NavSection />
+          </div>
           {children}
           <FooterWidget />
         </div>
