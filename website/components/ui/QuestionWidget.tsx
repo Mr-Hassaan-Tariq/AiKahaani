@@ -16,7 +16,7 @@ import {
 
 export default function QuestionWidget({ id }: { id?: string }) {
   return (
-    <Col id={id} className="gap-16 bg-black font-figtree">
+    <Col id={id} className="container mx-auto gap-16 bg-black px-8 font-figtree md:px-12 lg:pt-20">
       {/* heading */}
       <Col className="gap-4">
         <div className="mx-auto max-w-xl text-center">

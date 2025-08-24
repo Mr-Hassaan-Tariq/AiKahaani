@@ -30,13 +30,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           className="absolute left-0 top-0"
         />
         {/* Navbar outside container for mobile */}
+
         <div className="block rounded-b-3xl border-b-4 border-b-gray-800 px-8 py-4 md:hidden">
           <NavSection />
         </div>
 
-        <div className="container mx-auto px-8 py-8 md:px-12">
+        <div className="">
           {/* Navbar inside container for desktop */}
-          <div className="hidden md:block">
+          <div className="container mx-auto hidden px-8 py-8 md:block md:px-12">
             <NavSection />
           </div>
           {children}

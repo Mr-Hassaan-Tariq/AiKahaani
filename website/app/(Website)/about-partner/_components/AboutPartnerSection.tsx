@@ -6,7 +6,7 @@ export default function AboutPartnerSection({ id }: { id: string }) {
   return (
     <section
       id={id}
-      className="relative overflow-hidden bg-black pt-10 text-center text-white lg:pt-40"
+      className="container relative mx-auto overflow-hidden bg-black px-8 text-center text-white md:px-12 lg:py-20"
     >
       <Col
         className="relative w-full flex-col-reverse gap-6 overflow-hidden rounded-[32px] border border-brand-green/[32%] bg-brand-black lg:flex-row lg:items-center lg:justify-between"

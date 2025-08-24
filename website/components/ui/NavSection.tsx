@@ -50,9 +50,9 @@ export default function NavSection() {
 
       {/* Mobile Dropdown Menu */}
       {isOpen && (
-        <div className="animate-slideDown absolute left-0 top-16 z-50 h-screen w-screen border-t border-gray-800 bg-black/95 backdrop-blur-md md:hidden">
+        <div className="animate-slideDown absolute right-[-40px] top-16 z-50 h-screen w-screen overflow-hidden border-t border-gray-800 bg-black/95 backdrop-blur-md md:hidden">
           <ItemList />
-          <div className="flex flex-row gap-4">
+          <div className="flex flex-row gap-4 px-6">
             <Link href={`${WEB_APP_URL}/signup`} target="_blank">
               <Button className="flex h-[52px] w-[150px] items-center gap-2.5 rounded-full border bg-[#FFFFFF1A] px-4 font-bold transition-all duration-300 hover:scale-95 hover:bg-[#2BFF13] hover:opacity-80">
                 Login

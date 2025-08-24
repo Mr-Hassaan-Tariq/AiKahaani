@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 const audience = [
   'YouTube Creators',
   'Marketing Experts',
@@ -15,6 +17,14 @@ export default function Trends({ id }: { id?: string }) {
       id={id}
       className="relative flex items-center justify-center overflow-hidden bg-black pb-40 pt-10 text-white"
     >
+      <Image
+        src="/images/background.png"
+        alt="how-it-works"
+        width={500}
+        height={500}
+        className="absolute bottom-0 left-0 w-full"
+      />
+      <div className="absolute bottom-10 left-0 h-32 w-full rotate-180 bg-gradient-to-t from-black to-transparent" />
       <div className="relative z-10 w-full max-w-4xl px-4 text-center">
         {/* Heading */}
         <h2 className="mb-3 text-3xl font-semibold md:text-4xl">Is it for you?</h2>

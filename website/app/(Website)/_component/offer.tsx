@@ -2,7 +2,7 @@ import { ArrowRight } from 'lucide-react';
 
 export default function OfferSection() {
   return (
-    <div className="bg-black pb-20">
+    <div className="container mx-auto bg-black px-8 py-8 pb-20 md:px-12">
       <div
         className="flex w-full flex-col items-center bg-cover bg-center p-16 text-center"
         style={{

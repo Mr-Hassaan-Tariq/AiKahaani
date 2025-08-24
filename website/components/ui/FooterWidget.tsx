@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 import FooterItems from './FooterItems';
 import Col from 'components/ui/Col';
 import Row from 'components/ui/Row';
@@ -5,9 +7,17 @@ import Text from 'components/ui/Text';
 
 export default function FooterWidget() {
   return (
-    <Col className="gap-8 bg-black pb-6 pt-20 font-figtree lg:gap-16 lg:pt-40">
+    <Col className="relative gap-8 bg-black pb-6 pt-20 font-figtree lg:gap-16 lg:pt-40">
+      <Image
+        src="/images/background.png"
+        alt="how-it-works"
+        width={500}
+        height={500}
+        className="absolute left-0 top-10 w-full rotate-180"
+      />
+      <div className="absolute left-0 top-20 h-32 w-full bg-gradient-to-t from-black to-transparent" />
       {/* heading */}
-      <Row className="justify-center gap-3 lg:gap-7">
+      <Row className="z-10 justify-center gap-3 lg:gap-7">
         {logo}
         <Text className="text-3xl text-white lg:text-5xl">TubeGenius</Text>
       </Row>

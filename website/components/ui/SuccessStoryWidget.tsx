@@ -17,7 +17,7 @@ import {
 
 export default function SuccessStoryWidget({ id }: { id?: string }) {
   return (
-    <Col id={id} className="bg-black pb-10 font-figtree lg:gap-16 lg:pb-20">
+    <Col id={id} className="bg-black py-10 font-figtree lg:gap-16">
       {/* heading */}
       <Col className="gap-4">
         <div className="mx-auto max-w-xl text-center">

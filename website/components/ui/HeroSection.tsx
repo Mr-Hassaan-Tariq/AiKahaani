@@ -7,7 +7,7 @@ import { heroSectionContent } from '../../lib/localData';
 
 export default function HeroSection({ page }: { page: 'home' | 'partner' | 'affiliates' }) {
   return (
-    <section className="flex flex-col items-center justify-between py-12 text-white md:flex-row">
+    <section className="container mx-auto flex flex-col items-center justify-between px-8 py-12 py-8 text-white md:flex-row md:px-12">
       {/* Left Side */}
       <div className="flex max-w-lg flex-col items-center space-y-6 lg:items-start">
         <span className="flex w-fit items-center gap-2 rounded-full bg-[#292A27] px-3 py-1 text-sm">
