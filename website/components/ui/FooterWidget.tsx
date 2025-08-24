@@ -9,13 +9,12 @@ export default function FooterWidget() {
   return (
     <Col className="relative gap-8 bg-black pb-6 pt-20 font-figtree lg:gap-16 lg:pt-40">
       <Image
-        src="/images/background.png"
-        alt="how-it-works"
-        width={500}
-        height={500}
-        className="absolute left-0 top-10 w-full rotate-180"
+        src="/images/grid.svg"
+        alt="grid"
+        width={7000}
+        height={7000}
+        className="absolute left-0 top-0"
       />
-      <div className="absolute left-0 top-20 h-32 w-full bg-gradient-to-t from-black to-transparent" />
       {/* heading */}
       <Row className="z-10 justify-center gap-3 lg:gap-7">
         {logo}

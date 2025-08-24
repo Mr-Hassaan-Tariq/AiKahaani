@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 import SuccessStoryCard from './SuccessStoryCard';
 import { successStories } from 'lib/localData';
@@ -17,22 +18,31 @@ import {
 
 export default function SuccessStoryWidget({ id }: { id?: string }) {
   return (
-    <Col id={id} className="bg-black pb-10 font-figtree lg:gap-16 lg:pb-20">
-      {/* heading */}
-      <Col className="gap-4">
-        <div className="mx-auto max-w-xl text-center">
-          <Text className="text-2xl text-white md:text-3xl lg:text-5xl">
-            Success stories powered by TubeGenius
+    <div className="relative">
+      <Col id={id} className="bg-black pb-10 font-figtree lg:gap-16 lg:pb-20">
+        <Image
+          src="/images/grid.svg"
+          alt="grid"
+          width={7000}
+          height={7000}
+          className="absolute left-0 top-0"
+        />
+        {/* heading */}
+        <Col className="gap-4">
+          <div className="mx-auto max-w-xl text-center">
+            <Text className="text-2xl text-white md:text-3xl lg:text-5xl">
+              Success stories powered by TubeGenius
+            </Text>
+          </div>
+          <Text variant="lg" className="mx-auto max-w-2xl text-center text-[#AAACA6]">
+            See how real creators turn ideas into videos — and what they say about the process.
           </Text>
-        </div>
-        <Text variant="lg" className="mx-auto max-w-2xl text-center text-[#AAACA6]">
-          See how real creators turn ideas into videos — and what they say about the process.
-        </Text>
-      </Col>
+        </Col>
 
-      {/* Carousel */}
-      <CarouselWidget />
-    </Col>
+        {/* Carousel */}
+        <CarouselWidget />
+      </Col>
+    </div>
   );
 }
 

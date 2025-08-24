@@ -43,15 +43,13 @@ const WhatsInside = ({ id }: { id?: string }) => {
 
   return (
     <div className="relative pt-20">
+      y
       <Image
-        src="/images/background.png"
-        alt="how-it-works"
-        width={500}
-        height={500}
-        className={`absolute left-0 z-[-2] ${id === 'features' ? 'bottom-0' : 'top-0 rotate-180'} w-full`}
-      />
-      <div
-        className={`absolute z-[-1] ${id === 'features' ? 'bottom-10 rotate-180' : 'top-10'} left-0 h-32 w-full bg-gradient-to-t from-black to-transparent`}
+        src="/images/grid.svg"
+        alt="grid"
+        width={7000}
+        height={7000}
+        className="absolute left-0 top-0"
       />
       <section id={id} className="container mx-auto px-8 py-8 pb-20 text-white md:px-12 lg:pb-40">
         {/* Heading */}

@@ -30,14 +30,6 @@ const features = [
 const CreatorsCard: FC<{ id: string }> = ({ id }) => {
   return (
     <div className="relative">
-      <Image
-        src="/images/background.png"
-        alt="how-it-works"
-        width={500}
-        height={500}
-        className="absolute bottom-0 left-0 z-[-2] w-full"
-      />
-      <div className="absolute bottom-10 left-0 z-[-1] h-32 w-full rotate-180 bg-gradient-to-t from-black to-transparent" />
       <section id={id} className="container mx-auto px-6 px-8 pb-20 text-white md:px-12 lg:pb-40">
         <div className="mx-auto flex max-w-6xl flex-col items-center text-center">
           {/* Heading */}

@@ -6,14 +6,7 @@ import Text from 'components/ui/Text';
 export default function HowItWorks({ id }: { id?: string }) {
   return (
     <div className="relative">
-      <Image
-        src="/images/background.png"
-        alt="how-it-works"
-        width={500}
-        height={500}
-        className="absolute left-0 top-0 z-[-2] w-full rotate-180"
-      />
-      <div className="absolute left-0 top-10 z-[-1] h-32 w-full bg-gradient-to-t from-black to-transparent" />
+      {' '}
       <section
         id={id}
         className="container mx-auto px-8 pb-20 pt-20 text-center text-white md:px-12 lg:pt-40"
