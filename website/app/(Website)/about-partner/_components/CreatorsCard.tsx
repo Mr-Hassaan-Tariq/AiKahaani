@@ -29,42 +29,52 @@ const features = [
 
 const CreatorsCard: FC<{ id: string }> = ({ id }) => {
   return (
-    <section id={id} className="bg-black px-6 py-16 text-white">
-      <div className="mx-auto flex max-w-6xl flex-col items-center text-center">
-        {/* Heading */}
-        <h2 className="mb-2 text-3xl font-bold md:text-4xl">
-          Why creators love <span className="text-green-400">TubeGenius</span>
-        </h2>
-        <p className="mb-12 text-gray-400">
-          Helping creators save time, grow audiences, and boost earnings
-        </p>
+    <div className="relative">
+      <Image
+        src="/images/background.png"
+        alt="how-it-works"
+        width={500}
+        height={500}
+        className="absolute bottom-0 left-0 z-[-2] w-full"
+      />
+      <div className="absolute bottom-10 left-0 z-[-1] h-32 w-full rotate-180 bg-gradient-to-t from-black to-transparent" />
+      <section id={id} className="container mx-auto px-6 px-8 pb-20 text-white md:px-12 lg:pb-40">
+        <div className="mx-auto flex max-w-6xl flex-col items-center text-center">
+          {/* Heading */}
+          <h2 className="mb-2 text-3xl font-bold md:text-4xl">
+            Why creators love <span className="text-green-400">TubeGenius</span>
+          </h2>
+          <p className="mb-12 text-gray-400">
+            Helping creators save time, grow audiences, and boost earnings
+          </p>
 
-        {/* Features grid */}
-        <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-4">
-          {features.map((item, idx) => (
-            <div
-              key={idx}
-              className="flex flex-col items-center rounded-xl border border-[#222] bg-[#171a16] p-6 text-center transition hover:shadow-lg"
-            >
-              <Image src={item.icon} alt={item.title} width={60} height={80} className="mb-4" />
-              <h3 className="mb-2 text-lg font-semibold">{item.title}</h3>
-              <p className="text-sm text-gray-400">{item.desc}</p>
-            </div>
-          ))}
+          {/* Features grid */}
+          <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-4">
+            {features.map((item, idx) => (
+              <div
+                key={idx}
+                className="flex flex-col items-center rounded-xl border border-[#222] bg-[#171a16] p-6 text-center transition hover:shadow-lg"
+              >
+                <Image src={item.icon} alt={item.title} width={60} height={80} className="mb-4" />
+                <h3 className="mb-2 text-lg font-semibold">{item.title}</h3>
+                <p className="text-sm text-gray-400">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA button */}
+          <button
+            className="flex w-fit items-center gap-2 rounded-full bg-[#2BFF13] pl-4 text-sm text-black"
+            style={{ fontWeight: '600' }}
+          >
+            Start for $1
+            <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white">
+              <ArrowRight size={20} />
+            </span>
+          </button>
         </div>
-
-        {/* CTA button */}
-        <button
-          className="flex w-fit items-center gap-2 rounded-full bg-[#2BFF13] pl-4 text-sm text-black"
-          style={{ fontWeight: '600' }}
-        >
-          Start for $1
-          <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white">
-            <ArrowRight size={20} />
-          </span>
-        </button>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 };
 
