@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import CarouselImage from 'assets/carousel-image.jpg';
 
 import Col from './Col';
 import Row from './Row';
@@ -36,8 +35,7 @@ export default function SuccessStoryCard({ story, isActive }: SuccessStoryCardPr
         </Text>
 
         <Image
-          // src={story.image}
-          src={CarouselImage}
+          src={story.image}
           alt={story.name}
           width={500}
           height={500}
