@@ -82,6 +82,41 @@
   }
 }
 
+.bottom-circle-img {
+  position: relative;
+  width: 100vw; /* always full screen width */
+  height: 50vh; /* use vh instead of % for consistent sizing */
+  object-fit: cover; /* keep aspect ratio, crop if needed */
+  object-position: top; /* show top part */
+  display: block;
+}
+
+.bottom-circle-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/svg/bottom-circle.svg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: '50% 0%;';
+}
+.rotated-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/svg/bottom-circle.svg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  transform: rotate(180deg);
+  z-index: -1;
+}
+
 @layer base {
   * {
     @apply border-border;

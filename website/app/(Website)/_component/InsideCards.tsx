@@ -8,7 +8,7 @@ import { Clock, ExternalLink, Info, Users } from 'lucide-react';
 import { WEB_APP_URL } from '../../../lib/constants';
 import Carousel from 'components/ui/Carousel';
 
-const WhatsInside = ({ id }: { id?: string }) => {
+const WhatsInside = ({ id, page = 'home' }: { id?: string; page?: 'home' | 'partner' }) => {
   const [value, setValue] = useState<number>(500);
 
   interface Card {
@@ -42,16 +42,24 @@ const WhatsInside = ({ id }: { id?: string }) => {
   ];
 
   return (
-    <div className="relative pt-20">
-      y
-      <Image
-        src="/images/grid.svg"
-        alt="grid"
-        width={7000}
-        height={7000}
-        className="absolute left-0 top-0"
-      />
-      <section id={id} className="container mx-auto px-8 py-8 pb-20 text-white md:px-12 lg:pb-40">
+    <div
+      className={`${page == 'home' && 'rotated-bg'} relative py-20`}
+      style={
+        page === 'home'
+          ? {}
+          : {
+              backgroundImage: 'url(/svg/bottom-circle.svg)',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              paddingTop: '200px',
+            }
+      }
+    >
+      {page == 'home' && (
+        <img src="/svg/top-left-gid.svg" alt="grid" className="absolute left-0 top-0" />
+      )}
+      <section id={id} className="container mx-auto px-8 py-8 text-white md:px-12 lg:pb-40">
         {/* Heading */}
         <div className="mb-10 text-center">
           <h2 className="text-3xl font-bold md:text-4xl">What’s inside</h2>
@@ -308,7 +316,7 @@ const WhatsInside = ({ id }: { id?: string }) => {
           />
         </div>
         <div className="hidden md:block">
-          <div className="flex items-center justify-center bg-black p-6">
+          <div className="flex items-center justify-center p-6">
             <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-12">
               <div className="col-span-12 rounded-2xl border border-[#BAFF381F] bg-gradient-to-br from-[#161616] via-[#161616] to-[#BAFF38]/[0.06] p-8 shadow-lg md:col-span-7">
                 <div>
@@ -438,7 +446,7 @@ const WhatsInside = ({ id }: { id?: string }) => {
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-center bg-black px-6">
+          <div className="flex items-center justify-center px-6">
             <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-12">
               {/* Left Card */}
               <div className="col-span-12 rounded-2xl border border-[#BAFF381F] bg-[#161616] px-7 pt-14 md:col-span-5">
@@ -544,6 +552,10 @@ const WhatsInside = ({ id }: { id?: string }) => {
           </div>
         </div>
       </section>
+
+      {/* {page == 'home' && (
+        <img src="/svg/bottom-circle.svg" alt="grid" className="bottom-circle-img rotate-180" />
+      )} */}
     </div>
   );
 };

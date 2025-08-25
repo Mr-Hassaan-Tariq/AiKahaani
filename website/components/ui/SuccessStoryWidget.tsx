@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 
 import SuccessStoryCard from './SuccessStoryCard';
 import { successStories } from 'lib/localData';
@@ -20,13 +19,8 @@ export default function SuccessStoryWidget({ id }: { id?: string }) {
   return (
     <div className="relative">
       <Col id={id} className="bg-black pb-10 font-figtree lg:gap-16 lg:pb-20">
-        <Image
-          src="/images/grid.svg"
-          alt="grid"
-          width={7000}
-          height={7000}
-          className="absolute left-0 top-0"
-        />
+        <img src="/svg/top-left-gid.svg" alt="grid" className="absolute left-0 top-0" />
+
         {/* heading */}
         <Col className="gap-4">
           <div className="mx-auto max-w-xl text-center">

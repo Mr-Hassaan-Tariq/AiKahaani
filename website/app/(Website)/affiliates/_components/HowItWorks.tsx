@@ -2,7 +2,15 @@ import Image from 'next/image';
 
 export default function HowItWorks({ id }: { id: string }) {
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      style={{
+        backgroundImage: 'url(/svg/bottom-circle.svg)',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+        backgroundPosition: '50% 0%',
+      }}
+    >
       <section
         id={id}
         className="container mx-auto px-8 py-20 pt-20 text-center text-white md:px-12 lg:pt-40"

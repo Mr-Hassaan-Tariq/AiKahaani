@@ -5,7 +5,16 @@ import Text from 'components/ui/Text';
 
 export default function FooterWidget() {
   return (
-    <Col className="relative gap-8 bg-black pb-6 pt-20 font-figtree lg:gap-16 lg:pt-40">
+    <Col
+      style={{
+        backgroundImage: 'url(/svg/bottom-circle.svg)',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+        backgroundPosition: '50% 0%',
+        height: 'fit-content',
+      }}
+      className="relative gap-8 bg-black pb-6 pt-20 font-figtree lg:gap-16 lg:pt-40"
+    >
       {/* <Image
         src="/images/grid.svg"
         alt="grid"
@@ -13,7 +22,18 @@ export default function FooterWidget() {
         height={7000}
         className="absolute left-0 top-0"
       /> */}
+
+      <div className="absolute left-0 top-0 h-full w-full overflow-hidden">
+        <img
+          src="/svg/top-left-gid.svg"
+          alt="grid"
+          className="object-cover"
+          style={{ objectPosition: 'top' }}
+        />
+      </div>
       {/* heading */}
+
+      {/* <img src="/svg/bottom-circle.svg" alt="grid" className="bottom-circle-img rotate-180" /> */}
       <Row className="z-10 justify-center gap-3 lg:gap-7">
         {logo}
         <Text className="text-3xl text-white lg:text-5xl">TubeGenius</Text>

@@ -5,8 +5,16 @@ import Text from 'components/ui/Text';
 
 export default function HowItWorks({ id }: { id?: string }) {
   return (
-    <div className="relative">
-      {' '}
+    <div
+      className="relative"
+      style={{
+        backgroundImage: 'url(/svg/bottom-circle.svg)',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {/* <img src="/svg/bottom-circle.svg" alt="grid" className="bottom-circle-img" /> */}{' '}
       <section
         id={id}
         className="container mx-auto px-8 pb-20 pt-20 text-center text-white md:px-12 lg:pt-40"

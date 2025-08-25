@@ -16,20 +16,24 @@ import {
 
 export default function QuestionWidget({ id }: { id?: string }) {
   return (
-    <Col id={id} className="container mx-auto gap-16 bg-black px-8 font-figtree md:px-12 lg:pt-20">
-      {/* heading */}
-      <Col className="gap-4">
-        <div className="mx-auto max-w-xl text-center">
-          <Text className="text-3xl text-white lg:text-5xl">Got questions?</Text>
+    <div id={id} className="relative">
+      <img src="/svg/top-right-gid.svg" alt="grid" className="absolute right-0 top-0" />
+
+      <Col className="container relative mx-auto gap-16 bg-black px-8 font-figtree md:px-12 lg:pt-20">
+        {/* heading */}
+        <Col className="gap-4">
+          <div className="mx-auto max-w-xl text-center">
+            <Text className="text-3xl text-white lg:text-5xl">Got questions?</Text>
+          </div>
+          <Text variant="lg" className="mx-auto max-w-2xl text-center text-[#AAACA6]">
+            {"We've got you covered."}
+          </Text>
+        </Col>
+        <div className="mx-auto w-full">
+          <AccordionWidget />
         </div>
-        <Text variant="lg" className="mx-auto max-w-2xl text-center text-[#AAACA6]">
-          {"We've got you covered."}
-        </Text>
       </Col>
-      <div className="mx-auto w-full">
-        <AccordionWidget />
-      </div>
-    </Col>
+    </div>
   );
 }
 

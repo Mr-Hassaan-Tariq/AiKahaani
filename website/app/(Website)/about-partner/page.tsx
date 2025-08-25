@@ -13,7 +13,7 @@ export default function Page() {
     <Fragment>
       <HeroSection page="partner" />
       <AboutPartnerSection id="about-partner" />
-      <InsideCards id="platform" />
+      <InsideCards id="platform" page="partner" />
       <CreatorsCard id="benefits" />
       <SuccessStoryWidget id="success-stories" />
       <QuestionWidget id="faq" />
