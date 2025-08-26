@@ -48,3 +48,44 @@ class UserSerializer(serializers.ModelSerializer):
 
 class GoogleAuthInputSerializer(serializers.Serializer):
     id_token = serializers.CharField()
+
+
+class MagicLinkLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class MagicLinkVerifySerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+    def validate_token(self, value):
+        """Validate that the token is a properly formatted UUID"""
+        import uuid
+
+        try:
+            # Try to parse as UUID to validate format
+            uuid.UUID(value)
+            return value
+        except ValueError as e:
+            raise serializers.ValidationError("Invalid token format.") from e
+
+
+# ---------------------------------------------------------------------------
+# Response Serializers (for API documentation and explicit response schemas)
+# ---------------------------------------------------------------------------
+
+
+class UserBasicSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    email = serializers.EmailField()
+    username = serializers.CharField()
+    fullname = serializers.CharField(allow_blank=True)
+
+
+class MagicLinkLoginSuccessResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
+class MagicLinkVerifySuccessResponseSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    access = serializers.CharField()
+    user = UserBasicSerializer()

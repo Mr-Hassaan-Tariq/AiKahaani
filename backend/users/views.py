@@ -1,15 +1,30 @@
 import logging
+from datetime import timedelta
+
+import requests
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.utils import timezone
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
-from django.conf import settings
-import requests
-from google.oauth2 import id_token as google_id_token
-from google.auth.transport import requests as google_requests
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import GoogleAuthInputSerializer, UserSerializer, UserSignupSerializer
+
+from .models import MagicLinkToken
+from .serializers import (
+    GoogleAuthInputSerializer,
+    MagicLinkLoginSerializer,
+    MagicLinkLoginSuccessResponseSerializer,
+    MagicLinkVerifySerializer,
+    MagicLinkVerifySuccessResponseSerializer,
+    UserSerializer,
+    UserSignupSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +65,8 @@ class GoogleLoginAPIView(APIView):
         "user": {
             "id": "<user_id>",
             "email": "<user_email>",
-            "fullname": "<user_fullname>"
+            "fullname": "<user_fullname>",
+            "username": "<user_username>"
         },
         "created": "<boolean>"
     }
@@ -109,6 +125,7 @@ class GoogleLoginAPIView(APIView):
                     "id": str(user.pk),
                     "email": user.email,
                     "fullname": user.fullname,
+                    "username": user.username,
                 },
                 "created": created,
             }
@@ -173,7 +190,7 @@ class GoogleLoginAPIView(APIView):
             return user_info
         except Exception as e:
             logger.error(f"Failed to verify Google ID token: {str(e)}")
-            raise ValueError("Invalid Google ID token")
+            raise ValueError("Invalid Google ID token") from e
 
     def get_or_create_user(self, idinfo):
         """
@@ -196,3 +213,202 @@ class GoogleLoginAPIView(APIView):
             logger.info(f"Retrieved existing user: {email}")
 
         return user, created
+
+
+class MagicLinkLoginAPIView(APIView):
+    """
+    API endpoint for sending magic link to user's email for passwordless authentication.
+
+    If user doesn't exist, a new user will be created with the provided email.
+    The username will be extracted from the part before '@' in the email.
+    """
+
+    permission_classes = [AllowAny]
+    serializer_class = MagicLinkLoginSerializer
+
+    @extend_schema(
+        operation_id="magic_link_login",
+        summary="Send Magic Link for Authentication",
+        description=(
+            "Sends a magic link to the provided email address for passwordless authentication. "
+            "If the user doesn't exist, a new user account will be created automatically. "
+            "The username is extracted from the email address (part before '@'). "
+            "The magic link expires in 15 minutes."
+        ),
+        request=MagicLinkLoginSerializer,
+        examples=[
+            OpenApiExample(
+                "Magic Link Request",
+                summary="Request magic link for existing or new user",
+                description="Send magic link to user's email",
+                value={"email": "john.doe@example.com"},
+                request_only=True,
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=MagicLinkLoginSuccessResponseSerializer,
+                description="Magic link sent successfully",
+                examples=[
+                    OpenApiExample(
+                        "Magic Link Sent",
+                        value={"message": "Magic link sent to your email"},
+                        response_only=True,
+                    )
+                ],
+            ),
+            400: OpenApiResponse(
+                description="Invalid email format or missing email",
+                examples=[
+                    OpenApiExample(
+                        "Validation Error",
+                        value={"email": ["Enter a valid email address."]},
+                        response_only=True,
+                    )
+                ],
+            ),
+            500: OpenApiResponse(
+                description="Email service is temporarily unavailable",
+                examples=[
+                    OpenApiExample(
+                        "Email Service Error",
+                        value={"error": "Failed to send magic link email"},
+                        response_only=True,
+                    )
+                ],
+            ),
+        },
+        tags=["Authentication"],
+    )
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+        username = email.split("@")[0]
+
+        # Get or create user if doesn't exist
+        user, created = User.objects.get_or_create(
+            email=email, defaults={"username": username}
+        )
+        token = MagicLinkToken.objects.create(
+            user=user, expires_at=timezone.now() + timedelta(minutes=15)
+        )
+        magic_link = f"{settings.FRONTEND_URL}/magic-link?token={token.token}"
+
+        # Send magic link email using Anymail
+        try:
+            send_mail(
+                "Your Magic Link",
+                f"Click this link to log in: {magic_link}",
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            return Response(
+                {"message": "Magic link sent to your email"}, status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            logger.error(f"Failed to send magic link email to {email}: {str(e)}")
+            return Response(
+                {"error": "Failed to send magic link email"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class MagicLinkVerifyAPIView(APIView):
+    """
+    API endpoint for verifying magic link tokens and authenticating users.
+
+    Validates the magic link token and returns JWT authentication tokens.
+    The token is single-use and gets invalidated after successful verification.
+    """
+
+    permission_classes = [AllowAny]
+    serializer_class = MagicLinkVerifySerializer
+
+    @extend_schema(
+        operation_id="magic_link_verify",
+        summary="Verify Magic Link Token",
+        description=(
+            "Verifies the magic link token received via email and returns JWT authentication tokens. "
+            "The token is validated for existence and expiration. Upon successful verification, "
+            "the token is immediately invalidated (single-use) and JWT tokens are generated for the user."
+        ),
+        request=MagicLinkVerifySerializer,
+        examples=[
+            OpenApiExample(
+                "Magic Link Verification Request",
+                summary="Verify magic link token",
+                description="Submit the token received via magic link email",
+                value={"token": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"},
+                request_only=True,
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=MagicLinkVerifySuccessResponseSerializer,
+                description="Token verified and JWT tokens generated",
+                examples=[
+                    OpenApiExample(
+                        "Authentication Success",
+                        value={
+                            "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTcwNjg5ODA2MSwidXNlcl9pZCI6MX0.abc123def456",
+                            "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzA2ODExNjYxLCJ1c2VyX2lkIjoxfQ.xyz789uvw456",
+                            "user": {
+                                "id": "1",
+                                "email": "john.doe@example.com",
+                                "username": "john.doe",
+                                "fullname": "John Doe",
+                            },
+                        },
+                        response_only=True,
+                    )
+                ],
+            ),
+            400: OpenApiResponse(
+                description="Invalid, expired or malformed token",
+                examples=[
+                    OpenApiExample(
+                        "Invalid Token",
+                        value={"detail": "Invalid or expired magic link."},
+                        response_only=True,
+                    )
+                ],
+            ),
+        },
+        tags=["Authentication"],
+    )
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        token = serializer.validated_data["token"]
+
+        try:
+            link_token = MagicLinkToken.objects.get(
+                token=token, expires_at__gt=timezone.now()
+            )
+            user = link_token.user
+            link_token.delete()  # Invalidate the used token
+
+            refresh = RefreshToken.for_user(user)
+
+            return Response(
+                {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "user": {
+                        "id": str(user.pk),
+                        "email": user.email,
+                        "username": user.username,
+                        "fullname": user.fullname,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except MagicLinkToken.DoesNotExist:
+            logger.warning(f"Invalid or expired magic link token attempted: {token}")
+            return Response(
+                {"detail": "Invalid or expired magic link."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )

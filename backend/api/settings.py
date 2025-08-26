@@ -1,11 +1,11 @@
 from os import environ
 from pathlib import Path
 
+import dj_database_url
 from django.core.management.utils import get_random_secret_key
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from dotenv import load_dotenv
-import dj_database_url
 
 ######################################################################
 # General
@@ -94,21 +94,25 @@ APPEND_SLASH = False
 ######################################################################
 # Apps
 ######################################################################
-INSTALLED_APPS = [
+THIRD_PARTY_APPS = [
     "unfold",
+    "anymail",
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "drf_spectacular",
+    "corsheaders",
+]
+
+INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "rest_framework",
-    "rest_framework_simplejwt",
-    "drf_spectacular",
-    "corsheaders",
     "api",
     "users",
-]
+] + THIRD_PARTY_APPS
 
 ######################################################################
 # Middleware
@@ -235,6 +239,16 @@ REST_FRAMEWORK = {
     ],
 }
 
+
+EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
+DEFAULT_FROM_EMAIL = environ.get("DEFAULT_FROM_EMAIL")
+
+
+ANYMAIL = {
+    "BREVO_API_KEY": environ.get("BREVO_API_KEY"),
+}
+
+FRONTEND_URL = environ.get("FRONTEND_URL", "http://localhost:3000/")
 ######################################################################
 # Unfold
 ######################################################################
