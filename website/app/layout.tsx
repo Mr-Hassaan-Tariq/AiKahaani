@@ -25,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <img src="/svg/top-left-gid.svg" alt="grid" className="absolute left-0 top-0" />
         {/* Navbar outside container for mobile */}
 
-        <div className="block rounded-b-3xl border-b-4 border-b-gray-800 px-8 py-4 md:hidden">
+        <div className="block rounded-b-3xl border-b-2 border-b-green-800 px-8 py-4 md:hidden">
           <NavSection />
         </div>
 

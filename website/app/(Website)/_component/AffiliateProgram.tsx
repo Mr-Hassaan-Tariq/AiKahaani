@@ -9,7 +9,7 @@ export default function AffiliateProgram({ id }: { id?: string }) {
   return (
     <section
       id={id}
-      className="container relative mx-auto overflow-hidden bg-black px-8 pt-20 text-center text-white md:px-12 lg:pt-40"
+      className="container relative mx-auto overflow-hidden bg-black px-4 pt-20 text-center text-white md:px-12 lg:pt-40"
     >
       <Col
         className="relative w-full gap-6 overflow-hidden rounded-[32px] border border-brand-green/[32%] bg-brand-black lg:flex-row lg:items-center lg:justify-between"
@@ -55,7 +55,7 @@ export default function AffiliateProgram({ id }: { id?: string }) {
           src="/images/affiliate-program.jpg"
           width={500}
           height={500}
-          className="h-[408px] w-full rounded-t-[32px] bg-white object-cover lg:rounded-r-[32px] lg:rounded-t-none"
+          className="/* mobile: no top radius */ /* apply top radius only from sm+ */ h-[408px] w-full rounded-t-none bg-white object-cover sm:rounded-t-[32px] lg:rounded-r-[32px] lg:rounded-t-none"
         />
       </Col>
     </section>

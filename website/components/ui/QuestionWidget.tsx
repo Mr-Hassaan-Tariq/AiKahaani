@@ -19,7 +19,7 @@ export default function QuestionWidget({ id }: { id?: string }) {
     <div id={id} className="relative">
       <img src="/svg/top-right-gid.svg" alt="grid" className="absolute right-0 top-0" />
 
-      <Col className="container relative mx-auto gap-16 bg-black px-8 font-figtree md:px-12 lg:pt-20">
+      <Col className="container relative mx-auto gap-16 bg-black px-4 font-figtree md:px-12 lg:pt-20">
         {/* heading */}
         <Col className="gap-4">
           <div className="mx-auto max-w-xl text-center">
@@ -55,7 +55,7 @@ export function AccordionWidget() {
           className={cn(
             'overflow-hidden rounded-[32px] border border-brand-green/10 bg-brand-black p-4 lg:p-8',
             openItem === question.id.toString() &&
-              'bg-gradient-to-r from-transparent via-brand-green/[0.02] to-brand-green/[0.02]'
+              'border-brand-green/30 bg-gradient-to-br from-transparent to-brand-green/5'
           )}
         >
           <AccordionTrigger

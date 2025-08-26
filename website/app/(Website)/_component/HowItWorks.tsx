@@ -20,7 +20,7 @@ export default function HowItWorks({ id }: { id?: string }) {
         className="container mx-auto px-8 pb-20 pt-20 text-center text-white md:px-12 lg:pt-40"
       >
         {/* Heading */}
-        <Col className="z-10 mb-16 gap-4">
+        <Col className="z-10 mb-16 mt-20 gap-4">
           <div className="mx-auto max-w-xl text-center">
             <Text variant="5xl" className="text-white">
               How it works

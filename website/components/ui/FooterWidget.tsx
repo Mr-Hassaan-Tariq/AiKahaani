@@ -13,7 +13,7 @@ export default function FooterWidget() {
         backgroundPosition: '50% 0%',
         height: 'fit-content',
       }}
-      className="relative gap-8 bg-black pb-6 pt-20 font-figtree lg:gap-16 lg:pt-40"
+      className="relative mt-20 gap-8 bg-black pb-20 pt-20 font-figtree lg:gap-16 lg:pt-40"
     >
       {/* <Image
         src="/images/grid.svg"
@@ -23,7 +23,7 @@ export default function FooterWidget() {
         className="absolute left-0 top-0"
       /> */}
 
-      <div className="absolute left-0 top-0 h-full w-full overflow-hidden">
+      <div className="absolute left-0 h-full w-full overflow-hidden" style={{ top: '-250px' }}>
         <img
           src="/svg/top-left-gid.svg"
           alt="grid"
@@ -31,12 +31,13 @@ export default function FooterWidget() {
           style={{ objectPosition: 'top' }}
         />
       </div>
+
       {/* heading */}
 
       {/* <img src="/svg/bottom-circle.svg" alt="grid" className="bottom-circle-img rotate-180" /> */}
-      <Row className="z-10 justify-center gap-3 lg:gap-7">
+      <Row className="z-10 mt-7 justify-center gap-3 lg:gap-7">
         {logo}
-        <Text className="text-3xl text-white lg:text-5xl">TubeGenius</Text>
+        <Text className="text-3xl font-bold text-white lg:text-5xl">TubeGenius</Text>
       </Row>
 
       <Row className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap sm:gap-6 md:gap-9">

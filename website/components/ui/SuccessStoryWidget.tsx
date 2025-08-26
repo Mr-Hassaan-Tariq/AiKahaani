@@ -23,12 +23,15 @@ export default function SuccessStoryWidget({ id }: { id?: string }) {
 
         {/* heading */}
         <Col className="gap-4">
-          <div className="mx-auto max-w-xl text-center">
-            <Text className="text-2xl text-white md:text-3xl lg:text-5xl">
+          <div className="mx-auto max-w-xl text-center md:px-6 lg:px-0">
+            <Text className="text-2xl font-bold text-white md:text-4xl lg:text-5xl">
               Success stories powered by TubeGenius
             </Text>
           </div>
-          <Text variant="lg" className="mx-auto max-w-2xl text-center text-[#AAACA6]">
+          <Text
+            variant="lg"
+            className="mx-auto max-w-2xl text-center text-[#AAACA6] md:px-6 lg:px-0"
+          >
             See how real creators turn ideas into videos — and what they say about the process.
           </Text>
         </Col>

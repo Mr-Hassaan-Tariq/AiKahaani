@@ -19,9 +19,9 @@ export default function SuccessStoryCard({ story, isActive }: SuccessStoryCardPr
   return (
     <div
       className={cn(
-        'relative h-auto w-full transform overflow-hidden rounded-3xl border border-brand-green/10 bg-brand-black p-4 transition-all duration-500 lg:h-[500px] lg:p-8',
+        'relative mx-4 h-auto w-full transform overflow-hidden rounded-3xl border border-brand-green/10 bg-brand-black p-4 transition-all duration-500 md:p-12 lg:h-[500px] lg:p-8',
         isActive &&
-          'border-brand-green/30 bg-gradient-to-br from-transparent to-brand-green/5 md:scale-105 lg:scale-110'
+          'border-brand-green/30 bg-gradient-to-br from-transparent to-brand-green/5 md:scale-105 lg:scale-110 lg:p-8'
       )}
       style={{
         transition: 'all 500ms ease-in-out',
