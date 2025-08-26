@@ -20,7 +20,6 @@ class SignupView(APIView):
     permission_classes = [AllowAny]
     serializer_class = UserSignupSerializer
 
-
     def post(self, request):
         serializer = UserSignupSerializer(data=request.data)
         if serializer.is_valid():
@@ -31,8 +30,6 @@ class SignupView(APIView):
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 
 class GoogleLoginAPIView(APIView):
@@ -63,7 +60,6 @@ class GoogleLoginAPIView(APIView):
     permission_classes = [AllowAny]
     serializer_class = GoogleAuthInputSerializer
 
-
     def post(self, request):
         """
         Authenticates the user using a Google ID token or authorization code.
@@ -77,7 +73,9 @@ class GoogleLoginAPIView(APIView):
 
         if not CLIENT_ID or not CLIENT_SECRET:
             return Response(
-                {"detail": "Authentication service temporarily unavailable"},
+                {
+                    "detail": "Authentication service temporarily unavailable(MAY BE MISSED CREDENTIALS?)"
+                },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
@@ -89,14 +87,19 @@ class GoogleLoginAPIView(APIView):
             else:
                 logger.info("Processing Google ID token")
                 id_token = token
-                
+
             idinfo = self.verify_id_token(id_token)
 
             if not idinfo.get("email_verified", False):
-                logger.warning(f"Email not verified for user: {idinfo.get('email', 'unknown')}")
-                return Response({"detail": "Email not verified by Google."}, status=status.HTTP_400_BAD_REQUEST)
+                logger.warning(
+                    f"Email not verified for user: {idinfo.get('email', 'unknown')}"
+                )
+                return Response(
+                    {"detail": "Email not verified by Google."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-            user = self.get_or_create_user(idinfo)
+            user, created = self.get_or_create_user(idinfo)
             refresh = RefreshToken.for_user(user)
 
             data = {
@@ -113,20 +116,15 @@ class GoogleLoginAPIView(APIView):
             logger.info(f"Successful Google authentication for user: {user.email}")
             return Response(data, status=status.HTTP_200_OK)
 
-        except requests.RequestException:
+        except requests.RequestException as e:
             return Response(
-                {"detail": "Authentication service temporarily unavailable"},
+                {"detail": f"Authentication service temporarily unavailable: {e}"},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         except ValueError:
             return Response(
                 {"detail": "Invalid authentication credentials"},
                 status=status.HTTP_401_UNAUTHORIZED,
-            )
-        except Exception:
-            return Response(
-                {"detail": "Authentication service temporarily unavailable"},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
     def exchange_authorization_code(self, auth_code):
@@ -139,24 +137,27 @@ class GoogleLoginAPIView(APIView):
             "client_secret": settings.GOOGLE_OAUTH2_CLIENT_SECRET,
             "code": auth_code,
             "grant_type": "authorization_code",
-            "redirect_uri": settings.GOOGLE_OAUTH2_REDIRECT_URI,
+            "redirect_uri": "http://localhost:3000/",  # TODO: CHANGE THIS TO THE PRODUCTION/STAGING URL
         }
-        
+
         try:
             response = requests.post(token_url, data=token_data, timeout=30)
             response.raise_for_status()
             token_info = response.json()
-            
+
             if "id_token" not in token_info:
                 logger.error("No ID token received from Google OAuth exchange")
                 raise ValueError("No ID token received from Google")
-                
+
             logger.info("Successfully exchanged authorization code for ID token")
             return token_info.get("id_token")
-            
+
         except requests.RequestException as e:
             logger.error(f"Failed to exchange authorization code: {str(e)}")
-            raise
+            if hasattr(e, "response") and e.response is not None:
+                logger.error(f"Response status: {e.response.status_code}")
+                logger.error(f"Response body: {e.response.text}")
+            raise e
 
     def verify_id_token(self, id_token):
         """
@@ -166,7 +167,9 @@ class GoogleLoginAPIView(APIView):
             user_info = google_id_token.verify_oauth2_token(
                 id_token, google_requests.Request(), settings.GOOGLE_OAUTH2_CLIENT_ID
             )
-            logger.info(f"Successfully verified Google ID token for user: {user_info.get('email', 'unknown')}")
+            logger.info(
+                f"Successfully verified Google ID token for user: {user_info.get('email', 'unknown')}"
+            )
             return user_info
         except Exception as e:
             logger.error(f"Failed to verify Google ID token: {str(e)}")
@@ -178,14 +181,18 @@ class GoogleLoginAPIView(APIView):
         """
         email = idinfo["email"]
         defaults = {
-            "fullname": f"{idinfo.get('given_name', '')} {idinfo.get('family_name', '')}".strip()[:150]
+            "fullname": f"{idinfo.get('given_name', '')} {idinfo.get('family_name', '')}".strip()[
+                :150
+            ]
         }
-        
-        user, created = User.objects.get_or_create(email=email, defaults=defaults)
-        
+
+        user, created = User.objects.get_or_create(
+            email=email, username=email.strip("@")[0], defaults=defaults
+        )
+
         if created:
             logger.info(f"Created new user: {email}")
         else:
             logger.info(f"Retrieved existing user: {email}")
-            
-        return user
+
+        return user, created
