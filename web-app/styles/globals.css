@@ -3,6 +3,26 @@
 @tailwind utilities;
 
 @layer utilities {
+  .scrollbar::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .scrollbar::-webkit-scrollbar-track {
+    border-radius: 100vh;
+    background: transparent;
+    margin-top: 5px;
+    margin-bottom: 10px;
+  }
+
+  .scrollbar::-webkit-scrollbar-thumb {
+    background: #c7cfd1;
+    border-radius: 20px;
+  }
+
+  .no-scroll::-webkit-scrollbar {
+    width: 0px;
+  }
+
   @keyframes slideDown {
     from {
       opacity: 0;
