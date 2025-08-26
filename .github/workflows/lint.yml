@@ -48,6 +48,37 @@ jobs:
           cd web-app
           pnpm install
 
+      - name: Check for .env file
+        run: |
+          cd web-app
+          if [ ! -f .env ]; then
+            echo "❌ .env file not found in web-app directory"
+            echo "Creating .env from .env.example if it exists..."
+            if [ -f .env.example ]; then
+              cp .env.example .env
+              echo "✅ Created .env from .env.example"
+            else
+              echo "❌ No .env.example file found either"
+              echo "Please ensure environment variables are properly configured"
+              exit 1
+            fi
+          else
+            echo "✅ .env file found"
+          fi
+
+      - name: Validate environment variables
+        run: |
+          cd web-app
+          # Check if .env file has content
+          if [ -f .env ] && [ -s .env ]; then
+            echo "✅ .env file exists and has content"
+            echo "Environment variables found:"
+            # Show variable names only (not values for security)
+            grep -E '^[A-Z_]+=' .env | cut -d'=' -f1 | sort || echo "No environment variables found in .env"
+          else
+            echo "⚠️  .env file is empty or missing"
+          fi
+
       - name: Run TypeScript check
         run: |
           cd web-app
@@ -100,6 +131,37 @@ jobs:
         run: |
           cd website
           pnpm install
+
+      - name: Check for .env file
+        run: |
+          cd website
+          if [ ! -f .env ]; then
+            echo "❌ .env file not found in website directory"
+            echo "Creating .env from .env.example if it exists..."
+            if [ -f .env.example ]; then
+              cp .env.example .env
+              echo "✅ Created .env from .env.example"
+            else
+              echo "❌ No .env.example file found either"
+              echo "Please ensure environment variables are properly configured"
+              exit 1
+            fi
+          else
+            echo "✅ .env file found"
+          fi
+
+      - name: Validate environment variables
+        run: |
+          cd website
+          # Check if .env file has content
+          if [ -f .env ] && [ -s .env ]; then
+            echo "✅ .env file exists and has content"
+            echo "Environment variables found:"
+            # Show variable names only (not values for security)
+            grep -E '^[A-Z_]+=' .env | cut -d'=' -f1 | sort || echo "No environment variables found in .env"
+          else
+            echo "⚠️  .env file is empty or missing"
+          fi
 
       - name: Run TypeScript check
         run: |
