@@ -56,6 +56,7 @@ const WhatsInside = ({ id, page = 'home' }: { id?: string; page?: 'home' | 'part
             }
       }
     >
+      {/* <img src="/svg/bottom-circle.svg" alt="grid" className="bottom-circle-img" />{' '} */}
       {page == 'home' && (
         <img src="/svg/top-left-gid.svg" alt="grid" className="absolute left-0 top-0" />
       )}
@@ -73,7 +74,7 @@ const WhatsInside = ({ id, page = 'home' }: { id?: string; page?: 'home' | 'part
             items={[
               <div
                 key="1"
-                className="col-span-12 h-auto rounded-2xl border border-[#BAFF381F] bg-gradient-to-br from-[#161616] via-[#161616] to-[#BAFF38]/[0.06] p-8 shadow-lg md:col-span-7"
+                className="col-span-12 h-auto rounded-2xl border border-[#BAFF381F] bg-gradient-to-br from-[#161616] via-[#161616] to-[#BAFF38]/[0.06] px-4 py-8 shadow-lg md:col-span-7"
               >
                 <div>
                   {/* <h2 className="mb-4 text-lg font-semibold text-gray-300">
@@ -552,7 +553,6 @@ const WhatsInside = ({ id, page = 'home' }: { id?: string; page?: 'home' | 'part
           </div>
         </div>
       </section>
-
       {/* {page == 'home' && (
         <img src="/svg/bottom-circle.svg" alt="grid" className="bottom-circle-img rotate-180" />
       )} */}

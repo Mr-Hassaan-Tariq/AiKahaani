@@ -7,9 +7,9 @@ import Text from 'components/ui/Text';
 export default function UnlockTubeGenius() {
   return (
     <div className="relative">
-      <section className="container relative mx-auto gap-16 bg-black px-8 font-figtree text-white md:px-12 lg:pt-20">
+      <section className="container relative mx-auto gap-16 bg-black px-4 py-12 font-figtree text-white md:px-12 lg:pt-20">
         <Row
-          className="relative w-full items-center justify-center rounded-[32px] border border-brand-green/[32%] bg-brand-black lg:h-[408px]"
+          className="relative w-full items-center justify-center rounded-[32px] border border-brand-green/[32%] bg-brand-black p-8 lg:h-[408px]"
           style={{
             backgroundImage: `
         linear-gradient(to right, rgba(43, 255, 19, 0.02), transparent),

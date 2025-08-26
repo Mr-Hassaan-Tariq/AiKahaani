@@ -29,7 +29,7 @@ const features = [
 
 const CreatorsCard: FC<{ id: string }> = ({ id }) => {
   return (
-    <div className="rotated-bgs relative pb-72">
+    <div className="rotated-bgs relative mt-20">
       <section id={id} className="container mx-auto px-6 px-8 pb-20 text-white md:px-12 lg:pb-40">
         <div className="mx-auto flex max-w-6xl flex-col items-center text-center">
           {/* Heading */}
