@@ -7,6 +7,7 @@ import {
   SignupRequest,
   SignupResponse,
   User,
+  VerifiedUser,
 } from './types';
 
 export class AuthService {
@@ -33,6 +34,57 @@ export class AuthService {
       throw {
         status: apiError.status,
       };
+    }
+  }
+
+  /**
+   * Send a magic link to the provided email
+   * @param email - User email
+   * @returns Promise with API response
+   */
+  async sendMagicLink(email: string): Promise<{ message: string }> {
+    try {
+      const response = await this.apiClient.post<{ message: string }>('/auth/magic-link/', {
+        email,
+      });
+
+      if (!response.data) {
+        throw new Error('No data received from magic link request');
+      }
+
+      return response.data;
+    } catch (error) {
+      const apiError = error as { data: ApiError; status: number };
+      throw {
+        status: apiError.status,
+      };
+    }
+  }
+
+  /**
+   * Verify magic link token
+   * @param token - Magic link token
+   */
+  async verifyMagicLink(
+    token: string,
+  ): Promise<{ success: boolean; message?: string; user: VerifiedUser | null; access?: string }> {
+    try {
+      const response = await this.apiClient.post<{
+        success: boolean;
+        message?: string;
+        user: VerifiedUser | null;
+      }>('/auth/magic-link/verify/', { token });
+
+      // Ensure we always return user
+      return (
+        response.data ?? {
+          success: false,
+          message: 'Verification failed',
+          user: null,
+        }
+      );
+    } catch {
+      return { success: false, message: 'Verification failed', user: null };
     }
   }
 

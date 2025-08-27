@@ -54,7 +54,7 @@ export default function GoogleAuthComponent() {
       ) : (
         <>
           <FcGoogle className="text-xl" />
-          <span>Continue with Google</span>
+          <span className="font-bold">Continue with Google</span>
         </>
       )}
     </button>

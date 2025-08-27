@@ -8,6 +8,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { env } from 'env.mjs';
 import * as yup from 'yup';
 
+import { authService } from 'lib/api';
 import Button from 'components/common/Button';
 import TextField from 'components/common/TextField';
 
@@ -43,7 +44,6 @@ export default function Signup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    router.push('/magic-link');
     // Reset errors
     setErrors({});
     setIsLoading(true);
@@ -52,8 +52,11 @@ export default function Signup() {
       // Validate form data
       await signupSchema.validate(formData, { abortEarly: false });
 
-      // Simulate API call - replace with actual magic link API
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await authService.sendMagicLink(formData.email);
+
+      if (response.message === 'Magic link sent to your email') {
+        router.push(`/magic-link?email=${encodeURIComponent(formData.email)}`);
+      }
     } catch (validationError) {
       if (validationError instanceof yup.ValidationError) {
         // Convert Yup errors to our format
@@ -76,17 +79,15 @@ export default function Signup() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-3">
       {/* Background grid effect */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#1a2e1d,transparent_40%)] opacity-50" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,#1a2e1d,transparent_40%)] opacity-50" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#1a2e1d,transparent_40%)] opacity-100" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,#1a2e1d,transparent_40%)] opacity-100" />
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-xl rounded-2xl bg-[#161616] p-8 shadow-lg">
+      <div className="relative z-10 w-full max-w-xl rounded-2xl border border-[#BAFF381F] bg-[#161616] p-8 shadow-lg">
         {/* Heading */}
-        <h1 className="text-center text-3xl font-semibold text-white">
-          Let&apos;s get you creating
-        </h1>
-        <p className="mt-1 text-center text-sm text-gray-400">
-          Sign in or create an account in seconds — no password needed.
+        <h1 className="text-center text-4xl font-bold text-white">Let&apos;s get you creating</h1>
+        <p className="mt-2 text-center text-lg text-gray-400">
+          Sign in or create an account in seconds <br></br> — no password needed.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6">
@@ -96,7 +97,7 @@ export default function Signup() {
               label="Email"
               placeholder="Enter your email"
               type="email"
-              className={`w-full rounded-lg border ${
+              className={`w-full rounded-xl border ${
                 errors.email ? 'border-red-500' : 'border-transparent'
               } bg-[#2d2d2d] px-4 py-3 text-white placeholder-[#aaaca6] outline-none focus:border-green-500`}
               value={formData.email}
@@ -108,7 +109,7 @@ export default function Signup() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="mt-4 flex items-center justify-center space-x-2"
+            className="mt-10 flex items-center justify-center space-x-2"
           >
             {isLoading ? (
               <>
@@ -118,14 +119,14 @@ export default function Signup() {
             ) : (
               <>
                 <Image src="/images/maginpan.svg" alt="maginpan" width={20} height={20} />
-                <span>Send me the magic link</span>
+                <span className="font-bold"> Send me the magic link</span>
               </>
             )}
           </Button>
         </form>
 
         {/* Divider */}
-        <div className="my-4 flex items-center">
+        <div className="my-6 flex items-center">
           <div className="h-px flex-grow bg-gray-700"></div>
           <span className="px-2 text-sm text-gray-500">or</span>
           <div className="h-px flex-grow bg-gray-700"></div>

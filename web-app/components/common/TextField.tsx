@@ -26,7 +26,7 @@ export default function TextField(props: TextFieldProps) {
         placeholder={placeholder}
         value={value}
         onChange={handleChange}
-        className="w-full rounded-lg border border-transparent bg-[#2d2d2d] px-4 py-3 text-white placeholder-[#aaaca6] outline-none focus:border-green-500"
+        className="w-full rounded-xl border border-transparent bg-[#2d2d2d] px-4 py-3 text-white placeholder-[#aaaca6] outline-none focus:border-green-500"
       />
     </div>
   );

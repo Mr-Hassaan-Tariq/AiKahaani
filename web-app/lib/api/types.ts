@@ -74,3 +74,10 @@ export interface ApiClientConfig {
   timeout?: number;
   headers?: Record<string, string>;
 }
+
+export interface VerifiedUser {
+  id: string;
+  email: string;
+  username: string;
+  fullname: string;
+}
