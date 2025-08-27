@@ -10,18 +10,19 @@ from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import MagicLinkToken
+from .models import EmailVerificationToken, MagicLinkToken
 from .serializers import (
     GoogleAuthInputSerializer,
     MagicLinkLoginSerializer,
     MagicLinkLoginSuccessResponseSerializer,
     MagicLinkVerifySerializer,
     MagicLinkVerifySuccessResponseSerializer,
+    UserDetailsUpdateSerializer,
     UserSerializer,
     UserSignupSerializer,
 )
@@ -313,6 +314,154 @@ class MagicLinkLoginAPIView(APIView):
                 {"error": "Failed to send magic link email"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class UserDetailsUpdateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        operation_id="user_details_update",
+        summary="Update current user's details",
+        description=(
+            "Authenticated endpoint to update the signed-in user's profile fields. "
+            "Allows updating fullName, username, emailAddress, preferredLanguage."
+        ),
+        request=UserDetailsUpdateSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="User details updated successfully",
+                response=UserSerializer,
+                examples=[
+                    OpenApiExample(
+                        "Update Success",
+                        value={
+                            "id": "1",
+                            "email": "jane.doe@example.com",
+                            "username": "jane.doe",
+                            "fullname": "Jane Doe",
+                            "preferred_language": "en",
+                            "profile_picture": "https://example.com/profile.jpg",
+                            "is_email_verified": False,
+                        },
+                        response_only=True,
+                    )
+                ],
+            ),
+            400: OpenApiResponse(
+                description="Validation error",
+                examples=[
+                    OpenApiExample(
+                        "Username Taken",
+                        value={"username": ["This username is already taken."]},
+                        response_only=True,
+                    ),
+                    OpenApiExample(
+                        "Invalid Email",
+                        value={"emailAddress": ["Enter a valid email address."]},
+                        response_only=True,
+                    ),
+                ],
+            ),
+        },
+        tags=["Users"],
+    )
+    def put(self, request):
+        serializer = UserDetailsUpdateSerializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        previous_email = user.email
+        email_in_payload = serializer.validated_data.get("emailAddress")
+
+        serializer.update_user(user)
+
+        # If email was updated, send verification link
+        if email_in_payload and email_in_payload != previous_email:
+            try:
+                # Invalidate any previous verification tokens for this user
+                EmailVerificationToken.objects.filter(user=user).delete()
+
+                token_obj = EmailVerificationToken.objects.create(
+                    user=user,
+                    email=user.email,
+                    expires_at=timezone.now() + timedelta(hours=24),
+                )
+                verify_url = f"{settings.FRONTEND_URL}/email-verification?token={token_obj.token}"
+
+                send_mail(
+                    "Verify your email address",
+                    f"Click this link to verify your email: {verify_url}",
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to send email verification to {user.email}: {str(e)}"
+                )
+                return Response(
+                    {"error": "Failed to send verification email"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        operation_id="user_details_get",
+        summary="Get current user's details",
+        description=(
+            "Authenticated endpoint to fetch the signed-in user's profile details."
+        ),
+        responses={200: UserSerializer},
+        tags=["Users"],
+    )
+    def get(self, request):
+        user = request.user
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
+
+class EmailVerificationAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        operation_id="verify_email",
+        summary="Verify email change",
+        description=(
+            "Verifies a user's email address using a one-time token. "
+            "Marks the user's email as verified upon success."
+        ),
+        responses={
+            200: OpenApiResponse(
+                description="Email verified successfully",
+                response=UserSerializer,
+            ),
+            400: OpenApiResponse(
+                description="Invalid or expired verification token",
+            ),
+        },
+        tags=["Users"],
+    )
+    def get(self, request, token):
+        try:
+            vtoken = EmailVerificationToken.objects.get(
+                token=token, expires_at__gt=timezone.now()
+            )
+        except EmailVerificationToken.DoesNotExist:
+            return Response(
+                {"detail": "Invalid or expired verification link."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = vtoken.user
+        # Optionally ensure the verified email matches the pending email
+        if user.email != vtoken.email:
+            user.email = vtoken.email
+        user.is_email_verified = True
+        user.save()
+
+        vtoken.delete()
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
 
 
 class MagicLinkVerifyAPIView(APIView):

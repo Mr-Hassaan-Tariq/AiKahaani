@@ -2,6 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
+from .choices import LanguageChoices
 from .models import User
 
 
@@ -42,8 +43,16 @@ class UserSignupSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "email", "username", "fullname", "date_joined", "is_active")
-        read_only_fields = ("id", "date_joined", "is_active")
+        fields = (
+            "id",
+            "email",
+            "username",
+            "fullname",
+            "preferred_language",
+            "profile_picture",
+            "is_email_verified",
+        )
+        read_only_fields = ("id",)
 
 
 class GoogleAuthInputSerializer(serializers.Serializer):
@@ -67,6 +76,45 @@ class MagicLinkVerifySerializer(serializers.Serializer):
             return value
         except ValueError as e:
             raise serializers.ValidationError("Invalid token format.") from e
+
+
+class UserDetailsUpdateSerializer(serializers.Serializer):
+    fullName = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    username = serializers.CharField(required=False, max_length=150)
+    emailAddress = serializers.EmailField(required=False)
+    preferredLanguage = serializers.ChoiceField(
+        required=False, choices=[choice.value for choice in LanguageChoices]
+    )
+
+    def validate_username(self, value):
+        user = self.context["request"].user
+        if (
+            value
+            and User.objects.exclude(pk=user.pk).filter(username__iexact=value).exists()
+        ):
+            raise serializers.ValidationError("This username is already taken.")
+        return value
+
+    def validate_emailAddress(self, value):
+        user = self.context["request"].user
+        if (
+            value
+            and User.objects.exclude(pk=user.pk).filter(email__iexact=value).exists()
+        ):
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value
+
+    def update_user(self, user):
+        data = self.validated_data
+        if "fullName" in data:
+            user.fullname = data["fullName"].strip()
+        if "username" in data:
+            user.username = data["username"].strip()
+        if "preferredLanguage" in data:
+            user.preferred_language = data["preferredLanguage"]
+
+        user.save()
+        return user
 
 
 # ---------------------------------------------------------------------------

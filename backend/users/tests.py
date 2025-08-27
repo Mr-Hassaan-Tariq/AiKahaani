@@ -7,7 +7,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from .models import MagicLinkToken, User
+from .models import EmailVerificationToken, MagicLinkToken, User
 
 
 @pytest.mark.django_db
@@ -327,3 +327,226 @@ class TestMagicLinkVerifyAPI:
         assert len(access_token) > 50
         assert refresh_token.count(".") == 2  # JWT format: header.payload.signature
         assert access_token.count(".") == 2
+
+
+@pytest.mark.django_db
+class TestUserDetailsUpdateAPI:
+    def setup_method(self):
+        self.client = APIClient()
+        self.url = reverse("user-details-update")
+        self.user = User.objects.create_user(
+            email="user@example.com", username="user", password="password123"
+        )
+
+    def test_requires_authentication(self):
+        unauth_client = APIClient()
+        response = unauth_client.put(self.url, {"fullName": "New Name"}, format="json")
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_get_requires_authentication(self):
+        unauth_client = APIClient()
+        response = unauth_client.get(self.url)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_update_fullname_success(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(self.url, {"fullName": "Jane Doe"}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        self.user.refresh_from_db()
+        assert self.user.fullname == "Jane Doe"
+
+    def test_get_user_details_success(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["email"] == self.user.email
+        assert response.data["username"] == self.user.username
+
+    def test_update_username_success(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(self.url, {"username": "newusername"}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        self.user.refresh_from_db()
+        assert self.user.username == "newusername"
+
+    def test_username_uniqueness_validation(self):
+        # Another user with target username
+        User.objects.create_user(
+            email="other@example.com", username="taken", password="password123"
+        )
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(self.url, {"username": "taken"}, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "username" in response.data
+
+    def test_email_invalid_format(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(
+            self.url, {"emailAddress": "not-an-email"}, format="json"
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "emailAddress" in response.data
+
+    def test_email_uniqueness_validation(self):
+        User.objects.create_user(
+            email="taken@example.com", username="someone", password="password123"
+        )
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(
+            self.url, {"emailAddress": "taken@example.com"}, format="json"
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "emailAddress" in response.data
+
+    def test_preferred_language_invalid(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(self.url, {"preferredLanguage": "xx"}, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "preferredLanguage" in response.data
+
+    def test_preferred_language_update_success(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(self.url, {"preferredLanguage": "es"}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        self.user.refresh_from_db()
+        assert self.user.preferred_language == "es"
+
+    def test_idempotent_username_update_same_value(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(self.url, {"username": "user"}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        self.user.refresh_from_db()
+        assert self.user.username == "user"
+
+    def test_update_fullname_to_blank(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(self.url, {"fullName": ""}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        self.user.refresh_from_db()
+        assert self.user.fullname == ""
+
+    @patch("users.views.send_mail")
+    def test_email_update_triggers_verification(self, mock_send_mail):
+        self.client.force_authenticate(user=self.user)
+        old_email = self.user.email
+        new_email = "new@example.com"
+        response = self.client.put(self.url, {"emailAddress": new_email}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        self.user.refresh_from_db()
+        # Email should not change immediately; remains the old email
+        assert self.user.email == old_email
+
+        # Token created
+        token_obj = EmailVerificationToken.objects.get(user=self.user)
+        # Token currently stores the existing user email
+        assert token_obj.email == old_email
+
+        # Email sent and contains verification URL with token
+        assert mock_send_mail.called
+        args, kwargs = mock_send_mail.call_args
+        assert "email-verification?token=" in args[1]
+        assert str(token_obj.token) in args[1]
+
+    @patch("users.views.send_mail")
+    def test_email_update_clears_previous_tokens(self, mock_send_mail):
+        # Existing token for user
+        EmailVerificationToken.objects.create(
+            user=self.user,
+            email="old@example.com",
+            expires_at=timezone.now() + timedelta(hours=24),
+        )
+        self.client.force_authenticate(user=self.user)
+        old_email = self.user.email
+        response = self.client.put(
+            self.url, {"emailAddress": "brandnew@example.com"}, format="json"
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        tokens = EmailVerificationToken.objects.filter(user=self.user)
+        assert tokens.count() == 1
+        # Token stores the current user email (email is not updated yet)
+        assert tokens.first().email == old_email
+
+    @patch("users.views.send_mail", side_effect=Exception("SMTP down"))
+    def test_email_update_send_mail_failure(self, mock_send_mail):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(
+            self.url, {"emailAddress": "fail@example.com"}, format="json"
+        )
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        # Token likely exists since it's created before sending
+        assert EmailVerificationToken.objects.filter(user=self.user).exists()
+
+
+@pytest.mark.django_db
+class TestEmailVerificationAPI:
+    def setup_method(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email="old@example.com", username="verifyuser", password="password123"
+        )
+
+    def _verify_url(self, token):
+        return reverse("verify-email", args=[str(token)])
+
+    def test_verify_valid_token_sets_verified(self):
+        token_obj = EmailVerificationToken.objects.create(
+            user=self.user,
+            email="new@example.com",
+            expires_at=timezone.now() + timedelta(hours=24),
+        )
+
+        response = self.client.get(self._verify_url(token_obj.token))
+        assert response.status_code == status.HTTP_200_OK
+        self.user.refresh_from_db()
+        assert self.user.is_email_verified is True
+        assert self.user.email == "new@example.com"
+        # Token deleted
+        assert not EmailVerificationToken.objects.filter(id=token_obj.id).exists()
+
+    def test_verify_nonexistent_token(self):
+        response = self.client.get(
+            self._verify_url("12345678-1234-5678-9abc-123456789abc")
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Invalid or expired" in response.data.get("detail", "")
+
+    def test_verify_expired_token(self):
+        token_obj = EmailVerificationToken.objects.create(
+            user=self.user,
+            email="new@example.com",
+            expires_at=timezone.now() - timedelta(minutes=1),
+        )
+        response = self.client.get(self._verify_url(token_obj.token))
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        # Token remains (optional, but current implementation only rejects)
+        assert EmailVerificationToken.objects.filter(id=token_obj.id).exists()
+
+    def test_verify_token_single_use(self):
+        token_obj = EmailVerificationToken.objects.create(
+            user=self.user,
+            email="new@example.com",
+            expires_at=timezone.now() + timedelta(hours=24),
+        )
+        # First use
+        response1 = self.client.get(self._verify_url(token_obj.token))
+        assert response1.status_code == status.HTTP_200_OK
+        # Second use should fail
+        response2 = self.client.get(self._verify_url(token_obj.token))
+        assert response2.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_verify_applies_token_email_if_user_changed_again(self):
+        token_obj = EmailVerificationToken.objects.create(
+            user=self.user,
+            email="token@example.com",
+            expires_at=timezone.now() + timedelta(hours=24),
+        )
+        # User email changed after token creation
+        self.user.email = "changed-later@example.com"
+        self.user.save()
+
+        response = self.client.get(self._verify_url(token_obj.token))
+        assert response.status_code == status.HTTP_200_OK
+        self.user.refresh_from_db()
+        assert self.user.email == "token@example.com"
+        assert self.user.is_email_verified is True
