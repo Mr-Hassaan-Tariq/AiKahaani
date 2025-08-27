@@ -55,3 +55,24 @@ class EmailVerificationToken(models.Model):
 
     def is_valid(self):
         return self.expires_at > timezone.now()
+
+
+class Settings(TimeStampedModel):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    allow_product_update_emails = models.BooleanField(default=False)
+    allow_anonymized_data_usage = models.BooleanField(default=False)
+    in_app_notifications = models.BooleanField(default=False)
+    email_notifications = models.BooleanField(default=False)
+    web_push_notifications = models.BooleanField(default=False)
+    new_script_generated = models.BooleanField(default=False)
+    account_or_plan_changes = models.BooleanField(default=False)
+    tips_content_inspiration = models.BooleanField(default=False)
+    feature_updates = models.BooleanField(default=False)
+    community_affiliate_updates = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = _("user settings")
+        verbose_name_plural = _("user settings")
+
+    def __str__(self):
+        return f"Settings for {self.user.email}"

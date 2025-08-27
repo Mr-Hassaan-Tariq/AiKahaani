@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
 from .choices import LanguageChoices
-from .models import User
+from .models import User, Settings
 
 
 class UserSignupSerializer(serializers.ModelSerializer):
@@ -89,8 +89,8 @@ class UserDetailsUpdateSerializer(serializers.Serializer):
     def validate_username(self, value):
         user = self.context["request"].user
         if (
-            value
-            and User.objects.exclude(pk=user.pk).filter(username__iexact=value).exists()
+                value
+                and User.objects.exclude(pk=user.pk).filter(username__iexact=value).exists()
         ):
             raise serializers.ValidationError("This username is already taken.")
         return value
@@ -98,8 +98,8 @@ class UserDetailsUpdateSerializer(serializers.Serializer):
     def validate_emailAddress(self, value):
         user = self.context["request"].user
         if (
-            value
-            and User.objects.exclude(pk=user.pk).filter(email__iexact=value).exists()
+                value
+                and User.objects.exclude(pk=user.pk).filter(email__iexact=value).exists()
         ):
             raise serializers.ValidationError("A user with this email already exists.")
         return value
@@ -115,6 +115,48 @@ class UserDetailsUpdateSerializer(serializers.Serializer):
 
         user.save()
         return user
+
+
+class SettingsNotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Settings
+        fields = [
+            "in_app_notifications",
+            "email_notifications",
+            "web_push_notifications",
+            "new_script_generated",
+            "account_or_plan_changes",
+            "tips_content_inspiration",
+            "feature_updates",
+            "community_affiliate_updates",
+            "created",
+            "modified"
+        ]
+        read_only_fields = ["created", "modified"]
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
+
+class SettingsPrivacySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Settings
+        fields = [
+            "allow_product_update_emails",
+            "allow_anonymized_data_usage",
+            "created",
+            "modified"
+        ]
+        read_only_fields = ["created", "modified"]
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 # ---------------------------------------------------------------------------
