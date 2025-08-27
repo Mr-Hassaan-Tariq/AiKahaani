@@ -1,4 +1,10 @@
+import Image from 'next/image';
+import mainLogo from '@assets/sidebar/mainLogo.png';
+
 import DesktopMenu from './_components/DesktopMenu';
+import MobileMenu from './_components/MobileMenu';
+import Row from 'components/ui/Row';
+import Text from 'components/ui/Text';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,16 +18,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Mobile Top Navigation */}
         <div className="fixed left-0 right-0 top-0 z-40 border-b border-gray-800 bg-[#0E0F0C] px-4 py-3 lg:hidden">
           <div className="flex items-center justify-between text-white">
-            <div className="text-lg font-semibold">Menu</div>
-            {/* Add mobile menu toggle button here */}
+            <Row className="w-full justify-between">
+              <Image src={mainLogo} alt="mainLogo" className="object-cover" />
+              <Row className="gap-4">
+                <div className="h-8 w-8 rounded-full bg-gray-600" />
+                <MobileMenu />
+              </Row>
+            </Row>
           </div>
         </div>
 
         {/* Main Content Area */}
         <div className="scrollbar max-h-screen min-h-screen w-full overflow-y-auto">
-          <div className="hidden h-20 w-full items-center border-b border-gray-200 text-white lg:flex">
-            Menu
-          </div>
+          <Row className="hidden h-20 w-full rounded-br-3xl border-b border-[#BAFF381F] bg-[#161616] px-8 text-white lg:flex">
+            <Text variant="base" className="text-white">
+              Plan:
+            </Text>
+
+            <Row>
+              <div className="h-8 w-8 rounded-full bg-gray-600" />
+              <Text variant="base" className="text-white">
+                Jane Smith
+              </Text>
+            </Row>
+          </Row>
           <div className="mx-auto px-4 py-10 lg:px-16 lg:py-16">{children}</div>
         </div>
       </div>

@@ -1,0 +1,55 @@
+import Link from 'next/link';
+import { MenuIcon } from 'lucide-react';
+
+import { mainMenu, subMenu } from './DesktopMenu';
+import Col from 'components/ui/Col';
+import Row from 'components/ui/Row';
+import Text from 'components/ui/Text';
+import LogoutIcon from 'components/icons/LogoutIcon';
+import { Sheet, SheetContent, SheetTrigger } from 'components/shadcn_ui/sheet';
+
+export default function MobileMenu() {
+  return (
+    <Sheet>
+      <SheetTrigger>
+        <MenuIcon size={24} />
+      </SheetTrigger>
+      <SheetContent
+        side="right"
+        className="w-80 border-l border-[#BAFF381F] bg-[#161616] text-white"
+      >
+        <Col className="h-full w-full items-start justify-between pt-8">
+          <Col className="w-full gap-8">
+            {mainMenu.map((e) => (
+              <Link href={e.path} key={e.name}>
+                <Row className="group w-full cursor-pointer justify-start gap-4 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
+                  {e.icon}
+                  <p className="text-[#AAACA6] group-hover:text-[#20BF0E]/80">{e.name}</p>
+                </Row>
+              </Link>
+            ))}
+          </Col>
+          <Col className="w-full gap-8">
+            {subMenu.map((e) => (
+              <Link href={e.path} key={e.name}>
+                <Row className="group w-full cursor-pointer justify-start gap-4 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
+                  {e.icon}
+                  <Text variant="lg" className="text-[#AAACA6] group-hover:text-[#20BF0E]/80">
+                    {e.name}
+                  </Text>
+                </Row>
+              </Link>
+            ))}
+
+            <Row className="group w-full cursor-pointer justify-start gap-4 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
+              <LogoutIcon />
+              <Text variant="lg" className="text-[#AAACA6] group-hover:text-[#20BF0E]/80">
+                Logout
+              </Text>
+            </Row>
+          </Col>
+        </Col>
+      </SheetContent>
+    </Sheet>
+  );
+}
