@@ -16,6 +16,7 @@ module.exports = {
       colors: {
         brandGradient: 'linear-gradient(to right, #2BFF13, #20BF0E)',
         black: {
+          DEFAULT: '#000',
           100: '#2BFF13',
           200: '#20BF0E',
         },

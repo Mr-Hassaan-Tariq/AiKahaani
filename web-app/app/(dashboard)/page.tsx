@@ -43,7 +43,7 @@ export default function Home() {
         {/* Logo/Brand */}
         <div className="mb-8">
           <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-r from-[#2BFF13] to-[#20BF0E] shadow-lg">
-            <span className="text-black text-2xl font-bold">TG</span>
+            <span className="text-2xl font-bold text-black">TG</span>
           </div>
         </div>
 

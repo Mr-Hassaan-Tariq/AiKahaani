@@ -93,6 +93,6 @@ export const subMenu = [
   {
     name: 'Settings',
     icon: <SettingsIcon />,
-    path: '/setting',
+    path: '/settings',
   },
 ];

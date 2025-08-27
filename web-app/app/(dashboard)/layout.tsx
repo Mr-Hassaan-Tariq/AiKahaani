@@ -42,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Text>
             </Row>
           </Row>
-          <div className="mx-auto px-4 py-10 lg:px-16 lg:py-16">{children}</div>
+          <div className="mx-auto mt-14 px-4 py-10 lg:mt-0 lg:px-16 lg:py-16">{children}</div>
         </div>
       </div>
     </div>
