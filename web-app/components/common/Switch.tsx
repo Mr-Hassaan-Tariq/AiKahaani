@@ -24,7 +24,7 @@ export default function Switch({
   };
 
   return (
-    <div className="flex lg:items-center items-start gap-2 py-1">
+    <div className="flex items-start gap-2 py-1 lg:items-center">
       <button
         onClick={handleToggle}
         className={`flex h-6 w-12 items-center rounded-full p-1 transition ${
@@ -37,7 +37,7 @@ export default function Switch({
           }`}
         />
       </button>
-      <div className="lg:w-full md:w-full w-[240px]">
+      <div className="w-[240px] md:w-full lg:w-full">
         <p className="font-medium text-white">{label}</p>
         {description && <p className="text-sm text-gray-400">{description}</p>}
       </div>
