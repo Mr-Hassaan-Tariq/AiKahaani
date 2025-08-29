@@ -1,5 +1,6 @@
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
+from datetime import timezone as dt_timezone
 
 import requests
 from django.conf import settings
@@ -10,18 +11,22 @@ from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
 from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import EmailVerificationToken, MagicLinkToken
+from .models import BlacklistedAccessToken, EmailVerificationToken, MagicLinkToken
 from .serializers import (
     GoogleAuthInputSerializer,
+    LogoutSerializer,
     MagicLinkLoginSerializer,
     MagicLinkLoginSuccessResponseSerializer,
     MagicLinkVerifySerializer,
     MagicLinkVerifySuccessResponseSerializer,
+    MessageResponseSerializer,
+    ProfilePictureUploadSerializer,
     UserDetailsUpdateSerializer,
     UserSerializer,
     UserSignupSerializer,
@@ -40,7 +45,7 @@ class SignupView(APIView):
         serializer = UserSignupSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            user_data = UserSerializer(user).data
+            user_data = UserSerializer(user, context={"request": request}).data
             return Response(
                 {"message": "User created successfully", "user": user_data},
                 status=status.HTTP_201_CREATED,
@@ -405,7 +410,10 @@ class UserDetailsUpdateAPIView(APIView):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+        return Response(
+            UserSerializer(user, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
 
     @extend_schema(
         operation_id="user_details_get",
@@ -418,7 +426,10 @@ class UserDetailsUpdateAPIView(APIView):
     )
     def get(self, request):
         user = request.user
-        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+        return Response(
+            UserSerializer(user, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
 
 
 class EmailVerificationAPIView(APIView):
@@ -461,7 +472,10 @@ class EmailVerificationAPIView(APIView):
         user.save()
 
         vtoken.delete()
-        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+        return Response(
+            UserSerializer(user, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
 
 
 class MagicLinkVerifyAPIView(APIView):
@@ -561,3 +575,139 @@ class MagicLinkVerifyAPIView(APIView):
                 {"detail": "Invalid or expired magic link."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+class LogoutAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = LogoutSerializer
+
+    @extend_schema(
+        operation_id="logout",
+        summary="Logout user",
+        description=(
+            "Logs out the current user by blacklisting both refresh and access tokens. "
+            "Requires a valid refresh token in the request body."
+        ),
+        request=LogoutSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=MessageResponseSerializer,
+                description="Logout successful",
+                examples=[
+                    OpenApiExample(
+                        "Logout Success",
+                        value={"message": "Logged out successfully"},
+                        response_only=True,
+                    )
+                ],
+            ),
+            400: OpenApiResponse(
+                description="Invalid refresh token",
+                examples=[
+                    OpenApiExample(
+                        "Validation Error",
+                        value={"refresh": ["Refresh token is required."]},
+                        response_only=True,
+                    )
+                ],
+            ),
+        },
+        tags=["Authentication"],
+    )
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        refresh_token = serializer.validated_data["refresh"]
+        access_token = request.auth
+        try:
+            access_token_obj = access_token
+
+            # Store access token JTI in our custom blacklist with its expiry
+            access_jti = access_token_obj.get("jti")
+            access_exp = access_token_obj.get("exp")
+            if access_jti and access_exp:
+                expires_at = datetime.fromtimestamp(int(access_exp), tz=dt_timezone.utc)
+                BlacklistedAccessToken.objects.get_or_create(
+                    jti=access_jti,
+                    defaults={
+                        "user": request.user,
+                        "expires_at": expires_at,
+                    },
+                )
+
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except Exception:
+            return Response(
+                {"detail": "Invalid refresh token"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            {"message": "Logged out successfully"}, status=status.HTTP_200_OK
+        )
+
+
+class UserProfilePictureAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
+
+    @extend_schema(
+        operation_id="user_profile_picture_update",
+        summary="Update current user's profile picture",
+        description=(
+            "Authenticated endpoint to upload or replace the signed-in user's profile picture. "
+            "Accepts multipart/form-data with field 'profile_picture'."
+        ),
+        request=ProfilePictureUploadSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="Profile picture updated successfully",
+                response=UserSerializer,
+            ),
+            400: OpenApiResponse(description="Validation error"),
+        },
+        tags=["Users"],
+    )
+    def patch(self, request):
+        serializer = ProfilePictureUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        new_image = serializer.validated_data["profile_picture"]
+
+        try:
+            user.profile_picture.delete(save=False)
+        except Exception:
+            pass
+
+        user.profile_picture = new_image
+        user.save()
+        return Response(
+            UserSerializer(user, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        operation_id="user_profile_picture_delete",
+        summary="Delete current user's profile picture",
+        description=(
+            "Authenticated endpoint to remove the signed-in user's profile picture. "
+            "If no picture exists, the operation is a no-op."
+        ),
+        responses={
+            200: OpenApiResponse(
+                description="Profile picture deleted successfully",
+                response=UserSerializer,
+            )
+        },
+        tags=["Users"],
+    )
+    def delete(self, request):
+        user = request.user
+        try:
+            user.profile_picture.delete(save=False)
+        except Exception:
+            pass
+        user.profile_picture = None
+        user.save()
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)

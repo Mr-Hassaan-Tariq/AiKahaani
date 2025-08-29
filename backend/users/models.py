@@ -76,3 +76,27 @@ class Settings(TimeStampedModel):
 
     def __str__(self):
         return f"Settings for {self.user.email}"
+
+
+class BlacklistedAccessToken(TimeStampedModel):
+    """
+    Stores JTIs of access tokens that have been explicitly invalidated before
+    their natural expiration, enabling immediate logout for access tokens.
+    """
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="blacklisted_access_tokens"
+    )
+    jti = models.CharField(max_length=255, unique=True, db_index=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["jti"]),
+            models.Index(fields=["expires_at"]),
+        ]
+        verbose_name = _("blacklisted access token")
+        verbose_name_plural = _("blacklisted access tokens")
+
+    def __str__(self):
+        return f"BlacklistedAccessToken(jti={self.jti})"
