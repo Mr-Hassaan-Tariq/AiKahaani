@@ -11,10 +11,14 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        poppins: 'var(--Poppins-font)',
+        figtree: 'var(--figtree-font)',
       },
       colors: {
         brandGradient: 'linear-gradient(to right, #2BFF13, #20BF0E)',
+        error: '#FF5050',
+        brand: {
+          surface: '#161616',
+        },
         black: {
           DEFAULT: '#000',
           100: '#2BFF13',

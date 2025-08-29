@@ -1,3 +1,4 @@
+from datetime import timedelta
 from os import environ
 from pathlib import Path
 
@@ -99,6 +100,7 @@ THIRD_PARTY_APPS = [
     "anymail",
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "corsheaders",
 ]
@@ -224,6 +226,12 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 ######################################################################
+# Media
+######################################################################
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+######################################################################
 # Rest Framework
 ######################################################################
 REST_FRAMEWORK = {
@@ -234,9 +242,17 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "users.authentication.JWTAuthenticationWithAccessTokenBlacklist",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
+}
+
+
+# SimpleJWT configuration
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
 
 

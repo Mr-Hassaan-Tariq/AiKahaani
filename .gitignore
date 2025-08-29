@@ -40,9 +40,9 @@ db.sqlite3-journal
 # !*/migrations/__init__.py
 
 # Django static files
-/static/
-/staticfiles/
-/media/
+backend/static/
+backend/staticfiles/
+backend/media/
 
 # Django secret key and settings
 .env.backend

@@ -2,6 +2,7 @@ from django.urls import path
 
 from users.views import (
     GoogleLoginAPIView,
+    LogoutAPIView,
     MagicLinkLoginAPIView,
     MagicLinkVerifyAPIView,
     SignupView,
@@ -14,4 +15,5 @@ urlpatterns = [
     path(
         "magic-link/verify/", MagicLinkVerifyAPIView.as_view(), name="magic-link-verify"
     ),
+    path("logout/", LogoutAPIView.as_view(), name="logout"),
 ]

@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
 from .choices import LanguageChoices
-from .models import User, Settings
+from .models import Settings, User
 
 
 class UserSignupSerializer(serializers.ModelSerializer):
@@ -41,6 +41,8 @@ class UserSignupSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
@@ -53,6 +55,17 @@ class UserSerializer(serializers.ModelSerializer):
             "is_email_verified",
         )
         read_only_fields = ("id",)
+
+    def get_profile_picture(self, obj):
+        if not getattr(obj, "profile_picture", None):
+            return None
+        try:
+            url = obj.profile_picture.url
+        except Exception:
+            return None
+        request = self.context.get("request")
+        # for now will change it after s3
+        return request.build_absolute_uri(url) if request else url
 
 
 class GoogleAuthInputSerializer(serializers.Serializer):
@@ -89,8 +102,8 @@ class UserDetailsUpdateSerializer(serializers.Serializer):
     def validate_username(self, value):
         user = self.context["request"].user
         if (
-                value
-                and User.objects.exclude(pk=user.pk).filter(username__iexact=value).exists()
+            value
+            and User.objects.exclude(pk=user.pk).filter(username__iexact=value).exists()
         ):
             raise serializers.ValidationError("This username is already taken.")
         return value
@@ -98,8 +111,8 @@ class UserDetailsUpdateSerializer(serializers.Serializer):
     def validate_emailAddress(self, value):
         user = self.context["request"].user
         if (
-                value
-                and User.objects.exclude(pk=user.pk).filter(email__iexact=value).exists()
+            value
+            and User.objects.exclude(pk=user.pk).filter(email__iexact=value).exists()
         ):
             raise serializers.ValidationError("A user with this email already exists.")
         return value
@@ -130,7 +143,7 @@ class SettingsNotificationSerializer(serializers.ModelSerializer):
             "feature_updates",
             "community_affiliate_updates",
             "created",
-            "modified"
+            "modified",
         ]
         read_only_fields = ["created", "modified"]
 
@@ -148,7 +161,7 @@ class SettingsPrivacySerializer(serializers.ModelSerializer):
             "allow_product_update_emails",
             "allow_anonymized_data_usage",
             "created",
-            "modified"
+            "modified",
         ]
         read_only_fields = ["created", "modified"]
 
@@ -179,3 +192,37 @@ class MagicLinkVerifySuccessResponseSerializer(serializers.Serializer):
     refresh = serializers.CharField()
     access = serializers.CharField()
     user = UserBasicSerializer()
+
+
+class LogoutSerializer(serializers.Serializer):
+    """Serializer for logout endpoint. Requires refresh token to blacklist."""
+
+    refresh = serializers.CharField(required=True, allow_blank=False)
+
+    def validate_refresh(self, value):
+        """Validate that the refresh token is not empty or only whitespace."""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Refresh token is required.")
+        return value.strip()
+
+
+class MessageResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
+class ProfilePictureUploadSerializer(serializers.Serializer):
+    profile_picture = serializers.ImageField(required=True)
+
+    def validate_profile_picture(self, value):
+        max_size_mb = 5
+        if value.size > max_size_mb * 1024 * 1024:
+            raise serializers.ValidationError("Image size must be <= 5MB.")
+        valid_content_types = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+        if (
+            hasattr(value, "content_type")
+            and value.content_type not in valid_content_types
+        ):
+            raise serializers.ValidationError(
+                "Unsupported image type. Use JPEG, PNG, WEBP, or GIF."
+            )
+        return value
