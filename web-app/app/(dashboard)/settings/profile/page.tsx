@@ -1,3 +1,12 @@
+import ProfileCardDetail from './_components/ProfileCardDetail';
+import ProfilePhotoCard from './_components/ProfilePhotoCard';
+import Col from 'components/ui/Col';
+
 export default function Page() {
-  return <div className="text-4xl font-medium text-white">Profile Page</div>;
+  return (
+    <Col className="gap-10 text-white">
+      <ProfilePhotoCard />
+      <ProfileCardDetail />
+    </Col>
+  );
 }

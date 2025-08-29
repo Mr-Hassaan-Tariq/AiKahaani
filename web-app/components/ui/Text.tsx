@@ -11,7 +11,7 @@ type TypographyProps = React.HTMLAttributes<HTMLDivElement> & {
 const baseStyles = {
   xs: 'text-xs leading-3.5',
   sm: 'text-sm leading-4',
-  base: 'text-base leading-6',
+  base: 'text-base leading-6 tracking-[-0.2px]',
   lg: 'text-lg leading-5 font-medium tracking-[-0.2px]',
   xl: 'text-xl font-medium leading-6 tracking-[-0.2px]',
   '2xl': 'text-2xl leading-7 tracking-[-0.2px] font-semibold',

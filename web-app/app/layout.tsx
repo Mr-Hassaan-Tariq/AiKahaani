@@ -1,15 +1,14 @@
 import '../styles/globals.css';
 
-import { Poppins } from 'next/font/google';
+import { Figtree } from 'next/font/google';
 
 import ReactQueryProvider from 'lib/reactQuery/ReactQueryProvider';
 
-const POPPINS = Poppins({
-  variable: '--Poppins-font',
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+const FIGTREE = Figtree({
+  variable: '--figtree-font',
+  weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
 });
-
 export const metadata = {
   title: 'Tubegenius',
   description:
@@ -19,7 +18,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${POPPINS.variable} bg-black`}>
+      <body className={`${FIGTREE.variable} bg-black font-figtree`}>
         <ReactQueryProvider>{children}</ReactQueryProvider>
       </body>
     </html>
