@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+
 import { Tabs, TabsList, TabsTrigger } from 'components/shadcn_ui/tabs';
 
 const tabsPath = [

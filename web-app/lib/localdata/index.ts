@@ -1,5 +1,5 @@
-import Magicpan from '@assets/svg/magicpan.svg';
 import Draft from '@assets/svg/draft.svg';
+import Magicpan from '@assets/svg/magicpan.svg';
 
 export const notificationTexts = {
   deliveryChannels: {
@@ -34,52 +34,52 @@ export const notificationTexts = {
 export const notificationData = [
   {
     title: "New niche added: 'Listicle with a Twist'",
-    description: "Perfect for countdown videos with a unique hook",
-    time: "1d ago",
-    actionText: "Use this style",
-    actionLink: "#",
+    description: 'Perfect for countdown videos with a unique hook',
+    time: '1d ago',
+    actionText: 'Use this style',
+    actionLink: '#',
     isNew: true,
-    icon: Magicpan
+    icon: Magicpan,
   },
   {
-    title: "2 unfinished scripts waiting",
-    description: "Pick up where you left off",
-    time: "1d ago",
-    actionText: "Go to drafts",
-    actionLink: "#",
-    icon: Draft
+    title: '2 unfinished scripts waiting',
+    description: 'Pick up where you left off',
+    time: '1d ago',
+    actionText: 'Go to drafts',
+    actionLink: '#',
+    icon: Draft,
   },
   {
     title: "Trending format: 'Conspiracy Shorts'",
-    description: "Optimized for short-form storytelling",
-    time: "1d ago",
-    actionText: "Explore now",
-    actionLink: "#",
+    description: 'Optimized for short-form storytelling',
+    time: '1d ago',
+    actionText: 'Explore now',
+    actionLink: '#',
     isNew: true,
-    icon: Magicpan
+    icon: Magicpan,
   },
   {
-    title: "Script Generator update",
-    description: "Now supports 12 new viral tones!",
-    time: "2d ago",
-    actionText: "Explore in your next draft",
-    actionLink: "#",
-    icon: Magicpan
+    title: 'Script Generator update',
+    description: 'Now supports 12 new viral tones!',
+    time: '2d ago',
+    actionText: 'Explore in your next draft',
+    actionLink: '#',
+    icon: Magicpan,
   },
   {
-    title: "New: Title Generator",
-    description: "Generate viral titles in seconds",
-    time: "3d ago",
-    actionText: "Try now",
-    actionLink: "#",
-    icon: Magicpan
+    title: 'New: Title Generator',
+    description: 'Generate viral titles in seconds',
+    time: '3d ago',
+    actionText: 'Try now',
+    actionLink: '#',
+    icon: Magicpan,
   },
   {
-    title: "Trial plan ends in 3 days",
-    description: "Make the most of your access",
-    time: "4d ago",
-    actionText: "Upgrade plan",
-    actionLink: "#",
-    icon: Magicpan
+    title: 'Trial plan ends in 3 days',
+    description: 'Make the most of your access',
+    time: '4d ago',
+    actionText: 'Upgrade plan',
+    actionLink: '#',
+    icon: Magicpan,
   },
 ];
