@@ -1,18 +1,19 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework.permissions import IsAuthenticated
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from users.models import Settings
-from users.serializers import SettingsPrivacySerializer, SettingsNotificationSerializer
+from users.serializers import SettingsNotificationSerializer, SettingsPrivacySerializer
 
 
 @extend_schema(
     operation_id="settings_notification_update",
     summary="Update notification settings",
     description=(
-            "Authenticated endpoint to update the current user's notification settings. "
-            "Allows the user to manage in-app notifications, email notifications, web push notifications, "
-            "and other related preferences."
+        "Authenticated endpoint to update the current user's notification settings. "
+        "Allows the user to manage in-app notifications, email notifications, web push notifications, "
+        "and other related preferences."
     ),
     request=SettingsNotificationSerializer,
     responses={
@@ -62,7 +63,9 @@ class SettingsNotificationAPIView(APIView):
 
     def patch(self, request):
         settings, created = Settings.objects.get_or_create(user=request.user)
-        serializer = SettingsNotificationSerializer(settings, data=request.data, partial=True)
+        serializer = SettingsNotificationSerializer(
+            settings, data=request.data, partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
@@ -72,8 +75,8 @@ class SettingsNotificationAPIView(APIView):
     operation_id="settings_privacy_update",
     summary="Update privacy settings",
     description=(
-            "Authenticated endpoint to update the current user's privacy settings. "
-            "Allows the user to manage email preferences, anonymized data usage, and other privacy-related options."
+        "Authenticated endpoint to update the current user's privacy settings. "
+        "Allows the user to manage email preferences, anonymized data usage, and other privacy-related options."
     ),
     request=SettingsPrivacySerializer,
     responses={
@@ -117,7 +120,9 @@ class SettingsPrivacyAPIView(APIView):
 
     def patch(self, request):
         settings, created = Settings.objects.get_or_create(user=request.user)
-        serializer = SettingsPrivacySerializer(settings, data=request.data, partial=True)
+        serializer = SettingsPrivacySerializer(
+            settings, data=request.data, partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)

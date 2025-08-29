@@ -10,7 +10,6 @@ export class ApiWrapper {
   private client: ApiClient;
   public auth: AuthService;
   public user: UserService;
-
   constructor() {
     // Initialize the API client with configuration
     this.client = new ApiClient({
