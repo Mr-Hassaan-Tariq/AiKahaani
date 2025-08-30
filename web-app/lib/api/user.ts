@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ApiClient } from './client';
 import { ApiError, User } from './types';
 
@@ -10,6 +12,15 @@ export interface UpdateUserRequest {
 export interface UpdateUserResponse {
   user: User;
   message: string;
+}
+
+export interface UserDetailsResponse extends User {
+  message?: string;
+}
+
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
 }
 
 export class UserService {
@@ -38,6 +49,52 @@ export class UserService {
         status: apiError.status,
       };
     }
+  }
+
+  /**
+   * Get user details
+   * @returns Promise with user details
+   */
+  async getUserDetails(): Promise<User> {
+    const token = getCookie('access_token'); // get token from cookies
+
+    const response = await this.apiClient.get<UserDetailsResponse>('/v1/users/details/', {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    });
+
+    if (response.status !== 200) {
+      throw new Error('No user details received from API');
+    }
+
+    return response.data as User;
+  }
+
+  /**
+   * Update user profile
+   * @param userData - User data to update
+   * @returns Promise with updated user data
+   */
+  async updateUserDetails(data: {
+    fullname?: string;
+    username?: string;
+    email?: string;
+    preferred_language?: string;
+  }): Promise<any> {
+    const token = getCookie('access_token'); // get token from cookies
+
+    const response = await this.apiClient.put('/v1/users/details/', data, {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    });
+
+    if (response.status !== 200) {
+      throw new Error('Failed to update user details');
+    }
+
+    return response.data;
   }
 
   /**

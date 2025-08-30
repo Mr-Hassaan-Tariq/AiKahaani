@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('access_token')?.value; // Read token from cookies
 
   // Pages that don't need authentication (e.g., signup, login)
-  const publicPaths = ['/signup', '/login'];
+  const publicPaths = ['/signup', '/login', '/magic-link'];
 
   // If no token and trying to access a protected route → redirect to signup
   if (!token && !publicPaths.includes(path)) {

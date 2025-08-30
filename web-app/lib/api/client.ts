@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-var-requires */
+
 import { ApiClientConfig, ApiError, ApiResponse, RequestOptions } from './types';
 
 export class ApiClient {
@@ -16,10 +19,14 @@ export class ApiClient {
 
   // Get access token from localStorage
   private getAccessToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('access_token');
+    if (typeof window === 'undefined') {
+      // Running on the server, get it from cookies
+      const cookieStore = require('next/headers').cookies();
+      return cookieStore.get('access_token')?.value || null;
     }
-    return null;
+
+    // Fallback for client-side (if needed)
+    return localStorage.getItem('access_token');
   }
 
   // Get refresh token from localStorage
