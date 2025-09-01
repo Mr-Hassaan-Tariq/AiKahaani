@@ -1,4 +1,7 @@
-import Image from 'next/image';
+'use client';
+
+import { useState } from 'react';
+import Image, { StaticImageData } from 'next/image';
 import ProfileImage from 'public/images/dummy-profile-pic.png';
 
 import ChangePhotoModal from './ChangePhotoModal';
@@ -10,6 +13,8 @@ import Text from 'components/ui/Text';
 import { Button } from 'components/shadcn_ui/button';
 
 export default function ProfilePhotoCard() {
+  const [profilePic, setProfilePic] = useState<string | StaticImageData>(ProfileImage);
+
   return (
     <Card>
       <Col className="gap-6 lg:gap-8">
@@ -19,7 +24,7 @@ export default function ProfilePhotoCard() {
 
         <Row className="flex-col justify-normal gap-6 md:flex-row">
           <Image
-            src={ProfileImage}
+            src={profilePic}
             alt="DP"
             width={500}
             height={500}
@@ -44,10 +49,11 @@ export default function ProfilePhotoCard() {
             <Row className="justify-center lg:justify-normal">
               <ChangePhotoModal
                 trigger={
-                  <Button className="flex w-fit items-center justify-center rounded-full bg-white/10 p-3 text-sm font-semibold backdrop-blur-[2px] hover:bg-white/10 hover:opacity-70 active:scale-95">
+                  <Button className="flex w-fit items-center ...">
                     {changePhotoIcon} Change photo
                   </Button>
                 }
+                onSuccess={(newPic: string) => setProfilePic(newPic)}
               />
 
               <DeletePhotoModal
