@@ -1,4 +1,8 @@
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 import { MenuIcon } from 'lucide-react';
 
 import { mainMenu, subMenu } from './DesktopMenu';
@@ -9,6 +13,13 @@ import LogoutIcon from 'components/icons/LogoutIcon';
 import { Sheet, SheetContent, SheetTrigger } from 'components/shadcn_ui/sheet';
 
 export default function MobileMenu() {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    Cookies.remove('access_token');
+    router.push('/signup');
+  };
+
   return (
     <Sheet>
       <SheetTrigger>
@@ -41,7 +52,10 @@ export default function MobileMenu() {
               </Link>
             ))}
 
-            <Row className="group w-full cursor-pointer justify-start gap-4 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
+            <Row
+              onClick={handleLogout}
+              className="group w-full cursor-pointer justify-start gap-4 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]"
+            >
               <LogoutIcon />
               <Text variant="lg" className="text-[#AAACA6] group-hover:text-[#20BF0E]/80">
                 Logout

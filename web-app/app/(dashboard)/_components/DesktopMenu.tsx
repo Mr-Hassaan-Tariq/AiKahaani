@@ -1,6 +1,10 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import mainLogo from '@assets/sidebar/mainLogo.png';
+import Cookies from 'js-cookie';
 
 import Col from 'components/ui/Col';
 import Row from 'components/ui/Row';
@@ -14,6 +18,13 @@ import SubTitleIcon from 'components/icons/SubTitleIcon';
 import UsersIcon from 'components/icons/UsersIcon';
 
 export default function DesktopMenu() {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    Cookies.remove('access_token');
+    router.push('/signup');
+  };
+
   return (
     <div className="scrollbar sticky top-0 h-screen max-h-screen w-full overflow-hidden overflow-y-auto rounded-r-3xl border-r border-[#BAFF381F] bg-[#161616] px-7 py-8 text-white">
       <Col className="mx-auto h-full min-w-[170px] gap-12">
@@ -48,7 +59,10 @@ export default function DesktopMenu() {
               </Link>
             ))}
 
-            <Row className="group cursor-pointer justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
+            <Row
+              onClick={handleLogout}
+              className="group cursor-pointer justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]"
+            >
               <LogoutIcon />
               <Text variant="lg" className="text-[#AAACA6] group-hover:text-[#20BF0E]/40">
                 Logout

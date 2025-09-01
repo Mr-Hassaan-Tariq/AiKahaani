@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import ProfileImage from 'public/images/dummy-profile-pic.png';
 
 import ChangePhotoModal from './ChangePhotoModal';
 import DeletePhotoModal from './DeletePhotoModal';
@@ -18,7 +19,7 @@ export default function ProfilePhotoCard() {
 
         <Row className="flex-col justify-normal gap-6 md:flex-row">
           <Image
-            src="/images/profile-photo.png"
+            src={ProfileImage}
             alt="DP"
             width={500}
             height={500}

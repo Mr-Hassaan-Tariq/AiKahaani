@@ -8,6 +8,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { env } from 'env.mjs';
 import * as yup from 'yup';
 
+import MaginpanIcon from '/public/images/maginpan.svg';
 import { authService } from 'lib/api';
 import Button from 'components/common/Button';
 import TextField from 'components/common/TextField';
@@ -119,7 +120,7 @@ export default function Signup() {
               </>
             ) : (
               <>
-                <Image src="/images/maginpan.svg" alt="maginpan" width={20} height={20} />
+                <Image src={MaginpanIcon} alt="maginpan" width={20} height={20} />
                 <span className="font-bold"> Send me the magic link</span>
               </>
             )}

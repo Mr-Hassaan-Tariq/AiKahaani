@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
 import Cookies from 'js-cookie';
+import CheckIcon from 'public/images/right-check.svg';
 
 import { authService } from 'lib/api';
 
@@ -106,7 +107,7 @@ export default function MagicLinkSent() {
               Check your inbox — click the link to <br /> enter your workspace.
             </p>
             <div className="mt-8 flex items-center justify-center">
-              <Image src="/images/right-check.svg" alt="check" width={100} height={100} />
+              <Image src={CheckIcon} alt="check" width={100} height={100} />
             </div>
             <p className="mt-6 text-sm text-gray-500">
               Didn’t get the email?{' '}
