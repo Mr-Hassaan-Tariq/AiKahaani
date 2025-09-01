@@ -108,11 +108,7 @@ export default function Signup() {
             {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
           </div>
 
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="mt-10 flex items-center justify-center space-x-2"
-          >
+          <Button type="submit" disabled={isLoading} className="mt-10">
             {isLoading ? (
               <>
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent"></div>

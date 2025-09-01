@@ -2,6 +2,7 @@ import Image from 'next/image';
 import mainLogo from '@assets/sidebar/mainLogo.png';
 
 import DesktopMenu from './_components/DesktopMenu';
+import { Dropdown } from './_components/DropdownMenu';
 import MobileMenu from './_components/MobileMenu';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
@@ -36,7 +37,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Text>
 
             <Row>
-              <div className="h-8 w-8 rounded-full bg-gray-600" />
+              <Dropdown />
+              <div className="h-10 w-10 rounded-full bg-gray-600" />
               <Text variant="base" className="text-white">
                 Jane Smith
               </Text>
