@@ -103,6 +103,7 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "corsheaders",
+    "djstripe",
 ]
 
 INSTALLED_APPS = [
@@ -114,6 +115,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "api",
     "users",
+    "payments",
 ] + THIRD_PARTY_APPS
 
 ######################################################################
@@ -294,3 +296,29 @@ UNFOLD = {
         ],
     },
 }
+
+######################################################################
+# Stripe Configuration
+######################################################################
+STRIPE_SECRET_KEY = environ.get("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = environ.get("STRIPE_PUBLISHABLE_KEY")
+STRIPE_WEBHOOK_SECRET = environ.get("STRIPE_WEBHOOK_SECRET")
+
+# DJ-Stripe Configuration
+DJSTRIPE_WEBHOOK_SECRET = STRIPE_WEBHOOK_SECRET
+DJSTRIPE_USE_NATIVE_S3 = True
+DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
+DJSTRIPE_SECRET_KEY = STRIPE_SECRET_KEY
+DJSTRIPE_PUBLISHABLE_KEY = STRIPE_PUBLISHABLE_KEY
+
+# Stripe settings
+STRIPE_LIVE_MODE = environ.get("STRIPE_LIVE_MODE", "False").lower() == "true"
+STRIPE_TEST_MODE = not STRIPE_LIVE_MODE
+
+if STRIPE_TEST_MODE:
+    STRIPE_SECRET_KEY = environ.get("STRIPE_TEST_SECRET_KEY") or STRIPE_SECRET_KEY
+    STRIPE_PUBLISHABLE_KEY = environ.get("STRIPE_TEST_PUBLISHABLE_KEY") or STRIPE_PUBLISHABLE_KEY
+
+# DJ-Stripe Live/Test Mode Settings
+DJSTRIPE_LIVE_MODE = STRIPE_LIVE_MODE
+DJSTRIPE_TEST_MODE = STRIPE_TEST_MODE
