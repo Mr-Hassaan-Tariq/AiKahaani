@@ -48,6 +48,12 @@ class TrialDaysRemainingField(serializers.ReadOnlyField):
     pass
 
 
+@extend_schema_field(OpenApiTypes.STR)
+class TrialExpirationDateField(serializers.ReadOnlyField):
+    """Custom field for trial_expiration_date with proper type hint"""
+    pass
+
+
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
     """Serializer for subscription plans"""
     display_price = DisplayPriceField()
@@ -73,6 +79,7 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
     is_trial = IsTrialField()
     days_until_expiry = DaysUntilExpiryField()
     trial_days_remaining = TrialDaysRemainingField()
+    trial_expiration_date = TrialExpirationDateField()
     
     class Meta:
         model = UserSubscription
@@ -82,13 +89,24 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
             'current_period_end', 'trial_start', 'trial_end',
             'canceled_at', 'cancel_at_period_end', 'is_active',
             'is_trial', 'days_until_expiry', 'trial_days_remaining',
-            'created', 'modified'
+            'trial_expiration_date', 'created', 'modified'
         ]
         read_only_fields = [
             'id', 'user', 'stripe_subscription_id', 'stripe_customer_id',
             'current_period_start', 'current_period_end', 'trial_start',
             'trial_end', 'canceled_at', 'created', 'modified'
         ]
+
+
+class TrialStatusSerializer(serializers.Serializer):
+    """Serializer for trial status endpoint"""
+    is_trial = serializers.BooleanField()
+    trial_days_remaining = serializers.IntegerField()
+    trial_expiration_date = serializers.CharField(allow_null=True)
+    trial_start_date = serializers.DateTimeField(allow_null=True)
+    plan_name = serializers.CharField()
+    plan_type = serializers.CharField()
+    status = serializers.CharField()
 
 
 class PaymentHistorySerializer(serializers.ModelSerializer):

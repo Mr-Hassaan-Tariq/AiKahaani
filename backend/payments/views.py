@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 from .models import SubscriptionPlan, UserSubscription, PaymentHistory
 from .serializers import (
     SubscriptionPlanSerializer, UserSubscriptionSerializer,
-    CreateSubscriptionSerializer, PaymentHistorySerializer
+    CreateSubscriptionSerializer, PaymentHistorySerializer, TrialStatusSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -578,3 +578,51 @@ def handle_price_updated(price):
             
     except Exception as e:
         logger.error(f"Error handling price updated: {str(e)}")
+
+
+class TrialStatusView(APIView):
+    """View to check user's trial status"""
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Get user trial status",
+        description="Retrieve the current user's trial status including remaining days and expiration date",
+        responses={
+            200: OpenApiResponse(
+                description="User trial status",
+                response=TrialStatusSerializer
+            ),
+            404: OpenApiResponse(description="No subscription found")
+        },
+        tags=["Trial Status"]
+    )
+    def get(self, request):
+        """GET /api/user/trial-status - Get current user's trial status"""
+        try:
+            subscription = UserSubscription.objects.filter(user=request.user).first()
+            if not subscription:
+                return Response(
+                    {"error": "No subscription found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Prepare trial status data
+            trial_data = {
+                'is_trial': subscription.is_trial,
+                'trial_days_remaining': subscription.trial_days_remaining,
+                'trial_expiration_date': subscription.trial_expiration_date,
+                'trial_start_date': subscription.trial_start,
+                'plan_name': subscription.plan.name,
+                'plan_type': subscription.plan.plan_type,
+                'status': subscription.status
+            }
+            
+            serializer = TrialStatusSerializer(trial_data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error fetching trial status: {str(e)}")
+            return Response(
+                {"error": "Failed to fetch trial status"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

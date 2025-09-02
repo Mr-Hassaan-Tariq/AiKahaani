@@ -11,6 +11,9 @@ urlpatterns = [
     # User Subscriptions
     path('subscription/', views.UserSubscriptionView.as_view(), name='user-subscription'),
     
+    # Trial Status
+    path('user/trial-status/', views.TrialStatusView.as_view(), name='trial-status'),
+    
     # Payment History
     path('history/', views.PaymentHistoryView.as_view(), name='payment-history'),
     

@@ -7,6 +7,8 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class SubscriptionPlan(TimeStampedModel):
@@ -125,6 +127,13 @@ class UserSubscription(TimeStampedModel):
             delta = self.trial_end - timezone.now()
             return max(0, delta.days)
         return 0
+    
+    @property
+    def trial_expiration_date(self) -> str:
+        """Return trial expiration date in ISO format"""
+        if self.trial_end:
+            return self.trial_end.isoformat()
+        return None
 
 
 class PaymentHistory(TimeStampedModel):
@@ -157,3 +166,37 @@ class PaymentHistory(TimeStampedModel):
     
     def __str__(self):
         return f"{self.user.email} - ${self.amount} - {self.status}"
+
+
+# Signal to auto-assign trial plan to new users
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_user_trial_subscription(sender, instance, created, **kwargs):
+    """Auto-assign trial plan to new users"""
+    if created:
+        try:
+            # Get the trial plan
+            trial_plan = SubscriptionPlan.objects.filter(
+                plan_type='trial',
+                is_active=True
+            ).first()
+            
+            if trial_plan:
+                # Calculate trial end date
+                trial_start = timezone.now()
+                trial_end = trial_start + timezone.timedelta(days=trial_plan.trial_days)
+                
+                # Create user subscription
+                UserSubscription.objects.create(
+                    user=instance,
+                    plan=trial_plan,
+                    status='trial',
+                    trial_start=trial_start,
+                    trial_end=trial_end,
+                    current_period_start=trial_start,
+                    current_period_end=trial_end
+                )
+        except Exception as e:
+            # Log error but don't fail user creation
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to create trial subscription for user {instance.email}: {str(e)}")
