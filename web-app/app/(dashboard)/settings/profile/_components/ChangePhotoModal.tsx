@@ -5,11 +5,11 @@ import Image from 'next/image';
 import { ImagePlus } from 'lucide-react';
 
 import { userService } from 'lib/api';
+import Button from 'components/ui/Button';
 import Col from 'components/ui/Col';
 import Dialog from 'components/ui/Dialog';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
-import { Button } from 'components/shadcn_ui/button';
 
 export default function ChangePhotoModal({
   trigger,
@@ -62,10 +62,7 @@ export default function ChangePhotoModal({
       }
       footer={
         <Row className="w-full gap-6">
-          <Button
-            className="h-[52px] w-full rounded-full bg-white/10 backdrop-blur-[2px] hover:bg-white/10 hover:opacity-70"
-            onClick={() => setOpen(false)}
-          >
+          <Button variant="gray" onClick={() => setOpen(false)}>
             <Text
               variant="base"
               className="font-extrabold [font-feature-settings:'liga'_off,'clig'_off]"
@@ -73,18 +70,8 @@ export default function ChangePhotoModal({
               Cancel
             </Text>
           </Button>
-          <Button
-            type="button"
-            disabled={!image || loading}
-            onClick={handleSave}
-            className="h-[52px] w-full rounded-full bg-gradient-to-r from-[#2BFF13] to-[#20BF0E] hover:opacity-70 disabled:opacity-50"
-          >
-            <Text
-              variant="base"
-              className="font-extrabold text-[#0E0F0C] [font-feature-settings:'liga'_off,'clig'_off]"
-            >
-              {loading ? 'Saving...' : 'Save'}
-            </Text>
+          <Button type="button" disabled={!image || loading} onClick={handleSave}>
+            {loading ? 'Saving...' : 'Save'}
           </Button>
         </Row>
       }

@@ -6,6 +6,7 @@ import { MenuIcon } from 'lucide-react';
 import { mainMenu, subMenu } from './DesktopMenu';
 import LogoutModal from './LogoutModal';
 import Col from 'components/ui/Col';
+import PlanUpgradeModal from 'components/ui/PlanUpgradeModal';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 import { Sheet, SheetContent, SheetTrigger } from 'components/shadcn_ui/sheet';
@@ -20,6 +21,9 @@ export default function MobileMenu() {
         side="right"
         className="w-80 border-l border-[#BAFF381F] bg-[#161616] text-white"
       >
+        <Text variant="base" className="flex items-center gap-4 text-white">
+          Plan: <PlanUpgradeModal />
+        </Text>
         <Col className="h-full w-full items-start justify-between pt-8">
           <Col className="w-full gap-8">
             {mainMenu.map((e) => (

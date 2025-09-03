@@ -1,5 +1,7 @@
 'use client';
 
+import { cn } from 'lib/utils';
+
 interface ButtonProps {
   children: React.ReactNode;
   className?: string;
@@ -15,7 +17,10 @@ export function Button(props: ButtonProps) {
       type={type}
       disabled={disabled}
       onClick={onClick}
-      className={`flex w-full items-center justify-center space-x-2 rounded-full bg-gradient-to-r from-[#2BFF13] to-[#20BF0E] p-3 font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${className} `}
+      className={cn(
+        'flex w-full items-center justify-center space-x-2 rounded-full bg-gradient-to-r from-[#2BFF13] to-[#20BF0E] p-3 font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50',
+        className,
+      )}
     >
       {children}
     </button>

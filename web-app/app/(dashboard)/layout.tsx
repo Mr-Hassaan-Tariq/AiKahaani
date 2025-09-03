@@ -4,6 +4,7 @@ import mainLogo from '@assets/sidebar/mainLogo.png';
 import DesktopMenu from './_components/DesktopMenu';
 import { Dropdown } from './_components/DropdownMenu';
 import MobileMenu from './_components/MobileMenu';
+import PlanUpgradeModal from 'components/ui/PlanUpgradeModal';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
@@ -32,8 +33,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Main Content Area */}
         <div className="scrollbar max-h-screen min-h-screen w-full overflow-y-auto">
           <Row className="hidden h-20 w-full rounded-br-3xl border-b border-[#BAFF381F] bg-[#161616] px-8 text-white lg:flex">
-            <Text variant="base" className="text-white">
-              Plan:
+            <Text variant="base" className="flex gap-4 text-white">
+              Plan: <PlanUpgradeModal align="start" />
             </Text>
 
             <Row>

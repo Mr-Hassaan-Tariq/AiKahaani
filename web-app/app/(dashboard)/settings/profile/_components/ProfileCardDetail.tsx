@@ -5,12 +5,12 @@ import { FormProvider, useForm } from 'react-hook-form';
 
 import { userService } from 'lib/api';
 import { Email_REGEX } from 'lib/constants';
+import Button from 'components/ui/Button';
 import Card from 'components/ui/Card';
 import Col from 'components/ui/Col';
 import FormInput from 'components/ui/FormInput';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
-import Button from 'components/common/Button';
 
 interface ProfileDetailFormType {
   fullName: string;
@@ -148,7 +148,7 @@ export default function ProfileCardDetail() {
                 <Button
                   type="submit"
                   disabled={!isDirty || !isValid || isUpdating}
-                  className="ml-auto w-full rounded-full bg-gradient-to-r from-[#2BFF13] to-[#20BF0E] p-3 font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 lg:max-w-28"
+                  className="ml-auto lg:max-w-28"
                 >
                   {isUpdating ? 'Saving...' : 'Save'}
                 </Button>

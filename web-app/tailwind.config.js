@@ -18,6 +18,7 @@ module.exports = {
         error: '#FF5050',
         brand: {
           surface: '#161616',
+          secondary: '#AAACA6',
         },
         black: {
           DEFAULT: '#000',

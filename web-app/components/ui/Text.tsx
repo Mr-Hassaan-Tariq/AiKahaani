@@ -15,7 +15,7 @@ const baseStyles = {
   lg: 'text-lg leading-5 font-medium tracking-[-0.2px]',
   xl: 'text-xl font-medium leading-6 tracking-[-0.2px]',
   '2xl': 'text-2xl leading-7 tracking-[-0.2px] font-semibold',
-  '3xl': 'text-3xl',
+  '3xl': 'text-3xl tracking-[-0.2px] font-semibold leading-[38px]',
   '4xl': 'text-4xl',
   '5xl': 'text-5xl font-semibold leading-[120%] tracking-[-0.72px]',
 } as const;
