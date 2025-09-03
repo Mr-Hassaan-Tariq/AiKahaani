@@ -38,7 +38,7 @@ export default function Dialog({
         onInteractOutside={(event) => !outsideInteract && event.preventDefault()}
       >
         <Col className="gap-4">
-          <Text variant="3xl" className="w-full text-center text-white">
+          <Text variant="3xl" className="w-full text-center font-semibold text-white">
             {title}
           </Text>
           {description && (
