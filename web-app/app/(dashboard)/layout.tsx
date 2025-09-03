@@ -11,7 +11,7 @@ import Text from 'components/ui/Text';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-[100dvh] min-h-screen w-full overflow-hidden bg-[#0E0F0C]">
-      <div className="mx-auto flex max-w-screen-2xl">
+      <div className="mx-auto flex">
         {/* Desktop Sidebar */}
         <div className="hidden h-screen lg:block lg:w-[265px]">
           <DesktopMenu />
@@ -45,7 +45,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Text>
             </Row>
           </Row>
-          <div className="mx-auto mt-14 px-4 py-10 lg:mt-0 lg:px-16 lg:py-16">{children}</div>
+          <div className="mx-auto mt-14 max-w-screen-2xl px-4 py-10 lg:mt-0 lg:px-16 lg:py-16">
+            {children}
+          </div>
         </div>
       </div>
     </div>
