@@ -231,7 +231,9 @@ STATIC_URL = "static/"
 # Media
 ######################################################################
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+
+print(environ.get("MEDIA_ROOT"))
+MEDIA_ROOT = environ.get("MEDISA_ROOT", BASE_DIR / "media")
 
 ######################################################################
 # Rest Framework

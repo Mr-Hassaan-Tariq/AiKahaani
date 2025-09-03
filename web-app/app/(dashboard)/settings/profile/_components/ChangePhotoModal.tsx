@@ -4,15 +4,40 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { ImagePlus } from 'lucide-react';
 
+import { userService } from 'lib/api';
 import Col from 'components/ui/Col';
 import Dialog from 'components/ui/Dialog';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 import { Button } from 'components/shadcn_ui/button';
 
-export default function ChangePhotoModal({ trigger }: { trigger: React.ReactNode }) {
+export default function ChangePhotoModal({
+  trigger,
+  onSuccess,
+}: {
+  trigger: React.ReactNode;
+  onSuccess?: (newPic: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [image, setImage] = useState<File | undefined>();
+
+  const [loading, setLoading] = useState(false);
+
+  const handleSave = async () => {
+    if (!image) return;
+    setLoading(true);
+    try {
+      const response = await userService.updateProfilePicture(image);
+
+      if (onSuccess) onSuccess(response.profile_picture);
+
+      setOpen(false);
+    } catch (error) {
+      console.error('Failed to update profile picture', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Dialog
       open={open}
@@ -49,15 +74,16 @@ export default function ChangePhotoModal({ trigger }: { trigger: React.ReactNode
             </Text>
           </Button>
           <Button
-            type="submit"
-            disabled={!image}
+            type="button"
+            disabled={!image || loading}
+            onClick={handleSave}
             className="h-[52px] w-full rounded-full bg-gradient-to-r from-[#2BFF13] to-[#20BF0E] hover:opacity-70 disabled:opacity-50"
           >
             <Text
               variant="base"
               className="font-extrabold text-[#0E0F0C] [font-feature-settings:'liga'_off,'clig'_off]"
             >
-              Save
+              {loading ? 'Saving...' : 'Save'}
             </Text>
           </Button>
         </Row>

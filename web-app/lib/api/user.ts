@@ -82,7 +82,7 @@ export class UserService {
     email?: string;
     preferred_language?: string;
   }): Promise<any> {
-    const token = getCookie('access_token'); // get token from cookies
+    const token = getCookie('access_token');
 
     const response = await this.apiClient.put('/v1/users/details/', data, {
       headers: {
@@ -120,6 +120,30 @@ export class UserService {
         status: apiError.status,
       };
     }
+  }
+
+  async updateProfilePicture(file: File): Promise<{ message: string; profile_picture: string }> {
+    const token = getCookie('access_token');
+
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+
+    const response = await this.apiClient.patch<{ message: string; profile_picture: string }>(
+      '/v1/users/profile-picture',
+      formData,
+      {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    );
+
+    if (!response || !response.data) {
+      throw new Error('No response received from API');
+    }
+
+    return response.data;
   }
 
   /**

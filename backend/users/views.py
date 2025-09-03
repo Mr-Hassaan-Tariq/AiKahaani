@@ -210,7 +210,7 @@ class GoogleLoginAPIView(APIView):
         }
 
         user, created = User.objects.get_or_create(
-            email=email, username=email.strip("@")[0], defaults=defaults
+            email=email, username=email.split("@")[0], defaults=defaults
         )
 
         if created:
@@ -380,7 +380,7 @@ class UserDetailsUpdateAPIView(APIView):
         email_in_payload = serializer.validated_data.get("emailAddress")
 
         serializer.update_user(user)
-
+        # breakpoint()
         # If email was updated, send verification link
         if email_in_payload and email_in_payload != previous_email:
             try:

@@ -1,22 +1,33 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
+import ComponentNav from '@/(dashboard)/_components/ComponentNav';
+import TickCircle from '@assets/svg/tick-circle.svg';
 
 import { Tabs, TabsList, TabsTrigger } from 'components/shadcn_ui/tabs';
 
 const tabsPath = [
   { label: 'All', path: '/notifications' },
-  { label: 'Product Updates', path: '/notifications/product-updates' },
-  { label: 'Subscription', path: '/notifications/subscription' },
+  { label: 'Product Updates', path: '/notifications?query=product-updates' },
+  { label: 'Subscription', path: '/notifications?query=subscription' },
 ] as const;
 
 export default function NotificationTabs({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const activeTab = tabsPath.find((tab) => tab.path === pathname) ?? tabsPath[0];
+  const searchParams = useSearchParams();
+  const query = searchParams.get('query');
+  const activeTab =
+    tabsPath.find((tab) => tab.path === pathname + '?query=' + query) ?? tabsPath[0];
 
   return (
-    <div className="flex grow flex-col gap-7">
+    <div className="flex grow flex-col gap-5">
+      <ComponentNav
+        title="Notifications"
+        buttonText="Mark all as read"
+        buttonIcon={TickCircle}
+        _onButtonClick={() => console.log('Profile updated!')}
+      />
       <div className="w-full overflow-x-auto overflow-y-visible lg:w-fit">
         <Tabs defaultValue={activeTab.label} className="min-w-[550px]">
           <TabsList className="flex h-[52px] w-full items-center justify-normal gap-1.5 bg-transparent md:justify-normal md:gap-4 lg:h-fit">
