@@ -4,11 +4,13 @@ import mainLogo from '@assets/sidebar/mainLogo.png';
 import DesktopMenu from './_components/DesktopMenu';
 import { Dropdown } from './_components/DropdownMenu';
 import MobileMenu from './_components/MobileMenu';
+import { getUserProfile } from './actions';
 import PlanUpgradeModal from 'components/ui/PlanUpgradeModal';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { data } = await getUserProfile();
   return (
     <div className="h-[100dvh] min-h-screen w-full overflow-hidden bg-[#0E0F0C]">
       <div className="mx-auto flex">
@@ -23,7 +25,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Row className="w-full justify-between">
               <Image src={mainLogo} alt="mainLogo" className="object-cover" />
               <Row className="gap-4">
-                <div className="h-8 w-8 rounded-full bg-gray-600" />
+                <Image
+                  src={data?.profile_picture ?? ''}
+                  alt="p"
+                  width={40}
+                  height={40}
+                  className="h-8 w-8 rounded-full bg-white/10 object-cover"
+                />
                 <MobileMenu />
               </Row>
             </Row>
@@ -39,9 +47,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <Row>
               <Dropdown />
-              <div className="h-10 w-10 rounded-full bg-gray-600" />
-              <Text variant="base" className="text-white">
-                Jane Smith
+              <Image
+                src={data?.profile_picture ?? ''}
+                alt="p"
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-full bg-white/10 object-cover"
+              />
+              <Text
+                variant="base"
+                className="max-w-28 overflow-hidden text-ellipsis whitespace-nowrap text-white"
+              >
+                {data?.fullname}
               </Text>
             </Row>
           </Row>

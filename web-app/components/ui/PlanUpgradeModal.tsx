@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, CircleCheck, CircleX, Info } from 'lucide-react';
 
 import Button from './Button';
@@ -9,10 +9,14 @@ import Col from './Col';
 import Dialog from './Dialog';
 import Row from './Row';
 import Text from './Text';
+import useGetAllPlan, { PlanType } from 'lib/hooks/useGetAllPlan';
+import useGetCurrentPlan from 'lib/hooks/useGetCurrentPlan';
 import { cn } from 'lib/utils';
+import useToast from 'lib/utils/useToast';
 import ExternalLinkIcon from 'components/icons/ExternalLinkIcon';
 import { Popover, PopoverContent, PopoverTrigger } from 'components/shadcn_ui/popover';
 import { Separator } from 'components/shadcn_ui/separator';
+import { Skeleton } from 'components/shadcn_ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'components/shadcn_ui/tabs';
 
 interface PlanUpgradeModalProps {
@@ -20,17 +24,30 @@ interface PlanUpgradeModalProps {
 }
 
 export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalProps) {
+  const toast = useToast();
+  const { data, isLoading, isError, error } = useGetCurrentPlan();
+
+  useEffect(() => {
+    if (isError) {
+      toast.error('Something went wrong', error.message);
+    }
+  }, [isError, toast, error]);
+
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <div className="group flex h-8 w-20 items-center justify-center gap-3 rounded-full border border-[#BAFF38]/[.12] bg-white/[.16] text-sm">
-          Trail{' '}
-          <ChevronDown
-            size={20}
-            className="text-white transition-all duration-500 group-data-[state=open]:rotate-180"
-          />
-        </div>
-      </PopoverTrigger>
+      {isLoading ? (
+        <Skeleton className="h-8 w-20 rounded-full" />
+      ) : (
+        <PopoverTrigger asChild>
+          <div className="group flex h-8 w-20 items-center justify-center gap-3 rounded-full border border-[#BAFF38]/[.12] bg-white/[.16] text-sm capitalize">
+            {data?.plan.plan_type || 'Trial'}{' '}
+            <ChevronDown
+              size={20}
+              className="text-white transition-all duration-500 group-data-[state=open]:rotate-180"
+            />
+          </div>
+        </PopoverTrigger>
+      )}
       <PopoverContent
         className="z-50 w-full rounded-xl border border-[#BAFF38]/[.12] bg-white/10 p-6 backdrop-blur-lg sm:w-96"
         align={align}
@@ -38,10 +55,10 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
         <Col className="items-center gap-6">
           <Col className="items-center gap-3">
             <Text variant="xl" className="font-semibold text-white">
-              You&apos;re currently on a Trial
+              You&apos;re currently on a {data?.plan.plan_type}
             </Text>
             <Text className="text-[#AAACA6]" variant="sm">
-              Enjoy access to basic tools for 7 days for only 1$.
+              {data?.plan.description}
             </Text>
           </Col>
           <Col className="gag-4 w-full">
@@ -66,7 +83,20 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
 }
 
 function ViewAllPlanModal({ trigger }: { trigger: React.ReactNode }) {
+  const toast = useToast();
   const [open, setOpen] = useState(false);
+  const { data, isLoading, isError, error } = useGetAllPlan({ enabled: open });
+
+  useEffect(() => {
+    if (isError) {
+      toast.error('Something went wrong', error.message);
+    }
+  }, [isError, toast, error, data]);
+
+  const trialData = useMemo(() => data?.find((e) => e.plan_type === 'trial'), [data]);
+  const monthlyData = useMemo(() => data?.find((e) => e.plan_type === 'basic'), [data]);
+  const yearlyData = useMemo(() => data?.find((e) => e.plan_type === 'pro'), [data]);
+
   return (
     <Dialog
       open={open}
@@ -76,31 +106,35 @@ function ViewAllPlanModal({ trigger }: { trigger: React.ReactNode }) {
       className="sm:max-w-[983px]"
     >
       <Col className="mt-4 w-full items-center gap-8">
-        <Tabs defaultValue="monthly" className="flex w-full flex-col gap-6">
-          <TabsList className="flex flex-row gap-6 bg-transparent">
-            <TabsTrigger
-              value="monthly"
-              className="h-[52px] w-fit rounded-full bg-white/10 px-6 py-4 backdrop-blur-[2px] hover:bg-white/10 hover:opacity-70"
-            >
-              Monthly
-            </TabsTrigger>
-            <TabsTrigger
-              value="yearly"
-              className="relative h-[52px] w-fit rounded-full bg-white/10 px-6 py-4 backdrop-blur-[2px] hover:bg-white/10 hover:opacity-70"
-            >
-              <div className="absolute -right-10 -top-3 z-50 flex items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-xs leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md">
-                Save 20%
-              </div>
-              Yearly
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="monthly">
-            <TrailWidget frequency="monthly" />
-          </TabsContent>
-          <TabsContent value="yearly">
-            <TrailWidget frequency="yearly" />
-          </TabsContent>
-        </Tabs>
+        {isLoading ? (
+          <Skeleton className="h-[452px] w-full bg-white/[.05]" />
+        ) : (
+          <Tabs defaultValue="monthly" className="flex w-full flex-col gap-6">
+            <TabsList className="flex flex-row gap-6 bg-transparent">
+              <TabsTrigger
+                value="monthly"
+                className="h-[52px] w-fit rounded-full bg-white/10 px-6 py-4 backdrop-blur-[2px] hover:bg-white/10 hover:opacity-70"
+              >
+                Monthly
+              </TabsTrigger>
+              <TabsTrigger
+                value="yearly"
+                className="relative h-[52px] w-fit rounded-full bg-white/10 px-6 py-4 backdrop-blur-[2px] hover:bg-white/10 hover:opacity-70"
+              >
+                <div className="absolute -right-10 -top-3 z-50 flex items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-xs leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md">
+                  Save 20%
+                </div>
+                Yearly
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="monthly">
+              <TrailWidget data={monthlyData} trial={trialData} />
+            </TabsContent>
+            <TabsContent value="yearly">
+              <TrailWidget data={yearlyData} trial={trialData} />
+            </TabsContent>
+          </Tabs>
+        )}
       </Col>
     </Dialog>
   );
@@ -120,7 +154,7 @@ const trailIcon = (
   </svg>
 );
 
-const data = {
+const trialData = {
   trail: [
     { success: true, label: 'Access to script generator' },
     { success: true, label: 'Use title generator' },
@@ -136,28 +170,34 @@ const data = {
   ],
 };
 
-function TrailWidget({ frequency }: { frequency: 'monthly' | 'yearly' }) {
+interface TrailWidgetProps {
+  data?: PlanType;
+  trial?: PlanType;
+}
+
+function TrailWidget({ data, trial }: TrailWidgetProps) {
   return (
     <Row className="w-full gap-6">
       <Card className={cn(cardCss, 'min-w-[300px] hover:bg-white/[.16]')}>
         <Col className="h-full gap-6">
           <Col className="gap-4">
             <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-xs leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md">
-              Try TubeGenius for 7 days — just $1
+              {/* Try TubeGenius for 7 days — just $1 */}
+              {trial?.description}
             </div>
             <Row>
               <Row>
                 {trailIcon}
                 <Text variant="2xl" className="text-xl text-white lg:text-2xl">
-                  Trial
+                  {trial?.name}
                 </Text>
               </Row>
               <Row className="items-end gap-1">
                 <Text variant="3xl" className="text-white">
-                  $1 /
+                  ${trial?.price} /
                 </Text>
                 <Text variant="sm" className="mb-1 text-brand-secondary">
-                  7 days
+                  {trial?.trial_days} days
                 </Text>
               </Row>
             </Row>
@@ -166,7 +206,7 @@ function TrailWidget({ frequency }: { frequency: 'monthly' | 'yearly' }) {
           <Separator className="w-full bg-white/[.16]" />
 
           <Col className="gap-4">
-            {data.trail.map((e) => (
+            {trialData.trail.map((e) => (
               <Row key={e.label} className="ga-2 justify-normal">
                 {e.success ? (
                   <CircleCheck size={24} className="text-[#00B559]" />
@@ -190,25 +230,26 @@ function TrailWidget({ frequency }: { frequency: 'monthly' | 'yearly' }) {
           <Button className="mt-auto">Upgrade now</Button>
         </Col>
       </Card>
+
       <Card className={cn(cardCss, 'min-w-[300px] hover:bg-white/[.16]')}>
         <Col className="h-full gap-6">
           <Col className="gap-4">
             <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-xs leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md">
-              Most popular
+              {data?.description || data?.name}
             </div>
             <Row>
               <Row>
                 {trailIcon}
                 <Text variant="2xl" className="text-xl text-white lg:text-2xl">
-                  Premium
+                  {data?.name}
                 </Text>
               </Row>
               <Row className="items-end gap-1">
                 <Text variant="3xl" className="text-white">
-                  $45 /
+                  ${data?.price} /
                 </Text>
                 <Text variant="sm" className="mb-1 text-brand-secondary">
-                  {frequency === 'monthly' ? 'month' : 'year'}
+                  {data?.billing_cycle}
                 </Text>
               </Row>
             </Row>
@@ -217,7 +258,7 @@ function TrailWidget({ frequency }: { frequency: 'monthly' | 'yearly' }) {
           <Separator className="w-full bg-white/[.16]" />
 
           <Col className="gap-4">
-            {data.Premium.map((e) => (
+            {trialData.Premium.map((e) => (
               <Row key={e.label} className="ga-2 justify-normal">
                 {e.success ? (
                   <CircleCheck size={24} className="text-[#00B559]" />
