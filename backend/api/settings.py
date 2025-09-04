@@ -178,7 +178,6 @@ else:
             "HOST": db_host,
             "PORT": db_port,
             "OPTIONS": {
-                "sslmode": environ.get("DATABASE_SSL_MODE", "require"),
                 "connect_timeout": 10,
             },
         }
