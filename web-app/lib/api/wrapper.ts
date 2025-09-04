@@ -1,6 +1,8 @@
 import { env } from '../../env.mjs';
 import { AuthService } from './auth';
 import { ApiClient } from './client';
+import { NotificationService } from './notifications';
+import { PrivacyService } from './privacy';
 import { UserService } from './user';
 
 /**
@@ -10,6 +12,8 @@ export class ApiWrapper {
   private client: ApiClient;
   public auth: AuthService;
   public user: UserService;
+  public notifications: NotificationService;
+  public privacy: PrivacyService;
   constructor() {
     // Initialize the API client with configuration
     this.client = new ApiClient({
@@ -23,6 +27,8 @@ export class ApiWrapper {
     // Initialize services
     this.auth = new AuthService(this.client);
     this.user = new UserService(this.client);
+    this.notifications = new NotificationService(this.client);
+    this.privacy = new PrivacyService(this.client);
   }
 
   /**
@@ -65,3 +71,5 @@ export const api = new ApiWrapper();
 // Export individual services for direct access
 export const authService = api.auth;
 export const userService = api.user;
+export const notificationService = api.notifications;
+export const privacyService = api.privacy;

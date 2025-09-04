@@ -14,8 +14,17 @@ export const baseUrl = env.NEXT_PUBLIC_API_URL;
 // New API wrapper exports
 export { AuthService } from './auth';
 export { ApiClient } from './client';
+export { NotificationService } from './notifications';
+export { PrivacyService } from './privacy';
 export { UserService } from './user';
-export { api, ApiWrapper, authService, userService } from './wrapper';
+export {
+  api,
+  ApiWrapper,
+  authService,
+  notificationService,
+  privacyService,
+  userService,
+} from './wrapper';
 
 // Type exports
 export type {
@@ -26,6 +35,8 @@ export type {
   GoogleAuthRequest,
   GoogleAuthResponse,
   HttpMethod,
+  NotificationSettings,
+  PrivacySettings,
   RequestOptions,
   SignupRequest,
   SignupResponse,

@@ -7,15 +7,18 @@ export const notificationTexts = {
     options: [
       {
         label: 'Email notifications',
+        key: 'email_notifications',
         description:
           "You'll receive updates about your scripts, account, and new features via email.",
       },
       {
         label: 'In-app notifications',
+        key: 'in_app_notifications',
         description: 'See notifications directly in your TubeGenius.',
       },
       {
         label: 'Web push notifications (coming soon)',
+        key: 'web_push_notifications',
         description: "Get real-time alerts even when you're not on the platform.",
       },
     ],
@@ -23,10 +26,27 @@ export const notificationTexts = {
   notificationTypes: {
     title: 'Notification types',
     options: [
-      { label: 'Account or plan changes' },
-      { label: 'Feature updates' },
-      { label: 'Tips & content inspiration' },
-      { label: 'Community or affiliate updates' },
+      {
+        label: 'New script generated',
+        key: 'new_script_generated',
+      },
+      {
+        label: 'Account or plan changes',
+        key: 'account_or_plan_changes',
+      },
+      {
+        label: 'Tips & content inspiration',
+        key: 'tips_content_inspiration',
+      },
+      {
+        label: 'Feature updates',
+        key: 'feature_updates',
+      },
+      {
+        label: 'Community or affiliate updates',
+        key: 'community_affiliate_updates',
+        description: 'Get updates about our community and affiliate program.',
+      },
     ],
   },
 };

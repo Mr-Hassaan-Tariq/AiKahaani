@@ -101,3 +101,9 @@
     @apply bg-background text-foreground;
   }
 }
+.bg-muted {
+  background-color: #444444 !important;
+  margin-top: 0px !important;
+  margin-bottom: 10px !important;
+  width: 10% !important;
+}

@@ -81,3 +81,21 @@ export interface VerifiedUser {
   username: string;
   fullname: string;
 }
+
+// Notification Types
+export interface NotificationSettings {
+  in_app_notifications: boolean;
+  email_notifications: boolean;
+  web_push_notifications: boolean;
+  new_script_generated: boolean;
+  account_or_plan_changes: boolean;
+  tips_content_inspiration: boolean;
+  feature_updates: boolean;
+  community_affiliate_updates: boolean;
+}
+
+// Privacy Types
+export interface PrivacySettings {
+  allow_product_update_emails: boolean;
+  allow_anonymized_data_usage: boolean;
+}

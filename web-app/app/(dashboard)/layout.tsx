@@ -2,18 +2,17 @@ import Image from 'next/image';
 import mainLogo from '@assets/sidebar/mainLogo.png';
 
 import DesktopMenu from './_components/DesktopMenu';
+import { MobileDrawer } from './_components/Drawer';
 import { Dropdown } from './_components/DropdownMenu';
 import MobileMenu from './_components/MobileMenu';
-import { getUserProfile } from './actions';
 import PlanUpgradeModal from 'components/ui/PlanUpgradeModal';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { data } = await getUserProfile();
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-[100dvh] min-h-screen w-full overflow-hidden bg-[#0E0F0C]">
-      <div className="mx-auto flex">
+      <div className="mx-auto flex max-w-screen-2xl">
         {/* Desktop Sidebar */}
         <div className="hidden h-screen lg:block lg:w-[265px]">
           <DesktopMenu />
@@ -25,13 +24,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Row className="w-full justify-between">
               <Image src={mainLogo} alt="mainLogo" className="object-cover" />
               <Row className="gap-4">
-                <Image
-                  src={data?.profile_picture ?? ''}
-                  alt="p"
-                  width={40}
-                  height={40}
-                  className="h-8 w-8 rounded-full bg-white/10 object-cover"
-                />
+                <MobileDrawer />
+                <div className="h-8 w-8 rounded-full bg-gray-600" />
                 <MobileMenu />
               </Row>
             </Row>
@@ -47,24 +41,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
             <Row>
               <Dropdown />
-              <Image
-                src={data?.profile_picture ?? ''}
-                alt="p"
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-full bg-white/10 object-cover"
-              />
-              <Text
-                variant="base"
-                className="max-w-28 overflow-hidden text-ellipsis whitespace-nowrap text-white"
-              >
-                {data?.fullname}
+              <div className="h-10 w-10 rounded-full bg-gray-600" />
+              <Text variant="base" className="text-white">
+                Jane Smith
               </Text>
             </Row>
           </Row>
-          <div className="mx-auto mt-14 max-w-screen-2xl px-4 py-10 lg:mt-0 lg:px-16 lg:py-16">
-            {children}
-          </div>
+          <div className="mx-auto mt-14 px-4 py-10 lg:mt-0 lg:px-16 lg:py-16">{children}</div>
         </div>
       </div>
     </div>
