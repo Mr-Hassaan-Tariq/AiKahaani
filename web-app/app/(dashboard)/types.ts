@@ -4,6 +4,6 @@ export interface UserProfileType {
   username: string;
   fullname: string;
   preferred_language: string;
-  profile_picture: string | null;
+  profile_picture: string;
   is_email_verified: boolean;
 }

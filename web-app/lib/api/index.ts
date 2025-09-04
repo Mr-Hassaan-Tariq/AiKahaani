@@ -7,7 +7,7 @@ export const method = {
   delete: 'DELETE',
   put: 'PUT',
   patch: 'PATCH',
-};
+} as const;
 
 export const baseUrl = env.NEXT_PUBLIC_API_URL;
 

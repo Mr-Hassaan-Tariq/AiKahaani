@@ -129,7 +129,7 @@ export class UserService {
     formData.append('profile_picture', file);
 
     const response = await this.apiClient.patch<{ message: string; profile_picture: string }>(
-      '/v1/users/profile-picture',
+      '/v1/users/profile-picture/',
       formData,
       {
         headers: {

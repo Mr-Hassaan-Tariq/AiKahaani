@@ -6,7 +6,9 @@ export const env = createEnv({
    * Server side Environment variables, not available on the client.
    * Will throw if accessed on the client.
    */
-  server: {},
+  server: {
+    STRIPE_SECRET_KEY: z.string(),
+  },
   /*
    * Environment variables available on the client (and server).
    *
@@ -15,6 +17,7 @@ export const env = createEnv({
   client: {
     NEXT_PUBLIC_API_URL: z.string().url('Must include valid URL to Tubegenius API'),
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: z.string(),
+    NEXT_PUBLIC_STRIPE_PORTAL_LINK: z.string(),
   },
   /*
    * Due to how Next.js bundles environment variables on Edge and Client,
@@ -25,5 +28,7 @@ export const env = createEnv({
   runtimeEnv: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    NEXT_PUBLIC_STRIPE_PORTAL_LINK: process.env.NEXT_PUBLIC_STRIPE_PORTAL_LINK,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   },
 });

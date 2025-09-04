@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import dayjs from 'dayjs';
+import { env } from 'env.mjs';
 import { CircleCheck } from 'lucide-react';
 
 import { getCurrentPlan } from './actions';
@@ -48,10 +50,16 @@ export default async function Page() {
               Access: <p className="text-white">All tools unlocked for 7 more days</p>
             </Text>
             <Row className="w-full lg:w-fit">
-              <Button variant="gray" className="whitespace-nowrap px-8" height={41}>
-                Manage subscription
-              </Button>
-              {data.plan.plan_type !== 'pro' && <Button height={41}>Upgrade plan</Button>}
+              <Link href={env.NEXT_PUBLIC_STRIPE_PORTAL_LINK} target="_blank">
+                <Button variant="gray" className="whitespace-nowrap px-8" height={41}>
+                  Manage subscription
+                </Button>
+              </Link>
+              {data.plan.plan_type !== 'pro' && (
+                <Link href={env.NEXT_PUBLIC_STRIPE_PORTAL_LINK}>
+                  <Button height={41}>Upgrade plan</Button>
+                </Link>
+              )}
             </Row>
           </Row>
         </Col>

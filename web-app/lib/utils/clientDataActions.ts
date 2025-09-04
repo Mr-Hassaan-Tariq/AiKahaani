@@ -3,7 +3,7 @@
 import Cookies from 'js-cookie';
 import { z } from 'zod';
 
-import { baseUrl } from 'lib/api';
+import { baseUrl, method } from 'lib/api';
 import { logger } from 'lib/logger';
 
 export async function processError(resp: Response) {
@@ -97,18 +97,17 @@ export async function patchClientDataAction<T, P>(endpoint: string, body?: P) {
   return res.json() as T;
 }
 
-export async function deleteClientDataAction<T, P>(endpoint: string, body?: P) {
+export async function deleteClientDataAction<T>(endpoint: string) {
   const token = getAuthToken();
-  const res = await fetch(`${baseUrl}/${endpoint}`, {
-    method: 'DELETE',
+  const res = await fetch(`${baseUrl}${endpoint}`, {
+    method: method.delete,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(body),
   });
   if (!res.ok) {
-    if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
+    // if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
     const error = await processError(res);
     logger.error(error);
     throw error;

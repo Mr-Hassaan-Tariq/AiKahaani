@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { env } from 'env.mjs';
 import { ChevronDown, CircleCheck, CircleX, Info } from 'lucide-react';
 
 import Button from './Button';
@@ -9,6 +11,7 @@ import Col from './Col';
 import Dialog from './Dialog';
 import Row from './Row';
 import Text from './Text';
+import useCreateStripeSession from 'lib/hooks/useCreateStripeSession';
 import useGetAllPlan, { PlanType } from 'lib/hooks/useGetAllPlan';
 import useGetCurrentPlan from 'lib/hooks/useGetCurrentPlan';
 import { cn } from 'lib/utils';
@@ -26,6 +29,7 @@ interface PlanUpgradeModalProps {
 export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalProps) {
   const toast = useToast();
   const { data, isLoading, isError, error } = useGetCurrentPlan();
+  const { isPending, mutate: createStripeSession } = useCreateStripeSession();
 
   useEffect(() => {
     if (isError) {
@@ -33,9 +37,28 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
     }
   }, [isError, toast, error]);
 
+  const handleUpgrade = async ({ name, price }: { name: string; price: number }) => {
+    createStripeSession(
+      { name, price },
+      {
+        onSuccess: (data) => {
+          if (typeof data?.url === 'string') {
+            window.location.href = data.url;
+          } else {
+            toast.error('Something went wrong');
+          }
+        },
+
+        onError: (error) => {
+          toast.error('Something went wrong', error.message);
+        },
+      },
+    );
+  };
+
   return (
     <Popover>
-      {isLoading ? (
+      {isLoading || isPending ? (
         <Skeleton className="h-8 w-20 rounded-full" />
       ) : (
         <PopoverTrigger asChild>
@@ -62,8 +85,11 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
             </Text>
           </Col>
           <Col className="gag-4 w-full">
-            <Button fullRounded>Upgrade now</Button>
+            <Link href={env.NEXT_PUBLIC_STRIPE_PORTAL_LINK}>
+              <Button fullRounded>Upgrade now</Button>
+            </Link>
             <ViewAllPlanModal
+              handleUpgrade={handleUpgrade}
               trigger={
                 <Button variant="ghost" className="mx-auto w-fit">
                   <Row className="cursor-pointer justify-center gap-2 hover:opacity-75">
@@ -82,7 +108,12 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
   );
 }
 
-function ViewAllPlanModal({ trigger }: { trigger: React.ReactNode }) {
+type HandleUpgradeType = ({ name, price }: { name: string; price: number }) => void;
+type ViewAllPlanModalProps = {
+  trigger: React.ReactNode;
+  handleUpgrade: HandleUpgradeType;
+};
+function ViewAllPlanModal({ trigger, handleUpgrade }: ViewAllPlanModalProps) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const { data, isLoading, isError, error } = useGetAllPlan({ enabled: open });
@@ -128,10 +159,10 @@ function ViewAllPlanModal({ trigger }: { trigger: React.ReactNode }) {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="monthly">
-              <TrailWidget data={monthlyData} trial={trialData} />
+              <TrailWidget data={monthlyData} trial={trialData} handleUpgrade={handleUpgrade} />
             </TabsContent>
             <TabsContent value="yearly">
-              <TrailWidget data={yearlyData} trial={trialData} />
+              <TrailWidget data={yearlyData} trial={trialData} handleUpgrade={handleUpgrade} />
             </TabsContent>
           </Tabs>
         )}
@@ -173,9 +204,10 @@ const trialData = {
 interface TrailWidgetProps {
   data?: PlanType;
   trial?: PlanType;
+  handleUpgrade: HandleUpgradeType;
 }
 
-function TrailWidget({ data, trial }: TrailWidgetProps) {
+function TrailWidget({ data, trial, handleUpgrade }: TrailWidgetProps) {
   return (
     <Row className="w-full gap-6">
       <Card className={cn(cardCss, 'min-w-[300px] hover:bg-white/[.16]')}>
@@ -227,7 +259,12 @@ function TrailWidget({ data, trial }: TrailWidgetProps) {
             <Text variant="xs">Note: Auto-upgrades to Basic plan after trial ends</Text>
           </Row>
 
-          <Button className="mt-auto">Upgrade now</Button>
+          <Button
+            className="mt-auto"
+            onClick={() => handleUpgrade({ name: data?.name ?? '', price: Number(data?.price) })}
+          >
+            Upgrade now
+          </Button>
         </Col>
       </Card>
 
@@ -274,7 +311,12 @@ function TrailWidget({ data, trial }: TrailWidgetProps) {
 
           <Separator className="w-full bg-white/[.16]" />
 
-          <Button className="mt-auto">Start with Premium</Button>
+          <Button
+            className="mt-auto"
+            onClick={() => handleUpgrade({ name: data?.name ?? '', price: Number(data?.price) })}
+          >
+            Start with Premium
+          </Button>
         </Col>
       </Card>
     </Row>
