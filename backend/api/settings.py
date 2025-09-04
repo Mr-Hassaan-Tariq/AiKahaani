@@ -158,15 +158,15 @@ TEMPLATES = [
 DATABASE_URL = environ.get("DATABASE_URL")
 
 if DATABASE_URL:
-    # Parse DATABASE_URL for Railway
+    # Parse DATABASE_URL for Railway/Aiven
     DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
 
 else:
-    # Fallback to individual environment variables
+    # Fallback to individual environment variables for Aiven
     db_user = environ.get("DATABASE_USER", "postgres")
     db_password = environ.get("DATABASE_PASSWORD", "change-password")
     db_name = environ.get("DATABASE_NAME", "db")
-    db_host = environ.get("DATABASE_HOST", "db")
+    db_host = environ.get("DATABASE_HOST", "localhost")
     db_port = environ.get("DATABASE_PORT", "5432")
 
     DATABASES = {
@@ -177,9 +177,10 @@ else:
             "NAME": db_name,
             "HOST": db_host,
             "PORT": db_port,
-            # "OPTIONS": {
-            #     "sslmode": environ.get("DATABASE_SSL_MODE", "require"),
-            # },
+            "OPTIONS": {
+                "sslmode": environ.get("DATABASE_SSL_MODE", "require"),
+                "connect_timeout": 10,
+            },
         }
     }
 
