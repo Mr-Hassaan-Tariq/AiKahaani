@@ -37,6 +37,7 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
 
             <Row className="flex-col gap-4 md:gap-6 lg:flex-row">
               <FormInput
+                disabled
                 name="fullName"
                 label="Full name"
                 placeholder="Enter your full name"
@@ -46,6 +47,7 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
                 }}
               />
               <FormInput
+                disabled
                 name="userName"
                 label="Username"
                 placeholder="Enter your username"
@@ -57,6 +59,7 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
             </Row>
             <Row className="flex-col gap-4 md:gap-6 lg:flex-row">
               <FormInput
+                disabled
                 name="email"
                 label="Email address"
                 placeholder="Enter your email address"
@@ -66,6 +69,7 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
                 }}
               />
               <FormInput
+                disabled
                 name="language"
                 label="Preferred language"
                 placeholder="Enter your preferred language"

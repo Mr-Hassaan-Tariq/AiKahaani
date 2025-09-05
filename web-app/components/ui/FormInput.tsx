@@ -45,6 +45,7 @@ export default function FormInput(props: InputProps) {
         <input
           // eslint-disable-next-line react/jsx-props-no-spreading
           {...inputProps}
+          disabled={disabled}
           type={type}
           // eslint-disable-next-line react/jsx-props-no-spreading
           {...register(name, validationSchema)}

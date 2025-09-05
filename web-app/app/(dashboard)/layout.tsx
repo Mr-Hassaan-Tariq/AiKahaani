@@ -5,14 +5,17 @@ import DesktopMenu from './_components/DesktopMenu';
 import { MobileDrawer } from './_components/Drawer';
 import { Dropdown } from './_components/DropdownMenu';
 import MobileMenu from './_components/MobileMenu';
+import { getUserProfile } from './actions';
+import ClientImage from 'components/ui/ClientImage';
 import PlanUpgradeModal from 'components/ui/PlanUpgradeModal';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { data } = await getUserProfile();
   return (
     <div className="h-[100dvh] min-h-screen w-full overflow-hidden bg-[#0E0F0C]">
-      <div className="mx-auto flex max-w-screen-2xl">
+      <div className="mx-auto flex">
         {/* Desktop Sidebar */}
         <div className="hidden h-screen lg:block lg:w-[265px]">
           <DesktopMenu />
@@ -41,13 +44,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <Row>
               <Dropdown />
-              <div className="h-10 w-10 rounded-full bg-gray-600" />
+              <ClientImage
+                src={data?.profile_picture || ''}
+                alt="DP"
+                width={100}
+                height={100}
+                priority={true}
+                className="h-10 w-10 rounded-full bg-gray-600 object-cover"
+              />
               <Text variant="base" className="text-white">
-                Jane Smith
+                {data?.fullname || ''}
               </Text>
             </Row>
           </Row>
-          <div className="mx-auto mt-14 px-4 py-10 lg:mt-0 lg:px-16 lg:py-16">{children}</div>
+          <div className="mx-auto mt-14 max-w-screen-2xl px-4 py-10 lg:mt-0 lg:px-16 lg:py-16">
+            {children}
+          </div>
         </div>
       </div>
     </div>

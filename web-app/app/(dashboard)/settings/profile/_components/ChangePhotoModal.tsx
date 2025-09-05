@@ -34,6 +34,7 @@ export default function ChangePhotoModal({ trigger }: { trigger: ReactNode }) {
       onSuccess: async () => {
         toast.success('Success', 'Profile image updated successfully');
         router.refresh();
+        setImage(undefined);
         setOpen(false);
       },
       onError: (error) => {
@@ -46,10 +47,10 @@ export default function ChangePhotoModal({ trigger }: { trigger: ReactNode }) {
     <Dialog
       open={open}
       setOpen={(value) => {
-        setOpen(value);
         if (!value) {
           setImage(undefined);
         }
+        setOpen(value);
       }}
       trigger={trigger}
       title="Change your profile photo"
@@ -74,8 +75,8 @@ export default function ChangePhotoModal({ trigger }: { trigger: ReactNode }) {
           <Button
             variant="gray"
             onClick={() => {
-              setOpen(false);
               setImage(undefined);
+              setOpen(false);
             }}
           >
             <Text
@@ -99,7 +100,7 @@ export default function ChangePhotoModal({ trigger }: { trigger: ReactNode }) {
             alt="profile"
             width={250}
             height={250}
-            className="size-[250px] rounded"
+            className="h-[250px] w-full rounded-lg object-cover"
           />
         ) : (
           imageUploadIcon

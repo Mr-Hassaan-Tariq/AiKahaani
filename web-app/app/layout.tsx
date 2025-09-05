@@ -13,7 +13,7 @@ const FIGTREE = Figtree({
 export const metadata = {
   title: 'Tubegenius',
   description:
-    "Longevity at the palm of your hand. Access to leading specialists, cutting edge therapies, and the highest quality of care, all available on the Geviti platform. Whether it's TRT, peptide therapy, or nutritional advice, we have you covered. All practices backed by science. Go Geviti, and live a longer, healthier life.",
+    'TubeGenius is envisioned as an AI-powered script writing platform specifically designed to automate and enhance the YouTube content creation process. The platform’s overarching goal is to function as "Your Genius AI Assistant for YouTube Automation," empowering content creators to effortlessly transform nascent video ideas into professionally structured and engaging scripts with minimal manual intervention',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

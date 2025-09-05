@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { env } from 'env.mjs';
 import { ChevronDown, CircleCheck, CircleX, Info } from 'lucide-react';
@@ -28,14 +28,24 @@ interface PlanUpgradeModalProps {
 
 export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalProps) {
   const toast = useToast();
+  const [openPopover, setOpenPopover] = useState(false);
+  const [open, setOpen] = useState(false);
   const { data, isLoading, isError, error } = useGetCurrentPlan();
   const { isPending, mutate: createStripeSession } = useCreateStripeSession();
 
   useEffect(() => {
     if (isError) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((error as any)?.error === 'No subscription found') {
+        setOpenPopover(true);
+        setOpen(true);
+        return toast.error('You are not on any plan', 'Please upgrade to a plan');
+      }
+
       toast.error('Something went wrong', error.message);
     }
-  }, [isError, toast, error]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isError, toast, isLoading]);
 
   const handleUpgrade = async ({ name, price }: { name: string; price: number }) => {
     createStripeSession(
@@ -45,7 +55,7 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
           if (typeof data?.url === 'string') {
             window.location.href = data.url;
           } else {
-            toast.error('Something went wrong');
+            toast.error('Something went wrong', 'Please try again');
           }
         },
 
@@ -57,7 +67,7 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
   };
 
   return (
-    <Popover>
+    <Popover open={openPopover} onOpenChange={setOpenPopover}>
       {isLoading || isPending ? (
         <Skeleton className="h-8 w-20 rounded-full" />
       ) : (
@@ -89,6 +99,11 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
               <Button fullRounded>Upgrade now</Button>
             </Link>
             <ViewAllPlanModal
+              open={open}
+              setOpen={(value) => {
+                if (!data?.plan.plan_type) return;
+                setOpen(value);
+              }}
               handleUpgrade={handleUpgrade}
               trigger={
                 <Button variant="ghost" className="mx-auto w-fit">
@@ -110,12 +125,13 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
 
 type HandleUpgradeType = ({ name, price }: { name: string; price: number }) => void;
 type ViewAllPlanModalProps = {
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
   trigger: React.ReactNode;
   handleUpgrade: HandleUpgradeType;
 };
-function ViewAllPlanModal({ trigger, handleUpgrade }: ViewAllPlanModalProps) {
+function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlanModalProps) {
   const toast = useToast();
-  const [open, setOpen] = useState(false);
   const { data, isLoading, isError, error } = useGetAllPlan({ enabled: open });
 
   useEffect(() => {
@@ -139,7 +155,7 @@ function ViewAllPlanModal({ trigger, handleUpgrade }: ViewAllPlanModalProps) {
       <Col className="mt-4 w-full items-center gap-8">
         {isLoading ? (
           <Skeleton className="h-[452px] w-full bg-white/[.05]" />
-        ) : (
+        ) : Number(data?.length) > 0 ? (
           <Tabs defaultValue="monthly" className="flex w-full flex-col gap-6">
             <TabsList className="flex flex-row gap-6 bg-transparent">
               <TabsTrigger
@@ -165,6 +181,10 @@ function ViewAllPlanModal({ trigger, handleUpgrade }: ViewAllPlanModalProps) {
               <TrailWidget data={yearlyData} trial={trialData} handleUpgrade={handleUpgrade} />
             </TabsContent>
           </Tabs>
+        ) : (
+          <Text variant="base" className="flex h-24 items-center justify-center text-white">
+            No plans found
+          </Text>
         )}
       </Col>
     </Dialog>

@@ -13,5 +13,6 @@ export default function useGetTrailStatus() {
     queryKey: ['get-trail-status'],
     queryFn: () => getTrailStatus(),
     retry: false,
+    refetchOnWindowFocus: false,
   });
 }

@@ -13,6 +13,8 @@ export default function useGetCurrentPlan() {
     queryKey: ['get-current-plan'],
     queryFn: () => getCurrentPlan(),
     retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 60 * 1, // 1 hours
   });
 }
 

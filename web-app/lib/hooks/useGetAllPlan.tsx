@@ -13,6 +13,7 @@ export default function useGetAllPlan({ enabled }: { enabled: boolean }) {
     queryKey: ['get-all-plan'],
     queryFn: () => getAllPlan(),
     retry: false,
+    refetchOnWindowFocus: false,
     enabled,
   });
 }

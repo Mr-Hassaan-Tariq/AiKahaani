@@ -1,13 +1,11 @@
 'use client';
 
-import Image from 'next/image';
-import brokenImage from 'public/broken-image.png';
-
 import ChangePhotoModal from './ChangePhotoModal';
 import { basketIcon, changePhotoIcon } from './components';
 import DeletePhotoModal from './DeletePhotoModal';
 import Button from 'components/ui/Button';
 import Card from 'components/ui/Card';
+import ClientImage from 'components/ui/ClientImage';
 import Col from 'components/ui/Col';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
@@ -21,11 +19,24 @@ export default function ProfilePhotoCard({ profileImage }: { profileImage?: stri
         </Text>
 
         <Row className="flex-col justify-normal gap-6 md:flex-row">
-          <Image
-            src={!profileImage ? brokenImage : profileImage}
+          {/* <Image
+            src={profileImage || brokenImage}
             alt="DP"
             width={500}
             height={500}
+            priority={true}
+            className="h-[120px] w-[120px] rounded-full bg-white/10 object-cover"
+            onError={(e) => {
+              e.currentTarget.src = brokenImage.src;
+            }}
+          /> */}
+
+          <ClientImage
+            src={profileImage || ''}
+            alt="DP"
+            width={500}
+            height={500}
+            priority={true}
             className="h-[120px] w-[120px] rounded-full bg-white/10 object-cover"
           />
 
