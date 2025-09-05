@@ -4,8 +4,6 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import GoogleAuthComponent from '@/(auth)/signup/_components/GoogleAuthComponent';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import { env } from 'env.mjs';
 import * as yup from 'yup';
 
 import MaginpanIcon from '/public/images/maginpan.svg';
@@ -131,9 +129,7 @@ export default function Signup() {
         </div>
 
         {/* Google button */}
-        <GoogleOAuthProvider clientId={env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
-          <GoogleAuthComponent />
-        </GoogleOAuthProvider>
+        <GoogleAuthComponent />
       </div>
     </div>
   );

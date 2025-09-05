@@ -49,28 +49,20 @@ export async function getClientDataAction<T>(endpoint: string, schema?: z.ZodSch
   return data as T;
 }
 
-export async function postClientDataAction<T, P>(
-  endpoint: string,
-  body: P,
-  customUrl?: string,
-  idempotencyKey?: string,
-) {
+export async function postClientDataAction<T, P>(endpoint: string, body?: P, customUrl?: string) {
   const token = getAuthToken();
   // headers
   const headers = new Headers();
   headers.set('Content-Type', 'application/json');
   headers.set('Authorization', `Bearer ${token}`);
-  if (idempotencyKey) {
-    headers.set('x-idempotency-key', idempotencyKey);
-  }
 
-  const res = await fetch(customUrl ?? `${baseUrl}/${endpoint}`, {
+  const res = await fetch(customUrl ?? `${baseUrl}${endpoint}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
+    // if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
     const error = await processError(res);
     logger.error(error);
     throw error;

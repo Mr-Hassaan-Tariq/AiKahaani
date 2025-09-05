@@ -1,17 +1,17 @@
 'use client';
 
 import Image, { ImageProps } from 'next/image';
-import brokenImage from 'public/broken-image.png';
+import dummyProfilePic from 'public/images/avatar.png';
 
 export default function ClientImage(props: ImageProps) {
   const { src, alt, className, ...rest } = props;
   return (
     <Image
-      src={src || brokenImage}
+      src={src || dummyProfilePic}
       alt={alt || 'image'}
       className={className}
       onError={(e) => {
-        e.currentTarget.src = '/broken-image.png';
+        e.currentTarget.src = '/images/avatar.png';
       }}
       // eslint-disable-next-line react/jsx-props-no-spreading
       {...rest}

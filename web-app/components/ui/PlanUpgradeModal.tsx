@@ -9,6 +9,7 @@ import Button from './Button';
 import Card from './Card';
 import Col from './Col';
 import Dialog from './Dialog';
+import PageLoader from './PageLoader';
 import Row from './Row';
 import Text from './Text';
 import useCreateStripeSession from 'lib/hooks/useCreateStripeSession';
@@ -47,28 +48,22 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isError, toast, isLoading]);
 
-  const handleUpgrade = async ({ name, price }: { name: string; price: number }) => {
-    createStripeSession(
-      { name, price },
-      {
-        onSuccess: (data) => {
-          if (typeof data?.url === 'string') {
-            window.location.href = data.url;
-          } else {
-            toast.error('Something went wrong', 'Please try again');
-          }
-        },
-
-        onError: (error) => {
-          toast.error('Something went wrong', error.message);
-        },
+  const handleUpgrade = async (plan_id: string) => {
+    createStripeSession(plan_id, {
+      onSuccess: (data) => {
+        window.location.href = data.url;
       },
-    );
+
+      onError: (error) => {
+        toast.error('Something went wrong', error.message);
+      },
+    });
   };
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      {isLoading || isPending ? (
+      {isPending && <PageLoader size="2xl" color="white" />}
+      {isLoading ? (
         <Skeleton className="h-8 w-20 rounded-full" />
       ) : (
         <PopoverTrigger asChild>
@@ -123,12 +118,11 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
   );
 }
 
-type HandleUpgradeType = ({ name, price }: { name: string; price: number }) => void;
 type ViewAllPlanModalProps = {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
   trigger: React.ReactNode;
-  handleUpgrade: HandleUpgradeType;
+  handleUpgrade: (plan_id: string) => void;
 };
 function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlanModalProps) {
   const toast = useToast();
@@ -140,9 +134,9 @@ function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlan
     }
   }, [isError, toast, error, data]);
 
-  const trialData = useMemo(() => data?.find((e) => e.plan_type === 'trial'), [data]);
-  const monthlyData = useMemo(() => data?.find((e) => e.plan_type === 'basic'), [data]);
-  const yearlyData = useMemo(() => data?.find((e) => e.plan_type === 'pro'), [data]);
+  const trialData = useMemo(() => data?.find((e) => e.billing_cycle === 'weekly'), [data]);
+  const monthlyData = useMemo(() => data?.find((e) => e.billing_cycle === 'monthly'), [data]);
+  const yearlyData = useMemo(() => data?.find((e) => e.billing_cycle === 'yearly'), [data]);
 
   return (
     <Dialog
@@ -158,21 +152,25 @@ function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlan
         ) : Number(data?.length) > 0 ? (
           <Tabs defaultValue="monthly" className="flex w-full flex-col gap-6">
             <TabsList className="flex flex-row gap-6 bg-transparent">
-              <TabsTrigger
-                value="monthly"
-                className="h-[52px] w-fit rounded-full bg-white/10 px-6 py-4 backdrop-blur-[2px] hover:bg-white/10 hover:opacity-70"
-              >
-                Monthly
-              </TabsTrigger>
-              <TabsTrigger
-                value="yearly"
-                className="relative h-[52px] w-fit rounded-full bg-white/10 px-6 py-4 backdrop-blur-[2px] hover:bg-white/10 hover:opacity-70"
-              >
-                <div className="absolute -right-10 -top-3 z-50 flex items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-xs leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md">
-                  Save 20%
-                </div>
-                Yearly
-              </TabsTrigger>
+              {monthlyData && (
+                <TabsTrigger
+                  value="monthly"
+                  className="h-[52px] w-fit rounded-full bg-white/10 px-6 py-4 backdrop-blur-[2px] hover:bg-white/10 hover:opacity-70"
+                >
+                  Monthly
+                </TabsTrigger>
+              )}
+              {yearlyData && (
+                <TabsTrigger
+                  value="yearly"
+                  className="relative h-[52px] w-fit rounded-full bg-white/10 px-6 py-4 backdrop-blur-[2px] hover:bg-white/10 hover:opacity-70"
+                >
+                  <div className="absolute -right-10 -top-3 z-50 flex items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-xs leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md">
+                    Save 20%
+                  </div>
+                  Yearly
+                </TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="monthly">
               <TrailWidget data={monthlyData} trial={trialData} handleUpgrade={handleUpgrade} />
@@ -224,7 +222,7 @@ const trialData = {
 interface TrailWidgetProps {
   data?: PlanType;
   trial?: PlanType;
-  handleUpgrade: HandleUpgradeType;
+  handleUpgrade: (plan_id: string) => void;
 }
 
 function TrailWidget({ data, trial, handleUpgrade }: TrailWidgetProps) {
@@ -279,10 +277,7 @@ function TrailWidget({ data, trial, handleUpgrade }: TrailWidgetProps) {
             <Text variant="xs">Note: Auto-upgrades to Basic plan after trial ends</Text>
           </Row>
 
-          <Button
-            className="mt-auto"
-            onClick={() => handleUpgrade({ name: data?.name ?? '', price: Number(data?.price) })}
-          >
+          <Button className="mt-auto" onClick={() => data?.id && handleUpgrade(data.id)}>
             Upgrade now
           </Button>
         </Col>
@@ -331,10 +326,7 @@ function TrailWidget({ data, trial, handleUpgrade }: TrailWidgetProps) {
 
           <Separator className="w-full bg-white/[.16]" />
 
-          <Button
-            className="mt-auto"
-            onClick={() => handleUpgrade({ name: data?.name ?? '', price: Number(data?.price) })}
-          >
+          <Button className="mt-auto" onClick={() => data?.id && handleUpgrade(data.id)}>
             Start with Premium
           </Button>
         </Col>

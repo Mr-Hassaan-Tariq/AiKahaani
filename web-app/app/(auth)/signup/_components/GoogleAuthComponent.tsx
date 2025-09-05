@@ -1,62 +1,56 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useGoogleLogin } from '@react-oauth/google';
+import { useEffect } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { env } from 'env.mjs';
+import Cookies from 'js-cookie';
 import { FcGoogle } from 'react-icons/fc';
 
-export default function GoogleAuthComponent() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const domain = typeof window !== 'undefined' ? window.location.origin : '';
+import useGoogleSignup from 'lib/hooks/useGoogleSignup';
+import useToast from 'lib/utils/useToast';
+import PageLoader from 'components/ui/PageLoader';
 
-  const handleGoogleLogin = useGoogleLogin({
-    flow: 'auth-code',
-    scope: 'openid email profile',
-    hosted_domain: domain,
-    onSuccess: async (response) => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          'https://tubegenius-production-b4b6.up.railway.app/api/auth/google/',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              id_token: response.code,
-            }),
+export default function GoogleAuthComponent() {
+  const toast = useToast();
+  const searchParams = useSearchParams();
+  // const domain = typeof window !== 'undefined' ? window.location.origin : '';
+  const domain = 'https://web-app-production-495a.up.railway.app';
+  const { mutate: googleSignup, isPending } = useGoogleSignup();
+
+  useEffect(() => {
+    if (!isPending) {
+      const token = searchParams.get('code');
+      if (token) {
+        googleSignup(token, {
+          onSuccess: (response) => {
+            toast.success('Success', 'Successfully logged in');
+            Cookies.set('access_token', response.access);
+            window.location.href = '/';
           },
-        );
-        const data = await res.json();
-        alert(JSON.stringify(data));
-        router.push('/');
-      } catch (error) {
-        alert(JSON.stringify(error));
-      } finally {
-        setLoading(false);
+          onError: (err) => {
+            toast.error('Error signing up with Google', err.message);
+          },
+        });
       }
-    },
-    onError: (err) => {
-      console.log('Auth error:', err);
-      alert(JSON.stringify(err));
-    },
-  });
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <button
-      onClick={handleGoogleLogin}
-      disabled={loading}
+    <Link
+      href={`https://accounts.google.com/o/oauth2/v2/auth?client_id=${env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}&redirect_uri=${domain}/&response_type=code&scope=openid%20email%20profile&access_type=offline&state=xyz123`}
       className="flex w-full items-center justify-center space-x-2 rounded-full border border-gray-700 bg-[#1a1a1a] py-3 font-medium text-white transition hover:bg-[#222222]"
     >
-      {loading ? (
-        <div>Loading...</div>
+      {isPending ? (
+        <PageLoader size="2xl" color="white" />
       ) : (
         <>
           <FcGoogle className="text-xl" />
           <span className="font-bold">Continue with Google</span>
         </>
       )}
-    </button>
+    </Link>
   );
 }
