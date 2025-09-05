@@ -714,6 +714,15 @@ class CreateCheckoutSessionView(APIView):
                 )
 
             # Create Stripe Checkout Session using standard Stripe API
+            success_url = f"{settings.FRONTEND_URL.rstrip('/')}/settings/subscription-plan/success"
+            cancel_url = (
+                f"{settings.FRONTEND_URL.rstrip('/')}/settings/subscription-plan/"
+            )
+
+            print("Creating checkout session with URLs:")
+            print(f"Success URL: {success_url}")
+            print(f"Cancel URL: {cancel_url}")
+
             session = stripe.checkout.Session.create(
                 customer=customer.id,
                 payment_method_types=["card"],
@@ -724,8 +733,8 @@ class CreateCheckoutSessionView(APIView):
                     }
                 ],
                 mode="subscription",
-                success_url=f"https://web-app-production-495a.up.railway.app/settings/subscription-plan/success?payment_method_id={{CHECKOUT_SESSION_ID}}&plan_id={plan.id}&billing_cycle={plan.billing_cycle}",
-                cancel_url=" https://web-app-production-495a.up.railway.app/settings/subscription-plan/",
+                success_url=success_url,
+                cancel_url=cancel_url,
                 metadata={
                     "user_id": str(request.user.id),
                     "plan_id": str(plan.id),
