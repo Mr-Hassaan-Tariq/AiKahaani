@@ -653,6 +653,20 @@ class CreateCheckoutSessionView(APIView):
             "Create a subscription Checkout Session for the given Plan ID. "
             "Uses the local SubscriptionPlan model to find the associated Stripe Price and create the Session."
         ),
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "plan_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The UUID of the subscription plan",
+                        "example": "7ca467f6-ac3d-4580-996a-a79c8756b2d1",
+                    }
+                },
+                "required": ["plan_id"],
+            }
+        },
         responses={
             200: OpenApiResponse(description="Checkout session created"),
             400: OpenApiResponse(description="Invalid request or plan id"),
@@ -710,8 +724,8 @@ class CreateCheckoutSessionView(APIView):
                     }
                 ],
                 mode="subscription",
-                success_url=f"{settings.FRONTEND_URL}/payments/success?session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=f"{settings.FRONTEND_URL}/payments/cancel",
+                success_url=f"https://web-app-production-495a.up.railway.app/settings/subscription-plan/success?payment_method_id={{CHECKOUT_SESSION_ID}}&plan_id={plan.id}&billing_cycle={plan.billing_cycle}",
+                cancel_url=" https://web-app-production-495a.up.railway.app/settings/subscription-plan/",
                 metadata={
                     "user_id": str(request.user.id),
                     "plan_id": str(plan.id),

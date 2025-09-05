@@ -4,8 +4,6 @@ from pathlib import Path
 
 import dj_database_url
 from django.core.management.utils import get_random_secret_key
-from django.urls import reverse_lazy
-from django.utils.translation import gettext_lazy as _
 from dotenv import load_dotenv
 
 ######################################################################
@@ -96,7 +94,6 @@ APPEND_SLASH = False
 # Apps
 ######################################################################
 THIRD_PARTY_APPS = [
-    "unfold",
     "anymail",
     "rest_framework",
     "rest_framework_simplejwt",
@@ -161,6 +158,7 @@ if DATABASE_URL:
     # Parse DATABASE_URL for Railway/Aiven
     DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
 
+
 else:
     # Fallback to individual environment variables for Aiven
     db_user = environ.get("DATABASE_USER", "postgres")
@@ -177,9 +175,6 @@ else:
             "NAME": db_name,
             "HOST": db_host,
             "PORT": db_port,
-            "OPTIONS": {
-                "connect_timeout": 10,
-            },
         }
     }
 
@@ -272,32 +267,6 @@ FRONTEND_URL = environ.get("FRONTEND_URL", "http://localhost:3000/")
 ######################################################################
 # Unfold
 ######################################################################
-UNFOLD = {
-    "SITE_HEADER": _("Turbo Admin"),
-    "SITE_TITLE": _("Turbo Admin"),
-    "SIDEBAR": {
-        "show_search": True,
-        "show_all_applications": True,
-        "navigation": [
-            {
-                "title": _("Navigation"),
-                "separator": False,
-                "items": [
-                    {
-                        "title": _("Users"),
-                        "icon": "person",
-                        "link": reverse_lazy("admin:users_user_changelist"),
-                    },
-                    {
-                        "title": _("Groups"),
-                        "icon": "label",
-                        "link": reverse_lazy("admin:auth_group_changelist"),
-                    },
-                ],
-            },
-        ],
-    },
-}
 
 ######################################################################
 # Stripe Configuration
