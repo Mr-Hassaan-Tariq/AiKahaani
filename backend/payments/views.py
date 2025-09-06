@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+import stripe
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils import timezone
@@ -311,11 +312,27 @@ class PaymentHistoryView(APIView):
 @require_http_methods(["POST"])
 def stripe_webhook(request):
     """Handle Stripe webhooks"""
-    try:
-        # Use DJ-Stripe webhook handling
-        from djstripe.webhooks import construct_event_from_request
 
-        event = construct_event_from_request(request)
+    # Set Stripe API key
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+    # Get the webhook secret from settings
+    webhook_secret = settings.STRIPE_WEBHOOK_SECRET
+
+    try:
+        # Get the raw request body
+        payload = request.body
+        sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+
+        # Construct the event using Stripe's method
+        event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+
+    except ValueError as e:
+        logger.error(f"Invalid payload: {str(e)}")
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError as e:
+        logger.error(f"Invalid signature: {str(e)}")
+        return HttpResponse(status=400)
     except Exception as e:
         logger.error(f"Webhook error: {str(e)}")
         return HttpResponse(status=400)
