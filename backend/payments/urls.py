@@ -1,4 +1,4 @@
-from django.urls import include, path
+from django.urls import path
 
 from . import views
 
@@ -22,5 +22,5 @@ urlpatterns = [
         name="create-checkout-session",
     ),
     # Stripe Webhook
-    path("webhook/stripe/", include("djstripe.urls")),
+    path("webhook/stripe/", views.stripe_webhook, name="stripe-webhook"),
 ]
