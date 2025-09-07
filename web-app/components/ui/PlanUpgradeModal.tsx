@@ -172,10 +172,10 @@ function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlan
                 </TabsTrigger>
               )}
             </TabsList>
-            <TabsContent value="monthly">
+            <TabsContent value="monthly" className="max-w-[90vw] overflow-hidden overflow-x-auto">
               <TrailWidget data={monthlyData} trial={trialData} handleUpgrade={handleUpgrade} />
             </TabsContent>
-            <TabsContent value="yearly">
+            <TabsContent value="yearly" className="max-w-[90vw] overflow-hidden overflow-x-auto">
               <TrailWidget data={yearlyData} trial={trialData} handleUpgrade={handleUpgrade} />
             </TabsContent>
           </Tabs>
@@ -231,19 +231,19 @@ function TrailWidget({ data, trial, handleUpgrade }: TrailWidgetProps) {
       <Card className={cn(cardCss, 'min-w-[300px] hover:bg-white/[.16]')}>
         <Col className="h-full gap-6">
           <Col className="gap-4">
-            <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-xs leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md">
+            <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-[10px] leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md md:text-xs">
               {/* Try TubeGenius for 7 days — just $1 */}
               {trial?.description}
             </div>
             <Row>
               <Row>
                 {trailIcon}
-                <Text variant="2xl" className="text-xl text-white lg:text-2xl">
+                <Text variant="2xl" className="text-lg text-white lg:text-2xl">
                   {trial?.name}
                 </Text>
               </Row>
               <Row className="items-end gap-1">
-                <Text variant="3xl" className="text-white">
+                <Text variant="3xl" className="text-lg text-white lg:text-2xl">
                   ${trial?.price} /
                 </Text>
                 <Text variant="sm" className="mb-1 text-brand-secondary">
@@ -257,7 +257,7 @@ function TrailWidget({ data, trial, handleUpgrade }: TrailWidgetProps) {
 
           <Col className="gap-4">
             {trialData.trail.map((e) => (
-              <Row key={e.label} className="ga-2 justify-normal">
+              <Row key={e.label} className="justify-normal gap-2">
                 {e.success ? (
                   <CircleCheck size={24} className="text-[#00B559]" />
                 ) : (
@@ -286,18 +286,18 @@ function TrailWidget({ data, trial, handleUpgrade }: TrailWidgetProps) {
       <Card className={cn(cardCss, 'min-w-[300px] hover:bg-white/[.16]')}>
         <Col className="h-full gap-6">
           <Col className="gap-4">
-            <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-xs leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md">
+            <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-[10px] leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md md:text-xs">
               {data?.description || data?.name}
             </div>
             <Row>
               <Row>
                 {trailIcon}
-                <Text variant="2xl" className="text-xl text-white lg:text-2xl">
+                <Text variant="2xl" className="text-lg text-white lg:text-2xl">
                   {data?.name}
                 </Text>
               </Row>
               <Row className="items-end gap-1">
-                <Text variant="3xl" className="text-white">
+                <Text variant="3xl" className="text-lg text-white lg:text-2xl">
                   ${data?.price} /
                 </Text>
                 <Text variant="sm" className="mb-1 text-brand-secondary">
