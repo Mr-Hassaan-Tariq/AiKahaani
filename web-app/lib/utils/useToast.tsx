@@ -7,6 +7,13 @@ export default function useToast() {
       icon: <CheckCircleIcon />,
       description,
       duration: duration || 5000,
+      classNames: {
+        icon: 'text-green-500',
+      },
+      style: {
+        '--normal-bg': '[rgba(186,255,56,0.12)]',
+        '--normal-border': '#b9ff3869',
+      } as React.CSSProperties,
     });
   };
   const error = (title: string, description?: string, duration?: number) => {
@@ -14,6 +21,13 @@ export default function useToast() {
       icon: <XCircleIcon />,
       description,
       duration: duration || 5000,
+      classNames: {
+        icon: 'text-red-500',
+      },
+      style: {
+        '--normal-bg': '[rgba(255,56,56,0.12)]',
+        '--normal-border': '#ff383869',
+      } as React.CSSProperties,
     });
   };
 

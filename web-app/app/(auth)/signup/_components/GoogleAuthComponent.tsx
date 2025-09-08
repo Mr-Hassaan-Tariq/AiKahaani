@@ -1,6 +1,8 @@
 'use client';
 
-import { useGoogleLogin } from '@react-oauth/google';
+import { useEffect } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import Cookies from 'js-cookie';
 import { FcGoogle } from 'react-icons/fc';
 
@@ -10,36 +12,38 @@ import PageLoader from 'components/ui/PageLoader';
 
 export default function GoogleAuthComponent() {
   const toast = useToast();
+  const searchParams = useSearchParams();
+  // const domain = typeof window !== 'undefined' ? window.location.origin : '';
+  // const domain = 'https://web-app-production-495a.up.railway.app';
+  // const domain = 'http://localhost:3000';
   const { mutate: googleSignup, isPending } = useGoogleSignup();
 
-  const onSubmit = async (token: string) => {
-    console.log('token is ', token);
-    googleSignup(token, {
-      onSuccess: (response) => {
-        toast.success('Success', 'Successfully logged in');
-        Cookies.set('access_token', response.access);
-        window.location.href = '/';
-      },
-      onError: (err) => {
-        toast.error('Error signing up with Google', err.message);
-      },
-    });
-  };
+  useEffect(() => {
+    if (!isPending) {
+      const token = searchParams.get('code');
+      if (token) {
+        googleSignup(token, {
+          onSuccess: (response) => {
+            toast.success('Success', 'Successfully logged in');
+            Cookies.set('access_token', response.access);
+            window.location.href = '/';
+          },
+          onError: (err) => {
+            toast.error('Error signing up with Google', err.message);
+          },
+        });
+      }
+    }
 
-  const handleGoogleLogin = useGoogleLogin({
-    flow: 'implicit',
-    onSuccess: async (response) => {
-      const { access_token } = response;
-      await onSubmit(access_token);
-    },
-    onError: () => {},
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
-    <p
-      role="button"
-      onClick={() => handleGoogleLogin()}
-      className="flex w-full cursor-pointer items-center justify-center space-x-2 rounded-full border border-gray-700 bg-[#1a1a1a] py-3 font-medium text-white transition hover:bg-[#222222]"
+    <Link
+      href={
+        'https://accounts.google.com/o/oauth2/v2/auth?client_id=658417643408-29csi91f3mm71brdvvqq37qmhlna0cr7.apps.googleusercontent.com&redirect_uri=https://web-app-production-495a.up.railway.app/&response_type=code&scope=openid%20email%20profile&access_type=offline&state=xyz123'
+      }
+      className="flex w-full items-center justify-center space-x-2 rounded-full border border-gray-700 bg-[#1a1a1a] py-3 font-medium text-white transition hover:bg-[#222222]"
     >
       {isPending ? (
         <PageLoader size="2xl" color="white" />
@@ -49,19 +53,6 @@ export default function GoogleAuthComponent() {
           <span className="font-bold">Continue with Google</span>
         </>
       )}
-    </p>
-    // <Link
-    //   href={`https://accounts.google.com/o/oauth2/v2/auth?client_id=${env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}&redirect_uri=${domain}/&response_type=code&scope=openid%20email%20profile&access_type=offline&state=xyz123`}
-    //   className="flex w-full items-center justify-center space-x-2 rounded-full border border-gray-700 bg-[#1a1a1a] py-3 font-medium text-white transition hover:bg-[#222222]"
-    // >
-    //   {isPending ? (
-    //     <PageLoader size="2xl" color="white" />
-    //   ) : (
-    //     <>
-    //       <FcGoogle className="text-xl" />
-    //       <span className="font-bold">Continue with Google</span>
-    //     </>
-    //   )}
-    // </Link>
+    </Link>
   );
 }

@@ -22,7 +22,7 @@ export default function LogoutModal() {
       open={open}
       setOpen={setOpen}
       trigger={
-        <Row className="group cursor-pointer justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
+        <Row className="group mb-10 cursor-pointer justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
           <LogoutIcon />
           <Text variant="lg" className="text-[#AAACA6] group-hover:text-[#20BF0E]/40">
             Logout

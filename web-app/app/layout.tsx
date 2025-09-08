@@ -25,13 +25,45 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <OriginalGoogleOAuthProvider clientId={env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
           <ReactQueryProvider>{children}</ReactQueryProvider>
           <Toaster
+            // toastOptions={{
+            //   classNames: {
+            //     toast: 'rounded-xl border border-[#BAFF38]/[.12] bg-white/10 p-6 backdrop-blur-lg',
+            //     title: 'pl-4 text-black',
+            //     description: 'pl-4 text-brand-secondary',
+            //   },
+            // }}
+
             toastOptions={{
               classNames: {
-                toast: 'bg-white/10 w-[558px] p-3 rounded-2xl',
-                title: 'pl-4 text-white',
-                description: 'pl-4 text-white',
+                // Main toast container
+                toast: 'rounded-xl border border-[#BAFF38]/[.12] bg-white/10 p-6 backdrop-blur-lg',
+                // Toast title
+                title: 'pl-4 text-black text-lg font-semibold',
+                // Toast description
+                description: 'pl-4 text-brand-secondary text-sm',
+                // Action buttons
+                actionButton: 'bg-blue-500 text-white px-4 py-2 rounded',
+                // Cancel button
+                cancelButton: 'bg-gray-500 text-white px-4 py-2 rounded',
+                // Close button
+                closeButton: 'text-gray-400 hover:text-gray-600',
+                // Icon
+                icon: 'text-green-500',
               },
             }}
+            // style={
+            //   {
+            //     '--normal-bg': '#ffffff69',
+            //     '--normal-text': 'black',
+            //     '--normal-border': '#b9ff3869',
+            //     '--success-bg': '#10b981',
+            //     '--success-text': 'white',
+            //     '--error-bg': '#ef4444',
+            //     '--error-text': 'white',
+            //     '--warning-bg': '#f59e0b',
+            //     '--warning-text': 'white',
+            //   } as React.CSSProperties
+            // }
             position="top-right"
           />
         </OriginalGoogleOAuthProvider>

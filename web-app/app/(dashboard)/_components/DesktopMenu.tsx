@@ -18,7 +18,9 @@ export default function DesktopMenu() {
   return (
     <div className="scrollbar sticky top-0 h-screen max-h-screen w-full overflow-hidden overflow-y-auto rounded-r-3xl border-r border-[#BAFF381F] bg-[#161616] px-7 py-8 text-white">
       <Col className="mx-auto h-full min-w-[170px] gap-12">
-        <Image src={mainLogo} alt="mainLogo" className="object-cover" />
+        <Link href="/">
+          <Image src={mainLogo} alt="mainLogo" className="object-cover" />
+        </Link>
 
         <Col className="h-full justify-between">
           <Col className="gap-6">

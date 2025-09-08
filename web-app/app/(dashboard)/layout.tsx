@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import mainLogo from '@assets/sidebar/mainLogo.png';
 
 import DesktopMenu from './_components/DesktopMenu';
@@ -25,10 +26,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="fixed left-0 right-0 top-0 z-40 border-b border-gray-800 bg-[#0E0F0C] px-4 py-3 lg:hidden">
           <div className="flex items-center justify-between text-white">
             <Row className="w-full justify-between">
-              <Image src={mainLogo} alt="mainLogo" className="object-cover" />
+              <Link href="/">
+                <Image src={mainLogo} alt="mainLogo" className="object-cover" />
+              </Link>
               <Row className="gap-4">
                 <MobileDrawer />
-                <div className="h-8 w-8 rounded-full bg-gray-600" />
+                <ClientImage
+                  src={data?.profile_picture || ''}
+                  alt="DP"
+                  width={100}
+                  height={100}
+                  priority={true}
+                  className="h-8 w-8 rounded-full bg-gray-600 object-cover"
+                />
                 <MobileMenu />
               </Row>
             </Row>

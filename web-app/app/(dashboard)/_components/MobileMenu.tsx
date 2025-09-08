@@ -9,7 +9,7 @@ import Col from 'components/ui/Col';
 import PlanUpgradeModal from 'components/ui/PlanUpgradeModal';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
-import { Sheet, SheetContent, SheetTrigger } from 'components/shadcn_ui/sheet';
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from 'components/shadcn_ui/sheet';
 
 export default function MobileMenu() {
   return (
@@ -25,25 +25,29 @@ export default function MobileMenu() {
           Plan: <PlanUpgradeModal />
         </Text>
         <Col className="h-full w-full items-start justify-between pt-8">
-          <Col className="w-full gap-8">
+          <Col className="w-full gap-6">
             {mainMenu.map((e) => (
               <Link href={e.path} key={e.name}>
-                <Row className="group w-full cursor-pointer justify-start gap-4 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
-                  {e.icon}
-                  <p className="text-[#AAACA6] group-hover:text-[#20BF0E]/80">{e.name}</p>
-                </Row>
+                <SheetClose>
+                  <Row className="group w-full cursor-pointer justify-start gap-4 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
+                    {e.icon}
+                    <p className="text-[#AAACA6] group-hover:text-[#20BF0E]/80">{e.name}</p>
+                  </Row>
+                </SheetClose>
               </Link>
             ))}
           </Col>
-          <Col className="w-full gap-8">
+          <Col className="w-full gap-6">
             {subMenu.map((e) => (
               <Link href={e.path} key={e.name}>
-                <Row className="group w-full cursor-pointer justify-start gap-4 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
-                  {e.icon}
-                  <Text variant="lg" className="text-[#AAACA6] group-hover:text-[#20BF0E]/80">
-                    {e.name}
-                  </Text>
-                </Row>
+                <SheetClose className="px-0 py-0">
+                  <Row className="group w-full cursor-pointer justify-start gap-4 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
+                    {e.icon}
+                    <Text variant="lg" className="text-[#AAACA6] group-hover:text-[#20BF0E]/80">
+                      {e.name}
+                    </Text>
+                  </Row>
+                </SheetClose>
               </Link>
             ))}
 
