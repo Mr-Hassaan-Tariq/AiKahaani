@@ -160,7 +160,7 @@ class GoogleLoginAPIView(APIView):
             "client_secret": settings.GOOGLE_OAUTH2_CLIENT_SECRET,
             "code": auth_code,
             "grant_type": "authorization_code",
-            "redirect_uri": "http://localhost:3000/",  # TODO: CHANGE THIS TO THE PRODUCTION/STAGING URL
+            "redirect_uri": f"{settings.FRONTEND_URL}/",  # TODO: CHANGE THIS TO THE PRODUCTION/STAGING URL
         }
 
         try:
