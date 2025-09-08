@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Cookies from 'js-cookie';
 import { FcGoogle } from 'react-icons/fc';
 
+import { SetAccessToken } from '../actions';
 import useGoogleSignup from 'lib/hooks/useGoogleSignup';
 import useToast from 'lib/utils/useToast';
 import PageLoader from 'components/ui/PageLoader';
@@ -23,9 +24,10 @@ export default function GoogleAuthComponent() {
       const token = searchParams.get('code');
       if (token) {
         googleSignup(token, {
-          onSuccess: (response) => {
+          onSuccess: async (response) => {
             toast.success('Success', 'Successfully logged in');
             Cookies.set('access_token', response.access);
+            SetAccessToken(response.access);
             window.location.href = '/';
           },
           onError: (err) => {
