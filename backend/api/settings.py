@@ -25,6 +25,7 @@ ALLOWED_HOSTS = [
     "api",
     ".railway.app",  # Allow Railway domains
     ".up.railway.app",  # Allow Railway preview domains
+    "charmed-simple-asp.ngrok-free.app",
 ]
 
 # CORS Configuration
@@ -48,6 +49,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://*.io",
     "https://*.org",
     "https://*.net",
+    "https://charmed-simple-asp.ngrok-free.app",
 ]
 
 # Allow credentials (cookies, authorization headers)
