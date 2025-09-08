@@ -43,7 +43,7 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
         return toast.error('You are not on any plan', 'Please upgrade to a plan');
       }
 
-      toast.error('Something went wrong', error.message);
+      // toast.error('Something went wrong', error.message);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isError, toast, isLoading]);

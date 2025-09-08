@@ -9,11 +9,11 @@ export async function middleware(request: NextRequest) {
   const publicPaths = ['/signup', '/login', '/magic-link'];
 
   // If no token and trying to access a protected route → redirect to signup
-  if (!token && !publicPaths.includes(path)) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/signup';
-    return NextResponse.redirect(url);
-  }
+  // if (!token && !publicPaths.includes(path)) {
+  //   const url = request.nextUrl.clone();
+  //   url.pathname = '/signup';
+  //   return NextResponse.redirect(url);
+  // }
 
   // If token exists and user is trying to go to signup/login → redirect to home
   if (token && publicPaths.includes(path)) {

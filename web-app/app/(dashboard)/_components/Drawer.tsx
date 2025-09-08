@@ -90,9 +90,11 @@ export function MobileDrawer() {
         ))}
 
         {/* Footer */}
-        <div className="mt-5 text-center" onClick={() => router.push('/notifications')}>
-          <button className="text-sm hover:underline">View All Notifications</button>
-        </div>
+        <DrawerClose asChild>
+          <div className="mt-5 text-center" onClick={() => router.push('/notifications')}>
+            <button className="text-sm hover:underline">View All Notifications</button>
+          </div>
+        </DrawerClose>
       </DrawerContent>
     </Drawer>
   );

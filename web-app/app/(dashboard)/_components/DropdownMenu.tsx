@@ -97,8 +97,16 @@ export function Dropdown() {
         ))}
 
         {/* Footer */}
-        <div className="mt-5 text-center" onClick={() => router.push('/notifications')}>
-          <button className="text-sm hover:underline">View All Notifications</button>
+        <div className="mt-5 text-center">
+          <button
+            className="text-sm hover:underline"
+            onClick={() => {
+              router.push('/notifications');
+              setOpen(false);
+            }}
+          >
+            View All Notifications
+          </button>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
