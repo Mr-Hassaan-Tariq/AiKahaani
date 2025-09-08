@@ -277,7 +277,7 @@ function TrailWidget({ data, trial, handleUpgrade }: TrailWidgetProps) {
             <Text variant="xs">Note: Auto-upgrades to Basic plan after trial ends</Text>
           </Row>
 
-          <Button className="mt-auto" onClick={() => data?.id && handleUpgrade(data.id)}>
+          <Button className="mt-auto" onClick={() => trial?.id && handleUpgrade(trial.id)}>
             Upgrade now
           </Button>
         </Col>
