@@ -1,18 +1,17 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+const publicPaths = ['/signup', '/magic-link'];
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const token = request.cookies.get('access_token')?.value; // Read token from cookies
 
   // Pages that don't need authentication (e.g., signup, login)
-  const publicPaths = ['/signup', '/login', '/magic-link'];
 
   // If no token and trying to access a protected route → redirect to signup
   if (!token && !publicPaths.includes(path)) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/signup';
-    return NextResponse.redirect(url);
+    const redirectUrl = `/signup${request.nextUrl.search || ''}`;
+    return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
   // If token exists and user is trying to go to signup/login → redirect to home
