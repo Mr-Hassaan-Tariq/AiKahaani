@@ -15,7 +15,7 @@ const tabsPath = [
 export default async function SettingTabs({ children }: { children: React.ReactNode }) {
   const headersList = await headers();
   const pathname = headersList.get('current_page');
-  const activeTab = tabsPath.find((tab) => tab.path === pathname) ?? tabsPath[0];
+  const activeTab = tabsPath.find((tab) => pathname?.includes(tab.path));
 
   return (
     <div className="flex grow flex-col gap-10">
@@ -24,7 +24,7 @@ export default async function SettingTabs({ children }: { children: React.ReactN
           Settings
         </Text>
         <div className="w-full overflow-x-auto overflow-y-visible lg:w-fit">
-          <Tabs defaultValue={activeTab.label} className="min-w-[550px]">
+          <Tabs defaultValue={activeTab?.label || ''} className="min-w-[550px]">
             <TabsList className="flex h-[52px] w-full items-center justify-normal gap-1.5 bg-transparent md:justify-normal md:gap-4 lg:h-fit">
               {tabsPath.map((tab) => (
                 <Link key={tab.label} href={tab.path}>
