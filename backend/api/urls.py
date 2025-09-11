@@ -17,8 +17,9 @@ urlpatterns = [
     path("api/v1/users/", include("users.users_urls")),
     path("api/v1/payments/", include("payments.urls")),
     path("admin/", admin.site.urls),
+    path("stripe/", include("djstripe.urls", namespace="djstripe")),
     # dj-stripe webhook endpoint
-    # path("webhooks/stripe/", include("djstripe.urls")),
+    path("webhooks/stripe/", include("djstripe.urls", namespace="djstripe-webhooks")),
 ]
 
 if settings.DEBUG:

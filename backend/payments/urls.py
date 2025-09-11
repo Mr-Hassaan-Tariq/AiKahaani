@@ -11,16 +11,20 @@ urlpatterns = [
     path(
         "subscription/", views.UserSubscriptionView.as_view(), name="user-subscription"
     ),
-    # Trial Status
-    path("user/trial-status/", views.TrialStatusView.as_view(), name="trial-status"),
-    # Payment History
-    path("history/", views.PaymentHistoryView.as_view(), name="payment-history"),
-    # Create Checkout Session
     path(
         "checkout/session/",
         views.CreateCheckoutSessionView.as_view(),
         name="create-checkout-session",
     ),
-    # Stripe Webhook
-    path("webhook/stripe/", views.stripe_webhook, name="stripe-webhook"),
+    path(
+        "billing-portal/",
+        views.CreateBillingPortalSessionView.as_view(),
+        name="create-billing-portal",
+    ),
+    # Trial Status
+    path(
+        "user/trial-status/",
+        views.TrialStatusView.as_view(),
+        name="trial-status",
+    ),
 ]

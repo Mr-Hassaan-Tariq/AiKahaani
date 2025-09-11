@@ -49,7 +49,7 @@ dependencies = [
     "sqlparse>=0.5.3",
     "tzdata>=2025.2",
     "pillow>=11.3.0",
-    "dj-stripe>=2.10.1",
+    "dj-stripe==2.8.4",
 ]
 
 [build-system]

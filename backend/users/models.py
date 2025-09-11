@@ -24,6 +24,10 @@ class User(AbstractUser, TimeStampedModel):
         null=True,
     )
     is_email_verified = models.BooleanField(default=False)
+    has_used_trial = models.BooleanField(
+        default=False,
+        help_text="Tracks if user has already used their trial subscription",
+    )
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 

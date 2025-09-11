@@ -23,6 +23,7 @@ ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     "api",
+    "tubegenius-backend-production-05e9.up.railway.app",  # Specific Railway domain
     ".railway.app",  # Allow Railway domains
     ".up.railway.app",  # Allow Railway preview domains
     "charmed-simple-asp.ngrok-free.app",
@@ -91,6 +92,27 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # URL Configuration - Prevent automatic slash appending for API endpoints
 APPEND_SLASH = False
+
+######################################################################
+# CSRF Configuration
+######################################################################
+CSRF_TRUSTED_ORIGINS = [
+    "https://tubegenius-backend-production-05e9.up.railway.app",
+    "https://*.railway.app",
+    "https://*.up.railway.app",
+    "https://tubegenius.vercel.app",
+    "https://tubegenius-frontend.vercel.app",
+    "https://*.vercel.app",
+    "https://localhost:3000",
+    "http://localhost:3000",
+    "https://localhost:8000",
+    "http://localhost:8000",
+]
+
+# CSRF settings for admin panel access
+CSRF_COOKIE_SECURE = not DEBUG  # Use secure cookies in production
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access to CSRF token
+CSRF_COOKIE_SAMESITE = "Lax"  # Allow cross-site requests with CSRF protection
 
 ######################################################################
 # Apps
@@ -281,6 +303,8 @@ DJSTRIPE_WEBHOOK_SECRET = STRIPE_WEBHOOK_SECRET
 DJSTRIPE_USE_NATIVE_S3 = True
 DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
 DJSTRIPE_SECRET_KEY = STRIPE_SECRET_KEY
+DJSTRIPE_SUBSCRIBER_MODEL = "users.User"
+STRIPE_API_VERSION = "2024-06-20"
 
 # Stripe settings
 STRIPE_LIVE_MODE = environ.get("STRIPE_LIVE_MODE", "False").lower() == "true"
