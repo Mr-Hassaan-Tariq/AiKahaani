@@ -3,6 +3,7 @@ import { AuthService } from './auth';
 import { ApiClient } from './client';
 import { NotificationService } from './notifications';
 import { PrivacyService } from './privacy';
+import { SubscriptionService } from './subscription';
 import { UserService } from './user';
 
 /**
@@ -14,6 +15,7 @@ export class ApiWrapper {
   public user: UserService;
   public notifications: NotificationService;
   public privacy: PrivacyService;
+  public subscription: SubscriptionService;
   constructor() {
     // Initialize the API client with configuration
     this.client = new ApiClient({
@@ -29,6 +31,7 @@ export class ApiWrapper {
     this.user = new UserService(this.client);
     this.notifications = new NotificationService(this.client);
     this.privacy = new PrivacyService(this.client);
+    this.subscription = new SubscriptionService(this.client);
   }
 
   /**
@@ -73,3 +76,4 @@ export const authService = api.auth;
 export const userService = api.user;
 export const notificationService = api.notifications;
 export const privacyService = api.privacy;
+export const subscriptionService = api.subscription;

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ManageSubscriptionButton } from '@/(dashboard)/_components/ManageSubscriptionButton';
 import dayjs from 'dayjs';
 import { env } from 'env.mjs';
 import { CircleCheck } from 'lucide-react';
@@ -25,14 +26,14 @@ export default async function Page() {
       <Col className="gap-8">
         <Row>
           <Text variant="3xl" className="capitalize text-white">
-            {data?.plan.plan_type} plan
+            {data?.plan?.plan_type} plan
           </Text>
           <Row className="items-end gap-1">
             <Text variant="3xl" className="text-white">
-              ${data?.plan.price} /
+              ${data?.plan?.price} /
             </Text>
             <Text variant="sm" className="mb-1 text-brand-secondary">
-              {data?.plan.billing_cycle}
+              {data?.plan?.billing_cycle}
             </Text>
           </Row>
         </Row>
@@ -49,13 +50,11 @@ export default async function Page() {
             <Text variant="lg" className="flex items-center gap-3 text-brand-secondary">
               Access: <p className="text-white">All tools unlocked for 7 more days</p>
             </Text>
-            <Row className="w-full lg:w-fit">
-              <Link href={env.NEXT_PUBLIC_STRIPE_PORTAL_LINK} target="_blank">
-                <Button variant="gray" className="whitespace-nowrap px-8" height={41}>
-                  Manage subscription
-                </Button>
+            <Row>
+              <Link href={'#'}>
+                <ManageSubscriptionButton />
               </Link>
-              {data.plan.plan_type !== 'pro' && (
+              {data?.plan?.plan_type !== 'pro' && (
                 <Link href={env.NEXT_PUBLIC_STRIPE_PORTAL_LINK}>
                   <Button height={41}>Upgrade plan</Button>
                 </Link>

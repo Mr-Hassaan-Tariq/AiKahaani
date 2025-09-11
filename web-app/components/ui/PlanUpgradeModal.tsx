@@ -68,7 +68,7 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
       ) : (
         <PopoverTrigger asChild>
           <div className="group flex h-8 w-20 items-center justify-center gap-3 rounded-full border border-[#BAFF38]/[.12] bg-white/[.16] text-sm capitalize">
-            {data?.plan.plan_type || 'Trial'}{' '}
+            {data?.plan?.plan_type || 'Trial'}{' '}
             <ChevronDown
               size={20}
               className="text-white transition-all duration-500 group-data-[state=open]:rotate-180"
@@ -83,10 +83,10 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
         <Col className="items-center gap-6">
           <Col className="items-center gap-3">
             <Text variant="xl" className="font-semibold text-white">
-              You&apos;re currently on a {data?.plan.plan_type}
+              You&apos;re currently on a {data?.plan?.plan_type}
             </Text>
             <Text className="text-[#AAACA6]" variant="sm">
-              {data?.plan.description}
+              {data?.plan?.description}
             </Text>
           </Col>
           <Col className="gag-4 w-full">
@@ -96,7 +96,7 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
             <ViewAllPlanModal
               open={open}
               setOpen={(value) => {
-                if (!data?.plan.plan_type) return;
+                if (!data?.plan?.plan_type) return;
                 setOpen(value);
               }}
               handleUpgrade={handleUpgrade}
