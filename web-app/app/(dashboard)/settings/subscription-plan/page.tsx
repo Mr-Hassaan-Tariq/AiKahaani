@@ -21,19 +21,40 @@ export default async function Page() {
     );
   }
 
+  if (!data.subscription === null) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-lg text-white">
+        No subscription found
+      </div>
+    );
+  }
+  const billingCycle = data?.plan?.product?.metadata.billing_cycle || data?.plan?.billing_cycle;
+  const start = data?.start_date ? dayjs(data.start_date) : null;
+  const computedEndDate = (() => {
+    if (!start || !billingCycle) return null;
+    if (billingCycle === 'weekly') return start.add(7, 'day');
+    if (billingCycle === 'monthly') return start.add(1, 'month');
+    if (billingCycle === 'yearly') return start.add(1, 'year');
+    return null;
+  })();
+
+  const computedRemainingDays = (() => {
+    if (!computedEndDate) return null;
+    return computedEndDate.diff(dayjs(), 'day');
+  })();
   return (
     <Card>
       <Col className="gap-8">
         <Row>
           <Text variant="3xl" className="capitalize text-white">
-            {data?.plan?.plan_type} plan
+            {data?.plan?.product?.name}
           </Text>
           <Row className="items-end gap-1">
             <Text variant="3xl" className="text-white">
-              ${data?.plan?.price} /
+              ${data?.plan?.amount} /
             </Text>
             <Text variant="sm" className="mb-1 text-brand-secondary">
-              {data?.plan?.billing_cycle}
+              {data?.plan?.product?.metadata.billing_cycle}
             </Text>
           </Row>
         </Row>
@@ -44,11 +65,14 @@ export default async function Page() {
           </Text>
           <Text variant="lg" className="flex items-center gap-3 text-brand-secondary">
             Ends:{' '}
-            <p className="text-white">{dayjs(data?.current_period_end).format('MMMM DD, YYYY')}</p>
+            <p className="text-white">
+              {computedEndDate ? computedEndDate.format('MMMM DD, YYYY') : '-'}
+            </p>
           </Text>
           <Row className="flex-col gap-6 lg:flex-row">
             <Text variant="lg" className="flex items-center gap-3 text-brand-secondary">
-              Access: <p className="text-white">All tools unlocked for 7 more days</p>
+              Access:{' '}
+              <p className="text-white">All tools unlocked for {computedRemainingDays} more days</p>
             </Text>
             <Row>
               <Link href={'#'}>
@@ -70,18 +94,21 @@ export default async function Page() {
               to:
             </Text>
             <Col className="gap-4">
-              {['Script Generator', 'Title & Niche Tools', 'Saved Scripts'].map((e) => (
-                <Row key={e} className="justify-normal gap-2">
-                  <CircleCheck size={20} className="text-white" />
-                  <Text variant="sm" className="text-white">
-                    {e}
-                  </Text>
-                </Row>
-              ))}
+              {data?.plan?.product?.metadata?.features &&
+                Object.keys(JSON.parse(data?.plan?.product?.metadata?.features ?? [])).map((e) => (
+                  <Row key={e} className="justify-normal gap-2">
+                    <CircleCheck size={20} className="text-white" />
+                    <Text variant="sm" className="capitalize text-white">
+                      {e?.replace(/_/g, ' ')}
+                    </Text>
+                  </Row>
+                ))}
             </Col>
-            <Text variant="base" className="font-bold leading-5 text-white">
-              Upgrade to keep your work and continue using TubeGenius.
-            </Text>
+            {data.trial_start && (
+              <Text variant="base" className="font-bold leading-5 text-white">
+                Upgrade to keep your work and continue using TubeGenius.
+              </Text>
+            )}
           </Col>
         </Card>
       </Col>

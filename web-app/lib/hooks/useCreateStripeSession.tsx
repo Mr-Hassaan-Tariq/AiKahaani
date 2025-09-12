@@ -37,6 +37,14 @@ async function createStripeSession(plan_id: string) {
   );
 }
 
+async function createBillingPortal() {
+  return await postClientDataAction<ResponseType, undefined>(
+    'v1/payments/billing-portal',
+    undefined,
+  );
+}
+
 export default function useCreateStripeSession() {
   return useMutation({ mutationFn: createStripeSession });
+  return useMutation({ mutationFn: createBillingPortal });
 }

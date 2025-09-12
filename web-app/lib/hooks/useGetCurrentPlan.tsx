@@ -19,14 +19,27 @@ export default function useGetCurrentPlan() {
 }
 
 export interface CurrentPlanType {
+  subscription?: null | {};
   id: string;
   user: number;
+  start_date: string;
+  end_date: string;
   plan: {
     id: string;
-    name: string;
+    product: {
+      name: string;
+      metadata: {
+        billing_cycle: string;
+        features: string;
+        plan_type: string;
+        sort_order: string;
+        trial_days: string;
+      };
+    };
+    amount: string;
     plan_type: string;
     billing_cycle: string;
-    price: string;
+    price: number;
     display_price: string;
     yearly_price: number;
     monthly_price: number;
@@ -38,6 +51,7 @@ export interface CurrentPlanType {
     created: string;
     modified: string;
   };
+
   stripe_subscription_id: string | null;
   stripe_customer_id: string | null;
   status: string;

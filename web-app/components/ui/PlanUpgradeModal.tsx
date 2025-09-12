@@ -1,8 +1,8 @@
 'use client';
 
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { env } from 'env.mjs';
+import { useRouter } from 'next/navigation';
+import dayjs from 'dayjs';
 import { ChevronDown, CircleCheck, CircleX, Info } from 'lucide-react';
 
 import Button from './Button';
@@ -12,6 +12,7 @@ import Dialog from './Dialog';
 import PageLoader from './PageLoader';
 import Row from './Row';
 import Text from './Text';
+import useCreateBillingPortal from 'lib/hooks/useBIllingPortal';
 import useCreateStripeSession from 'lib/hooks/useCreateStripeSession';
 import useGetAllPlan, { PlanType } from 'lib/hooks/useGetAllPlan';
 import useGetCurrentPlan from 'lib/hooks/useGetCurrentPlan';
@@ -29,10 +30,13 @@ interface PlanUpgradeModalProps {
 
 export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalProps) {
   const toast = useToast();
+  const router = useRouter();
   const [openPopover, setOpenPopover] = useState(false);
   const [open, setOpen] = useState(false);
   const { data, isLoading, isError, error } = useGetCurrentPlan();
+
   const { isPending, mutate: createStripeSession } = useCreateStripeSession();
+  const { mutate: createBillingPortal } = useCreateBillingPortal();
 
   useEffect(() => {
     if (isError) {
@@ -60,6 +64,39 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
     });
   };
 
+  const billingCycle = data?.plan?.product?.metadata.billing_cycle || data?.plan?.billing_cycle;
+  const start = data?.start_date ? dayjs(data.start_date) : null;
+  const computedEndDate = (() => {
+    if (!start || !billingCycle) return null;
+    if (billingCycle === 'weekly') return start.add(7, 'day');
+    if (billingCycle === 'monthly') return start.add(1, 'month');
+    if (billingCycle === 'yearly') return start.add(1, 'year');
+    return null;
+  })();
+
+  const computedRemainingDays = (() => {
+    if (!computedEndDate) return null;
+    return computedEndDate.diff(dayjs(), 'day');
+  })();
+
+  const headingText = () => {
+    if (computedRemainingDays !== null && computedRemainingDays <= 3) {
+      return {
+        heading: `You're currently on a ${data?.plan?.product.name} and your trial ends in ${computedRemainingDays} days`,
+        subheading: 'Billed monthly via Stripe.',
+      };
+    } else if (data?.end_date) {
+      return {
+        heading: `Your ${data?.plan?.product.name} has expired`,
+        subheading: `Your access is limited.
+      Renew or upgrade to continue using all tools.`,
+      };
+    }
+    return {
+      heading: `You're currently on a ${data?.plan?.product.name}`,
+      subheading: 'Billed monthly via Stripe.',
+    };
+  };
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       {isPending && <PageLoader size="2xl" color="white" />}
@@ -67,8 +104,8 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
         <Skeleton className="h-8 w-20 rounded-full" />
       ) : (
         <PopoverTrigger asChild>
-          <div className="group flex h-8 w-20 items-center justify-center gap-3 rounded-full border border-[#BAFF38]/[.12] bg-white/[.16] text-sm capitalize">
-            {data?.plan?.plan_type || 'Trial'}{' '}
+          <div className="group flex h-8 min-w-20 cursor-pointer items-center justify-center gap-3 rounded-full border border-[#BAFF38]/[.12] bg-white/[.16] px-2 text-sm capitalize">
+            {data?.plan?.product.name || 'Not Activated'}{' '}
             <ChevronDown
               size={20}
               className="text-white transition-all duration-500 group-data-[state=open]:rotate-180"
@@ -76,6 +113,7 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
           </div>
         </PopoverTrigger>
       )}
+
       <PopoverContent
         className="z-50 w-full rounded-xl border border-[#BAFF38]/[.12] bg-white/10 p-6 backdrop-blur-lg sm:w-96"
         align={align}
@@ -83,20 +121,30 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
         <Col className="items-center gap-6">
           <Col className="items-center gap-3">
             <Text variant="xl" className="font-semibold text-white">
-              You&apos;re currently on a {data?.plan?.plan_type}
+              {data?.plan?.product.name ? headingText()?.heading : 'You are not on any plan'}
             </Text>
-            <Text className="text-[#AAACA6]" variant="sm">
-              {data?.plan?.description}
+            <Text
+              className="whitespace-pre-line text-center leading-tight text-[#AAACA6]"
+              variant="sm"
+            >
+              {data?.plan?.product.name ? headingText()?.subheading : 'You are not on any plan'}
             </Text>
           </Col>
           <Col className="gag-4 w-full">
-            <Link href={env.NEXT_PUBLIC_STRIPE_PORTAL_LINK}>
+            <p
+              onClick={() =>
+                createBillingPortal(undefined, {
+                  onSuccess: (data) => {
+                    router.push(data);
+                  },
+                })
+              }
+            >
               <Button fullRounded>Upgrade now</Button>
-            </Link>
+            </p>
             <ViewAllPlanModal
               open={open}
               setOpen={(value) => {
-                if (!data?.plan?.plan_type) return;
                 setOpen(value);
               }}
               handleUpgrade={handleUpgrade}
@@ -135,8 +183,8 @@ function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlan
   }, [isError, toast, error, data]);
 
   const trialData = useMemo(() => data?.find((e) => e.billing_cycle === 'weekly'), [data]);
-  const monthlyData = useMemo(() => data?.find((e) => e.billing_cycle === 'monthly'), [data]);
-  const yearlyData = useMemo(() => data?.find((e) => e.billing_cycle === 'yearly'), [data]);
+  const monthlyData = useMemo(() => data?.filter((e) => e.billing_cycle === 'monthly'), [data]);
+  const yearlyData = useMemo(() => data?.filter((e) => e.billing_cycle === 'yearly'), [data]);
 
   return (
     <Dialog
@@ -173,10 +221,10 @@ function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlan
               )}
             </TabsList>
             <TabsContent value="monthly" className="max-w-[90vw] overflow-hidden overflow-x-auto">
-              <TrailWidget data={monthlyData} trial={trialData} handleUpgrade={handleUpgrade} />
+              <TrailWidget data={monthlyData} handleUpgrade={handleUpgrade} />
             </TabsContent>
             <TabsContent value="yearly" className="max-w-[90vw] overflow-hidden overflow-x-auto">
-              <TrailWidget data={yearlyData} trial={trialData} handleUpgrade={handleUpgrade} />
+              <TrailWidget data={yearlyData} handleUpgrade={handleUpgrade} />
             </TabsContent>
           </Tabs>
         ) : (
@@ -190,7 +238,7 @@ function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlan
 }
 
 const cardCss =
-  'rounded-xl h-[500px] lg:h-[475px] border-[#BAFF3812] bg-white/10 px-6 py-6 shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] lg:px-6 lg:py-6';
+  'rounded-xl h-full lg:h-[475px]  border-[#BAFF3812] bg-white/10 px-6 py-6 shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] lg:px-6 lg:py-6';
 const trailIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none">
     <path
@@ -203,134 +251,74 @@ const trailIcon = (
   </svg>
 );
 
-const trialData = {
-  trail: [
-    { success: true, label: 'Access to script generator' },
-    { success: true, label: 'Use title generator' },
-    { success: false, label: 'AI title optimizer' },
-    { success: false, label: 'Personal niche recommendations' },
-  ],
-  Premium: [
-    { success: true, label: 'All from Trial Plan' },
-    { success: true, label: 'Unlimited script generation' },
-    { success: true, label: 'Advanced analytics' },
-    { success: true, label: 'Affiliate tracking' },
-    { success: true, label: 'Priority support' },
-  ],
-};
-
 interface TrailWidgetProps {
-  data?: PlanType;
-  trial?: PlanType;
+  data?: PlanType[];
   handleUpgrade: (plan_id: string) => void;
 }
 
-function TrailWidget({ data, trial, handleUpgrade }: TrailWidgetProps) {
+function TrailWidget({ data, handleUpgrade }: TrailWidgetProps) {
   return (
-    <Row className="w-full gap-6">
-      <Card className={cn(cardCss, 'min-w-[300px] hover:bg-white/[.16]')}>
-        <Col className="h-full gap-6">
-          <Col className="gap-4">
-            <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-[10px] leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md md:text-xs">
-              {/* Try TubeGenius for 7 days — just $1 */}
-              {trial?.description}
-            </div>
-            <Row>
-              <Row>
-                {trailIcon}
-                <Text variant="2xl" className="text-lg text-white lg:text-2xl">
-                  {trial?.name}
-                </Text>
-              </Row>
-              <Row className="items-end gap-1">
-                <Text variant="3xl" className="text-lg text-white lg:text-2xl">
-                  ${trial?.price} /
-                </Text>
-                <Text variant="sm" className="mb-1 text-brand-secondary">
-                  {trial?.trial_days} days
-                </Text>
-              </Row>
-            </Row>
-          </Col>
-
-          <Separator className="w-full bg-white/[.16]" />
-
-          <Col className="gap-4">
-            {trialData.trail.map((e) => (
-              <Row key={e.label} className="justify-normal gap-2">
-                {e.success ? (
-                  <CircleCheck size={24} className="text-[#00B559]" />
-                ) : (
-                  <CircleX size={24} className="text-[#FF5050]" />
+    <Row className="scrollbar-hide scroll-fade-x w-full gap-6 overflow-clip overflow-y-auto">
+      {data &&
+        data.map((e, index) => (
+          <Card key={index} className={cn(cardCss, 'min-w-[300px] hover:bg-white/[.16]')}>
+            <Col className="h-fit gap-6">
+              <Col className="gap-4">
+                {e?.description && (
+                  <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-[10px] leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md md:text-xs">
+                    {/* Try TubeGenius for 7 days — just $1 */}
+                    {e?.description}
+                  </div>
                 )}
-                <Text variant="base" className="text-white">
-                  {e.label}
-                </Text>
+                <Row>
+                  <Row>
+                    {trailIcon}
+                    <Text variant="2xl" className="text-lg text-white lg:text-2xl">
+                      {e?.name}
+                    </Text>
+                  </Row>
+                  <Row className="items-end gap-1">
+                    <Text variant="3xl" className="text-lg text-white lg:text-2xl">
+                      ${e?.price} /
+                    </Text>
+                    <Text variant="sm" className="mb-1 text-brand-secondary">
+                      {e?.billing_cycle}
+                    </Text>
+                  </Row>
+                </Row>
+              </Col>
+
+              <Separator className="w-full bg-white/[.16]" />
+
+              <Col className="scrollbar-hide scroll-fade-y h-40 gap-4 overflow-y-auto">
+                {e?.features &&
+                  Object.keys(JSON.parse(e?.features)).map((feature: string) => (
+                    <Row key={feature} className="justify-normal gap-2">
+                      {JSON.parse(e?.features)[feature] ? (
+                        <CircleCheck size={24} className="text-[#00B559]" />
+                      ) : (
+                        <CircleX size={24} className="text-[#FF5050]" />
+                      )}
+                      <Text variant="base" className="capitalize text-white">
+                        {feature?.replace(/_/g, ' ')}
+                      </Text>
+                    </Row>
+                  ))}
+              </Col>
+
+              <Separator className="w-full bg-white/[.16]" />
+
+              <Row className="justify-normal gap-2 text-white">
+                <Info size={16} />
+                <Text variant="xs">Note: Auto-upgrades to Basic plan after trial ends</Text>
               </Row>
-            ))}
-          </Col>
 
-          <Separator className="w-full bg-white/[.16]" />
-
-          <Row className="justify-normal gap-2 text-white">
-            <Info size={16} />
-            <Text variant="xs">Note: Auto-upgrades to Basic plan after trial ends</Text>
-          </Row>
-
-          <Button className="mt-auto" onClick={() => trial?.id && handleUpgrade(trial.id)}>
-            Upgrade now
-          </Button>
-        </Col>
-      </Card>
-
-      <Card className={cn(cardCss, 'min-w-[300px] hover:bg-white/[.16]')}>
-        <Col className="h-full gap-6">
-          <Col className="gap-4">
-            <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-[10px] leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md md:text-xs">
-              {data?.description || data?.name}
-            </div>
-            <Row>
-              <Row>
-                {trailIcon}
-                <Text variant="2xl" className="text-lg text-white lg:text-2xl">
-                  {data?.name}
-                </Text>
-              </Row>
-              <Row className="items-end gap-1">
-                <Text variant="3xl" className="text-lg text-white lg:text-2xl">
-                  ${data?.price} /
-                </Text>
-                <Text variant="sm" className="mb-1 text-brand-secondary">
-                  {data?.billing_cycle}
-                </Text>
-              </Row>
-            </Row>
-          </Col>
-
-          <Separator className="w-full bg-white/[.16]" />
-
-          <Col className="gap-4">
-            {trialData.Premium.map((e) => (
-              <Row key={e.label} className="ga-2 justify-normal">
-                {e.success ? (
-                  <CircleCheck size={24} className="text-[#00B559]" />
-                ) : (
-                  <CircleX size={24} className="text-[#FF5050]" />
-                )}
-                <Text variant="base" className="text-white">
-                  {e.label}
-                </Text>
-              </Row>
-            ))}
-          </Col>
-
-          <Separator className="w-full bg-white/[.16]" />
-
-          <Button className="mt-auto" onClick={() => data?.id && handleUpgrade(data.id)}>
-            Start with Premium
-          </Button>
-        </Col>
-      </Card>
+              <Button className="mt-auto" onClick={() => e?.id && handleUpgrade(e.id)}>
+                Upgrade now
+              </Button>
+            </Col>
+          </Card>
+        ))}
     </Row>
   );
 }

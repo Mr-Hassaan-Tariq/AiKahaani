@@ -64,16 +64,18 @@ export default function ProfilePhotoCard({ profileImage }: { profileImage?: stri
                 }
               />
 
-              <DeletePhotoModal
-                trigger={
-                  <Button
-                    variant="red"
-                    className="flex w-fit items-center justify-center bg-[#FF50500D]"
-                  >
-                    {basketIcon} Remove photo
-                  </Button>
-                }
-              />
+              {profileImage && (
+                <DeletePhotoModal
+                  trigger={
+                    <Button
+                      variant="red"
+                      className="flex w-fit items-center justify-center bg-[#FF50500D]"
+                    >
+                      {basketIcon} Remove photo
+                    </Button>
+                  }
+                />
+              )}
             </Row>
           </Col>
         </Row>
