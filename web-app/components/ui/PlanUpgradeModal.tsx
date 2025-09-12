@@ -53,7 +53,7 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
   }, [isError, toast, isLoading]);
 
   const handleUpgrade = async (plan_id: string) => {
-    createStripeSession(plan_id, {
+    createStripeSession(plan_id as never, {
       onSuccess: (data) => {
         window.location.href = data.url;
       },
@@ -182,7 +182,7 @@ function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlan
     }
   }, [isError, toast, error, data]);
 
-  const trialData = useMemo(() => data?.find((e) => e.billing_cycle === 'weekly'), [data]);
+  // const trialData = useMemo(() => data?.find((e) => e.billing_cycle === 'weekly'), [data]);
   const monthlyData = useMemo(() => data?.filter((e) => e.billing_cycle === 'monthly'), [data]);
   const yearlyData = useMemo(() => data?.filter((e) => e.billing_cycle === 'yearly'), [data]);
 
@@ -313,7 +313,7 @@ function TrailWidget({ data, handleUpgrade }: TrailWidgetProps) {
                 <Text variant="xs">Note: Auto-upgrades to Basic plan after trial ends</Text>
               </Row>
 
-              <Button className="mt-auto" onClick={() => e?.id && handleUpgrade(e.id)}>
+              <Button className="mt-auto" onClick={() => e?.id && handleUpgrade(e.id as string)}>
                 Upgrade now
               </Button>
             </Col>

@@ -19,7 +19,7 @@ export default function useGetCurrentPlan() {
 }
 
 export interface CurrentPlanType {
-  subscription?: null | {};
+  subscription?: null | unknown;
   id: string;
   user: number;
   start_date: string;
