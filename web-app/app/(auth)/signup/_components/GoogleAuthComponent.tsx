@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { env } from 'env.mjs';
 import Cookies from 'js-cookie';
 import { FcGoogle } from 'react-icons/fc';
 
@@ -42,9 +43,7 @@ export default function GoogleAuthComponent() {
 
   return (
     <Link
-      href={
-        'https://accounts.google.com/o/oauth2/v2/auth?client_id=658417643408-29csi91f3mm71brdvvqq37qmhlna0cr7.apps.googleusercontent.com&redirect_uri=https://web-app-production-495a.up.railway.app/&response_type=code&scope=openid%20email%20profile&access_type=offline&state=xyz123'
-      }
+      href={`https://accounts.google.com/o/oauth2/v2/auth?client_id=${env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}&redirect_uri=https://web-app-production-495a.up.railway.app/&response_type=code&scope=openid%20email%20profile&access_type=offline&state=xyz123`}
       className="flex w-full items-center justify-center space-x-2 rounded-full border border-gray-700 bg-[#1a1a1a] py-3 font-medium text-white transition hover:bg-[#222222]"
     >
       {isPending ? (

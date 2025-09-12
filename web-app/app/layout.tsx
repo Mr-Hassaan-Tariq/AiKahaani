@@ -25,14 +25,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <OriginalGoogleOAuthProvider clientId={env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
           <ReactQueryProvider>{children}</ReactQueryProvider>
           <Toaster
-            // toastOptions={{
-            //   classNames: {
-            //     toast: 'rounded-xl border border-[#BAFF38]/[.12] bg-white/10 p-6 backdrop-blur-lg',
-            //     title: 'pl-4 text-black',
-            //     description: 'pl-4 text-brand-secondary',
-            //   },
-            // }}
-
             toastOptions={{
               classNames: {
                 // Main toast container

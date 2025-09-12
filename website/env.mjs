@@ -13,7 +13,7 @@ export const env = createEnv({
    * 💡 You'll get type errors if these are not prefixed with NEXT_PUBLIC_.
    */
   client: {
-    NEXT_PUBLIC_API_URL: z.string().url('Must include valid URL to Geviti API'),
+    NEXT_PUBLIC_WEBSITE_URL: z.string().url('Must include valid URL to website'),
   },
   /*
    * Due to how Next.js bundles environment variables on Edge and Client,
@@ -22,6 +22,6 @@ export const env = createEnv({
    * 💡 You'll get type errors if not all variables from `server` & `client` are included here.
    */
   runtimeEnv: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_WEBSITE_URL: process.env.NEXT_PUBLIC_WEBSITE_URL,
   },
 });
