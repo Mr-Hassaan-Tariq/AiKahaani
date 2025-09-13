@@ -1,18 +1,46 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { ManageSubscriptionButton } from '@/(dashboard)/_components/ManageSubscriptionButton';
 import dayjs from 'dayjs';
-import { env } from 'env.mjs';
 import { CircleCheck } from 'lucide-react';
 
-import { getCurrentPlan } from './actions';
+import useCreateStripeSession from 'lib/hooks/useCreateStripeSession';
+import useGetCurrentPlan from 'lib/hooks/useGetCurrentPlan';
+import useToast from 'lib/utils/useToast';
 import Button from 'components/ui/Button';
 import Card from 'components/ui/Card';
 import Col from 'components/ui/Col';
+import { ViewAllPlanModal } from 'components/ui/PlanUpgradeModal';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
-export default async function Page() {
-  const { data, isError, error } = await getCurrentPlan();
+export default function Page() {
+  const [openAllPlans, setOpenAllPlans] = useState(false);
+  const toast = useToast();
+  const { mutate: createStripeSession } = useCreateStripeSession();
+  const { data, isLoading, isError, error } = useGetCurrentPlan();
+
+  const handleUpgrade = async (plan_id: string) => {
+    createStripeSession(plan_id as never, {
+      onSuccess: (data) => {
+        window.location.href = data.url;
+      },
+      onError: (error) => {
+        toast.error('Something went wrong', error.message);
+      },
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-lg text-white">
+        Loading...
+      </div>
+    );
+  }
+
   if (isError) {
     return (
       <div className="flex h-full w-full items-center justify-center text-lg text-white">
@@ -21,14 +49,14 @@ export default async function Page() {
     );
   }
 
-  if (!data.subscription === null) {
+  if (data?.subscription === null) {
     return (
       <div className="flex h-full w-full items-center justify-center text-lg text-white">
         No subscription found
       </div>
     );
   }
-  const billingCycle = data?.plan?.product?.metadata.billing_cycle || data?.plan?.billing_cycle;
+  const billingCycle = data?.plan?.product?.metadata?.billing_cycle || data?.plan?.billing_cycle;
   const start = data?.start_date ? dayjs(data.start_date) : null;
   const computedEndDate = (() => {
     if (!start || !billingCycle) return null;
@@ -42,6 +70,15 @@ export default async function Page() {
     if (!computedEndDate) return null;
     return computedEndDate.diff(dayjs(), 'day');
   })();
+
+  const subscriptionStatus = () => {
+    if (computedRemainingDays !== null && computedRemainingDays <= 3) {
+      return { heading: 'Expiring soon', dot: warningDot };
+    } else if (data?.end_date) {
+      return { heading: 'Expired', dot: dangerDot };
+    }
+    return { heading: 'Active', dot: dot };
+  };
   return (
     <Card>
       <Col className="gap-8">
@@ -61,7 +98,8 @@ export default async function Page() {
 
         <Col className="gap-4">
           <Text variant="lg" className="flex items-center gap-3 text-brand-secondary">
-            Status: {dot} <p className="capitalize text-white">{data?.status}</p>
+            Status: {subscriptionStatus()?.dot}{' '}
+            <p className="capitalize text-white">{subscriptionStatus()?.heading}</p>
           </Text>
           <Text variant="lg" className="flex items-center gap-3 text-brand-secondary">
             Ends:{' '}
@@ -78,11 +116,9 @@ export default async function Page() {
               <Link href={'#'}>
                 <ManageSubscriptionButton />
               </Link>
-              {data?.plan?.plan_type !== 'pro' && (
-                <Link href={env.NEXT_PUBLIC_STRIPE_PORTAL_LINK}>
-                  <Button height={41}>Upgrade plan</Button>
-                </Link>
-              )}
+              <Button height={41} onClick={() => setOpenAllPlans(true)}>
+                Upgrade plan
+              </Button>
             </Row>
           </Row>
         </Col>
@@ -104,7 +140,7 @@ export default async function Page() {
                   </Row>
                 ))}
             </Col>
-            {data.trial_start && (
+            {data?.trial_start && (
               <Text variant="base" className="font-bold leading-5 text-white">
                 Upgrade to keep your work and continue using TubeGenius.
               </Text>
@@ -112,6 +148,13 @@ export default async function Page() {
           </Col>
         </Card>
       </Col>
+
+      <ViewAllPlanModal
+        open={openAllPlans}
+        setOpen={setOpenAllPlans}
+        handleUpgrade={handleUpgrade}
+        trigger={<div />}
+      />
     </Card>
   );
 }
@@ -119,5 +162,17 @@ export default async function Page() {
 const dot = (
   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
     <circle cx="6" cy="6" r="6" fill="#00B559" />
+  </svg>
+);
+
+const dangerDot = (
+  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <circle cx="6" cy="6" r="6" fill="#FF5050" />
+  </svg>
+);
+
+const warningDot = (
+  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <circle cx="6" cy="6" r="6" fill="#ED8101" />
   </svg>
 );

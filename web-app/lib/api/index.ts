@@ -15,16 +15,8 @@ export const baseUrl = env.NEXT_PUBLIC_API_URL;
 export { AuthService } from './auth';
 export { ApiClient } from './client';
 export { NotificationService } from './notifications';
-export { PrivacyService } from './privacy';
 export { UserService } from './user';
-export {
-  api,
-  ApiWrapper,
-  authService,
-  notificationService,
-  privacyService,
-  userService,
-} from './wrapper';
+export { api, ApiWrapper, authService, notificationService, userService } from './wrapper';
 
 // Type exports
 export type {

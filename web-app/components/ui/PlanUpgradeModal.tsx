@@ -3,7 +3,7 @@
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
-import { ChevronDown, CircleCheck, CircleX, Info } from 'lucide-react';
+import { ChevronDown, ChevronRight, CircleCheck, CircleX, Info } from 'lucide-react';
 
 import Button from './Button';
 import Card from './Card';
@@ -33,6 +33,7 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
   const router = useRouter();
   const [openPopover, setOpenPopover] = useState(false);
   const [open, setOpen] = useState(false);
+  const [openAllPlans, setOpenAllPlans] = useState(false);
   const { data, isLoading, isError, error } = useGetCurrentPlan();
 
   const { isPending, mutate: createStripeSession } = useCreateStripeSession();
@@ -97,6 +98,44 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
       subheading: 'Billed monthly via Stripe.',
     };
   };
+  useEffect(() => {
+    if (!isLoading && !isError && !data?.plan?.product?.name) {
+      setOpen(true);
+    }
+  }, [isLoading, isError, data]);
+
+  // If no plan data, show the ViewTrialPlanModal directly
+  if (!isLoading && !isError && !data?.plan?.product?.name) {
+    return (
+      <>
+        <ViewTrialPlanModal
+          open={open}
+          setOpen={setOpen}
+          // setOpen={() => {}}
+          handleUpgrade={handleUpgrade}
+          onOpenAllPlans={() => {
+            setOpenAllPlans(true);
+          }}
+          trigger={
+            <div className="group flex h-8 min-w-20 cursor-pointer items-center justify-center gap-3 rounded-full border border-[#BAFF38]/[.12] bg-white/[.16] px-2 text-sm capitalize">
+              Not Activated{' '}
+              <ChevronDown
+                size={20}
+                className="text-white transition-all duration-500 group-data-[state=open]:rotate-180"
+              />
+            </div>
+          }
+        />
+        <ViewAllPlanModal
+          open={openAllPlans}
+          setOpen={setOpenAllPlans}
+          handleUpgrade={handleUpgrade}
+          trigger={<div />}
+        />
+      </>
+    );
+  }
+
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       {isPending && <PageLoader size="2xl" color="white" />}
@@ -172,7 +211,20 @@ type ViewAllPlanModalProps = {
   trigger: React.ReactNode;
   handleUpgrade: (plan_id: string) => void;
 };
-function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlanModalProps) {
+type ViewTrialPlanModalProps = {
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  trigger: React.ReactNode;
+  handleUpgrade: (plan_id: string) => void;
+  onOpenAllPlans?: () => void;
+};
+export function ViewTrialPlanModal({
+  trigger,
+  handleUpgrade,
+  open,
+  setOpen,
+  onOpenAllPlans,
+}: ViewTrialPlanModalProps) {
   const toast = useToast();
   const { data, isLoading, isError, error } = useGetAllPlan({ enabled: open });
 
@@ -182,7 +234,51 @@ function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlan
     }
   }, [isError, toast, error, data]);
 
-  // const trialData = useMemo(() => data?.find((e) => e.billing_cycle === 'weekly'), [data]);
+  const trialData = useMemo(() => data?.filter((e) => e.name === 'Free Trial'), [data]);
+
+  return (
+    <Dialog
+      open={open}
+      setOpen={setOpen}
+      trigger={trigger}
+      title="Welcome to TubeGenius!"
+      description="Your journey to smarter content creation starts now!"
+      className="sm:max-w-[983px]"
+      closeActionButton={null}
+      outsideInteract={false}
+    >
+      <Col className="mt-4 w-full items-center gap-8">
+        {isLoading ? (
+          <Skeleton className="h-[452px] w-full bg-white/[.05]" />
+        ) : Number(data?.length) > 0 ? (
+          <Tabs defaultValue="monthly" className="flex w-full flex-col gap-6">
+            <TrailWidget
+              data={trialData}
+              isTrial={true}
+              handleUpgrade={handleUpgrade}
+              onOpenAllPlans={onOpenAllPlans}
+            />
+          </Tabs>
+        ) : (
+          <Text variant="base" className="flex h-24 items-center justify-center text-white">
+            No plans found
+          </Text>
+        )}
+      </Col>
+    </Dialog>
+  );
+}
+
+export function ViewAllPlanModal({ trigger, handleUpgrade, open, setOpen }: ViewAllPlanModalProps) {
+  const toast = useToast();
+  const { data, isLoading, isError, error } = useGetAllPlan({ enabled: open });
+
+  useEffect(() => {
+    if (isError) {
+      toast.error('Something went wrong', error.message);
+    }
+  }, [isError, toast, error, data]);
+
   const monthlyData = useMemo(() => data?.filter((e) => e.billing_cycle === 'monthly'), [data]);
   const yearlyData = useMemo(() => data?.filter((e) => e.billing_cycle === 'yearly'), [data]);
 
@@ -254,71 +350,104 @@ const trailIcon = (
 interface TrailWidgetProps {
   data?: PlanType[];
   handleUpgrade: (plan_id: string) => void;
+  isTrial?: boolean;
+  onOpenAllPlans?: () => void;
 }
 
-function TrailWidget({ data, handleUpgrade }: TrailWidgetProps) {
+function TrailWidget({ data, handleUpgrade, isTrial = false, onOpenAllPlans }: TrailWidgetProps) {
   return (
-    <Row className="scrollbar-hide scroll-fade-x w-full gap-6 overflow-clip overflow-y-auto">
-      {data &&
-        data.map((e, index) => (
-          <Card key={index} className={cn(cardCss, 'min-w-[300px] hover:bg-white/[.16]')}>
-            <Col className="h-fit gap-6">
-              <Col className="gap-4">
-                {e?.description && (
-                  <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-[10px] leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md md:text-xs">
-                    {/* Try TubeGenius for 7 days — just $1 */}
-                    {e?.description}
-                  </div>
-                )}
-                <Row>
+    <>
+      <Row className="scrollbar-hide scroll-fade-x w-full gap-6 overflow-clip overflow-x-auto">
+        {data &&
+          data.map((e, index) => (
+            <Card key={index} className={cn(cardCss, 'hover:bg-white/[.16 ] min-w-[300px]')}>
+              <Col className="h-fit gap-6">
+                <Col className="gap-4">
+                  {e?.description && (
+                    <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-[10px] leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md md:text-xs">
+                      {/* Try TubeGenius for 7 days — just $1 */}
+                      {e?.description}
+                    </div>
+                  )}
                   <Row>
-                    {trailIcon}
-                    <Text variant="2xl" className="text-lg text-white lg:text-2xl">
-                      {e?.name}
-                    </Text>
-                  </Row>
-                  <Row className="items-end gap-1">
-                    <Text variant="3xl" className="text-lg text-white lg:text-2xl">
-                      ${e?.price} /
-                    </Text>
-                    <Text variant="sm" className="mb-1 text-brand-secondary">
-                      {e?.billing_cycle}
-                    </Text>
-                  </Row>
-                </Row>
-              </Col>
-
-              <Separator className="w-full bg-white/[.16]" />
-
-              <Col className="scrollbar-hide scroll-fade-y h-40 gap-4 overflow-y-auto">
-                {e?.features &&
-                  Object.keys(JSON.parse(e?.features)).map((feature: string) => (
-                    <Row key={feature} className="justify-normal gap-2">
-                      {JSON.parse(e?.features)[feature] ? (
-                        <CircleCheck size={24} className="text-[#00B559]" />
-                      ) : (
-                        <CircleX size={24} className="text-[#FF5050]" />
-                      )}
-                      <Text variant="base" className="capitalize text-white">
-                        {feature?.replace(/_/g, ' ')}
+                    <Row>
+                      {trailIcon}
+                      <Text variant="2xl" className="text-lg text-white lg:text-2xl">
+                        {e?.name}
                       </Text>
                     </Row>
-                  ))}
+                    <Row className="items-end gap-1">
+                      <Text variant="3xl" className="text-lg text-white lg:text-2xl">
+                        ${e?.price} /
+                      </Text>
+                      <Text variant="sm" className="mb-1 text-brand-secondary">
+                        {e?.billing_cycle}
+                      </Text>
+                    </Row>
+                  </Row>
+                </Col>
+
+                <Separator className="w-full bg-white/[.16]" />
+
+                <Col className="scrollbar-hide scroll-fade-y h-40 gap-4 overflow-y-auto">
+                  {e?.features &&
+                    Object.keys(JSON.parse(e?.features)).map((feature: string) => (
+                      <Row key={feature} className="justify-normal gap-2">
+                        {JSON.parse(e?.features)[feature] ? (
+                          <CircleCheck size={24} className="text-[#00B559]" />
+                        ) : (
+                          <CircleX size={24} className="text-[#FF5050]" />
+                        )}
+                        <Text variant="base" className="capitalize text-white">
+                          {feature?.replace(/_/g, ' ')}
+                        </Text>
+                      </Row>
+                    ))}
+                </Col>
+
+                <Separator className="w-full bg-white/[.16]" />
+
+                {isTrial && (
+                  <Row className="justify-normal gap-2 text-white">
+                    <Info size={16} />
+                    <Text variant="xs">Note: Auto-upgrades to Basic plan after trial ends</Text>
+                  </Row>
+                )}
+
+                {!isTrial && (
+                  <Button
+                    className="mt-auto"
+                    onClick={() => e?.id && handleUpgrade(e.id as string)}
+                  >
+                    Upgrade now
+                  </Button>
+                )}
+
+                {isTrial && (
+                  <Row className="mt-auto gap-3">
+                    <Button variant="gray" className="flex-1 bg-black" onClick={onOpenAllPlans}>
+                      <Row className="md:text-md items-center gap-2 text-sm">
+                        Other Plans <ChevronRight />
+                      </Row>
+                    </Button>
+                    <Button
+                      className="md:text-md flex-1 text-sm"
+                      onClick={() => e?.id && handleUpgrade(e.id as string)}
+                    >
+                      Start trial for $1
+                    </Button>
+                  </Row>
+                )}
               </Col>
-
-              <Separator className="w-full bg-white/[.16]" />
-
-              <Row className="justify-normal gap-2 text-white">
-                <Info size={16} />
-                <Text variant="xs">Note: Auto-upgrades to Basic plan after trial ends</Text>
-              </Row>
-
-              <Button className="mt-auto" onClick={() => e?.id && handleUpgrade(e.id as string)}>
-                Upgrade now
-              </Button>
-            </Col>
-          </Card>
-        ))}
-    </Row>
+            </Card>
+          ))}
+      </Row>
+      {isTrial && (
+        <p className="text-center text-sm text-white">
+          After 7 days, your plan will automatically continue as the Premium ($45/month){' '}
+          <span className="text-[#2BFF13]">Terms & Conditions↗</span>
+        </p>
+      )}
+    </>
   );
 }

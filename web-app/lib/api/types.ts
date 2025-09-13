@@ -6,6 +6,11 @@ export interface ApiResponse<T = unknown> {
   status: number;
 }
 
+export interface PrivacySettingsResponse {
+  message: string;
+  settings: PrivacySettings;
+}
+
 // User Types
 export interface User {
   id: string;
