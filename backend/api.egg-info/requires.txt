@@ -44,4 +44,5 @@ asgiref>=3.9.1
 sqlparse>=0.5.3
 tzdata>=2025.2
 pillow>=11.3.0
+openai>=1.107.1
 dj-stripe==2.8.4

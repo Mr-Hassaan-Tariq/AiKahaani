@@ -137,6 +137,7 @@ INSTALLED_APPS = [
     "api",
     "users",
     "payments",
+    "scripts"
 ] + THIRD_PARTY_APPS
 
 ######################################################################
@@ -316,3 +317,8 @@ if STRIPE_TEST_MODE:
 # DJ-Stripe Live/Test Mode Settings
 DJSTRIPE_LIVE_MODE = STRIPE_LIVE_MODE
 DJSTRIPE_TEST_MODE = STRIPE_TEST_MODE
+
+######################################################################
+# OPENAI Configuration
+######################################################################
+OPENAI_API_KEY = environ.get("OPENAI_API_KEY")

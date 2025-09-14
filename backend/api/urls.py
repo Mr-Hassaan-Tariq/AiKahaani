@@ -16,6 +16,7 @@ urlpatterns = [
     path("api/auth/", include("users.urls")),
     path("api/v1/users/", include("users.users_urls")),
     path("api/v1/payments/", include("payments.urls")),
+    path("api/v1/scripts/", include("scripts.urls")),
     path("admin/", admin.site.urls),
     path("stripe/", include("djstripe.urls", namespace="djstripe")),
     # dj-stripe webhook endpoint
