@@ -57,3 +57,30 @@ export type ErrorResponse = {
   statusCode?: number;
   digest?: string;
 };
+
+export async function updateServerDataAction<T>(
+  endpoint: string,
+  data: unknown,
+): Promise<GetServerDataActionReturnType<T>> {
+  try {
+    const cookieStore = await cookies();
+    const userCookie = cookieStore.get('access_token');
+
+    const res = await fetch(`${baseUrl}${endpoint}`, {
+      method: 'PATCH',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${userCookie?.value}`,
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      return { isError: true, error: await processError(res), data: undefined };
+    }
+    const responseData = (await res.json()) as T;
+    return { isError: false, error: undefined, data: responseData };
+  } catch (error) {
+    return { isError: true, error: error as Error, data: undefined };
+  }
+}

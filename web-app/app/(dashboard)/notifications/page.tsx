@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import BellIcon from '@assets/svg/bell-notification.svg';
 
-import EmptyState from './_components/EmptyState';
+import EmptyState from '../_components/EmptyState';
 import NotificationItem from './_components/NotificationItem';
 import NotificationTabs from './_components/NotificationTabs';
 import ProductUpdates from './_components/ProductUpdates';

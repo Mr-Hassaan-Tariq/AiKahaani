@@ -2,7 +2,7 @@
 
 import Icon from '@assets/svg/card-sparkles.svg';
 
-import EmptyState from './EmptyState';
+import EmptyState from '../../_components/EmptyState';
 
 export default function SubscriptionPage() {
   return (

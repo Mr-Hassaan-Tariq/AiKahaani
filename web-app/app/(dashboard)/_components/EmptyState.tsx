@@ -16,7 +16,10 @@ export default function EmptyState({ icon, title, description }: EmptyStateProps
       <h2 className="mb-2 text-xl font-semibold">{title}</h2>
 
       {/* Description */}
-      <p className="max-w-md text-sm text-[#AAACA6]">{description}</p>
+      <p
+        className="max-w-md text-sm text-[#AAACA6]"
+        dangerouslySetInnerHTML={{ __html: description }}
+      />
     </div>
   );
 }

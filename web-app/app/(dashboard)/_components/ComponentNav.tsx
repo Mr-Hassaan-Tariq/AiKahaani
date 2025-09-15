@@ -1,7 +1,6 @@
 'use client';
 
-import Image from 'next/image';
-
+import { cn } from 'lib/utils';
 import Text from 'components/ui/Text';
 import { Button } from 'components/common/Button';
 
@@ -10,6 +9,8 @@ interface ComponentNavProps {
   buttonText?: string;
   buttonIcon?: any;
   _onButtonClick?: () => void;
+  className?: string;
+  buttonClassName?: string;
 }
 
 export default function ComponentNav({
@@ -17,14 +18,21 @@ export default function ComponentNav({
   buttonText,
   buttonIcon,
   _onButtonClick,
+  className,
+  buttonClassName,
 }: ComponentNavProps) {
   return (
-    <div className="flex flex-col justify-between gap-2 md:flex-row lg:flex-row lg:items-center">
+    <div
+      className={cn(
+        'flex flex-col justify-between gap-2 md:flex-row lg:flex-row lg:items-center',
+        className,
+      )}
+    >
       <Text variant="3xl" className="text-[32px] font-semibold text-white">
         {title}
       </Text>
-      <Button className="md:max-w-[200px] lg:max-w-[200px]">
-        {buttonIcon && <Image src={buttonIcon} alt="icon" width={20} height={20} />}
+      <Button className={cn('md:max-w-[200px] lg:max-w-[200px]', buttonClassName)}>
+        {buttonIcon && buttonIcon}
         <span className="font-bold">{buttonText}</span>
       </Button>
     </div>

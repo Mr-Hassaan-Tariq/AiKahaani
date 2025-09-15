@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import ComponentNav from '@/(dashboard)/_components/ComponentNav';
-import TickCircle from '@assets/svg/tick-circle.svg';
 
+import { RightCircle } from './components';
 import { Tabs, TabsList, TabsTrigger } from 'components/shadcn_ui/tabs';
 
 const tabsPath = [
@@ -25,7 +25,7 @@ export default function NotificationTabs({ children }: { children: React.ReactNo
       <ComponentNav
         title="Notifications"
         buttonText="Mark all as read"
-        buttonIcon={TickCircle}
+        buttonIcon={RightCircle}
         _onButtonClick={() => console.log('Profile updated!')}
       />
       <div className="w-full overflow-x-auto overflow-y-visible lg:w-fit">
