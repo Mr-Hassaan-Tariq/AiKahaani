@@ -53,3 +53,35 @@ class FullScriptSerializer(serializers.ModelSerializer):
             'uuid', 'word_count', 'estimated_duration',
             'tokens_used', 'generation_time', 'version'
         ]
+
+
+# Response serializers that reference the model serializers above
+class ScriptGeneratorConfigResponseSerializer(serializers.Serializer):
+    tones = ToneSerializer(many=True)
+    template_styles = TemplateStyleSerializer(many=True)
+    length_range = serializers.DictField()
+
+
+class GenerateOutlineRequestSerializer(serializers.Serializer):
+    description = serializers.CharField(max_length=2000)
+    tone = serializers.IntegerField()
+    template_style = serializers.IntegerField(required=False, allow_null=True)
+    length = serializers.IntegerField(default=500, min_value=100, max_value=10000)
+    title = serializers.CharField(max_length=200, required=False, allow_blank=True)
+
+
+class GenerateOutlineResponseSerializer(serializers.Serializer):
+    outline = ScriptOutlineSerializer()
+    message = serializers.CharField()
+
+
+class GenerateScriptRequestSerializer(serializers.Serializer):
+    tone = serializers.CharField(default="Informative")
+    template_style = serializers.CharField(default="medium")
+    length = serializers.IntegerField(default=5000, min_value=1000, max_value=20000)
+    title = serializers.CharField(max_length=200, required=False, allow_blank=True)
+
+
+class GenerateScriptResponseSerializer(serializers.Serializer):
+    script = FullScriptSerializer()
+    message = serializers.CharField()

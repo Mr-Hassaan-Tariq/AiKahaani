@@ -50,3 +50,4 @@ Requires-Dist: tzdata>=2025.2
 Requires-Dist: pillow>=11.3.0
 Requires-Dist: openai>=1.107.1
 Requires-Dist: dj-stripe==2.8.4
+Requires-Dist: django-filter>=25.1

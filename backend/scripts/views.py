@@ -1,15 +1,20 @@
 # views.py
 from .models import Tone, TemplateStyle, ScriptOutline, FullScript
 from .serializers import (
-    ToneSerializer, TemplateStyleSerializer, ScriptOutlineUpdateSerializer
+    ToneSerializer, TemplateStyleSerializer, ScriptOutlineUpdateSerializer,
+    ScriptGeneratorConfigResponseSerializer, GenerateOutlineRequestSerializer,
+    GenerateOutlineResponseSerializer, GenerateScriptRequestSerializer,
+    GenerateScriptResponseSerializer, ScriptOutlineSerializer, FullScriptSerializer
 )
+from .filters import ScriptOutlineFilter, FullScriptFilter
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .services.open_ai import OpenAIScriptService
-from .serializers import ScriptOutlineSerializer, FullScriptSerializer
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter, OpenApiTypes
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,7 +24,10 @@ logger = logging.getLogger(__name__)
     summary="Get script generator configuration",
     description="Retrieve all configuration data needed for the script generator UI",
     responses={
-        200: OpenApiResponse(description="Configuration data retrieved successfully")
+        200: OpenApiResponse(
+            response=ScriptGeneratorConfigResponseSerializer,
+            description="Configuration data retrieved successfully"
+        )
     }
 )
 @api_view(['GET'])
@@ -40,13 +48,15 @@ def script_generator_config(request):
     })
 
 
-
-
 @extend_schema(
     summary="Generate script outline",
     description="Generate a detailed script outline using OpenAI based on user input (description, tone, template style, length)",
+    request=GenerateOutlineRequestSerializer,
     responses={
-        201: OpenApiResponse(description="Script outline generated successfully"),
+        201: OpenApiResponse(
+            response=GenerateOutlineResponseSerializer,
+            description="Script outline generated successfully"
+        ),
         400: OpenApiResponse(description="Invalid input data"),
         500: OpenApiResponse(description="Outline generation failed")
     }
@@ -122,14 +132,6 @@ def generate_script_outline(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@extend_schema(
-    summary="Get script outline",
-    description="Retrieve a specific script outline by its UUID",
-    responses={
-        200: OpenApiResponse(description="Script outline retrieved successfully"),
-        404: OpenApiResponse(description="Script outline not found")
-    }
-)
 class ScriptOutlineDetailView(generics.RetrieveUpdateAPIView):
     """
     Get and update script outline
@@ -143,12 +145,46 @@ class ScriptOutlineDetailView(generics.RetrieveUpdateAPIView):
             return ScriptOutlineUpdateSerializer
         return ScriptOutlineSerializer
 
+    @extend_schema(
+        summary="Get script outline",
+        description="Retrieve a specific script outline by its UUID",
+        responses={
+            200: OpenApiResponse(
+                response=ScriptOutlineSerializer,
+                description="Script outline retrieved successfully"
+            ),
+            404: OpenApiResponse(description="Script outline not found")
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update script outline",
+        description="Update a specific script outline by its UUID",
+        request=ScriptOutlineUpdateSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=ScriptOutlineSerializer,
+                description="Script outline updated successfully"
+            ),
+            404: OpenApiResponse(description="Script outline not found"),
+            400: OpenApiResponse(description="Invalid input data")
+        }
+    )
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
 
 @extend_schema(
     summary="Generate full script",
     description="Generate a complete script from an existing outline using OpenAI",
+    request=GenerateScriptRequestSerializer,
     responses={
-        201: OpenApiResponse(description="Full script generated successfully"),
+        201: OpenApiResponse(
+            response=GenerateScriptResponseSerializer,
+            description="Full script generated successfully"
+        ),
         404: OpenApiResponse(description="Script outline not found"),
         500: OpenApiResponse(description="Script generation failed")
     }
@@ -207,14 +243,6 @@ def generate_full_script(request, outline_uuid):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@extend_schema(
-    summary="Get full script",
-    description="Retrieve a specific full script by its UUID",
-    responses={
-        200: OpenApiResponse(description="Full script retrieved successfully"),
-        404: OpenApiResponse(description="Full script not found")
-    }
-)
 class FullScriptDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     Full CRUD for full scripts
@@ -223,19 +251,97 @@ class FullScriptDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = FullScriptSerializer
     lookup_field = 'uuid'
 
+    @extend_schema(
+        summary="Get full script",
+        description="Retrieve a specific full script by its UUID",
+        responses={
+            200: OpenApiResponse(
+                response=FullScriptSerializer,
+                description="Full script retrieved successfully"
+            ),
+            404: OpenApiResponse(description="Full script not found")
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update full script",
+        description="Update a specific full script by its UUID",
+        request=FullScriptSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=FullScriptSerializer,
+                description="Full script updated successfully"
+            ),
+            404: OpenApiResponse(description="Full script not found"),
+            400: OpenApiResponse(description="Invalid input data")
+        }
+    )
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Delete full script",
+        description="Delete a specific full script by its UUID",
+        responses={
+            204: OpenApiResponse(description="Full script deleted successfully"),
+            404: OpenApiResponse(description="Full script not found")
+        }
+    )
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
+
 
 @extend_schema(
     summary="List all script outlines",
-    description="Retrieve a paginated list of all script outlines",
+    description="Retrieve a paginated list of all script outlines with filtering options",
+    parameters=[
+        OpenApiParameter(
+            name='search',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Search by title or content',
+            required=False
+        ),
+        OpenApiParameter(
+            name='status',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by status (generating, generated, edited, approved, script_generated)',
+            required=False
+        ),
+        OpenApiParameter(
+            name='filter_type',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by type: all, outline_drafts, script_drafts, saved',
+            required=False
+        ),
+        OpenApiParameter(
+            name='ordering',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Order by field (created, modified, title). Use - for descending (e.g., -created)',
+            required=False
+        )
+    ],
     responses={
-        200: OpenApiResponse(description="Script outlines retrieved successfully")
+        200: OpenApiResponse(
+            response=ScriptOutlineSerializer(many=True),
+            description="Script outlines retrieved successfully"
+        )
     }
 )
 class ScriptOutlineListView(generics.ListAPIView):
     """
-    List all script outlines
+    List all script outlines with filtering and search
     """
     serializer_class = ScriptOutlineSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = ScriptOutlineFilter
+    ordering_fields = ['created', 'modified', 'title']
+    ordering = ['-created']
 
     def get_queryset(self):
         return ScriptOutline.objects.select_related(
@@ -245,16 +351,88 @@ class ScriptOutlineListView(generics.ListAPIView):
 
 @extend_schema(
     summary="List all full scripts",
-    description="Retrieve a paginated list of all full scripts",
+    description="Retrieve a paginated list of all full scripts with filtering options",
+    parameters=[
+        OpenApiParameter(
+            name='search',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Search by title or content',
+            required=False
+        ),
+        OpenApiParameter(
+            name='status',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by status (generating, generated, edited, finalized, published)',
+            required=False
+        ),
+        OpenApiParameter(
+            name='is_published',
+            type=OpenApiTypes.BOOL,
+            location=OpenApiParameter.QUERY,
+            description='Filter by published status',
+            required=False
+        ),
+        OpenApiParameter(
+            name='filter_type',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by type: all, outline_drafts, script_drafts, saved',
+            required=False
+        ),
+        OpenApiParameter(
+            name='word_count_min',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Minimum word count',
+            required=False
+        ),
+        OpenApiParameter(
+            name='word_count_max',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Maximum word count',
+            required=False
+        ),
+        OpenApiParameter(
+            name='duration_min',
+            type=OpenApiTypes.FLOAT,
+            location=OpenApiParameter.QUERY,
+            description='Minimum estimated duration in minutes',
+            required=False
+        ),
+        OpenApiParameter(
+            name='duration_max',
+            type=OpenApiTypes.FLOAT,
+            location=OpenApiParameter.QUERY,
+            description='Maximum estimated duration in minutes',
+            required=False
+        ),
+        OpenApiParameter(
+            name='ordering',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Order by field (created, modified, title, word_count, estimated_duration). Use - for descending (e.g., -created)',
+            required=False
+        )
+    ],
     responses={
-        200: OpenApiResponse(description="Full scripts retrieved successfully")
+        200: OpenApiResponse(
+            response=FullScriptSerializer(many=True),
+            description="Full scripts retrieved successfully"
+        )
     }
 )
 class FullScriptListView(generics.ListAPIView):
     """
-    List all full scripts
+    List all full scripts with filtering and search
     """
     serializer_class = FullScriptSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = FullScriptFilter
+    ordering_fields = ['created', 'modified', 'title', 'word_count', 'estimated_duration']
+    ordering = ['-created']
 
     def get_queryset(self):
         return FullScript.objects.select_related(

@@ -137,7 +137,8 @@ INSTALLED_APPS = [
     "api",
     "users",
     "payments",
-    "scripts"
+    "scripts",
+    "django_filters"
 ] + THIRD_PARTY_APPS
 
 ######################################################################
@@ -321,4 +322,5 @@ DJSTRIPE_TEST_MODE = STRIPE_TEST_MODE
 ######################################################################
 # OPENAI Configuration
 ######################################################################
+OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
 OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
