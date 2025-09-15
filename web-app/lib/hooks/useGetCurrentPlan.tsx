@@ -26,6 +26,7 @@ export interface CurrentPlanType {
   end_date: string;
   plan: {
     id: string;
+    interval: string;
     product: {
       name: string;
       metadata: {

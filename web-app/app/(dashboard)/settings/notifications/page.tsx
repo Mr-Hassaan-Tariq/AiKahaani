@@ -8,7 +8,7 @@ export default async function NotificationsPage() {
   const { data, error, isError } = await getNotificationSettings();
 
   return (
-    <Col className="gap-10 text-white">
+    <Col className="container gap-10 text-white">
       {isError && (
         <Text variant="base" className="text-brand-secondary">
           {error.message?.toString()}

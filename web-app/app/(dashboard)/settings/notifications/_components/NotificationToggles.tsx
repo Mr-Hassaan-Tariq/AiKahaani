@@ -105,7 +105,7 @@ export default function NotificationToggles({ initialSettings }: NotificationTog
   };
 
   return (
-    <div className="mx-auto space-y-6">
+    <div className="space-y-6">
       <Card title={notificationTexts.deliveryChannels.title}>
         {notificationTexts.deliveryChannels.options.map((option, index) => (
           <Switch

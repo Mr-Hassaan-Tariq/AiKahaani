@@ -83,8 +83,8 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
   const headingText = () => {
     if (computedRemainingDays !== null && computedRemainingDays <= 3) {
       return {
-        heading: `You're currently on a ${data?.plan?.product.name} and your trial ends in ${computedRemainingDays} days`,
-        subheading: 'Billed monthly via Stripe.',
+        heading: `Your  ${data?.plan?.product.name} ending soon `,
+        subheading: `You'r plan will be automatically renewed on \n${computedEndDate?.format('MMMM DD, YYYY')}.`,
       };
     } else if (data?.end_date) {
       return {
@@ -159,7 +159,7 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
       >
         <Col className="items-center gap-6">
           <Col className="items-center gap-3">
-            <Text variant="xl" className="font-semibold text-white">
+            <Text variant="xl" className="text-center font-semibold text-white">
               {data?.plan?.product.name ? headingText()?.heading : 'You are not on any plan'}
             </Text>
             <Text
