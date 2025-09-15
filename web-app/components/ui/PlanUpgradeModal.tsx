@@ -110,8 +110,7 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
       <>
         <ViewTrialPlanModal
           open={open}
-          setOpen={setOpen}
-          // setOpen={() => {}}
+          setOpen={() => {}}
           handleUpgrade={handleUpgrade}
           onOpenAllPlans={() => {
             setOpenAllPlans(true);
