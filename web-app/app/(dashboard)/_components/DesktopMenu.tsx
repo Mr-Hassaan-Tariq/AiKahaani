@@ -63,7 +63,7 @@ export const mainMenu = [
   {
     name: 'Script Generator',
     icon: <ScriptGeneratorIcon />,
-    path: '/script-generator',
+    path: '/new-script',
   },
   {
     name: 'My Scripts',

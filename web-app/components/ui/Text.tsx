@@ -9,7 +9,7 @@ type TypographyProps = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 const baseStyles = {
-  xs: 'text-xs leading-3.5',
+  xs: "text-xs leading-3.5 [font-feature-settings:'liga'_off,'clig'_off]",
   sm: 'text-sm leading-4',
   base: 'text-base leading-6 tracking-[-0.2px]',
   lg: 'text-lg leading-5 font-medium tracking-[-0.2px]',

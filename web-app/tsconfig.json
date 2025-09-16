@@ -34,7 +34,8 @@
     "middleware.ts",
     "env.mjs",
     "types",
-    "global.d.ts"
+    "global.d.ts",
+    "app/(dashboard)/new-script/script"
   ],
   "exclude": ["node_modules", ".next"]
 }

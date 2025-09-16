@@ -31,7 +31,7 @@ export default function Button(props: ButtonProps) {
         heightClasses[height],
         variantClasses[variant],
         className,
-        disabled && 'opacity-40 hover:bg-transparent active:scale-100',
+        disabled && 'opacity-40 hover:bg-current active:scale-100',
         '',
       )}
       disabled={disabled}

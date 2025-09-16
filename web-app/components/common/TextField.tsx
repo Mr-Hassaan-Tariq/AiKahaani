@@ -3,7 +3,7 @@
 interface TextFieldProps {
   label?: string;
   placeholder?: string;
-  type?: string;
+  type?: 'text' | 'email' | 'password' | 'date';
   className?: string;
   value?: string;
   onChange?: (value: string) => void;
@@ -23,6 +23,7 @@ export default function TextField(props: TextFieldProps) {
       <label className="mb-1 block text-sm text-white">{label}</label>
       <input
         type={type}
+        autoComplete="on"
         placeholder={placeholder}
         value={value}
         onChange={handleChange}

@@ -29,6 +29,6 @@ const colorClasses = {
   'sky-blue': ' border-sky-blue',
   white: ' border-white',
   red: ' border-red-800',
-  black: ' border-primary-eerie_black',
+  black: ' border-black',
   'alice-blue': ' border-primary-alice_blue ',
 };
