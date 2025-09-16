@@ -9,6 +9,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.mixins import MethodSpecificThrottleMixin
+
 from .models import SubscriptionPlan
 from .serializers import (
     SubscriptionPlanSerializer,
@@ -27,7 +29,7 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 logger = logging.getLogger(__name__)
 
 
-class SubscriptionPlansView(APIView):
+class SubscriptionPlansView(MethodSpecificThrottleMixin, APIView):
     """View to fetch all available subscription plans"""
 
     permission_classes = [AllowAny]
@@ -61,7 +63,7 @@ class SubscriptionPlansView(APIView):
             )
 
 
-class UserSubscriptionView(APIView):
+class UserSubscriptionView(MethodSpecificThrottleMixin, APIView):
     """View to manage user subscriptions"""
 
     permission_classes = [IsAuthenticated]
@@ -93,7 +95,7 @@ class UserSubscriptionView(APIView):
         return Response(SubscriptionSerializer(sub).data)
 
 
-class CreateCheckoutSessionView(APIView):
+class CreateCheckoutSessionView(MethodSpecificThrottleMixin, APIView):
     """Create a Stripe Checkout Session using dj-stripe."""
 
     permission_classes = [IsAuthenticated]
@@ -200,7 +202,7 @@ class CreateCheckoutSessionView(APIView):
         return plan
 
 
-class CreateBillingPortalSessionView(APIView):
+class CreateBillingPortalSessionView(MethodSpecificThrottleMixin, APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -259,7 +261,7 @@ class CreateBillingPortalSessionView(APIView):
         return Response({"url": portal.url})
 
 
-class TrialStatusView(APIView):
+class TrialStatusView(MethodSpecificThrottleMixin, APIView):
     """View to check user's trial subscription status"""
 
     permission_classes = [IsAuthenticated]

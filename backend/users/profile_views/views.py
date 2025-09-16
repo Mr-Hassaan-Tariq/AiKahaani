@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.mixins import MethodSpecificThrottleMixin
 from users.models import Settings
 from users.serializers import SettingsNotificationSerializer, SettingsPrivacySerializer
 
@@ -53,7 +54,7 @@ from users.serializers import SettingsNotificationSerializer, SettingsPrivacySer
     },
     tags=["Settings"],
 )
-class SettingsNotificationAPIView(APIView):
+class SettingsNotificationAPIView(MethodSpecificThrottleMixin, APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -110,7 +111,7 @@ class SettingsNotificationAPIView(APIView):
     },
     tags=["Settings"],
 )
-class SettingsPrivacyAPIView(APIView):
+class SettingsPrivacyAPIView(MethodSpecificThrottleMixin, APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

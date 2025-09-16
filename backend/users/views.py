@@ -17,6 +17,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from api.mixins import MethodSpecificThrottleMixin
+
 from .models import BlacklistedAccessToken, EmailVerificationToken, MagicLinkToken
 from .serializers import (
     GoogleAuthInputSerializer,
@@ -37,7 +39,7 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-class SignupView(APIView):
+class SignupView(MethodSpecificThrottleMixin, APIView):
     permission_classes = [AllowAny]
     serializer_class = UserSignupSerializer
 
@@ -53,7 +55,7 @@ class SignupView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GoogleLoginAPIView(APIView):
+class GoogleLoginAPIView(MethodSpecificThrottleMixin, APIView):
     """
     POST /api/auth/google/
     - Expects a Google Authorization Code or ID token.
@@ -221,7 +223,7 @@ class GoogleLoginAPIView(APIView):
         return user, created
 
 
-class MagicLinkLoginAPIView(APIView):
+class MagicLinkLoginAPIView(MethodSpecificThrottleMixin, APIView):
     """
     API endpoint for sending magic link to user's email for passwordless authentication.
 
@@ -321,7 +323,7 @@ class MagicLinkLoginAPIView(APIView):
             )
 
 
-class UserDetailsUpdateAPIView(APIView):
+class UserDetailsUpdateAPIView(MethodSpecificThrottleMixin, APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -432,7 +434,7 @@ class UserDetailsUpdateAPIView(APIView):
         )
 
 
-class EmailVerificationAPIView(APIView):
+class EmailVerificationAPIView(MethodSpecificThrottleMixin, APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
@@ -478,7 +480,7 @@ class EmailVerificationAPIView(APIView):
         )
 
 
-class MagicLinkVerifyAPIView(APIView):
+class MagicLinkVerifyAPIView(MethodSpecificThrottleMixin, APIView):
     """
     API endpoint for verifying magic link tokens and authenticating users.
 
@@ -577,7 +579,7 @@ class MagicLinkVerifyAPIView(APIView):
             )
 
 
-class LogoutAPIView(APIView):
+class LogoutAPIView(MethodSpecificThrottleMixin, APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = LogoutSerializer
 
@@ -647,7 +649,7 @@ class LogoutAPIView(APIView):
         )
 
 
-class UserProfilePictureAPIView(APIView):
+class UserProfilePictureAPIView(MethodSpecificThrottleMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 

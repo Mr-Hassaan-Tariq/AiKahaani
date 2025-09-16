@@ -138,7 +138,7 @@ INSTALLED_APPS = [
     "users",
     "payments",
     "scripts",
-    "django_filters"
+    "django_filters",
 ] + THIRD_PARTY_APPS
 
 ######################################################################
@@ -253,7 +253,6 @@ STATIC_URL = "static/"
 ######################################################################
 MEDIA_URL = "/media/"
 
-print(environ.get("MEDIA_ROOT"))
 MEDIA_ROOT = environ.get("MEDISA_ROOT", BASE_DIR / "media")
 
 ######################################################################
@@ -271,6 +270,20 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        # Global throttle rates (applied to all APIs)
+        "anon": "100/hour",  # Anonymous users: 100 requests/hour
+        "user": "1000/hour",  # Authenticated users: 1000 requests/hour
+        # Method-specific rates (for fine-grained control)
+        "get": "100/minute",
+        "post": "20/minute",
+        "put": "20/minute",
+        "delete": "10/minute",
+    },
 }
 
 
@@ -322,5 +335,4 @@ DJSTRIPE_TEST_MODE = STRIPE_TEST_MODE
 ######################################################################
 # OPENAI Configuration
 ######################################################################
-OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
 OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
