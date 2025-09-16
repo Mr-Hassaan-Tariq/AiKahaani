@@ -44,7 +44,12 @@ class Script(TimeStampedModel):
     )
     description = models.TextField(help_text="Description or summary of the script content")
     style = models.TextField(help_text="Style guidelines or formatting instructions")
-    length = models.IntegerField(help_text="Target length in characters or words")
+    min_length = models.IntegerField(
+        help_text="Minimum target length in characters or words"
+    )
+    max_length = models.IntegerField(
+        help_text="Maximum target length in characters or words"
+    )
     tone = models.ForeignKey(
         Tone,
         on_delete=models.CASCADE,
@@ -113,13 +118,11 @@ class ScriptOutline(TimeStampedModel):
 
     # Status tracking
     STATUS_CHOICES = [
-        ('generating', 'Generating'),
+        ('draft', 'Draft'),
         ('generated', 'Generated'),
-        ('edited', 'Edited'),
-        ('approved', 'Approved'),
-        ('script_generated', 'Script Generated'),
+        ('saved', 'Saved'),
     ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='generating')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
 
     # Version control for edits
     version = models.PositiveIntegerField(default=1)
@@ -133,7 +136,7 @@ class ScriptOutline(TimeStampedModel):
         # Track if outline text was edited
         if self.pk and self.outline_text != self.original_outline:
             if self.status == 'generated':
-                self.status = 'edited'
+                self.status = 'draft'
         super().save(*args, **kwargs)
 
     class Meta:
@@ -168,13 +171,11 @@ class FullScript(TimeStampedModel):
     tokens_used = models.IntegerField(default=0)
     generation_time = models.FloatField(default=0.0)
     STATUS_CHOICES = [
-        ('generating', 'Generating'),
+        ('draft', 'Draft'),
         ('generated', 'Generated'),
-        ('edited', 'Edited'),
-        ('finalized', 'Finalized'),
-        ('published', 'Published'),
+        ('saved', 'Saved'),
     ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='generating')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     version = models.PositiveIntegerField(default=1)
     is_published = models.BooleanField(default=False)
     published_at = models.DateTimeField(null=True, blank=True)

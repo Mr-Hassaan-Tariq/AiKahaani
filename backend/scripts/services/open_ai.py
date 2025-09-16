@@ -111,7 +111,8 @@ class OpenAIScriptService:
         tone = script_data.get('tone', 'informative')
         template_style = script_data.get('template_style', 'medium')
         description = script_data.get('description', '')
-        target_length = script_data.get('length', 500)
+        min_length = script_data.get('min_length', 100)
+        max_length = script_data.get('max_length', 1000)
 
         return f"""
 Create a detailed script outline for a YouTube video with the following requirements:
@@ -119,7 +120,7 @@ Create a detailed script outline for a YouTube video with the following requirem
 Topic: {description}
 Tone: {tone}
 Style: {template_style}
-Target Length: ~{target_length} words
+Target Length: {min_length}-{max_length} words
 
 Please structure the outline with:
 1. Hook/Opening (attention-grabbing start)
@@ -134,13 +135,15 @@ For each section, provide:
 - Estimated timing
 - Transition notes
 
-Make it engaging and suitable for the {tone} tone.
+Make it engaging and suitable for the {tone} tone. Ensure the final script will be between {min_length} and {max_length} words.
 """
 
     @staticmethod
     def _build_script_prompt(outline_text: str, script_data: Dict[str, Any]) -> str:
         """Build prompt for full script generation"""
         tone = script_data.get('tone', 'informative')
+        min_length = script_data.get('min_length', 1000)
+        max_length = script_data.get('max_length', 5000)
 
         return f"""
 Based on the following outline, write a complete, detailed YouTube script:
@@ -150,12 +153,14 @@ OUTLINE:
 
 REQUIREMENTS:
 - Tone: {tone}
+- Target Length: {min_length}-{max_length} words
 - Write in a conversational, engaging style
 - Include natural transitions between sections
 - Add specific examples and details
 - Write exactly what the speaker should say
 - Include [PAUSE], [VISUAL], or [EMPHASIS] cues where helpful
 - Make it flow naturally when spoken aloud
+- Ensure the final script is between {min_length} and {max_length} words
 
 Write the complete script with natural dialogue and engaging content.
 """

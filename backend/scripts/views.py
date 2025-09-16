@@ -9,6 +9,7 @@ from drf_spectacular.utils import (
     OpenApiTypes,
     extend_schema,
 )
+from rest_framework.views import APIView
 from rest_framework import filters, generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -17,7 +18,7 @@ from rest_framework.response import Response
 from api.mixins import MethodSpecificThrottleMixin
 from payments.permissions import HasActiveSubscriptionPermission
 
-from .filters import FullScriptFilter, ScriptOutlineFilter
+from .filters import ScriptOutlineFilter, FullScriptFilter, generation_filters
 from .models import FullScript, ScriptOutline, TemplateStyle, Tone
 from .serializers import (
     FullScriptSerializer,
@@ -30,11 +31,12 @@ from .serializers import (
     ScriptOutlineUpdateSerializer,
     TemplateStyleSerializer,
     ToneSerializer,
+    UnifiedGenerationSerializer,
+    StatusUpdateSerializer
 )
 from .services.open_ai import OpenAIScriptService
 
 logger = logging.getLogger(__name__)
-
 
 @extend_schema(
     summary="Get script generator configuration",
@@ -45,6 +47,41 @@ logger = logging.getLogger(__name__)
             description="Configuration data retrieved successfully",
         )
     },
+    examples=[
+        OpenApiExample(
+            "Config Example",
+            value={
+                "tones": [
+                    {"id": 1, "name": "Informative"},
+                    {"id": 2, "name": "Conversational"},
+                    {"id": 3, "name": "Professional"}
+                ],
+                "template_styles": [
+                    {
+                        "id": 1,
+                        "name": "Short Form",
+                        "min_length": 50,
+                        "max_length": 200,
+                        "duration": 60,
+                        "description": "Quick, punchy content",
+                        "word_range": "~50-200 words"
+                    }
+                ],
+                "outline_length_range": {
+                    "min": 50,
+                    "max": 10000,
+                    "default_min": 100,
+                    "default_max": 1000
+                },
+                "script_length_range": {
+                    "min": 500,
+                    "max": 20000,
+                    "default_min": 1000,
+                    "default_max": 5000
+                }
+            }
+        )
+    ]
 )
 @api_view(["GET"])
 def script_generator_config(request):
@@ -64,7 +101,7 @@ def script_generator_config(request):
 
 @extend_schema(
     summary="Generate script outline",
-    description="Generate a detailed script outline using OpenAI based on user input (description, tone, template style, length)",
+    description="Generate a detailed script outline...",
     request=GenerateOutlineRequestSerializer,
     responses={
         201: OpenApiResponse(
@@ -75,6 +112,19 @@ def script_generator_config(request):
         403: OpenApiResponse(description="Active subscription required"),
         500: OpenApiResponse(description="Outline generation failed"),
     },
+    examples=[
+        OpenApiExample(
+            "Outline Example",
+            value={
+                "description": "How to learn Python programming from scratch",
+                "tone": 1,
+                "template_style": 2,
+                "min_length": 200,
+                "max_length": 800,
+                "title": "Python Learning Guide"
+            }
+        )
+    ]
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
@@ -211,7 +261,7 @@ class ScriptOutlineDetailView(
 
 @extend_schema(
     summary="Generate full script",
-    description="Generate a complete script from an existing outline using OpenAI",
+    description="Generate a complete script from an existing outline...",
     request=GenerateScriptRequestSerializer,
     responses={
         201: OpenApiResponse(
@@ -221,6 +271,18 @@ class ScriptOutlineDetailView(
         404: OpenApiResponse(description="Script outline not found"),
         500: OpenApiResponse(description="Script generation failed"),
     },
+    examples=[
+        OpenApiExample(
+            "Full Script Example",
+            value={
+                "tone": "Informative",
+                "template_style": "medium",
+                "min_length": 1500,
+                "max_length": 3000,
+                "title": "Complete Python Tutorial"
+            }
+        )
+    ]
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
@@ -261,7 +323,7 @@ def generate_full_script(request, outline_uuid):
         )
 
         # Update outline status
-        outline.status = "script_generated"
+        outline.status = 'saved'
         outline.save()
 
         serializer = FullScriptSerializer(full_script)
@@ -484,111 +546,293 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get_queryset(self):
-        return FullScript.objects.select_related("outline", "outline__script").order_by(
-            "-created"
-        )
+        return FullScript.objects.select_related(
+            'outline', 'outline__script'
+        ).order_by('-created')
 
 
 @extend_schema(
-    summary="Test script throttling",
-    description="Test endpoint to demonstrate script API throttling with different rates for different HTTP methods",
+    summary="List all generations (unified)",
+    description="Retrieve a unified list of both script outlines and full scripts with filtering and sorting options.",
+    parameters=[
+        OpenApiParameter(
+            name='search',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Search by title or content',
+            required=False
+        ),
+        OpenApiParameter(
+            name='status',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by status (draft, generated, saved)',
+            required=False
+        ),
+        OpenApiParameter(
+            name='filter_type',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by type: all, outline_drafts, script_drafts, saved',
+            required=False
+        ),
+        OpenApiParameter(
+            name='type',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by generation type: outline, script',
+            required=False
+        ),
+        OpenApiParameter(
+            name='ordering',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Order by field (created, modified, title). Use - for descending (e.g., -created)',
+            required=False
+        )
+    ],
     responses={
-        200: OpenApiResponse(description="Throttling test successful"),
-        429: OpenApiResponse(description="Rate limit exceeded"),
-    },
+        200: OpenApiResponse(
+            response=ScriptOutlineSerializer(many=True),
+            description="Script outlines retrieved successfully"
+        )
+    }
 )
-class ThrottleTestView(MethodSpecificThrottleMixin, generics.GenericAPIView):
+class ScriptOutlineListView(generics.ListAPIView):
     """
-    Test endpoint to demonstrate method-specific throttling.
-    Different methods have different rate limits:
-    - GET: 3/minute
-    - POST: 20/minute
-    - PUT: 20/minute
-    - DELETE: 10/minute
+    List all script outlines with filtering and search
     """
+    serializer_class = ScriptOutlineSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = ScriptOutlineFilter
+    ordering_fields = ['created', 'modified', 'title']
+    ordering = ['-created']
 
-    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        return ScriptOutline.objects.select_related(
+            'script', 'script__tone'
+        ).order_by('-created')
+
+
+@extend_schema(
+    summary="List all full scripts",
+    description="Retrieve a paginated list of all full scripts with filtering options",
+    parameters=[
+        OpenApiParameter(
+            name='search',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Search by title or content',
+            required=False
+        ),
+        OpenApiParameter(
+            name='status',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by status (generating, generated, edited, finalized, published)',
+            required=False
+        ),
+        OpenApiParameter(
+            name='is_published',
+            type=OpenApiTypes.BOOL,
+            location=OpenApiParameter.QUERY,
+            description='Filter by published status',
+            required=False
+        ),
+        OpenApiParameter(
+            name='filter_type',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by type: all, outline_drafts, script_drafts, saved',
+            required=False
+        ),
+        OpenApiParameter(
+            name='word_count_min',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Minimum word count',
+            required=False
+        ),
+        OpenApiParameter(
+            name='word_count_max',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Maximum word count',
+            required=False
+        ),
+        OpenApiParameter(
+            name='duration_min',
+            type=OpenApiTypes.FLOAT,
+            location=OpenApiParameter.QUERY,
+            description='Minimum estimated duration in minutes',
+            required=False
+        ),
+        OpenApiParameter(
+            name='duration_max',
+            type=OpenApiTypes.FLOAT,
+            location=OpenApiParameter.QUERY,
+            description='Maximum estimated duration in minutes',
+            required=False
+        ),
+        OpenApiParameter(
+            name='ordering',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Order by field (created, modified, title, word_count, estimated_duration). Use - for descending (e.g., -created)',
+            required=False
+        )
+    ],
+    responses={
+        200: OpenApiResponse(
+            response=FullScriptSerializer(many=True),
+            description="Full scripts retrieved successfully"
+        )
+    }
+)
+class FullScriptListView(generics.ListAPIView):
+    """
+    List all full scripts with filtering and search
+    """
+    serializer_class = FullScriptSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = FullScriptFilter
+    ordering_fields = ['created', 'modified', 'title', 'word_count', 'estimated_duration']
+    ordering = ['-created']
+
+    def get_queryset(self):
+        return FullScript.objects.select_related(
+            'outline', 'outline__script'
+        ).order_by('-created')
+
+
+@extend_schema(
+    summary="List all generations (unified)",
+    description="Retrieve a unified list of both script outlines and full scripts with filtering and sorting options. This endpoint combines both outlines and scripts into a single response with consistent formatting.",
+    parameters=[
+        OpenApiParameter(
+            name='search',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Search by title or content across both outlines and scripts',
+            required=False,
+        ),
+        OpenApiParameter(
+            name='status',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by status: draft, generated, saved',
+            required=False,
+        ),
+        OpenApiParameter(
+            name='filter_type',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by type: all, outline_drafts, script_drafts, saved',
+            required=False,
+        ),
+        OpenApiParameter(
+            name='type',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Filter by generation type: outline, script',
+            required=False,
+        ),
+        OpenApiParameter(
+            name='ordering',
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description='Order by field: created, modified, title, word_count, estimated_duration. Use - for descending (e.g., -created)',
+            required=False,
+        )
+    ],
+    responses={
+        200: OpenApiResponse(
+            response=UnifiedGenerationSerializer(many=True),
+            description="Generations retrieved successfully"
+        ),
+        404: OpenApiResponse(description="No generations found for the given filters"),
+        400: OpenApiResponse(description="Invalid filter parameters")
+    }
+)
+class GenerationsList(APIView):
+    """
+    Unified listing API for both outlines and scripts.
+    Handles filtering, sorting, and returning data for both outlines and scripts.
+    """
 
     def get(self, request):
-        from django.utils import timezone
+        """
+        Handles GET requests for unified outlines and scripts.
+        Allows filtering and sorting of the results based on the provided query parameters.
+        """
+        # Get filter parameters from request
+        search = request.GET.get('search', '')
+        status_filter = request.GET.get('status', '')
+        filter_type = request.GET.get('filter_type', 'all')
+        type_filter = request.GET.get('type', '')
+        ordering = request.GET.get('ordering', '-created')
+        filtered_querysets = generation_filters(search, status_filter, filter_type, type_filter, ordering)
+        serializer = UnifiedGenerationSerializer(filtered_querysets, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-        return Response(
-            {
-                "message": f"Method-specific throttling test for {request.method} request",
-                "method": request.method,
-                "rate_limits": {
-                    "GET": "3/minute",
-                    "POST": "20/minute",
-                    "PUT": "20/minute",
-                    "DELETE": "10/minute",
-                },
-                "user": str(request.user),
-                "user_type": "authenticated"
-                if request.user.is_authenticated
-                else "anonymous",
-                "timestamp": timezone.now().isoformat(),
-            }
-        )
 
-    def post(self, request):
-        from django.utils import timezone
+@extend_schema(
+    summary="Update outline status",
+    description="Update the status of a script outline",
+    request=StatusUpdateSerializer,
+    responses={
+        200: OpenApiResponse(
+            response=ScriptOutlineSerializer,
+            description="Outline status updated successfully"
+        ),
+        404: OpenApiResponse(description="Outline not found"),
+        400: OpenApiResponse(description="Invalid status")
+    }
+)
+@api_view(['PATCH'])
+def update_outline_status(request, outline_uuid):
+    """
+    Update the status of a script outline
+    """
+    outline = get_object_or_404(ScriptOutline, uuid=outline_uuid)
+    
+    serializer = StatusUpdateSerializer(data=request.data)
+    if serializer.is_valid():
+        outline.status = serializer.validated_data['status']
+        outline.save()
+        
+        response_serializer = ScriptOutlineSerializer(outline)
+        return Response(response_serializer.data)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(
-            {
-                "message": f"Method-specific throttling test for {request.method} request",
-                "method": request.method,
-                "rate_limits": {
-                    "GET": "3/minute",
-                    "POST": "20/minute",
-                    "PUT": "20/minute",
-                    "DELETE": "10/minute",
-                },
-                "user": str(request.user),
-                "user_type": "authenticated"
-                if request.user.is_authenticated
-                else "anonymous",
-                "timestamp": timezone.now().isoformat(),
-            }
-        )
 
-    def put(self, request):
-        from django.utils import timezone
-
-        return Response(
-            {
-                "message": f"Method-specific throttling test for {request.method} request",
-                "method": request.method,
-                "rate_limits": {
-                    "GET": "3/minute",
-                    "POST": "20/minute",
-                    "PUT": "20/minute",
-                    "DELETE": "10/minute",
-                },
-                "user": str(request.user),
-                "user_type": "authenticated"
-                if request.user.is_authenticated
-                else "anonymous",
-                "timestamp": timezone.now().isoformat(),
-            }
-        )
-
-    def delete(self, request):
-        from django.utils import timezone
-
-        return Response(
-            {
-                "message": f"Method-specific throttling test for {request.method} request",
-                "method": request.method,
-                "rate_limits": {
-                    "GET": "3/minute",
-                    "POST": "20/minute",
-                    "PUT": "20/minute",
-                    "DELETE": "10/minute",
-                },
-                "user": str(request.user),
-                "user_type": "authenticated"
-                if request.user.is_authenticated
-                else "anonymous",
-                "timestamp": timezone.now().isoformat(),
-            }
-        )
+@extend_schema(
+    summary="Update script status",
+    description="Update the status of a full script",
+    request=StatusUpdateSerializer,
+    responses={
+        200: OpenApiResponse(
+            response=FullScriptSerializer,
+            description="Script status updated successfully"
+        ),
+        404: OpenApiResponse(description="Script not found"),
+        400: OpenApiResponse(description="Invalid status")
+    }
+)
+@api_view(['PATCH'])
+def update_script_status(request, script_uuid):
+    """
+    Update the status of a full script
+    """
+    script = get_object_or_404(FullScript, uuid=script_uuid)
+    
+    serializer = StatusUpdateSerializer(data=request.data)
+    if serializer.is_valid():
+        script.status = serializer.validated_data['status']
+        script.save()
+        
+        response_serializer = FullScriptSerializer(script)
+        return Response(response_serializer.data)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
