@@ -16,7 +16,7 @@ export default function Button(props: ButtonProps) {
     justIcon,
     className,
     fullRounded = true,
-    disabled,
+    disabled = false,
     height = 52,
     variant = 'green',
     ...buttonProps
@@ -25,7 +25,7 @@ export default function Button(props: ButtonProps) {
   return (
     <button
       className={cn(
-        "flex w-full items-center justify-center gap-2.5 rounded-xl px-5 transition-all duration-200 [font-feature-settings:'liga'_off,'clig'_off] active:scale-95",
+        "flex w-full items-center justify-center gap-2.5 rounded-xl px-5 transition-all duration-200 [font-feature-settings:'liga'_off,'clig'_off]",
         fullRounded && 'rounded-full',
         !justIcon && 'min-w-5',
         heightClasses[height],
@@ -35,7 +35,6 @@ export default function Button(props: ButtonProps) {
         '',
       )}
       disabled={disabled}
-      // eslint-disable-next-line react/jsx-props-no-spreading
       {...buttonProps}
     >
       {children}
@@ -50,8 +49,8 @@ const heightClasses = {
 
 const variantClasses = {
   green:
-    'bg-gradient-to-r from-[#2BFF13] to-[#20BF0E] text-[#0E0F0C] hover:bg-gradient-to-r hover:from-white hover:to-white disabled:bg-[#7C9971]',
-  gray: 'bg-white/10 text-white  backdrop-blur-sm hover:bg-white hover:text-[#0E0F0C] disabled:bg-white/10 disabled:backdrop-blur-sm',
+    'bg-gradient-to-r from-[#2BFF13] to-[#20BF0E] text-[#0E0F0C] hover:bg-gradient-to-r hover:from-white hover:to-white',
+  gray: 'bg-white/10 text-white backdrop-blur-sm hover:bg-white hover:text-[#0E0F0C]',
   ghost: 'bg-transparent text-[#EAECE5] rounded-none hover:border-b hover:border-[#2BFF13]',
-  red: 'bg-error text-white  backdrop-blur-sm backdrop-blur-sm hover:bg-white hover:text-[#0E0F0C]',
+  red: 'bg-error text-white backdrop-blur-sm hover:bg-white hover:text-[#0E0F0C]',
 };
