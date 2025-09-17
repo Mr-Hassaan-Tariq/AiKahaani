@@ -15,7 +15,7 @@ import Button from 'components/ui/Button';
 import Card from 'components/ui/Card';
 import Col from 'components/ui/Col';
 import FormSelect from 'components/ui/FormSelect';
-import FormTextarea from 'components/ui/FormTextArea';
+import FormTextArea from 'components/ui/FormTextArea_';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
@@ -166,7 +166,7 @@ export default function Page() {
                 />
               </Row>
 
-              <FormTextarea
+              <FormTextArea
                 name="prompt"
                 placeholder="e.g. Top 5 productivity hacks that actually work..."
                 validationSchema={{
@@ -235,11 +235,6 @@ export default function Page() {
                   msOverflowStyle: 'none',
                 }}
               >
-                <style jsx>{`
-                  div::-webkit-scrollbar {
-                    display: none;
-                  }
-                `}</style>
                 {titles.map((title, index) => (
                   <Row
                     key={index}

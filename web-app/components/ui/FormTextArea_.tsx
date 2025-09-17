@@ -12,7 +12,7 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   validationSchema?: RegisterOptions;
 }
 
-export default function FormTextarea(props: TextareaProps) {
+export default function FormTextArea(props: TextareaProps) {
   const {
     name,
     disabled,
