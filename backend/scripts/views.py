@@ -7,7 +7,7 @@ from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiResponse,
     OpenApiTypes,
-    extend_schema,
+    extend_schema, OpenApiExample,
 )
 from rest_framework.views import APIView
 from rest_framework import filters, generics, status
