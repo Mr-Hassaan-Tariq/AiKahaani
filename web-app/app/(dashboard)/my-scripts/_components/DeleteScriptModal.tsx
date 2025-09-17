@@ -7,10 +7,21 @@ import Dialog from 'components/ui/Dialog';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
-export default function DeletePhotoModal({ trigger }: { trigger: React.ReactNode }) {
+export default function DeletePhotoModal({
+  trigger,
+  script,
+  actions,
+}: {
+  trigger: React.ReactNode;
+  script: any;
+  actions: any;
+}) {
   const [open, setOpen] = useState(false);
 
-  function handleDelete() {}
+  function handleDelete() {
+    actions.onDelete?.(script.id);
+    setOpen(false);
+  }
 
   return (
     <Dialog

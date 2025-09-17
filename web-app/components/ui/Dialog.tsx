@@ -47,7 +47,7 @@ export default function Dialog({
             </Text>
           )}
         </Col>
-        <div className="flex flex-col items-center justify-center">{children}</div>
+        <div className="">{children}</div>
         <DialogFooter>
           {footer}
           <DialogClose asChild className="w-full">

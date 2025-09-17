@@ -5,6 +5,7 @@ import { Download } from 'lucide-react';
 import { ScriptCardProps } from '../_types';
 import { basketIcon, Edit } from './components';
 import DeleteScriptModal from './DeleteScriptModal';
+import ExportScriptModal from './ExportScriptModal';
 import Button from 'components/ui/Button';
 import Card from 'components/ui/Card';
 import Text from 'components/ui/Text';
@@ -41,19 +42,20 @@ export default function ScriptCard({ script, actions, className = '' }: ScriptCa
 
       <div className="mt-5 flex items-center gap-3">
         <DeleteScriptModal
-          trigger={
-            <Button variant="gray" onClick={() => actions.onDelete(script.id)}>
-              Delete {basketIcon}
-            </Button>
-          }
+          trigger={<Button variant="gray">Delete {basketIcon}</Button>}
+          script={script}
+          actions={actions}
         />
         {isCompleted ? (
-          <Button
-            className="bg-green-500 text-black hover:bg-green-600"
-            onClick={() => actions.onExport?.(script.id)}
-          >
-            <Download size={16} className="mr-1" /> Export
-          </Button>
+          <ExportScriptModal
+            trigger={
+              <Button variant="green">
+                <Download size={16} className="mr-1" /> Export
+              </Button>
+            }
+            script={script}
+            actions={actions}
+          />
         ) : (
           <Button
             className="bg-green-500 text-black hover:bg-green-600"
