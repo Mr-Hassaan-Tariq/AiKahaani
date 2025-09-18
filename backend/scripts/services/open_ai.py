@@ -2,6 +2,10 @@
 import logging
 import time
 from typing import Any, Dict, Tuple
+import base64
+from io import BytesIO
+from PIL import Image
+import requests
 
 import openai
 from django.conf import settings
@@ -24,6 +28,92 @@ class OpenAIScriptService:
     """
     Service for generating script outlines and full scripts using OpenAI
     """
+
+    @staticmethod
+    def analyze_image(image_file=None, image_url=None) -> Tuple[str, str]:
+        """
+        Analyze an image using OpenAI Vision model to generate title and description
+        
+        Args:
+            image_file: Django UploadedFile object (optional)
+            image_url: URL of the image to analyze (optional)
+            
+        Returns:
+            Tuple of (title, description)
+        """
+        try:
+            # Determine the image URL for OpenAI
+            if image_file:
+                # Convert uploaded file to base64
+                image_content = image_file.read()
+                # Reset file pointer for potential future use
+                image_file.seek(0)
+                # Convert to base64
+                base64_image = base64.b64encode(image_content).decode('utf-8')
+                image_url_for_openai = f"data:image/jpeg;base64,{base64_image}"
+            elif image_url:
+                # Use the provided URL directly
+                image_url_for_openai = image_url
+            else:
+                raise ValueError("Either image_file or image_url must be provided")
+            
+            client = get_openai_client()
+            response = client.chat.completions.create(
+                model="gpt-4-vision-preview",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": """Analyze this image and provide:
+1. A catchy, engaging YouTube video title (under 60 characters)
+2. A detailed description of what's happening in the image that could be used for script generation
+
+Format your response as:
+TITLE: [your title here]
+DESCRIPTION: [your description here]
+
+Make the title clickable and engaging for YouTube, and the description detailed enough to generate a good script outline."""
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": image_url_for_openai
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=500,
+                temperature=0.7
+            )
+            
+            content = response.choices[0].message.content
+            
+            # Parse the response to extract title and description
+            title = ""
+            description = ""
+            
+            lines = content.split('\n')
+            for line in lines:
+                line = line.strip()
+                if line.startswith('TITLE:'):
+                    title = line.replace('TITLE:', '').strip()
+                elif line.startswith('DESCRIPTION:'):
+                    description = line.replace('DESCRIPTION:', '').strip()
+            
+            # If parsing failed, use the whole response as description
+            if not title and not description:
+                description = content.strip()
+                title = "Image Analysis"
+            
+            return title, description
+            
+        except Exception as e:
+            logger.error(f"Image analysis failed: {str(e)}")
+            # Return fallback values
+            return "Image Analysis", "An image was provided for analysis."
 
     @staticmethod
     def generate_outline(script_data: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:

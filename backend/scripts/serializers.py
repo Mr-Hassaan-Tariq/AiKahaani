@@ -66,7 +66,7 @@ class ScriptGeneratorConfigResponseSerializer(serializers.Serializer):
 
 
 class GenerateOutlineRequestSerializer(serializers.Serializer):
-    description = serializers.CharField(max_length=2000)
+    description = serializers.CharField(max_length=2000, required=False, allow_blank=True)
     tones = serializers.ListField(
         child=serializers.IntegerField(),
         min_length=1,
@@ -76,6 +76,32 @@ class GenerateOutlineRequestSerializer(serializers.Serializer):
     min_length = serializers.IntegerField(default=100, min_value=50, max_value=5000)
     max_length = serializers.IntegerField(default=1000, min_value=100, max_value=10000)
     title = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    image = serializers.ImageField(required=False, allow_null=True, help_text="Image file to analyze for generating title/description")
+    image_url = serializers.URLField(required=False, allow_blank=True, help_text="Image URL to analyze for generating title/description")
+    
+    def validate(self, data):
+        """Ensure either description, image file, or image URL is provided"""
+        description = data.get('description', '').strip()
+        image = data.get('image')
+        image_url = data.get('image_url', '').strip()
+        
+        if not description and not image and not image_url:
+            raise serializers.ValidationError(
+                "Either 'description', 'image' file, or 'image_url' must be provided."
+            )
+        
+        # Ensure only one image input method is used
+        if image and image_url:
+            raise serializers.ValidationError(
+                "Please provide either an image file or image URL, not both."
+            )
+        
+        # If image (file or URL) is provided, description and title are not needed
+        if image or image_url:
+            data['description'] = ''  # Clear description if image is provided
+            data['title'] = ''  # Clear title if image is provided
+        
+        return data
 
 
 class GenerateOutlineResponseSerializer(serializers.Serializer):

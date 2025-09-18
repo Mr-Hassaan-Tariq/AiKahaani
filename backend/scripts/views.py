@@ -11,9 +11,10 @@ from drf_spectacular.utils import (
 )
 from rest_framework.views import APIView
 from rest_framework import filters, generics, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from api.mixins import MethodSpecificThrottleMixin
 from payments.permissions import HasActiveSubscriptionPermission
@@ -101,20 +102,37 @@ def script_generator_config(request):
 
 @extend_schema(
     summary="Generate script outline",
-    description="Generate a detailed script outline using multiple tones. You can specify multiple tones to blend different styles throughout the content.",
-    request=GenerateOutlineRequestSerializer,
+    description="""Generate a detailed script outline using multiple tones. 
+
+**Three input methods supported:**
+1. **Text Description (JSON)**: Provide a text description in JSON format
+2. **Image Upload (Form Data)**: Upload an image file using multipart/form-data
+3. **Image URL**: Provide an image URL that will be analyzed
+
+**Usage:**
+- For text input: Use `Content-Type: application/json` with `description` field
+- For image file: Use `Content-Type: multipart/form-data` with `image` file
+- For image URL: Use either JSON or form data with `image_url` field
+- Either `description`, `image` file, or `image_url` must be provided (only one)
+- **When providing an image**: No need to provide title or description - they will be automatically generated from the image content using OpenAI Vision""",
+    request={
+        'multipart/form-data': GenerateOutlineRequestSerializer,
+        'application/json': GenerateOutlineRequestSerializer,
+    },
     responses={
         201: OpenApiResponse(
             response=GenerateOutlineResponseSerializer,
             description="Script outline generated successfully",
         ),
-        400: OpenApiResponse(description="Invalid input data"),
+        400: OpenApiResponse(description="Invalid input data - either description or image must be provided"),
         403: OpenApiResponse(description="Active subscription required"),
-        500: OpenApiResponse(description="Outline generation failed"),
+        500: OpenApiResponse(description="Outline generation or image analysis failed"),
     },
     examples=[
         OpenApiExample(
-            "Single Tone Example",
+            "Text Description (JSON)",
+            summary="Generate outline from text description",
+            description="Standard JSON request with text description",
             value={
                 "description": "How to learn Python programming from scratch",
                 "tones": [1],
@@ -122,26 +140,43 @@ def script_generator_config(request):
                 "min_length": 200,
                 "max_length": 800,
                 "title": "Python Learning Guide"
-            }
+            },
+            media_type='application/json'
         ),
         OpenApiExample(
-            "Multiple Tones Example",
+            "Image Upload (Form Data)",
+            summary="Generate outline from uploaded image",
+            description="Upload an image file using form data. The image will be analyzed to generate title and description automatically. No need to provide title or description fields.",
             value={
-                "description": "Advanced JavaScript techniques for web developers",
-                "tones": [1, 3, 5],
+                "tones": [1, 3],
                 "template_style": 1,
                 "min_length": 300,
                 "max_length": 1000,
-                "title": "JavaScript Mastery"
-            }
+                "image": "[Upload image file here - title and description will be auto-generated]"
+            },
+            media_type='multipart/form-data'
+        ),
+        OpenApiExample(
+            "Image URL (JSON)",
+            summary="Generate outline from image URL",
+            description="Provide an image URL that will be analyzed using OpenAI Vision to generate title and description automatically.",
+            value={
+                "tones": [1, 2],
+                "template_style": 2,
+                "min_length": 200,
+                "max_length": 800,
+                "image_url": "https://example.com/path/to/image.jpg"
+            },
+            media_type='application/json'
         )
     ]
 )
 @api_view(["POST"])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 @permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
 def generate_script_outline(request):
     """
-    Generate script outline using OpenAI from user input
+    Generate script outline using OpenAI from user input or image analysis
     """
     # Validate request data using serializer
     serializer = GenerateOutlineRequestSerializer(data=request.data)
@@ -149,12 +184,46 @@ def generate_script_outline(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     validated_data = serializer.validated_data
-    description = validated_data["description"]
+    description = validated_data.get("description", "")
+    image = validated_data.get("image")
+    image_url = validated_data.get("image_url", "")
     tone_ids = validated_data["tones"]
     template_style_id = validated_data.get("template_style")
     min_length = validated_data.get("min_length", 100)
     max_length = validated_data.get("max_length", 1000)
     title = validated_data.get("title", "")
+    
+    # If image (file or URL) is provided, analyze it to generate title and description
+    if image or image_url:
+        try:
+            if image:
+                # Debug: Log the type of image object
+                logger.info(f"Image file type: {type(image)}, Image: {image}")
+                
+                # Ensure it's actually a file object, not a string
+                if hasattr(image, 'read') and hasattr(image, 'seek'):
+                    image_title, image_description = OpenAIScriptService.analyze_image(image_file=image)
+                else:
+                    logger.error(f"Invalid image object type: {type(image)}")
+                    return Response(
+                        {"error": "Invalid image file. Please upload a valid image file."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                # Use image URL
+                logger.info(f"Using image URL: {image_url}")
+                image_title, image_description = OpenAIScriptService.analyze_image(image_url=image_url)
+            
+            # Always use image analysis results when image is provided
+            title = image_title
+            description = image_description
+                
+        except Exception as e:
+            logger.error(f"Image analysis failed: {str(e)}")
+            return Response(
+                {"error": "Failed to analyze the provided image. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     try:
         # Get tone and template style objects
@@ -184,8 +253,9 @@ def generate_script_outline(request):
         )
 
         # Create ScriptOutline directly (no intermediate Script record needed)
+        outline_title = title if title else f"Outline: {description[:50]}"
         outline = ScriptOutline.objects.create(
-            title=f"Outline: {title or description[:50]}",
+            title=outline_title,
             outline_text=outline_text,
             outline_data=outline_data,
             original_outline=outline_text,
