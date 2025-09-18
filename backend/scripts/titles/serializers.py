@@ -4,6 +4,17 @@ from rest_framework import serializers
 from scripts.models import TitleTone
 
 
+class TitleToneSerializer(serializers.ModelSerializer):
+    """
+    Serializer for TitleTone model to list available tones
+    """
+
+    class Meta:
+        model = TitleTone
+        fields = ["id", "name", "created", "modified"]
+        read_only_fields = ["id", "created", "modified"]
+
+
 class GenerateTitlesRequestSerializer(serializers.Serializer):
     """
     Serializer for title generation request

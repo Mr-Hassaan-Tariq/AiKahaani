@@ -8,4 +8,5 @@ urlpatterns = [
     path(
         "optimize/", views.GenerateTitlesOptimizedView.as_view(), name="optimize-titles"
     ),
+    path("tones/", views.TitleToneListView.as_view(), name="list-title-tones"),
 ]

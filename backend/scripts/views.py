@@ -19,7 +19,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from api.mixins import MethodSpecificThrottleMixin
 from payments.permissions import HasActiveSubscriptionPermission
 
-from .filters import ScriptOutlineFilter, FullScriptFilter, generation_filters
+from .filters import ScriptOutlineFilter, FullScriptFilter
 from .models import FullScript, ScriptOutline, TemplateStyle, Tone
 from .serializers import (
     FullScriptSerializer,
@@ -33,7 +33,6 @@ from .serializers import (
     TemplateStyleSerializer,
     ToneSerializer,
     UnifiedGenerationSerializer,
-    StatusUpdateSerializer
 )
 from .services.open_ai import OpenAIScriptService
 
@@ -48,47 +47,9 @@ logger = logging.getLogger(__name__)
             description="Configuration data retrieved successfully",
         )
     },
-    examples=[
-        OpenApiExample(
-            "Config Example",
-            value={
-                "tones": [
-                    {"id": 1, "name": "Informative"},
-                    {"id": 2, "name": "Conversational"},
-                    {"id": 3, "name": "Professional"}
-                ],
-                "template_styles": [
-                    {
-                        "id": 1,
-                        "name": "Short Form",
-                        "min_length": 50,
-                        "max_length": 200,
-                        "duration": 60,
-                        "description": "Quick, punchy content",
-                        "word_range": "~50-200 words"
-                    }
-                ],
-                "outline_length_range": {
-                    "min": 50,
-                    "max": 10000,
-                    "default_min": 100,
-                    "default_max": 1000
-                },
-                "script_length_range": {
-                    "min": 500,
-                    "max": 20000,
-                    "default_min": 1000,
-                    "default_max": 5000
-                }
-            }
-        )
-    ]
 )
 @api_view(["GET"])
 def script_generator_config(request):
-    """
-    Lightning-fast endpoint to get all config data for script generator UI
-    """
     tones = Tone.objects.all().order_by("name")
     template_styles = TemplateStyle.objects.all().order_by("name")
     return Response(
@@ -131,8 +92,6 @@ def script_generator_config(request):
     examples=[
         OpenApiExample(
             "Text Description (JSON)",
-            summary="Generate outline from text description",
-            description="Standard JSON request with text description",
             value={
                 "description": "How to learn Python programming from scratch",
                 "tones": [1],
@@ -145,21 +104,17 @@ def script_generator_config(request):
         ),
         OpenApiExample(
             "Image Upload (Form Data)",
-            summary="Generate outline from uploaded image",
-            description="Upload an image file using form data. The image will be analyzed to generate title and description automatically. No need to provide title or description fields.",
             value={
                 "tones": [1, 3],
                 "template_style": 1,
                 "min_length": 300,
                 "max_length": 1000,
-                "image": "[Upload image file here - title and description will be auto-generated]"
+                "image": "[Upload image file here]"
             },
             media_type='multipart/form-data'
         ),
         OpenApiExample(
             "Image URL (JSON)",
-            summary="Generate outline from image URL",
-            description="Provide an image URL that will be analyzed using OpenAI Vision to generate title and description automatically.",
             value={
                 "tones": [1, 2],
                 "template_style": 2,
@@ -175,10 +130,6 @@ def script_generator_config(request):
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 @permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
 def generate_script_outline(request):
-    """
-    Generate script outline using OpenAI from user input or image analysis
-    """
-    # Validate request data using serializer
     serializer = GenerateOutlineRequestSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -192,41 +143,31 @@ def generate_script_outline(request):
     min_length = validated_data.get("min_length", 100)
     max_length = validated_data.get("max_length", 1000)
     title = validated_data.get("title", "")
-    
-    # If image (file or URL) is provided, analyze it to generate title and description
+
     if image or image_url:
         try:
             if image:
-                # Debug: Log the type of image object
-                logger.info(f"Image file type: {type(image)}, Image: {image}")
-                
-                # Ensure it's actually a file object, not a string
                 if hasattr(image, 'read') and hasattr(image, 'seek'):
                     image_title, image_description = OpenAIScriptService.analyze_image(image_file=image)
                 else:
-                    logger.error(f"Invalid image object type: {type(image)}")
                     return Response(
-                        {"error": "Invalid image file. Please upload a valid image file."},
+                        {"error": "Invalid image file."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
             else:
-                # Use image URL
-                logger.info(f"Using image URL: {image_url}")
                 image_title, image_description = OpenAIScriptService.analyze_image(image_url=image_url)
-            
-            # Always use image analysis results when image is provided
+
             title = image_title
             description = image_description
                 
         except Exception as e:
             logger.error(f"Image analysis failed: {str(e)}")
             return Response(
-                {"error": "Failed to analyze the provided image. Please try again."},
+                {"error": "Failed to analyze the provided image."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
     try:
-        # Get tone and template style objects
         tones = Tone.objects.filter(id__in=tone_ids)
         if len(tones) != len(tone_ids):
             return Response(
@@ -238,7 +179,6 @@ def generate_script_outline(request):
         if template_style_id:
             template_style = TemplateStyle.objects.get(id=template_style_id)
 
-        # Prepare script data for OpenAI
         script_data = {
             "description": description,
             "tones": [tone.name for tone in tones],
@@ -247,12 +187,8 @@ def generate_script_outline(request):
             "max_length": max_length,
         }
 
-        # Generate outline
-        outline_text, outline_data, metadata = OpenAIScriptService.generate_outline(
-            script_data
-        )
+        outline_text, outline_data, metadata = OpenAIScriptService.generate_outline(script_data)
 
-        # Create ScriptOutline directly (no intermediate Script record needed)
         outline_title = title if title else f"Outline: {description[:50]}"
         outline = ScriptOutline.objects.create(
             title=outline_title,
@@ -264,8 +200,6 @@ def generate_script_outline(request):
             tokens_used=metadata["tokens_used"],
             generation_time=metadata["generation_time"],
         )
-        
-        # Add the tones to the outline
         outline.tones.set(tones)
 
         serializer = ScriptOutlineSerializer(outline)
@@ -285,7 +219,7 @@ def generate_script_outline(request):
     except Exception as e:
         logger.error(f"Outline generation failed: {str(e)}")
         return Response(
-            {"error": "Failed to generate outline. Please try again."},
+            {"error": "Failed to generate outline."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
