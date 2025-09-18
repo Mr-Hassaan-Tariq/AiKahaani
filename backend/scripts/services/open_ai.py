@@ -112,17 +112,23 @@ class OpenAIScriptService:
     @staticmethod
     def _build_outline_prompt(script_data: Dict[str, Any]) -> str:
         """Build prompt for outline generation"""
-        tone = script_data.get("tone", "informative")
+        tones = script_data.get("tones", ["informative"])
         template_style = script_data.get("template_style", "medium")
         description = script_data.get("description", "")
         min_length = script_data.get("min_length", 100)
         max_length = script_data.get("max_length", 1000)
 
+        # Handle multiple tones
+        if isinstance(tones, list) and len(tones) > 1:
+            tone_text = f"Tones: {', '.join(tones)} (blend these tones naturally throughout the content)"
+        else:
+            tone_text = f"Tone: {tones[0] if isinstance(tones, list) else tones}"
+
         return f"""
 Create a detailed script outline for a YouTube video with the following requirements:
 
 Topic: {description}
-Tone: {tone}
+{tone_text}
 Style: {template_style}
 Target Length: {min_length}-{max_length} words
 
@@ -139,15 +145,21 @@ For each section, provide:
 - Estimated timing
 - Transition notes
 
-Make it engaging and suitable for the {tone} tone. Ensure the final script will be between {min_length} and {max_length} words.
+{f'Make it engaging and blend the {", ".join(tones)} tones naturally throughout the content.' if isinstance(tones, list) and len(tones) > 1 else f'Make it engaging and suitable for the {tones[0] if isinstance(tones, list) else tones} tone.'} Ensure the final script will be between {min_length} and {max_length} words.
 """
 
     @staticmethod
     def _build_script_prompt(outline_text: str, script_data: Dict[str, Any]) -> str:
         """Build prompt for full script generation"""
-        tone = script_data.get("tone", "informative")
+        tones = script_data.get("tones", ["informative"])
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
+
+        # Handle multiple tones
+        if isinstance(tones, list) and len(tones) > 1:
+            tone_text = f"Tones: {', '.join(tones)} (blend these tones naturally throughout the script)"
+        else:
+            tone_text = f"Tone: {tones[0] if isinstance(tones, list) else tones}"
 
         return f"""
 Based on the following outline, write a complete, detailed YouTube script:
@@ -156,7 +168,7 @@ OUTLINE:
 {outline_text}
 
 REQUIREMENTS:
-- Tone: {tone}
+- {tone_text}
 - Target Length: {min_length}-{max_length} words
 - Write in a conversational, engaging style
 - Include natural transitions between sections
@@ -166,7 +178,7 @@ REQUIREMENTS:
 - Make it flow naturally when spoken aloud
 - Ensure the final script is between {min_length} and {max_length} words
 
-Write the complete script with natural dialogue and engaging content.
+{f'Write the complete script blending the {", ".join(tones)} tones naturally with engaging content.' if isinstance(tones, list) and len(tones) > 1 else f'Write the complete script in a {tones[0] if isinstance(tones, list) else tones} tone with engaging content.'}
 """
 
     @staticmethod

@@ -101,7 +101,7 @@ def script_generator_config(request):
 
 @extend_schema(
     summary="Generate script outline",
-    description="Generate a detailed script outline...",
+    description="Generate a detailed script outline using multiple tones. You can specify multiple tones to blend different styles throughout the content.",
     request=GenerateOutlineRequestSerializer,
     responses={
         201: OpenApiResponse(
@@ -114,14 +114,25 @@ def script_generator_config(request):
     },
     examples=[
         OpenApiExample(
-            "Outline Example",
+            "Single Tone Example",
             value={
                 "description": "How to learn Python programming from scratch",
-                "tone": 1,
+                "tones": [1],
                 "template_style": 2,
                 "min_length": 200,
                 "max_length": 800,
                 "title": "Python Learning Guide"
+            }
+        ),
+        OpenApiExample(
+            "Multiple Tones Example",
+            value={
+                "description": "Advanced JavaScript techniques for web developers",
+                "tones": [1, 3, 5],
+                "template_style": 1,
+                "min_length": 300,
+                "max_length": 1000,
+                "title": "JavaScript Mastery"
             }
         )
     ]
@@ -132,22 +143,28 @@ def generate_script_outline(request):
     """
     Generate script outline using OpenAI from user input
     """
-    # Get user input from request
-    description = request.data.get("description")
-    tone_id = request.data.get("tone")
-    template_style_id = request.data.get("template_style")
-    length = request.data.get("length", 500)
-    title = request.data.get("title", "")
-
-    if not description or not tone_id:
-        return Response(
-            {"error": "Description and tone are required"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    # Validate request data using serializer
+    serializer = GenerateOutlineRequestSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    validated_data = serializer.validated_data
+    description = validated_data["description"]
+    tone_ids = validated_data["tones"]
+    template_style_id = validated_data.get("template_style")
+    min_length = validated_data.get("min_length", 100)
+    max_length = validated_data.get("max_length", 1000)
+    title = validated_data.get("title", "")
 
     try:
         # Get tone and template style objects
-        tone = Tone.objects.get(id=tone_id)
+        tones = Tone.objects.filter(id__in=tone_ids)
+        if len(tones) != len(tone_ids):
+            return Response(
+                {"error": "One or more invalid tone IDs provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         template_style = None
         if template_style_id:
             template_style = TemplateStyle.objects.get(id=template_style_id)
@@ -155,9 +172,10 @@ def generate_script_outline(request):
         # Prepare script data for OpenAI
         script_data = {
             "description": description,
-            "tone": tone.name,
+            "tones": [tone.name for tone in tones],
             "template_style": template_style.name if template_style else "medium",
-            "length": length,
+            "min_length": min_length,
+            "max_length": max_length,
         }
 
         # Generate outline
@@ -176,6 +194,9 @@ def generate_script_outline(request):
             tokens_used=metadata["tokens_used"],
             generation_time=metadata["generation_time"],
         )
+        
+        # Add the tones to the outline
+        outline.tones.set(tones)
 
         serializer = ScriptOutlineSerializer(outline)
         return Response(
@@ -186,10 +207,6 @@ def generate_script_outline(request):
             status=status.HTTP_201_CREATED,
         )
 
-    except Tone.DoesNotExist:
-        return Response(
-            {"error": "Invalid tone selected"}, status=status.HTTP_400_BAD_REQUEST
-        )
     except TemplateStyle.DoesNotExist:
         return Response(
             {"error": "Invalid template style selected"},
@@ -218,7 +235,7 @@ class ScriptOutlineDetailView(
     Get and update script outline
     """
 
-    queryset = ScriptOutline.objects.select_related("script", "script__tone")
+    queryset = ScriptOutline.objects.select_related("script").prefetch_related("script__tones", "tones")
     serializer_class = ScriptOutlineSerializer
     lookup_field = "uuid"
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
@@ -261,7 +278,7 @@ class ScriptOutlineDetailView(
 
 @extend_schema(
     summary="Generate full script",
-    description="Generate a complete script from an existing outline...",
+    description="Generate a complete script from an existing outline. The script will use the tones from the outline, or fallback to the provided tone if the outline has no tones.",
     request=GenerateScriptRequestSerializer,
     responses={
         201: OpenApiResponse(
@@ -293,16 +310,22 @@ def generate_full_script(request, outline_uuid):
     outline = get_object_or_404(ScriptOutline, uuid=outline_uuid)
 
     try:
-        # Prepare data for OpenAI (we'll need to extract tone info from the outline or request)
-        # For now, we'll use default values or get them from request
-        tone_name = request.data.get("tone", "Informative")
+        # Get tones from the outline or use request data as fallback
+        outline_tones = [tone.name for tone in outline.tones.all()]
+        if not outline_tones:
+            # Fallback to request data if outline has no tones
+            tone_name = request.data.get("tone", "Informative")
+            outline_tones = [tone_name]
+        
         template_style_name = request.data.get("template_style", "medium")
-        length = request.data.get("length", 5000)
+        min_length = request.data.get("min_length", 1000)
+        max_length = request.data.get("max_length", 5000)
 
         script_data = {
-            "tone": tone_name,
+            "tones": outline_tones,
             "template_style": template_style_name,
-            "length": length,
+            "min_length": min_length,
+            "max_length": max_length,
         }
 
         # Generate full script
@@ -447,7 +470,7 @@ class ScriptOutlineListView(MethodSpecificThrottleMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get_queryset(self):
-        return ScriptOutline.objects.select_related("script", "script__tone").order_by(
+        return ScriptOutline.objects.select_related("script").prefetch_related("script__tones", "tones").order_by(
             "-created"
         )
 
@@ -610,8 +633,8 @@ class ScriptOutlineListView(generics.ListAPIView):
 
     def get_queryset(self):
         return ScriptOutline.objects.select_related(
-            'script', 'script__tone'
-        ).order_by('-created')
+            'script'
+        ).prefetch_related('script__tones', 'tones').order_by('-created')
 
 
 @extend_schema(

@@ -57,11 +57,10 @@ class Script(TimeStampedModel):
     max_length = models.IntegerField(
         help_text="Maximum target length in characters or words"
     )
-    tone = models.ForeignKey(
+    tones = models.ManyToManyField(
         Tone,
-        on_delete=models.CASCADE,
         related_name="scripts",
-        help_text="The tone/vibe for this script",
+        help_text="The tones/vibes for this script"
     )
     template_style = models.ForeignKey(
         TemplateStyle,
@@ -97,6 +96,13 @@ class ScriptOutline(TimeStampedModel):
         help_text="Optional reference to original script (if created from script)",
     )
     title = models.CharField(max_length=300, blank=True)
+    
+    # Tones for this outline (can be multiple)
+    tones = models.ManyToManyField(
+        Tone,
+        related_name="outlines",
+        help_text="The tones/vibes for this outline"
+    )
 
     # Outline structure as JSON for flexibility
     outline_data = models.JSONField(
