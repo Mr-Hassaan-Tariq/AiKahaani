@@ -33,6 +33,7 @@ from .serializers import (
     TemplateStyleSerializer,
     ToneSerializer,
     UnifiedGenerationSerializer,
+    StatusUpdateSerializer
 )
 from .services.open_ai import OpenAIScriptService
 
