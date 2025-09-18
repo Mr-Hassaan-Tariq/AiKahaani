@@ -22,10 +22,12 @@ class TemplateStyleSerializer(serializers.ModelSerializer):
 
 
 class ScriptOutlineSerializer(serializers.ModelSerializer):
+    tones = ToneSerializer(many=True, read_only=True)
+    
     class Meta:
         model = ScriptOutline
         fields = [
-            'uuid', 'title', 'outline_text', 'outline_data',
+            'uuid', 'title', 'outline_text', 'outline_data', 'tones',
             'status', 'version', 'tokens_used', 'generation_time',
             'created', 'modified'
         ]
@@ -65,7 +67,11 @@ class ScriptGeneratorConfigResponseSerializer(serializers.Serializer):
 
 class GenerateOutlineRequestSerializer(serializers.Serializer):
     description = serializers.CharField(max_length=2000)
-    tone = serializers.IntegerField()
+    tones = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=1,
+        help_text="List of tone IDs to use for outline generation"
+    )
     template_style = serializers.IntegerField(required=False, allow_null=True)
     min_length = serializers.IntegerField(default=100, min_value=50, max_value=5000)
     max_length = serializers.IntegerField(default=1000, min_value=100, max_value=10000)

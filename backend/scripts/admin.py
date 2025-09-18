@@ -18,16 +18,21 @@ class ScriptAdmin(admin.ModelAdmin):
     list_display = (
         "uuid",
         "title",
-        "tone",
+        "get_tones",
         "template_style",
         "is_published",
         "created",
     )
-    list_filter = ("is_published", "tone", "template_style")
+    list_filter = ("is_published", "tones", "template_style")
     search_fields = ("title", "description", "content")
     readonly_fields = ("uuid", "created", "modified")
-    autocomplete_fields = ("tone", "template_style")
+    autocomplete_fields = ("template_style",)
+    filter_horizontal = ("tones",)
     ordering = ("-created",)
+    
+    def get_tones(self, obj):
+        return ", ".join([tone.name for tone in obj.tones.all()])
+    get_tones.short_description = "Tones"
 
 
 @admin.register(ScriptTitle)
@@ -69,12 +74,17 @@ class TemplateStyleAdmin(admin.ModelAdmin):
 
 @admin.register(ScriptOutline)
 class ScriptOutlineAdmin(admin.ModelAdmin):
-    list_display = ("uuid", "title", "script", "status", "version", "created")
-    list_filter = ("status", "openai_model")
+    list_display = ("uuid", "title", "script", "get_tones", "status", "version", "created")
+    list_filter = ("status", "openai_model", "tones")
     search_fields = ("title", "outline_text")
     readonly_fields = ("uuid", "created", "modified", "tokens_used", "generation_time")
     raw_id_fields = ("script",)
+    filter_horizontal = ("tones",)
     ordering = ("-created",)
+    
+    def get_tones(self, obj):
+        return ", ".join([tone.name for tone in obj.tones.all()])
+    get_tones.short_description = "Tones"
 
 
 @admin.register(FullScript)
