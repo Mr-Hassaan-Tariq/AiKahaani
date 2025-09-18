@@ -1,0 +1,203 @@
+# titles/views.py
+import logging
+
+from drf_spectacular.utils import (
+    OpenApiResponse,
+    extend_schema,
+)
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from api.mixins import MethodSpecificThrottleMixin
+from payments.permissions import HasActiveSubscriptionPermission
+from scripts.models import ScriptTitle
+from scripts.services.open_ai import OpenAIScriptService
+
+from .serializers import (
+    GenerateTitlesOptimizedRequestSerializer,
+    GenerateTitlesRequestSerializer,
+    GenerateTitlesResponseSerializer,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class GenerateTitlesView(APIView, MethodSpecificThrottleMixin):
+    permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
+
+    @extend_schema(
+        summary="Generate YouTube titles",
+        description="Generate engaging YouTube titles based on TubeGenius Title Wizardry principles",
+        request=GenerateTitlesRequestSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=GenerateTitlesResponseSerializer,
+                description="Titles generated successfully",
+            ),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+            500: OpenApiResponse(description="Title generation failed"),
+        },
+    )
+    def post(self, request):
+        """
+        Generate YouTube titles based on input prompt
+
+        Tone Validation Rules:
+        - Maximum 3 tones allowed
+        - Contradicting combinations are prevented (e.g., Neutral + Controversial)
+        - Too many intense tones (3+ of: Controversial, Shocking, Dramatic) are blocked
+        - Some style conflicts are detected (e.g., Question-based + Sarcastic)
+        """
+        # Validate input
+        serializer = GenerateTitlesRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        validated_data = serializer.validated_data
+        prompt = validated_data["prompt"]
+        title_count = validated_data["title_count"]
+        tones = validated_data.get("tones", [])
+        titles, metadata = OpenAIScriptService.generate_titles(
+            prompt=prompt, title_count=title_count, tones=tones
+        )
+
+        # Prepare response
+        tone_message = f" with tones: {', '.join(tones)}" if tones else ""
+        response_data = {
+            "titles": titles,
+            "metadata": metadata,
+            "message": f"Successfully generated {len(titles)} YouTube titles{tone_message}",
+        }
+
+        # Validate response
+        response_serializer = GenerateTitlesResponseSerializer(data=response_data)
+        if response_serializer.is_valid():
+            ScriptTitle.objects.create(
+                user=request.user,
+                titles=titles,
+                titles_count=len(titles),
+                prompt=prompt,
+            )
+            return Response(
+                response_serializer.validated_data, status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {"error": "Failed to format response"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class GenerateTitlesOptimizedView(APIView, MethodSpecificThrottleMixin):
+    permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
+
+    @extend_schema(
+        summary="Generate optimized YouTube titles",
+        description="Generate optimized YouTube titles from existing script content or user-provided title",
+        request=GenerateTitlesOptimizedRequestSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=GenerateTitlesResponseSerializer,
+                description="Optimized titles generated successfully",
+            ),
+            400: OpenApiResponse(description="Invalid request data"),
+            404: OpenApiResponse(description="Script not found or access denied"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+            500: OpenApiResponse(description="Title optimization failed"),
+        },
+    )
+    def post(self, request):
+        """
+        Generate optimized YouTube titles
+
+        Two modes of operation:
+        1. Script-based: Provide script UUID - uses script content + user prompt
+        2. Title-based: Provide user_title + prompt for optimization
+
+        Features:
+        - Validates script ownership for authenticated users
+        - Combines script content with user prompt for context
+        - Supports tone customization with validation
+        - Returns same format as GenerateTitlesView
+        """
+        # Validate input
+        serializer = GenerateTitlesOptimizedRequestSerializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        validated_data = serializer.validated_data
+        script = validated_data.get(
+            "script"
+        )  # This is now a Script object from validation
+        user_title = validated_data.get("user_title")
+        user_prompt = validated_data["prompt"]
+        title_count = validated_data["title_count"]
+        tones = validated_data.get("tones", [])
+
+        try:
+            # Generate optimized titles using the OpenAI service
+            titles, metadata = OpenAIScriptService.generate_optimized_titles(
+                script=script,
+                user_title=user_title,
+                user_prompt=user_prompt,
+                title_count=title_count,
+                tones=tones,
+            )
+
+            # Prepare response
+            tone_message = f" with tones: {', '.join(tones)}" if tones else ""
+            response_data = {
+                "titles": titles,
+                "metadata": metadata,
+                "message": f"Successfully generated {len(titles)} optimized YouTube titles{tone_message}",
+            }
+
+            # Validate response
+            response_serializer = GenerateTitlesResponseSerializer(data=response_data)
+            if response_serializer.is_valid():
+                # Create ScriptTitle record with optimization flag
+                # Logic: If script provided -> use script reference, no user_provided_title
+                #        If no script -> no script reference, but store user_provided_title
+                if script:
+                    # Script-based optimization
+                    ScriptTitle.objects.create(
+                        user=request.user,
+                        script=script,  # Use the script object directly
+                        is_optimized_title=True,
+                        titles=titles,
+                        titles_count=len(titles),
+                        prompt=user_prompt,
+                        user_provided_title=None,  # Don't store user title when script is provided
+                    )
+                else:
+                    # Title-based optimization
+                    ScriptTitle.objects.create(
+                        user=request.user,
+                        script=None,  # No script reference
+                        is_optimized_title=True,
+                        titles=titles,
+                        titles_count=len(titles),
+                        prompt=user_prompt,
+                        user_provided_title=user_title,  # Store the user provided title
+                    )
+
+                return Response(
+                    response_serializer.validated_data, status=status.HTTP_200_OK
+                )
+            else:
+                logger.error(
+                    f"Response serialization failed: {response_serializer.errors}"
+                )
+                return Response(
+                    {"error": "Failed to format response"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+        except Exception as e:
+            logger.error(f"Title optimization failed: {str(e)}")
+            return Response(
+                {"error": "Title optimization failed. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

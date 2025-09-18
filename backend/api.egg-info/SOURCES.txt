@@ -2,6 +2,7 @@ pyproject.toml
 api/__init__.py
 api/asgi.py
 api/health.py
+api/mixins.py
 api/settings.py
 api/urls.py
 api/wsgi.py
