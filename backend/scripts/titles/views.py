@@ -5,20 +5,21 @@ from drf_spectacular.utils import (
     OpenApiResponse,
     extend_schema,
 )
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.mixins import MethodSpecificThrottleMixin
 from payments.permissions import HasActiveSubscriptionPermission
-from scripts.models import ScriptTitle
+from scripts.models import ScriptTitle, TitleTone
 from scripts.services.open_ai import OpenAIScriptService
 
 from .serializers import (
     GenerateTitlesOptimizedRequestSerializer,
     GenerateTitlesRequestSerializer,
     GenerateTitlesResponseSerializer,
+    TitleToneSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -201,3 +202,27 @@ class GenerateTitlesOptimizedView(APIView, MethodSpecificThrottleMixin):
                 {"error": "Title optimization failed. Please try again."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class TitleToneListView(generics.ListAPIView, MethodSpecificThrottleMixin):
+    """
+    List all available title tones for use in title generation
+    """
+
+    queryset = TitleTone.objects.all()
+    serializer_class = TitleToneSerializer
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="List all available title tones",
+        description="Get a list of all available tones that can be used for title generation",
+        responses={
+            200: OpenApiResponse(
+                response=TitleToneSerializer(many=True),
+                description="List of available title tones",
+            ),
+            401: OpenApiResponse(description="Authentication required"),
+        },
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
