@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { Download } from './components';
+import useExportScript from 'lib/hooks/useExportScript';
 import Button from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
 import Row from 'components/ui/Row';
@@ -46,6 +47,8 @@ export default function ExportScriptModal({
 }) {
   const [open, setOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat | null>(null);
+  const { mutate: exportScript, isPending } = useExportScript();
+  console.log('actions', actions);
 
   const handleFormatChange = (format: ExportFormat, checked: boolean) => {
     if (checked) {
@@ -56,16 +59,27 @@ export default function ExportScriptModal({
   };
 
   const handleDownload = () => {
-    if (!selectedFormat) {
-      return;
-    }
+    if (!selectedFormat) return;
 
-    if (actions?.exportScript) {
-      actions.exportScript(script, [selectedFormat]);
-    }
-
-    setOpen(false);
-    setSelectedFormat(null); // Reset selection
+    exportScript(
+      { script, format: selectedFormat },
+      {
+        onSuccess: ({ blob, script, format }) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `script-${script}.${format}`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+          setSelectedFormat(null);
+        },
+        onError: (err) => {
+          console.error('Export error:', err);
+        },
+      },
+    );
   };
 
   const isFormatSelected = (format: ExportFormat) => selectedFormat === format;
@@ -93,8 +107,13 @@ export default function ExportScriptModal({
               Cancel
             </Text>
           </Button>
-          <Button type="submit" variant="green" onClick={handleDownload} disabled={!selectedFormat}>
-            {Download} Download
+          <Button
+            type="submit"
+            variant="green"
+            onClick={handleDownload}
+            disabled={!selectedFormat || isPending}
+          >
+            {Download} {isPending ? 'Downloading...' : 'Download'}
           </Button>
         </Row>
       }

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import ExportScriptModal from '@/(dashboard)/my-scripts/_components/ExportScriptModal';
 
 import { directFileIcon } from '../../[outlineId]/_components/components';
 import { ScriptSectionType } from './types';
@@ -9,7 +10,13 @@ import Card from 'components/ui/Card';
 import Col from 'components/ui/Col';
 import Row from 'components/ui/Row';
 
-export default function ScriptComponent({ sections }: { sections: ScriptSectionType[] }) {
+export default function ScriptComponent({
+  sections,
+  uuid,
+}: {
+  sections: ScriptSectionType[];
+  uuid: string;
+}) {
   return (
     <>
       <Col className="scrollbar h-full w-full space-y-3">
@@ -41,9 +48,15 @@ export default function ScriptComponent({ sections }: { sections: ScriptSectionT
             Go to Script
           </Button>
         </Link>
-        <Button className="w-full transition-colors duration-200 hover:bg-white/90 lg:w-fit">
-          {directFileIcon} Download
-        </Button>
+        <ExportScriptModal
+          trigger={
+            <Button className="w-full transition-colors duration-200 hover:bg-white/90 lg:w-fit">
+              {directFileIcon} Download
+            </Button>
+          }
+          script={uuid}
+          actions={undefined}
+        />
       </Row>
     </>
   );
