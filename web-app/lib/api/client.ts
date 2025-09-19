@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-/* eslint-disable @typescript-eslint/no-var-requires */
-
 import { ApiClientConfig, ApiError, ApiResponse, RequestOptions } from './types';
 
 export class ApiClient {
@@ -17,16 +14,41 @@ export class ApiClient {
     };
   }
 
-  // Get access token from localStorage
+  // Get access token from cookies or localStorage
   private getAccessToken(): string | null {
     if (typeof window === 'undefined') {
-      // Running on the server, get it from cookies
-      const cookieStore = require('next/headers').cookies();
-      return cookieStore.get('access_token')?.value || null;
+      // Running on the server, return null as we can't access cookies here
+      return null;
     }
 
-    // Fallback for client-side (if needed)
+    // Try to get from cookies first (preferred method)
+    const cookieToken = this.getCookie('access_token');
+    if (cookieToken) {
+      return cookieToken;
+    }
+
+    // Fallback to localStorage
     return localStorage.getItem('access_token');
+  }
+
+  // Helper function to get cookie value
+  private getCookie(name: string): string | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    // Try multiple cookie parsing methods
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [key, value] = cookie.trim().split('=');
+      if (key === name) {
+        return decodeURIComponent(value);
+      }
+    }
+
+    // Fallback to regex method
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : null;
   }
 
   // Get refresh token from localStorage

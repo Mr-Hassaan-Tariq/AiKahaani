@@ -1,15 +1,17 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { Script, ScriptActions } from '../_types';
+import { Script, ScriptActions, ScriptData } from '../_types';
+import { useScriptGenerations } from 'lib/hooks/useScriptGenerations';
 
 interface UseScriptsProps {
-  initialScripts: Script[];
-  onScriptUpdate?: (scripts: Script[]) => void;
+  initialScripts?: ScriptData[];
+  onScriptUpdate?: (scripts: ScriptData[]) => void;
+  useAPI?: boolean;
 }
 
 interface UseScriptsReturn {
-  scripts: Script[];
-  filteredScripts: Script[];
+  scripts: ScriptData[];
+  filteredScripts: ScriptData[];
   searchQuery: string;
   selectedMode: string | null;
   actions: ScriptActions;
@@ -21,87 +23,143 @@ interface UseScriptsReturn {
   updateScript: (id: string, updates: Partial<Script>) => void;
   deleteScript: (id: string) => void;
   clearError: () => void;
+  refetch: () => Promise<void>;
+  handleSearch: (query: string) => Promise<void>;
 }
 
-export function useScripts({ initialScripts, onScriptUpdate }: UseScriptsProps): UseScriptsReturn {
-  const [scripts, setScripts] = useState<Script[]>(initialScripts);
+export function useScripts({
+  initialScripts = [],
+  onScriptUpdate,
+  useAPI = true,
+}: UseScriptsProps): UseScriptsReturn {
+  // Use API hook if enabled
+  const {
+    scriptGenerations: apiScripts,
+    loading: apiLoading,
+    error: apiError,
+    refetch: refetchAPI,
+    deleteScript: deleteScriptAPI,
+    updateScript: updateScriptAPI,
+  } = useScriptGenerations();
+
+  const [localScripts, setLocalScripts] = useState<ScriptData[]>(initialScripts);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  // Filter scripts based on search query and selected mode
+  const transformedScripts = useMemo(() => {
+    if (useAPI) {
+      return apiScripts as any; // Use original API response format
+    }
+    return localScripts;
+  }, [useAPI, apiScripts, localScripts]);
+
+  const scripts = useAPI
+    ? apiError && initialScripts.length > 0
+      ? initialScripts
+      : transformedScripts
+    : localScripts;
+  const loading = useAPI ? apiLoading : localLoading;
+  const error = useAPI ? (apiError && initialScripts.length > 0 ? null : apiError) : localError;
+
   const filteredScripts = useMemo(() => {
     let filtered = scripts;
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      filtered = filtered.filter((script) =>
+    if (!useAPI && searchQuery.trim()) {
+      filtered = filtered.filter((script: ScriptData) =>
         script.title.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
-    // Filter by mode
     if (selectedMode) {
-      filtered = filtered.filter((script) => script.mode === selectedMode);
+      if (useAPI) {
+        filtered = filtered.filter(
+          (script: ScriptData) => 'type' in script && script.type === selectedMode,
+        );
+      } else {
+        filtered = filtered.filter(
+          (script: ScriptData) => 'mode' in script && script.mode === selectedMode,
+        );
+      }
     }
 
     return filtered;
-  }, [scripts, searchQuery, selectedMode]);
+  }, [scripts, searchQuery, selectedMode, useAPI]);
 
   // Script actions
   const actions: ScriptActions = {
     onDelete: useCallback(
-      (id: string) => {
-        setLoading(true);
-        try {
-          setScripts((prev) => {
-            const updated = prev.filter((script) => script.id !== id);
-            onScriptUpdate?.(updated);
-            return updated;
-          });
-        } catch (err) {
-          setError('Failed to delete script' + (err as Error).message);
-        } finally {
-          setLoading(false);
+      async (id: string) => {
+        if (useAPI) {
+          try {
+            await deleteScriptAPI(id);
+          } catch (err) {
+            console.error('Failed to delete script:', err);
+            throw err;
+          }
+        } else {
+          setLocalLoading(true);
+          try {
+            setLocalScripts((prev) => {
+              const updated = prev.filter((script) => script.id !== id);
+              onScriptUpdate?.(updated);
+              return updated;
+            });
+          } catch (err) {
+            setLocalError('Failed to delete script: ' + (err as Error).message);
+          } finally {
+            setLocalLoading(false);
+          }
         }
       },
-      [onScriptUpdate],
+      [useAPI, apiScripts, deleteScriptAPI, onScriptUpdate],
     ),
 
     onEdit: useCallback((id: string) => {
       console.log('Edit script:', id);
-      // TODO: Implement edit functionality
     }, []),
 
     onExport: useCallback((id: string) => {
       console.log('Export script:', id);
-      // TODO: Implement export functionality
     }, []),
   };
 
   const addScript = useCallback(
     (script: Script) => {
-      setScripts((prev) => {
-        const updated = [...prev, script];
-        onScriptUpdate?.(updated);
-        return updated;
-      });
+      if (!useAPI) {
+        setLocalScripts((prev) => {
+          const updated = [...prev, script];
+          onScriptUpdate?.(updated);
+          return updated;
+        });
+      }
     },
-    [onScriptUpdate],
+    [useAPI, onScriptUpdate],
   );
 
   const updateScript = useCallback(
-    (id: string, updates: Partial<Script>) => {
-      setScripts((prev) => {
-        const updated = prev.map((script) =>
-          script.id === id ? { ...script, ...updates } : script,
-        );
-        onScriptUpdate?.(updated);
-        return updated;
-      });
+    async (id: string, updates: Partial<Script>) => {
+      if (useAPI) {
+        try {
+          const apiUpdates: any = {};
+          if (updates.title) apiUpdates.title = updates.title;
+          await updateScriptAPI(id, apiUpdates);
+        } catch (err) {
+          console.error('Failed to update script:', err);
+          throw err;
+        }
+      } else {
+        setLocalScripts((prev) => {
+          const updated = prev.map((script) =>
+            script.id === id ? { ...script, ...updates } : script,
+          );
+          onScriptUpdate?.(updated);
+          return updated;
+        });
+      }
     },
-    [onScriptUpdate],
+    [useAPI, apiScripts, updateScriptAPI, onScriptUpdate],
   );
 
   const deleteScript = useCallback(
@@ -112,8 +170,40 @@ export function useScripts({ initialScripts, onScriptUpdate }: UseScriptsProps):
   );
 
   const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+    if (useAPI) {
+      return;
+    }
+    setLocalError(null);
+  }, [useAPI]);
+
+  const refetch = useCallback(async () => {
+    if (useAPI) {
+      const typeParam =
+        selectedMode === 'outline' || selectedMode === 'script' ? selectedMode : undefined;
+      await refetchAPI(undefined, typeParam as 'script' | 'outline' | undefined);
+    }
+  }, [useAPI, refetchAPI, selectedMode]);
+
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSearch = useCallback(
+    async (query: string) => {
+      setSearchQuery(query);
+
+      if (useAPI) {
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current);
+        }
+
+        searchTimeoutRef.current = setTimeout(async () => {
+          const typeParam =
+            selectedMode === 'outline' || selectedMode === 'script' ? selectedMode : undefined;
+          await refetchAPI(query, typeParam as 'script' | 'outline' | undefined);
+        }, 500);
+      }
+    },
+    [useAPI, refetchAPI, selectedMode],
+  );
 
   return {
     scripts,
@@ -129,5 +219,7 @@ export function useScripts({ initialScripts, onScriptUpdate }: UseScriptsProps):
     updateScript,
     deleteScript,
     clearError,
+    refetch,
+    handleSearch,
   };
 }

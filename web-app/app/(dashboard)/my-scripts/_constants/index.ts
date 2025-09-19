@@ -1,10 +1,10 @@
-import { Script, TabConfig } from '../_types';
+import { Script, ScriptStatus, TabConfig } from '../_types';
 
 export const MOCK_SCRIPTS: Script[] = [
   {
     id: '1',
     title: 'Top 5 productivity hacks that actually work',
-    status: 'Outline only',
+    status: 'Outline only' as ScriptStatus,
     lastEdited: 'July 17, 2025',
     duration: '20 min',
     wordCount: '2.6k words',
@@ -13,7 +13,7 @@ export const MOCK_SCRIPTS: Script[] = [
   {
     id: '2',
     title: "Beginner's guide to video SEO",
-    status: 'Completed',
+    status: 'Completed' as ScriptStatus,
     lastEdited: 'July 10, 2025',
     duration: '35 min',
     wordCount: '4.2k words',
@@ -22,7 +22,7 @@ export const MOCK_SCRIPTS: Script[] = [
   {
     id: '3',
     title: 'How to grow your YouTube channel in 2025',
-    status: 'Script in progress',
+    status: 'Script in progress' as ScriptStatus,
     lastEdited: 'July 14, 2025',
     duration: '40 min',
     wordCount: '5.5k words',
@@ -31,9 +31,9 @@ export const MOCK_SCRIPTS: Script[] = [
 ];
 
 export const TABS_CONFIG: TabConfig[] = [
-  { label: 'All', path: '/scripts' },
-  { label: 'Outlines', path: '/scripts?query=outlines', query: 'outlines' },
-  { label: 'Scripts', path: '/scripts?query=scripts', query: 'scripts' },
+  { label: 'All', path: '/my-scripts' },
+  { label: 'Outlines', path: '/my-scripts?query=outlines', query: 'outlines' },
+  { label: 'Scripts', path: '/my-scripts?query=scripts', query: 'scripts' },
 ] as const;
 
 export const SEARCH_PLACEHOLDER = 'Search by title or topic';

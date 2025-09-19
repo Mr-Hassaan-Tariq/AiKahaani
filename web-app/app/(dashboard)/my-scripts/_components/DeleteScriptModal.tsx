@@ -19,7 +19,7 @@ export default function DeletePhotoModal({
   const [open, setOpen] = useState(false);
 
   function handleDelete() {
-    actions.onDelete?.(script.id);
+    actions.onDelete?.(script.uuid);
     setOpen(false);
   }
 

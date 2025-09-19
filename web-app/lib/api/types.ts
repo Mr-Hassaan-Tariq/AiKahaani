@@ -104,3 +104,24 @@ export interface PrivacySettings {
   allow_product_update_emails: boolean;
   allow_anonymized_data_usage: boolean;
 }
+
+// Script Types
+export interface ScriptGeneration {
+  uuid: string;
+  title: string;
+  type: 'script' | 'outline';
+  status: 'draft' | 'generated' | 'saved';
+  status_display: string;
+  word_count: number | null;
+  estimated_duration: number | null;
+  created: string;
+  modified: string;
+  is_published: boolean | null;
+  version: number;
+}
+
+export interface ScriptGenerationsResponse {
+  data: ScriptGeneration[];
+  message?: string;
+  status: number;
+}

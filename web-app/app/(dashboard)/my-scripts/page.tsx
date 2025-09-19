@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ComponentNav from '@/(dashboard)/_components/ComponentNav';
 
@@ -8,25 +9,37 @@ import OutlinesPage from './_components/OutlinesPage';
 import ScriptList from './_components/ScriptList';
 import ScriptsPage from './_components/ScriptsPage';
 import ScriptsTab from './_components/ScriptsTab';
-import { MOCK_SCRIPTS } from './_constants';
 import { useScripts } from './_hooks/useScripts';
 
 export default function HomePage() {
   const searchParams = useSearchParams();
   const query = searchParams.get('query');
 
-  // Initialize scripts hook
-  const { filteredScripts, searchQuery, actions, loading, error, setSearchQuery } = useScripts({
-    initialScripts: MOCK_SCRIPTS,
+  // Initialize scripts hook with API integration
+  const {
+    filteredScripts,
+    searchQuery,
+    actions,
+    loading,
+    error,
+    handleSearch,
+    refetch,
+    setSelectedMode,
+  } = useScripts({
+    useAPI: true,
     onScriptUpdate: (updatedScripts) => {
       console.log('Scripts updated:', updatedScripts);
     },
   });
 
-  // Handle search
-  const handleSearch = (searchQuery: string) => {
-    setSearchQuery(searchQuery);
-  };
+  // Keep API type filter in sync with the page query
+  useEffect(() => {
+    const mode = query === 'outlines' ? 'outline' : query === 'scripts' ? 'script' : null;
+    setSelectedMode(mode);
+    // Trigger fetch with the appropriate type
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
   // Handle filter changes
   const handleFilter = () => {
@@ -84,7 +97,15 @@ export default function HomePage() {
 
       {error && (
         <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
-          <p className="text-red-400">Error: {error}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-red-400">Error: {error}</p>
+            <button
+              onClick={() => refetch()}
+              className="ml-4 rounded bg-red-500/20 px-3 py-1 text-sm text-red-400 hover:bg-red-500/30"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       )}
 
