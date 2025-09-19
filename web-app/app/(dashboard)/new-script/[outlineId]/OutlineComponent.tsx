@@ -121,8 +121,17 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
   // Handle regenerate
   const handleRegenerate = () => {
     if (!outline) return;
-    // TODO: Implement regenerate functionality
-    logger.log('Regenerating outline for:', outline.uuid);
+
+    generateScript(outline.uuid, {
+      onSuccess: (data) => {
+        toast.success('Success', 'Script regenerated successfully');
+        router.replace(`/new-script/script/${data.script.uuid}`);
+      },
+      onError: (error) => {
+        logger.error(error);
+        toast.error('Something went wrong', 'Error regenerating script');
+      },
+    });
   };
 
   // Handle generate script
