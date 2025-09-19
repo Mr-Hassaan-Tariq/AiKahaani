@@ -1,0 +1,260 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Edit2, PlusCircle, RefreshCcw } from 'lucide-react';
+
+import { LoadingScreen } from '../_components/components';
+import { OutlineType } from '../types';
+import { CardView } from './_components/CardView';
+import { directFileIcon } from './_components/components';
+import { SortableCard } from './_components/SortableCard';
+import { useCardManager } from './_components/useCardManager';
+import { useDragAndDrop } from './_components/useDragAndDrop';
+import useGenerateScript from 'lib/hooks/useGenerateScript';
+import useUpdateOutline from 'lib/hooks/useUpdateOutline';
+import { logger } from 'lib/logger';
+import useToast from 'lib/utils/useToast';
+import Button from 'components/ui/Button';
+import Card from 'components/ui/Card';
+import Col from 'components/ui/Col';
+import PageLoader from 'components/ui/PageLoader';
+import Row from 'components/ui/Row';
+
+// Convert outline data to card format
+const convertOutlineToCards = (outline: OutlineType) => {
+  // Add null checks and fallbacks
+  if (!outline || !outline.outline_data || !outline.outline_data.sections) {
+    return [];
+  }
+
+  return outline.outline_data.sections.map((section, index) => ({
+    id: index + 1,
+    title: section.title || '',
+    description: section.description || '',
+    keyPoints: section.key_points || [],
+    timing: section.timing || '',
+    transition: section.transition || '',
+  }));
+};
+
+// Convert cards back to outline format
+const convertCardsToOutline = (cards: any[], originalOutline: OutlineType) => {
+  const sections = cards.map((card) => ({
+    title: card.title || '',
+    description: card.description || '',
+    key_points: card.keyPoints || [],
+    timing: card.timing || '',
+    transition: card.transition || '',
+  }));
+
+  return {
+    ...originalOutline,
+    outline_data: {
+      ...originalOutline.outline_data,
+      sections,
+    },
+  };
+};
+
+export default function OutlineComponent({ outline }: { outline: OutlineType }) {
+  const toast = useToast();
+  const router = useRouter();
+  const [edit, setEdit] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const { isPending, mutate: updateOutline } = useUpdateOutline();
+  const { isPending: isGeneratingScript, mutate: generateScript } = useGenerateScript();
+
+  // Convert outline to cards format with fallback
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initialCards = outline ? convertOutlineToCards(outline) : [];
+
+  const {
+    cards,
+    setCards,
+    editingCard,
+    editValues,
+    validationErrors,
+    draggedCard,
+    setDraggedCard,
+    dragOverIndex,
+    setDragOverIndex,
+    titleInputRef,
+    descriptionInputRef,
+    addNewCard,
+    startEditing,
+    saveChanges,
+    cancelEditing,
+    deleteCard,
+    handleInputChange,
+    handleKeyDown,
+  } = useCardManager(initialCards);
+
+  const { handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd } =
+    useDragAndDrop(cards, setCards, draggedCard, setDraggedCard, dragOverIndex, setDragOverIndex);
+
+  // Track changes
+  useEffect(() => {
+    const hasChanges = JSON.stringify(cards) !== JSON.stringify(initialCards);
+    setHasChanges(hasChanges);
+  }, [cards, initialCards]);
+
+  // Handle save changes
+  const handleSaveChanges = () => {
+    if (!outline) return;
+
+    const updatedOutline = convertCardsToOutline(cards, outline);
+
+    updateOutline(updatedOutline, {
+      onSuccess: () => {
+        toast.success('Success', 'Outline updated successfully');
+        setHasChanges(false);
+        setEdit(false);
+      },
+      onError: (error) => {
+        logger.error(error);
+        toast.error('Something went wrong', 'Error updating outline');
+      },
+    });
+  };
+
+  // Handle regenerate
+  const handleRegenerate = () => {
+    if (!outline) return;
+    // TODO: Implement regenerate functionality
+    logger.log('Regenerating outline for:', outline.uuid);
+  };
+
+  // Handle generate script
+  const handleGenerateScript = () => {
+    if (!outline) return;
+    generateScript(outline.uuid, {
+      onSuccess: (data) => {
+        toast.success('Success', 'Script generated successFully');
+        router.replace(`/new-script/script/${data.script.uuid}`);
+      },
+      onError: (error) => {
+        logger.error(error);
+        toast.error('Something went wrong', 'Error in generation script');
+      },
+    });
+  };
+
+  // Show loading state if outline is not available
+  if (!outline) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <p className="text-white/70">Loading outline...</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {isPending && <PageLoader size="lg" color="white" />}
+      <Col className="scrollbar max-h-[calc(100vh-200px)] w-full space-y-3 overflow-hidden overflow-y-auto">
+        {isGeneratingScript ? (
+          <LoadingScreen />
+        ) : (
+          // eslint-disable-next-line react/jsx-no-useless-fragment
+          <>
+            {edit
+              ? cards.map((card, index) => (
+                  <SortableCard
+                    key={card.id}
+                    card={card}
+                    index={index}
+                    isEditing={editingCard === card.id}
+                    editValues={editValues}
+                    validationErrors={validationErrors}
+                    isDragged={draggedCard === card.id}
+                    isDragOver={dragOverIndex === index}
+                    showDropIndicator={dragOverIndex === index}
+                    titleInputRef={titleInputRef}
+                    descriptionInputRef={descriptionInputRef}
+                    onDragStart={(e) => handleDragStart(e, card.id)}
+                    onDragOver={(e) => handleDragOver(e, card.id, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, card.id)}
+                    onDragEnd={handleDragEnd}
+                    onEdit={startEditing}
+                    onInputChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    onSave={saveChanges}
+                    onCancel={cancelEditing}
+                    onDelete={deleteCard}
+                  />
+                ))
+              : cards.map((card) => (
+                  <Card
+                    key={card.id}
+                    className="group cursor-pointer border border-white/20 bg-white/10 backdrop-blur-sm transition-all duration-200 hover:bg-white/15 hover:shadow-lg hover:shadow-white/10"
+                    onClick={() => startEditing(card)}
+                  >
+                    <div className="p-4">
+                      <CardView card={card} onEdit={startEditing} />
+                    </div>
+                  </Card>
+                ))}
+          </>
+        )}
+      </Col>
+
+      {!isGeneratingScript &&
+        (edit ? (
+          <Row className="mt-6">
+            <Row className="space-x-3">
+              <Button
+                variant="gray"
+                onClick={() => setEdit(false)}
+                className="transition-colors duration-200 hover:bg-white/20"
+              >
+                <ArrowLeft size={20} className="min-w-5" /> Back
+              </Button>
+              <Button
+                variant="gray"
+                className="min-w-[200px] transition-colors duration-200 hover:bg-white/20"
+                onClick={addNewCard}
+              >
+                <PlusCircle size={20} className="min-w-5" /> Add new section
+              </Button>
+            </Row>
+            <Button
+              onClick={handleSaveChanges}
+              disabled={!hasChanges}
+              className={`w-full transition-colors duration-200 lg:w-fit ${
+                hasChanges ? 'hover:bg-white/90' : 'cursor-not-allowed opacity-50'
+              }`}
+            >
+              {directFileIcon} Save Changes {hasChanges && '*'}
+            </Button>
+          </Row>
+        ) : (
+          <Row className="mt-6 w-full flex-col space-y-3 lg:flex-row lg:space-y-0">
+            <Row className="space-x-3">
+              <Button
+                variant="gray"
+                onClick={() => setEdit(true)}
+                className="transition-colors duration-200 hover:bg-white/20"
+              >
+                <Edit2 size={20} className="min-w-5" /> Edit
+              </Button>
+              <Button
+                variant="gray"
+                className="min-w-[166px] transition-colors duration-200 hover:bg-white/20"
+                onClick={handleRegenerate}
+              >
+                <RefreshCcw size={20} className="min-w-5" /> Regenerate
+              </Button>
+            </Row>
+            <Button
+              className="w-full transition-colors duration-200 hover:bg-white/90 lg:w-fit"
+              onClick={handleGenerateScript}
+            >
+              {directFileIcon} Generate the script
+            </Button>
+          </Row>
+        ))}
+    </>
+  );
+}

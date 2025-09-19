@@ -106,3 +106,22 @@ export async function deleteClientDataAction<T>(endpoint: string) {
   }
   return res.json() as T;
 }
+
+export async function putClientDataAction<T, P>(endpoint: string, body?: P) {
+  const token = getAuthToken();
+  const res = await fetch(`${baseUrl}${endpoint}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
+    const error = await processError(res);
+    logger.error(error);
+    throw error;
+  }
+  return res.json() as T;
+}

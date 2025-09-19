@@ -1,13 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { LinkIcon, MonitorPlayIcon, NewspaperIcon, Pencil, PlusIcon, X } from 'lucide-react';
+import { FormProvider, useForm } from 'react-hook-form';
 
+import { FormType, GenerationPromptType } from '../types';
 import { LoadingScreen } from './components';
 import InfoModal from './InfoModal';
 import SliderWidget from './SliderWidget';
 import TemplatesWidget from './TemplatesWidget';
 import VibeToneWidget from './VibeToneWidget';
+import useGenerateOutline from 'lib/hooks/useGenerateOutline';
+import { logger } from 'lib/logger';
 import useToast from 'lib/utils/useToast';
 import Button from 'components/ui/Button';
 import Col from 'components/ui/Col';
@@ -19,40 +24,97 @@ import ExportIcon from 'components/icons/ExportIcon';
 import FolderCloudIcon from 'components/icons/FolderCloudIcon';
 import { Popover, PopoverContent, PopoverTrigger } from 'components/shadcn_ui/popover';
 
-export default function GenerateScriptForm() {
-  const [isGenerating, setIsGenerating] = useState(false);
+export default function GenerateScriptForm({ configData }: { configData: GenerationPromptType }) {
+  const toast = useToast();
+  const router = useRouter();
+  const { mutate: generateOutline, isPending } = useGenerateOutline();
 
-  const handleGenerateScript = () => {
-    setIsGenerating(true);
-    // Simulate API call - replace with actual implementation
-    setTimeout(() => {
-      setIsGenerating(false);
-    }, 5000);
+  const methods = useForm<FormType>({
+    defaultValues: {
+      description: '',
+      tones: [],
+      template_style: undefined,
+      min_length: 0,
+      max_length: 500,
+      title: '',
+    },
+  });
+
+  const onSubmit = async (formData: FormType) => {
+    generateOutline(formData, {
+      onSuccess: (data) => {
+        logger.info(data);
+        toast.success('Success', 'Script outline generated successfully');
+        router.push(`/new-script/${data.outline.uuid}`);
+      },
+      onError: (error) => {
+        logger.error(error);
+        toast.error('Something went wrong', 'Failed to generate script outline');
+      },
+    });
   };
 
-  return isGenerating ? (
-    <LoadingScreen />
-  ) : (
-    <Col className="gap-8">
-      <div className="relative">
-        <ContextButton />
-        <FormTextarea
-          label={
-            <Row className="justify-normal gap-2">
-              <span> What&apos;s your video about?</span>
-              <InfoModal description="Be specific about your topic, audience, and key points you want to cover" />
-            </Row>
-          }
-        />
-      </div>
-      <TemplatesWidget />
-      <SliderWidget />
-      <VibeToneWidget />
+  return (
+    // eslint-disable-next-line react/jsx-props-no-spreading
+    <FormProvider {...methods}>
+      <form onSubmit={methods.handleSubmit(onSubmit)}>
+        {isPending ? (
+          <LoadingScreen />
+        ) : (
+          <Col className="gap-8">
+            <div className="relative">
+              <ContextButton />
+              <FormTextarea
+                name="description"
+                validationSchema={{
+                  required: 'Description is required',
+                  minLength: { value: 50, message: 'Description must be at least 50 characters' },
+                }}
+                label={
+                  <Row className="justify-normal gap-2">
+                    <span> What&apos;s your video about?</span>
+                    <InfoModal description="Be specific about your topic, audience, and key points you want to cover" />
+                  </Row>
+                }
+              />
+            </div>
+            <TemplatesWidget
+              name="template_style"
+              templates={configData.template_styles}
+              validationSchema={{
+                required: 'Template style is required',
+              }}
+            />
+            <SliderWidget
+              range={configData.length_range}
+              validationSchema={{
+                required: 'Length is required',
+                min: { value: 500, message: 'Length must be at least 500 words' },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                validate: (_value: number, formValues: any) => {
+                  // If formValues is available, check min_length/max_length difference
+                  if (
+                    formValues &&
+                    typeof formValues.min_length === 'number' &&
+                    typeof formValues.max_length === 'number'
+                  ) {
+                    if (formValues.max_length - formValues.min_length < 500) {
+                      return 'Difference between min_length and max_length must be at least 500 words';
+                    }
+                  }
+                  return true;
+                },
+              }}
+            />
+            <VibeToneWidget tones={configData.tones} name="tones" />
 
-      <Button disabled={isGenerating} onClick={handleGenerateScript}>
-        <Pencil size={16} /> Generate Script Outline
-      </Button>
-    </Col>
+            <Button disabled={isPending} type="submit">
+              <Pencil size={16} /> Generate Script Outline
+            </Button>
+          </Col>
+        )}
+      </form>
+    </FormProvider>
   );
 }
 
