@@ -1,7 +1,10 @@
 # views.py
 import logging
+import io
+from datetime import datetime
 
 from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -241,7 +244,7 @@ def generate_script_outline(request):
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
-def recreate_script_outline(request, outline_uuid):
+def recreate_script_outline(request, uuid):
     """
     Recreate a script outline using the same parameters as an existing outline.
     
@@ -251,7 +254,7 @@ def recreate_script_outline(request, outline_uuid):
     """
     # Get the original outline, ensuring it belongs to the requesting user
     try:
-        original_outline = ScriptOutline.objects.get(uuid=outline_uuid, user=request.user)
+        original_outline = ScriptOutline.objects.get(uuid=uuid, user=request.user)
     except ScriptOutline.DoesNotExist:
         return Response(
             {"error": "Outline not found or access denied"},
@@ -435,11 +438,11 @@ class ScriptOutlineDetailView(
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
-def generate_full_script(request, outline_uuid):
+def generate_full_script(request, uuid):
     """
     Generate full script from outline
     """
-    outline = get_object_or_404(ScriptOutline, uuid=outline_uuid, user=request.user)
+    outline = get_object_or_404(ScriptOutline, uuid=uuid, user=request.user)
 
     try:
         # Get tones from the outline or use request data as fallback
@@ -1002,52 +1005,197 @@ def update_script_status(request, script_uuid):
 
 
 @extend_schema(
-    summary="Delete script outline",
-    description="Delete a specific script outline by its UUID. This will also delete any associated full scripts.",
+    summary="Export script to file",
+    description="Export a full script to various file formats (.txt, .pdf, .docx). The file will be downloaded with appropriate headers.",
+    parameters=[
+        OpenApiParameter(
+            name="format",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Export format: txt, pdf, or docx",
+            required=True,
+            enum=["txt", "pdf", "docx"],
+        ),
+    ],
     responses={
-        204: OpenApiResponse(description="Script outline deleted successfully"),
-        404: OpenApiResponse(description="Outline not found or access denied"),
-        403: OpenApiResponse(description="Active subscription required"),
-    },
-)
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
-def delete_script_outline(request, outline_uuid):
-    """
-    Delete a script outline and all associated full scripts
-    """
-    try:
-        outline = ScriptOutline.objects.get(uuid=outline_uuid, user=request.user)
-        outline.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    except ScriptOutline.DoesNotExist:
-        return Response(
-            {"error": "Outline not found or access denied"},
-            status=status.HTTP_404_NOT_FOUND,
-        )
-
-
-@extend_schema(
-    summary="Delete full script",
-    description="Delete a specific full script by its UUID. This will not affect the associated outline.",
-    responses={
-        204: OpenApiResponse(description="Full script deleted successfully"),
+        200: OpenApiResponse(description="File exported successfully"),
+        400: OpenApiResponse(description="Invalid format specified"),
         404: OpenApiResponse(description="Script not found or access denied"),
         403: OpenApiResponse(description="Active subscription required"),
     },
 )
-@api_view(['DELETE'])
+@api_view(['GET'])
 @permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
-def delete_full_script(request, script_uuid):
+def export_script(request, uuid):
     """
-    Delete a full script (does not affect the associated outline)
+    Export a full script to various file formats
+    
+    Supported formats:
+    - txt: Plain text format
+    - pdf: PDF format with proper formatting
+    - docx: Microsoft Word document format
     """
+    # Get the format parameter
+    export_format = request.GET.get('format', '').lower()
+    if export_format not in ['txt', 'pdf', 'docx']:
+        return Response(
+            {"error": "Invalid format. Supported formats: txt, pdf, docx"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    # Get the script, ensuring it belongs to the requesting user
     try:
-        script = FullScript.objects.get(uuid=script_uuid, user=request.user)
-        script.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        script = FullScript.objects.get(uuid=uuid, user=request.user)
     except FullScript.DoesNotExist:
         return Response(
             {"error": "Script not found or access denied"},
             status=status.HTTP_404_NOT_FOUND,
         )
+    
+    try:
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_title = "".join(c for c in script.title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        safe_title = safe_title.replace(' ', '_')[:50]  # Limit length and replace spaces
+        
+        if export_format == 'txt':
+            return _export_txt(script, safe_title, timestamp)
+        elif export_format == 'pdf':
+            return _export_pdf(script, safe_title, timestamp)
+        elif export_format == 'docx':
+            return _export_docx(script, safe_title, timestamp)
+            
+    except Exception as e:
+        logger.error(f"Script export failed: {str(e)}")
+        return Response(
+            {"error": "Failed to export script. Please try again."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+def _export_txt(script, safe_title, timestamp):
+    """Export script as plain text file"""
+    content = f"Title: {script.title}\n"
+    content += f"Created: {script.created.strftime('%Y-%m-%d %H:%M:%S')}\n"
+    content += f"Word Count: {script.word_count}\n"
+    content += f"Estimated Duration: {script.estimated_duration:.1f} minutes\n"
+    content += "=" * 50 + "\n\n"
+    content += script.content
+    
+    response = HttpResponse(content, content_type='text/plain')
+    response['Content-Disposition'] = f'attachment; filename="{safe_title}_{timestamp}.txt"'
+    return response
+
+
+def _export_pdf(script, safe_title, timestamp):
+    """Export script as PDF file"""
+    try:
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+    except ImportError:
+        return Response(
+            {"error": "PDF export not available. Please install reportlab."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch, bottomMargin=1*inch)
+    
+    # Get styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=30,
+        alignment=1,  # Center alignment
+    )
+    
+    # Build PDF content
+    story = []
+    
+    # Title
+    story.append(Paragraph(script.title, title_style))
+    story.append(Spacer(1, 12))
+    
+    # Metadata
+    meta_info = f"""
+    <b>Created:</b> {script.created.strftime('%Y-%m-%d %H:%M:%S')}<br/>
+    <b>Word Count:</b> {script.word_count}<br/>
+    <b>Estimated Duration:</b> {script.estimated_duration:.1f} minutes<br/>
+    <b>Status:</b> {script.get_status_display()}<br/>
+    """
+    story.append(Paragraph(meta_info, styles['Normal']))
+    story.append(Spacer(1, 20))
+    
+    # Script content
+    # Split content into paragraphs and add them
+    paragraphs = script.content.split('\n\n')
+    for para in paragraphs:
+        if para.strip():
+            story.append(Paragraph(para.strip(), styles['Normal']))
+            story.append(Spacer(1, 12))
+    
+    # Build PDF
+    doc.build(story)
+    
+    buffer.seek(0)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{safe_title}_{timestamp}.pdf"'
+    return response
+
+
+def _export_docx(script, safe_title, timestamp):
+    """Export script as DOCX file"""
+    try:
+        from docx import Document
+        from docx.shared import Inches
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+    except ImportError:
+        return Response(
+            {"error": "DOCX export not available. Please install python-docx."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+    
+    doc = Document()
+    
+    # Set margins
+    sections = doc.sections
+    for section in sections:
+        section.top_margin = Inches(1)
+        section.bottom_margin = Inches(1)
+        section.left_margin = Inches(1)
+        section.right_margin = Inches(1)
+    
+    # Title
+    title = doc.add_heading(script.title, 0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    # Add metadata
+    doc.add_paragraph(f"Created: {script.created.strftime('%Y-%m-%d %H:%M:%S')}")
+    doc.add_paragraph(f"Word Count: {script.word_count}")
+    doc.add_paragraph(f"Estimated Duration: {script.estimated_duration:.1f} minutes")
+    doc.add_paragraph(f"Status: {script.get_status_display()}")
+    
+    # Add separator
+    doc.add_paragraph("=" * 50)
+    
+    # Add script content
+    paragraphs = script.content.split('\n\n')
+    for para in paragraphs:
+        if para.strip():
+            doc.add_paragraph(para.strip())
+    
+    # Save to buffer
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{safe_title}_{timestamp}.docx"'
+    return response
