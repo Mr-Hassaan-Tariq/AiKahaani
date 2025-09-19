@@ -780,25 +780,15 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
             name="filter_type",
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
-<<<<<<< Updated upstream
-            description="Filter by type: all, outline_drafts, script_drafts, saved",
-            required=False,
-=======
             description='Filter by type: "all" (default), "outline_drafts" (draft/generated outlines only), "script_drafts" (draft/generated scripts only), "saved" (saved items only)',
             required=False
->>>>>>> Stashed changes
         ),
         OpenApiParameter(
             name="type",
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
-<<<<<<< Updated upstream
-            description="Filter by generation type: outline, script",
-            required=False,
-=======
             description='Filter by generation type: "outline" (outlines only), "script" (scripts only). Use "script" to apply word_count/duration filters effectively.',
             required=False
->>>>>>> Stashed changes
         ),
         OpenApiParameter(
             name="ordering",
@@ -811,51 +801,30 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
             name="word_count_min",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-<<<<<<< Updated upstream
-            description="Minimum word count for scripts",
-            required=False,
-=======
             description='Minimum word count for scripts (only applies to scripts, outlines are unaffected). Example: 500',
             required=False
->>>>>>> Stashed changes
         ),
         OpenApiParameter(
             name="word_count_max",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-<<<<<<< Updated upstream
-            description="Maximum word count for scripts",
-            required=False,
-=======
             description='Maximum word count for scripts (only applies to scripts, outlines are unaffected). Example: 2000',
             required=False
->>>>>>> Stashed changes
         ),
         OpenApiParameter(
             name="duration_min",
             type=OpenApiTypes.FLOAT,
             location=OpenApiParameter.QUERY,
-<<<<<<< Updated upstream
-            description="Minimum estimated duration in minutes",
-            required=False,
-=======
             description='Minimum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 3.5',
             required=False
->>>>>>> Stashed changes
         ),
         OpenApiParameter(
             name="duration_max",
             type=OpenApiTypes.FLOAT,
             location=OpenApiParameter.QUERY,
-<<<<<<< Updated upstream
-            description="Maximum estimated duration in minutes",
-            required=False,
-        ),
-=======
             description='Maximum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 15.0',
             required=False
         )
->>>>>>> Stashed changes
     ],
     responses={
         200: OpenApiResponse(
