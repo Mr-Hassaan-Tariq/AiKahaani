@@ -227,6 +227,119 @@ def generate_script_outline(request):
 
 
 @extend_schema(
+    summary="Recreate script outline",
+    description="Recreate an existing script outline using the same parameters as the original. This will generate a new outline with the same tones, template style, and length parameters, but with fresh AI-generated content.",
+    responses={
+        201: OpenApiResponse(
+            response=GenerateOutlineResponseSerializer,
+            description="Script outline recreated successfully",
+        ),
+        404: OpenApiResponse(description="Original outline not found or access denied"),
+        403: OpenApiResponse(description="Active subscription required"),
+        500: OpenApiResponse(description="Outline recreation failed"),
+    },
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
+def recreate_script_outline(request, outline_uuid):
+    """
+    Recreate a script outline using the same parameters as an existing outline.
+    
+    This endpoint takes the UUID of an existing outline and generates a new outline
+    using the same parameters (tones, template style, description, etc.) but with
+    fresh AI-generated content.
+    """
+    # Get the original outline, ensuring it belongs to the requesting user
+    try:
+        original_outline = ScriptOutline.objects.get(uuid=outline_uuid, user=request.user)
+    except ScriptOutline.DoesNotExist:
+        return Response(
+            {"error": "Outline not found or access denied"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        # Extract parameters from the original outline
+        # We'll need to reconstruct the original parameters used for generation
+        
+        # Get tones from the original outline
+        tones = list(original_outline.tones.all())
+        if not tones:
+            return Response(
+                {"error": "Cannot recreate outline: original outline has no tones"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Try to extract template style from the script if it exists
+        template_style = None
+        if original_outline.script and original_outline.script.template_style:
+            template_style = original_outline.script.template_style
+        
+        # Use default length parameters (we could store these in outline_data if needed)
+        min_length = 100
+        max_length = 1000
+        
+        # Try to extract length parameters from outline_data if available
+        if original_outline.outline_data:
+            min_length = original_outline.outline_data.get("min_length", 100)
+            max_length = original_outline.outline_data.get("max_length", 1000)
+
+        # Extract description from the original outline
+        # This could be stored in outline_data or we might need to use the title
+        description = original_outline.outline_data.get("description", "") if original_outline.outline_data else ""
+        if not description:
+            # Fallback to using the title or outline text as description
+            description = original_outline.title or f"Recreate outline based on: {original_outline.outline_text[:100]}..."
+
+        # Prepare script data for OpenAI service
+        script_data = {
+            "description": description,
+            "tones": [tone.name for tone in tones],
+            "template_style": template_style.name if template_style else "medium",
+            "min_length": min_length,
+            "max_length": max_length,
+        }
+
+        # Generate new outline using OpenAI service
+        outline_text, outline_data, metadata = OpenAIScriptService.generate_outline(script_data)
+
+        # Create new outline with "Recreated" prefix
+        new_title = f"Recreated: {original_outline.title}" if original_outline.title else f"Recreated outline from {original_outline.uuid}"
+        
+        new_outline = ScriptOutline.objects.create(
+            user=request.user,
+            title=new_title,
+            outline_text=outline_text,
+            outline_data=outline_data,
+            original_outline=outline_text,
+            status="generated",
+            openai_model=metadata["model"],
+            tokens_used=metadata["tokens_used"],
+            generation_time=metadata["generation_time"],
+        )
+        
+        # Set the same tones as the original
+        new_outline.tones.set(tones)
+
+        serializer = ScriptOutlineSerializer(new_outline)
+        return Response(
+            {
+                "outline": serializer.data,
+                "message": f"Script outline recreated successfully from original outline {original_outline.uuid}!",
+                "original_outline_uuid": str(original_outline.uuid),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    except Exception as e:
+        logger.error(f"Outline recreation failed: {str(e)}")
+        return Response(
+            {"error": "Failed to recreate outline. Please try again."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@extend_schema(
     summary="Get script outline",
     description="Retrieve a specific script outline by its UUID",
     responses={
@@ -235,7 +348,7 @@ def generate_script_outline(request):
     },
 )
 class ScriptOutlineDetailView(
-    MethodSpecificThrottleMixin, generics.RetrieveUpdateAPIView
+    MethodSpecificThrottleMixin, generics.RetrieveUpdateDestroyAPIView
 ):
     """
     Get and update script outline
@@ -282,6 +395,17 @@ class ScriptOutlineDetailView(
     )
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Delete script outline",
+        description="Delete a specific script outline by its UUID",
+        responses={
+            204: OpenApiResponse(description="Script outline deleted successfully"),
+            404: OpenApiResponse(description="Script outline not found"),
+        },
+    )
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
 
 
 @extend_schema(
@@ -875,3 +999,55 @@ def update_script_status(request, script_uuid):
         return Response(response_serializer.data)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    summary="Delete script outline",
+    description="Delete a specific script outline by its UUID. This will also delete any associated full scripts.",
+    responses={
+        204: OpenApiResponse(description="Script outline deleted successfully"),
+        404: OpenApiResponse(description="Outline not found or access denied"),
+        403: OpenApiResponse(description="Active subscription required"),
+    },
+)
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
+def delete_script_outline(request, outline_uuid):
+    """
+    Delete a script outline and all associated full scripts
+    """
+    try:
+        outline = ScriptOutline.objects.get(uuid=outline_uuid, user=request.user)
+        outline.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except ScriptOutline.DoesNotExist:
+        return Response(
+            {"error": "Outline not found or access denied"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+
+@extend_schema(
+    summary="Delete full script",
+    description="Delete a specific full script by its UUID. This will not affect the associated outline.",
+    responses={
+        204: OpenApiResponse(description="Full script deleted successfully"),
+        404: OpenApiResponse(description="Script not found or access denied"),
+        403: OpenApiResponse(description="Active subscription required"),
+    },
+)
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
+def delete_full_script(request, script_uuid):
+    """
+    Delete a full script (does not affect the associated outline)
+    """
+    try:
+        script = FullScript.objects.get(uuid=script_uuid, user=request.user)
+        script.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except FullScript.DoesNotExist:
+        return Response(
+            {"error": "Script not found or access denied"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
