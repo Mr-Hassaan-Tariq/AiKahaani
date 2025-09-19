@@ -19,7 +19,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from api.mixins import MethodSpecificThrottleMixin
 from payments.permissions import HasActiveSubscriptionPermission
 
-from .filters import ScriptOutlineFilter, FullScriptFilter
+from .filters import ScriptOutlineFilter, FullScriptFilter,generation_filters
 from .models import FullScript, ScriptOutline, TemplateStyle, Tone
 from .serializers import (
     FullScriptSerializer,
