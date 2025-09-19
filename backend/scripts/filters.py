@@ -105,13 +105,16 @@ class FullScriptFilter(django_filters.FilterSet):
         return queryset
 
 
-def generation_filters(search, status_filter, filter_type, type_filter, ordering):
+def generation_filters(search, status_filter, filter_type, type_filter, ordering, user=None):
     """
     Applies filters to both outline and script querysets and returns the filtered querysets
     along with the sorting criteria.
     """
     # Build outline queryset
-    outline_queryset = ScriptOutline.objects.annotate(
+    outline_queryset = ScriptOutline.objects
+    if user:
+        outline_queryset = outline_queryset.filter(user=user)
+    outline_queryset = outline_queryset.annotate(
         type=Value('outline', output_field=CharField()),
         word_count=Value(None, output_field=IntegerField()),
         estimated_duration=Value(None, output_field=FloatField()),
@@ -130,7 +133,10 @@ def generation_filters(search, status_filter, filter_type, type_filter, ordering
     )
 
     # Build script queryset
-    script_queryset = FullScript.objects.annotate(
+    script_queryset = FullScript.objects
+    if user:
+        script_queryset = script_queryset.filter(user=user)
+    script_queryset = script_queryset.annotate(
         type=Value('script', output_field=CharField()),
         status_display=Case(
             When(status='draft', then=Value('Draft')),

@@ -9,6 +9,11 @@ urlpatterns = [
     # Direct outline generation from user input
     path("outline/", views.generate_script_outline, name="generate-outline"),
     path(
+        "outline/<uuid:outline_uuid>/recreate/",
+        views.recreate_script_outline,
+        name="recreate-outline",
+    ),
+    path(
         "outline/<uuid:outline_uuid>/script/",
         views.generate_full_script,
         name="generate-script",
@@ -23,6 +28,17 @@ urlpatterns = [
         "outlines/<uuid:uuid>/",
         views.ScriptOutlineDetailView.as_view(),
         name="outline-detail",
+    ),
+    # Delete endpoints
+    path(
+        "outlines/<uuid:outline_uuid>/delete/",
+        views.delete_script_outline,
+        name="delete-outline",
+    ),
+    path(
+        "scripts/<uuid:script_uuid>/delete/",
+        views.delete_full_script,
+        name="delete-script",
     ),
     path("", views.FullScriptListView.as_view(), name="full-script-list"),
     path(
