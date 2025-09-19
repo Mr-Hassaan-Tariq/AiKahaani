@@ -22,7 +22,7 @@ export function LoadingScreen() {
         />
       ))}
 
-      <Button disabled height={52}>
+      <Button disabled className="py-[18px]">
         <Row>
           <Loader size="xs" color="black" />
           Optimizing...

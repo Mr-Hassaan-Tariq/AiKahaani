@@ -50,7 +50,7 @@ export default function OptimizeFormFields({ watch, scripts, register }: any) {
           placeholder="Enter your title manually..."
           validationSchema={{
             required: 'Title is required when entering manually',
-            minLength: { value: 5, message: 'Title must be at least 5 characters' },
+            minLength: { value: 10, message: 'Title must be at least 5 characters' },
           }}
         />
       )}

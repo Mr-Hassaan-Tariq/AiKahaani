@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { FormProvider, useForm } from 'react-hook-form';
 
@@ -36,9 +36,37 @@ export default function Page() {
   const optimizeTitles = useOptimizeTitles();
   const toast = useToast();
 
+  // Adjust validation logic for the form
   const methods = useForm({
     defaultValues: { prompt: '', tones: [], duration: 'saved', scriptOption: '', manualTitle: '' },
     mode: 'onChange',
+    resolver: async (data) => {
+      const errors: any = {};
+
+      // Description is required
+      if (!data.prompt) {
+        errors.prompt = 'Description is required';
+      }
+
+      // At least one tone is required
+      if (!data.tones || data.tones.length === 0) {
+        errors.tones = 'At least one tone is required';
+      }
+
+      if (activeTab === 'optimize') {
+        // Validation for "saved" duration
+        if (data.duration === 'saved' && !data.scriptOption) {
+          errors.scriptOption = 'Script selection is required';
+        }
+
+        // Validation for "manual" duration
+        if (data.duration === 'manual' && !data.manualTitle) {
+          errors.manualTitle = 'Manual title is required';
+        }
+      }
+
+      return { values: data, errors };
+    },
   });
   const {
     control,
@@ -46,8 +74,12 @@ export default function Page() {
     watch,
     formState: { isValid },
     register,
+    reset,
   } = methods;
 
+  useEffect(() => {
+    reset();
+  }, [activeTab]);
   const onSubmit = async (data: any) => {
     setLastPayload({ ...data });
     setIsGenerating(true);
@@ -189,6 +221,7 @@ export default function Page() {
 
                 <ToneSelector control={control} />
 
+                <p className="text-left text-white">isGenerating: {isGenerating.toString()}</p>
                 <Button
                   type="submit"
                   disabled={!isValid || isGenerating}
@@ -196,7 +229,7 @@ export default function Page() {
                 >
                   {isGenerating ? (
                     <>
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent"></div>
+                      <div className="w-5 animate-spin rounded-full border-2 border-black border-t-transparent"></div>
                       <span>{activeTab === 'optimize' ? 'Optimizing...' : 'Generating...'}</span>
                     </>
                   ) : (

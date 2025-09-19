@@ -30,7 +30,7 @@ export default function ScriptComponent({
                 <span className="font-semibold text-white/90 transition-colors duration-200 group-hover:text-white">
                   {e.title}
                 </span>
-                <span className="ml-2 text-white/70 transition-colors duration-200 group-hover:text-white/80">
+                <span className="ml-2 whitespace-pre-line text-white/70 transition-colors duration-200 group-hover:text-white/80">
                   {e.content}
                 </span>
               </div>
