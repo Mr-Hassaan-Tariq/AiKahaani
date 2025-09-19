@@ -750,6 +750,34 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
             location=OpenApiParameter.QUERY,
             description='Order by field (created, modified, title). Use - for descending (e.g., -created)',
             required=False
+        ),
+        OpenApiParameter(
+            name='word_count_min',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Minimum word count for scripts',
+            required=False
+        ),
+        OpenApiParameter(
+            name='word_count_max',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Maximum word count for scripts',
+            required=False
+        ),
+        OpenApiParameter(
+            name='duration_min',
+            type=OpenApiTypes.FLOAT,
+            location=OpenApiParameter.QUERY,
+            description='Minimum estimated duration in minutes',
+            required=False
+        ),
+        OpenApiParameter(
+            name='duration_max',
+            type=OpenApiTypes.FLOAT,
+            location=OpenApiParameter.QUERY,
+            description='Maximum estimated duration in minutes',
+            required=False
         )
     ],
     responses={
@@ -935,7 +963,39 @@ class GenerationsList(APIView):
         filter_type = request.GET.get('filter_type', 'all')
         type_filter = request.GET.get('type', '')
         ordering = request.GET.get('ordering', '-created')
-        filtered_querysets = generation_filters(search, status_filter, filter_type, type_filter, ordering, user=request.user)
+        
+        # Get numeric filters
+        word_count_min = request.GET.get('word_count_min')
+        word_count_max = request.GET.get('word_count_max')
+        duration_min = request.GET.get('duration_min')
+        duration_max = request.GET.get('duration_max')
+        
+        # Convert to integers if provided
+        try:
+            word_count_min = int(word_count_min) if word_count_min else None
+        except (ValueError, TypeError):
+            word_count_min = None
+            
+        try:
+            word_count_max = int(word_count_max) if word_count_max else None
+        except (ValueError, TypeError):
+            word_count_max = None
+            
+        try:
+            duration_min = float(duration_min) if duration_min else None
+        except (ValueError, TypeError):
+            duration_min = None
+            
+        try:
+            duration_max = float(duration_max) if duration_max else None
+        except (ValueError, TypeError):
+            duration_max = None
+        
+        filtered_querysets = generation_filters(
+            search, status_filter, filter_type, type_filter, ordering, 
+            user=request.user, word_count_min=word_count_min, word_count_max=word_count_max,
+            duration_min=duration_min, duration_max=duration_max
+        )
         serializer = UnifiedGenerationSerializer(filtered_querysets, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
