@@ -105,7 +105,7 @@ class FullScriptFilter(django_filters.FilterSet):
         return queryset
 
 
-def generation_filters(search, status_filter, filter_type, type_filter, ordering, user=None):
+def generation_filters(search, status_filter, filter_type, type_filter, ordering, user=None, word_count_min=None, word_count_max=None, duration_min=None, duration_max=None):
     """
     Applies filters to both outline and script querysets and returns the filtered querysets
     along with the sorting criteria.
@@ -182,6 +182,18 @@ def generation_filters(search, status_filter, filter_type, type_filter, ordering
     elif filter_type == 'saved':
         outline_queryset = outline_queryset.filter(status='saved')
         script_queryset = script_queryset.filter(status='saved')
+
+    # Apply word count filters (only applicable to scripts)
+    if word_count_min is not None:
+        script_queryset = script_queryset.filter(word_count__gte=word_count_min)
+    if word_count_max is not None:
+        script_queryset = script_queryset.filter(word_count__lte=word_count_max)
+
+    # Apply duration filters (only applicable to scripts)
+    if duration_min is not None:
+        script_queryset = script_queryset.filter(estimated_duration__gte=duration_min)
+    if duration_max is not None:
+        script_queryset = script_queryset.filter(estimated_duration__lte=duration_max)
 
     # Sorting logic
     reverse = ordering.startswith('-')
