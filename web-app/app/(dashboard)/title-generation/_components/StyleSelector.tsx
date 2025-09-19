@@ -11,8 +11,6 @@ export default function StyleSelector({
 }) {
   const { data } = useGetTitleStyles();
 
-  console.log('data', data);
-
   if (!data) return null;
 
   const handleSelect = (option: string) => {
