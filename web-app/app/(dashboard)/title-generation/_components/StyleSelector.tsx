@@ -1,53 +1,52 @@
-'use client';
+import useGetTitleStyles from 'lib/hooks/useGetTitleStyles';
 
-import { useState } from 'react';
+export default function StyleSelector({
+  value,
+  onChange,
+  error,
+}: {
+  value: string[];
+  onChange: (tones: string[]) => void;
+  error?: string;
+}) {
+  const { data } = useGetTitleStyles();
 
-const styleOptions = [
-  'Controversial',
-  'Shocking',
-  'Persuasive',
-  'Sarcastic',
-  'Witty',
-  'Neutral',
-  'Mysterious',
-  'Dramatic',
-  'Question-based',
-];
+  console.log('data', data);
 
-export default function StyleSelector() {
-  const [selected, setSelected] = useState<string[]>([]);
+  if (!data) return null;
 
   const handleSelect = (option: string) => {
-    if (selected.includes(option)) {
-      // unselect
-      setSelected(selected.filter((item) => item !== option));
+    if (value.includes(option)) {
+      onChange(value.filter((item) => item !== option));
     } else {
-      // select only if less than 3
-      if (selected.length < 3) {
-        setSelected([...selected, option]);
+      if (value.length < 3) {
+        onChange([...value, option]);
       }
     }
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {styleOptions.map((option) => {
-        const isSelected = selected.includes(option);
-        return (
-          <button
-            type="button"
-            key={option}
-            onClick={() => handleSelect(option)}
-            className={`rounded-full px-[12px] py-[8px] text-sm font-medium transition ${
-              isSelected
-                ? 'border border-[#BAFF381F] bg-[#FFFFFF1A] text-white'
-                : 'border border-transparent bg-[#FFFFFF1A] text-[#AAACA6]'
-            }`}
-          >
-            {option}
-          </button>
-        );
-      })}
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        {data?.results?.map((tone: { id: number; name: string }) => {
+          const isSelected = value.includes(tone.name);
+          return (
+            <button
+              type="button"
+              key={tone.id}
+              onClick={() => handleSelect(tone.name)}
+              className={`rounded-full px-[12px] py-[8px] text-sm font-medium transition ${
+                isSelected
+                  ? 'border border-[#BAFF381F] bg-[#FFFFFF1A] text-white'
+                  : 'border border-transparent bg-[#FFFFFF1A] text-[#AAACA6]'
+              }`}
+            >
+              {tone.name}
+            </button>
+          );
+        })}
+      </div>
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 }
