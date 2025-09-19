@@ -58,9 +58,7 @@ class Script(TimeStampedModel):
         help_text="Maximum target length in characters or words"
     )
     tones = models.ManyToManyField(
-        Tone,
-        related_name="scripts",
-        help_text="The tones/vibes for this script"
+        Tone, related_name="scripts", help_text="The tones/vibes for this script"
     )
     template_style = models.ForeignKey(
         TemplateStyle,
@@ -104,12 +102,10 @@ class ScriptOutline(TimeStampedModel):
         help_text="Optional reference to original script (if created from script)",
     )
     title = models.CharField(max_length=300, blank=True)
-    
+
     # Tones for this outline (can be multiple)
     tones = models.ManyToManyField(
-        Tone,
-        related_name="outlines",
-        help_text="The tones/vibes for this outline"
+        Tone, related_name="outlines", help_text="The tones/vibes for this outline"
     )
 
     # Outline structure as JSON for flexibility
@@ -212,7 +208,7 @@ class ScriptTitle(TimeStampedModel):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="titles")
     script = models.ForeignKey(
-        Script,
+        FullScript,
         on_delete=models.CASCADE,
         related_name="titles",
         null=True,

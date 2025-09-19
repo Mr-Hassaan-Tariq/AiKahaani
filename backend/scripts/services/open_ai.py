@@ -1,11 +1,8 @@
 # services/openai_service.py
+import base64
 import logging
 import time
 from typing import Any, Dict, Tuple
-import base64
-from io import BytesIO
-from PIL import Image
-import requests
 
 import openai
 from django.conf import settings
@@ -33,11 +30,11 @@ class OpenAIScriptService:
     def analyze_image(image_file=None, image_url=None) -> Tuple[str, str]:
         """
         Analyze an image using OpenAI Vision model to generate title and description
-        
+
         Args:
             image_file: Django UploadedFile object (optional)
             image_url: URL of the image to analyze (optional)
-            
+
         Returns:
             Tuple of (title, description)
         """
@@ -49,14 +46,14 @@ class OpenAIScriptService:
                 # Reset file pointer for potential future use
                 image_file.seek(0)
                 # Convert to base64
-                base64_image = base64.b64encode(image_content).decode('utf-8')
+                base64_image = base64.b64encode(image_content).decode("utf-8")
                 image_url_for_openai = f"data:image/jpeg;base64,{base64_image}"
             elif image_url:
                 # Use the provided URL directly
                 image_url_for_openai = image_url
             else:
                 raise ValueError("Either image_file or image_url must be provided")
-            
+
             client = get_openai_client()
             response = client.chat.completions.create(
                 model="gpt-4-vision-preview",
@@ -74,42 +71,40 @@ Format your response as:
 TITLE: [your title here]
 DESCRIPTION: [your description here]
 
-Make the title clickable and engaging for YouTube, and the description detailed enough to generate a good script outline."""
+Make the title clickable and engaging for YouTube, and the description detailed enough to generate a good script outline.""",
                             },
                             {
                                 "type": "image_url",
-                                "image_url": {
-                                    "url": image_url_for_openai
-                                }
-                            }
-                        ]
+                                "image_url": {"url": image_url_for_openai},
+                            },
+                        ],
                     }
                 ],
                 max_tokens=500,
-                temperature=0.7
+                temperature=0.7,
             )
-            
+
             content = response.choices[0].message.content
-            
+
             # Parse the response to extract title and description
             title = ""
             description = ""
-            
-            lines = content.split('\n')
+
+            lines = content.split("\n")
             for line in lines:
                 line = line.strip()
-                if line.startswith('TITLE:'):
-                    title = line.replace('TITLE:', '').strip()
-                elif line.startswith('DESCRIPTION:'):
-                    description = line.replace('DESCRIPTION:', '').strip()
-            
+                if line.startswith("TITLE:"):
+                    title = line.replace("TITLE:", "").strip()
+                elif line.startswith("DESCRIPTION:"):
+                    description = line.replace("DESCRIPTION:", "").strip()
+
             # If parsing failed, use the whole response as description
             if not title and not description:
                 description = content.strip()
                 title = "Image Analysis"
-            
+
             return title, description
-            
+
         except Exception as e:
             logger.error(f"Image analysis failed: {str(e)}")
             # Return fallback values
@@ -546,7 +541,7 @@ Focus on creating titles that would make someone stop scrolling and click immedi
         """
         if script:
             # Script-based optimization
-            script_content = script.content or script.description
+            script_content = script.content
             script_title = script.title or "Untitled Script"
 
             optimization_prompt = f"""

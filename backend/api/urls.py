@@ -4,9 +4,16 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from scripts import views
+
 from . import health
 
 urlpatterns = [
+    path(
+        "api/file/<uuid:uuid>/export/",
+        views.ExportScriptView.as_view(),
+        name="export-script",
+    ),
     path("health/", health.health_check, name="health_check"),
     path(
         "api/schema/swagger-ui/",

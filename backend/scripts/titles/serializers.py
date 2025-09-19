@@ -229,7 +229,7 @@ class GenerateTitlesOptimizedRequestSerializer(GenerateTitlesRequestSerializer):
         if value is None:
             return value
 
-        from scripts.models import Script
+        from scripts.models import FullScript
 
         # Get the user from the request context
         request = self.context.get("request")
@@ -237,9 +237,9 @@ class GenerateTitlesOptimizedRequestSerializer(GenerateTitlesRequestSerializer):
             raise serializers.ValidationError("Authentication required.")
 
         try:
-            script = Script.objects.get(uuid=value, user=request.user)
+            script = FullScript.objects.get(uuid=value, user=request.user)
             return script
-        except Script.DoesNotExist:
+        except FullScript.DoesNotExist:
             raise serializers.ValidationError(
                 "Script not found or you don't have permission to access it."
             ) from None
