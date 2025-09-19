@@ -192,6 +192,7 @@ def generate_script_outline(request):
 
         outline_title = title if title else f"Outline: {description[:50]}"
         outline = ScriptOutline.objects.create(
+            user=request.user,
             title=outline_title,
             outline_text=outline_text,
             outline_data=outline_data,
@@ -240,10 +241,12 @@ class ScriptOutlineDetailView(
     Get and update script outline
     """
 
-    queryset = ScriptOutline.objects.select_related("script").prefetch_related("script__tones", "tones")
     serializer_class = ScriptOutlineSerializer
     lookup_field = "uuid"
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
+
+    def get_queryset(self):
+        return ScriptOutline.objects.filter(user=self.request.user).select_related("script").prefetch_related("script__tones", "tones")
 
     def get_serializer_class(self):
         if self.request.method == "PATCH":
@@ -312,7 +315,7 @@ def generate_full_script(request, outline_uuid):
     """
     Generate full script from outline
     """
-    outline = get_object_or_404(ScriptOutline, uuid=outline_uuid)
+    outline = get_object_or_404(ScriptOutline, uuid=outline_uuid, user=request.user)
 
     try:
         # Get tones from the outline or use request data as fallback
@@ -340,6 +343,7 @@ def generate_full_script(request, outline_uuid):
 
         # Create FullScript
         full_script = FullScript.objects.create(
+            user=request.user,
             outline=outline,
             title=request.data.get("title", f"Script: {outline.title}"),
             content=script_content,
@@ -378,10 +382,12 @@ class FullScriptDetailView(
     Full CRUD for full scripts
     """
 
-    queryset = FullScript.objects.select_related("outline", "outline__script")
     serializer_class = FullScriptSerializer
     lookup_field = "uuid"
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
+
+    def get_queryset(self):
+        return FullScript.objects.filter(user=self.request.user).select_related("outline", "outline__script")
 
     @extend_schema(
         summary="Get full script",
@@ -475,7 +481,7 @@ class ScriptOutlineListView(MethodSpecificThrottleMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get_queryset(self):
-        return ScriptOutline.objects.select_related("script").prefetch_related("script__tones", "tones").order_by(
+        return ScriptOutline.objects.filter(user=self.request.user).select_related("script").prefetch_related("script__tones", "tones").order_by(
             "-created"
         )
 
@@ -574,7 +580,7 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get_queryset(self):
-        return FullScript.objects.select_related(
+        return FullScript.objects.filter(user=self.request.user).select_related(
             'outline', 'outline__script'
         ).order_by('-created')
 
@@ -635,9 +641,10 @@ class ScriptOutlineListView(generics.ListAPIView):
     filterset_class = ScriptOutlineFilter
     ordering_fields = ['created', 'modified', 'title']
     ordering = ['-created']
+    permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get_queryset(self):
-        return ScriptOutline.objects.select_related(
+        return ScriptOutline.objects.filter(user=self.request.user).select_related(
             'script'
         ).prefetch_related('script__tones', 'tones').order_by('-created')
 
@@ -726,9 +733,10 @@ class FullScriptListView(generics.ListAPIView):
     filterset_class = FullScriptFilter
     ordering_fields = ['created', 'modified', 'title', 'word_count', 'estimated_duration']
     ordering = ['-created']
+    permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get_queryset(self):
-        return FullScript.objects.select_related(
+        return FullScript.objects.filter(user=self.request.user).select_related(
             'outline', 'outline__script'
         ).order_by('-created')
 
@@ -787,6 +795,7 @@ class GenerationsList(APIView):
     Unified listing API for both outlines and scripts.
     Handles filtering, sorting, and returning data for both outlines and scripts.
     """
+    permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get(self, request):
         """
@@ -799,7 +808,7 @@ class GenerationsList(APIView):
         filter_type = request.GET.get('filter_type', 'all')
         type_filter = request.GET.get('type', '')
         ordering = request.GET.get('ordering', '-created')
-        filtered_querysets = generation_filters(search, status_filter, filter_type, type_filter, ordering)
+        filtered_querysets = generation_filters(search, status_filter, filter_type, type_filter, ordering, user=request.user)
         serializer = UnifiedGenerationSerializer(filtered_querysets, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -818,11 +827,12 @@ class GenerationsList(APIView):
     }
 )
 @api_view(['PATCH'])
+@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
 def update_outline_status(request, outline_uuid):
     """
     Update the status of a script outline
     """
-    outline = get_object_or_404(ScriptOutline, uuid=outline_uuid)
+    outline = get_object_or_404(ScriptOutline, uuid=outline_uuid, user=request.user)
     
     serializer = StatusUpdateSerializer(data=request.data)
     if serializer.is_valid():
@@ -849,11 +859,12 @@ def update_outline_status(request, outline_uuid):
     }
 )
 @api_view(['PATCH'])
+@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
 def update_script_status(request, script_uuid):
     """
     Update the status of a full script
     """
-    script = get_object_or_404(FullScript, uuid=script_uuid)
+    script = get_object_or_404(FullScript, uuid=script_uuid, user=request.user)
     
     serializer = StatusUpdateSerializer(data=request.data)
     if serializer.is_valid():

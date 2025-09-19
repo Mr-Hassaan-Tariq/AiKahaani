@@ -87,6 +87,14 @@ class ScriptOutline(TimeStampedModel):
     """
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="script_outlines",
+        help_text="The user who owns this script outline",
+        null=True,
+        blank=True,
+    )
     script = models.OneToOneField(
         "Script",
         on_delete=models.CASCADE,
@@ -152,6 +160,14 @@ class FullScript(TimeStampedModel):
     """
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="full_scripts",
+        help_text="The user who owns this full script",
+        null=True,
+        blank=True,
+    )
     outline = models.ForeignKey(
         ScriptOutline, on_delete=models.CASCADE, related_name="full_scripts"
     )
