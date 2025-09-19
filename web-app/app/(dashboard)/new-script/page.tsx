@@ -3,7 +3,7 @@ import NewScriptHeader from './_components/NewScriptHeader';
 import { getConfig } from './actions';
 import Col from 'components/ui/Col';
 
-export default async function Page() {
+export default async function NewScriptPage() {
   const { data, error, isError } = await getConfig();
 
   if (isError) {

@@ -15,9 +15,11 @@ const MAX_LENGTH = 'max_length';
 
 export default function SliderWidget({
   range,
+  disabled,
   validationSchema,
 }: {
   range: LengthRangeType;
+  disabled: boolean;
   validationSchema?: RegisterOptions;
 }) {
   const [worldCounter, setWorldCounter] = useState([range.min, range.default]);
@@ -55,6 +57,7 @@ export default function SliderWidget({
         min={range.min}
         max={range.max}
         step={10}
+        disabled={disabled}
         className="h-2"
       />
 

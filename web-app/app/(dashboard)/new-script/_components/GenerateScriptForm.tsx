@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Dispatch, SetStateAction, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LinkIcon, MonitorPlayIcon, NewspaperIcon, Pencil, PlusIcon, X } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -27,6 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from 'components/shadcn_ui/po
 export default function GenerateScriptForm({ configData }: { configData: GenerationPromptType }) {
   const toast = useToast();
   const router = useRouter();
+  const [files, setFiles] = useState<Array<FileType>>([]);
   const { mutate: generateOutline, isPending } = useGenerateOutline();
 
   const methods = useForm<FormType>({
@@ -40,8 +41,10 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
     },
   });
 
-  const onSubmit = async (formData: FormType) => {
-    generateOutline(formData, {
+  const { watch } = methods;
+
+  const onSubmit = (_formData: FormType) => {
+    generateOutline(_formData, {
       onSuccess: (data) => {
         logger.info(data);
         toast.success('Success', 'Script outline generated successfully');
@@ -63,7 +66,7 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
         ) : (
           <Col className="gap-8">
             <div className="relative">
-              <ContextButton />
+              <ContextButton files={files} setFiles={setFiles} />
               <FormTextarea
                 name="description"
                 validationSchema={{
@@ -81,12 +84,13 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
             <TemplatesWidget
               name="template_style"
               templates={configData.template_styles}
-              validationSchema={{
-                required: 'Template style is required',
-              }}
+              // validationSchema={{
+              //   required: 'Template style is required',
+              // }}
             />
             <SliderWidget
               range={configData.length_range}
+              disabled={watch('template_style') !== undefined}
               validationSchema={{
                 required: 'Length is required',
                 min: { value: 500, message: 'Length must be at least 500 words' },
@@ -120,9 +124,15 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
 
 type FileType = { type: 'link' | 'article' | 'file'; value: string | File };
 
-function ContextButton() {
+function ContextButton({
+  files,
+  setFiles,
+}: {
+  files: FileType[];
+  setFiles: Dispatch<SetStateAction<FileType[]>>;
+}) {
   const toast = useToast();
-  const [files, setFiles] = useState<Array<FileType>>([]);
+
   const [link, setLink] = useState<string>('');
   const [article, setArticle] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
@@ -273,8 +283,8 @@ function FileInput({
       </span>
       <input
         type="file"
-        accept=".pdf,.doc,.docx,.txt,video/*"
         className="hidden"
+        accept="image/*"
         onChange={onChange}
         // value={value?.name || ''}
       />
