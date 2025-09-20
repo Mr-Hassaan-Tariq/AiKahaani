@@ -221,7 +221,6 @@ export default function Page() {
 
                 <ToneSelector control={control} />
 
-                <p className="text-left text-white">isGenerating: {isGenerating.toString()}</p>
                 <Button
                   type="submit"
                   disabled={!isValid || isGenerating}

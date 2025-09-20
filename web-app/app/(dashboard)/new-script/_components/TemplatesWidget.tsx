@@ -48,8 +48,11 @@ export default function TemplatesWidget({
               'cursor-pointer rounded-2xl bg-white/10 p-4',
               watch(name) === template.id && 'border border-[#BAFF38]/[12%] bg-[#F9F9FF]/[.16]',
             )}
-            // onClick={() => setIsActive(template.id === isActive ? undefined : template.id)}
-            onClick={() => onChange({ target: { name, value: template.id } })}
+            onClick={() => {
+              const currentValue = watch(name);
+              const newValue = currentValue === template.id ? undefined : template.id;
+              onChange({ target: { name, value: newValue } });
+            }}
           >
             <Row>
               <H5 className="tracking-normal">{template.name}</H5>

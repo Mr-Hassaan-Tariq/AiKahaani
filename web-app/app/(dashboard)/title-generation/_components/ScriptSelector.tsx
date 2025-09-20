@@ -82,7 +82,7 @@ export default function ScriptSelector({
                     isSelected && 'font-bold text-white',
                   )}
                 >
-                  {script.title}
+                  {script.title.length > 50 ? `${script.title.substring(0, 50)}...` : script.title}
                 </label>
               </div>
             );

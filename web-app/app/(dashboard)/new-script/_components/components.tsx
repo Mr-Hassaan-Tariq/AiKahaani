@@ -22,7 +22,7 @@ export function LoadingScreen() {
           className="h-20 w-full bg-[linear-gradient(90deg,#161616_0%,#292929_67.79%,#333_83.65%,_#161616_100%)]"
         />
       ))}
-      <Button disabled height={52}>
+      <Button disabled className="py-5">
         <Row>
           <Loader size="xs" color="black" />
           Generating your script outline...

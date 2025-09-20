@@ -2,6 +2,7 @@
 
 import { Dispatch, SetStateAction, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { InitialScriptWordCount } from 'defaultValues';
 import { LinkIcon, MonitorPlayIcon, NewspaperIcon, Pencil, PlusIcon, X } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
 
@@ -44,7 +45,42 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
   const { watch } = methods;
 
   const onSubmit = (_formData: FormType) => {
-    generateOutline(_formData, {
+    const formValue = new FormData();
+    const payload: Partial<FormType> = {};
+
+    if (!files.length) {
+      payload.description = _formData.description;
+      payload.tones = _formData.tones;
+      if (_formData.template_style) {
+        payload.template_style = _formData.template_style;
+      } else {
+        payload.min_length = _formData.min_length;
+        payload.max_length = _formData.max_length;
+      }
+      payload.title = _formData.title;
+      logger.info(payload);
+    } else {
+      formValue.append('description', _formData.description);
+      formValue.append('tones', JSON.stringify(_formData.tones));
+      if (_formData.template_style) {
+        formValue.append('template_style', _formData.template_style.toString());
+      } else {
+        formValue.append('min_length', _formData.min_length.toString());
+        formValue.append('max_length', _formData.max_length.toString());
+      }
+      formValue.append('title', _formData.title);
+      files.forEach((file, index) => {
+        if (file.type === 'file' && file.value instanceof File) {
+          formValue.append('image', file.value);
+        } else if (file.type === 'link' && typeof file.value === 'string') {
+          formValue.append(`link_${index}`, file.value);
+        } else if (file.type === 'article' && typeof file.value === 'string') {
+          formValue.append(`article_${index}`, file.value);
+        }
+      });
+    }
+
+    generateOutline(files.length ? formValue : payload, {
       onSuccess: (data) => {
         logger.info(data);
         toast.success('Success', 'Script outline generated successfully');
@@ -90,6 +126,7 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
             />
             <SliderWidget
               range={configData.length_range}
+              defaultValue={InitialScriptWordCount} // Set initial value from form's default values
               disabled={watch('template_style') !== undefined}
               validationSchema={{
                 required: 'Length is required',

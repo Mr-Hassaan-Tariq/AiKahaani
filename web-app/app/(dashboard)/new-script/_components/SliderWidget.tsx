@@ -17,12 +17,15 @@ export default function SliderWidget({
   range,
   disabled,
   validationSchema,
+  defaultValue,
 }: {
   range: LengthRangeType;
   disabled: boolean;
   validationSchema?: RegisterOptions;
+
+  defaultValue?: number[];
 }) {
-  const [worldCounter, setWorldCounter] = useState([range.min, range.default]);
+  const [worldCounter, setWorldCounter] = useState(defaultValue || [range.min, range.default]);
 
   const {
     register,

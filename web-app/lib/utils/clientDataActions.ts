@@ -51,22 +51,26 @@ export async function getClientDataAction<T>(endpoint: string, schema?: z.ZodSch
 
 export async function postClientDataAction<T, P>(endpoint: string, body?: P, customUrl?: string) {
   const token = getAuthToken();
+
   // headers
   const headers = new Headers();
-  headers.set('Content-Type', 'application/json');
+  if (!(body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
   headers.set('Authorization', `Bearer ${token}`);
 
   const res = await fetch(customUrl ?? `${baseUrl}${endpoint}`, {
     method: 'POST',
-    headers,
-    body: JSON.stringify(body),
+    headers: headers,
+    body: body instanceof FormData ? body : JSON.stringify(body),
   });
+
   if (!res.ok) {
-    // if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
     const error = await processError(res);
     logger.error(error);
     throw error;
   }
+
   return res.json() as T;
 }
 

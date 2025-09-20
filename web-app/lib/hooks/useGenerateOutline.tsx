@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import { postClientDataAction } from 'lib/utils/clientDataActions';
 
-async function generateOutline(params: FormType) {
+async function generateOutline(params: Partial<FormType> | FormData) {
   return await postClientDataAction<OutlineResponseType, unknown>('v1/scripts/outline/', params);
 }
 
