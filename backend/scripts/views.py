@@ -430,12 +430,17 @@ class ScriptOutlineDetailView(
         summary="Delete script outline",
         description="Delete a specific script outline by its UUID",
         responses={
-            204: OpenApiResponse(description="Script outline deleted successfully"),
+            200: OpenApiResponse(description="Script outline deleted successfully"),
             404: OpenApiResponse(description="Script outline not found"),
         },
     )
     def delete(self, request, *args, **kwargs):
-        return super().delete(request, *args, **kwargs)
+        instance = self.get_object()
+        instance.delete()
+        return Response(
+            {"message": "Script outline deleted successfully"}, 
+            status=status.HTTP_200_OK
+        )
 
 
 @extend_schema(
