@@ -19,11 +19,14 @@ async function exportScript({ uuid, format }: ExportScriptPayload) {
     throw new Error('Authentication token not found');
   }
 
-  const res = await fetch(`${baseUrl}file/${uuid}/export/?format=${format}`, {
-    method: 'GET',
+  const res = await fetch(`${baseUrl}v1/scripts/${uuid}/export/`, {
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    body: JSON.stringify({
+      format: format.toString(),
+    }),
   });
 
   if (!res.ok) {
