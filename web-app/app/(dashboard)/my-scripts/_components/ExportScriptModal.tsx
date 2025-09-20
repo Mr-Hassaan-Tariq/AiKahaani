@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { ScriptData } from '../_types';
 import { Download } from './components';
 import useExportScript from 'lib/hooks/useExportScript';
 import Button from 'components/ui/Button';
@@ -39,16 +40,13 @@ const exportOptions: ExportOption[] = [
 export default function ExportScriptModal({
   trigger,
   script,
-  actions,
 }: {
   trigger: React.ReactNode;
-  script: any;
-  actions: any;
+  script: ScriptData;
 }) {
   const [open, setOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat | null>(null);
   const { mutate: exportScript, isPending } = useExportScript();
-  console.log('actions', actions);
 
   const handleFormatChange = (format: ExportFormat, checked: boolean) => {
     if (checked) {
@@ -59,24 +57,29 @@ export default function ExportScriptModal({
   };
 
   const handleDownload = () => {
-    if (!selectedFormat) return;
+    if (!selectedFormat || !script?.uuid) return;
 
     exportScript(
-      { script, format: selectedFormat },
+      { uuid: script.uuid, format: selectedFormat },
       {
-        onSuccess: ({ blob, script, format }) => {
+        onSuccess: ({ blob, uuid, format }) => {
+          // Create download link and trigger download
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `script-${script}.${format}`;
+          a.download = `${script.title || 'script'}-${uuid}.${format}`;
           document.body.appendChild(a);
           a.click();
           a.remove();
           window.URL.revokeObjectURL(url);
+
+          // Reset form and close modal
           setSelectedFormat(null);
+          setOpen(false);
         },
         onError: (err) => {
           console.error('Export error:', err);
+          // Error toast is handled in the hook
         },
       },
     );

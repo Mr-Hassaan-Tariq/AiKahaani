@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import Draft from '@assets/svg/draft.svg';
 import { Download } from 'lucide-react';
 
@@ -11,25 +12,23 @@ import Card from 'components/ui/Card';
 import Text from 'components/ui/Text';
 
 export default function ScriptCard({ script, actions, className = '' }: ScriptCardProps) {
+  const router = useRouter();
   // Handle both original API format and legacy format
   const isCompleted = script.status === 'saved';
-  const scriptId = script.id || script.uuid;
+  const scriptId = script.uuid;
   const scriptStatus = script.type;
   const scriptTitle = script.title;
-  const lastEdited =
-    script.lastEdited ||
-    (script.modified
-      ? new Date(script.modified).toLocaleDateString('en-US', {
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric',
-        })
-      : 'Unknown');
-  const duration =
-    script.duration ||
-    (script.estimated_duration ? `${Math.round(script.estimated_duration)} min` : '0 min');
-  const wordCount =
-    script.wordCount || (script.word_count ? `${script.word_count} words` : '0 words');
+  const lastEdited = script.modified
+    ? new Date(script.modified).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : 'Unknown';
+  const duration = script.estimated_duration
+    ? `${Math.round(script.estimated_duration)} min`
+    : '0 min';
+  const wordCount = script.word_count ? `${script.word_count} words` : '0 words';
 
   return (
     <Card className={`flex flex-col justify-between text-white lg:p-6 ${className}`}>
@@ -72,12 +71,11 @@ export default function ScriptCard({ script, actions, className = '' }: ScriptCa
               </Button>
             }
             script={script}
-            actions={actions}
           />
         ) : (
           <Button
             className="bg-green-500 text-black hover:bg-green-600"
-            onClick={() => actions.onEdit(scriptId || '')}
+            onClick={() => router.push(`/new-script//${scriptId}`)}
           >
             {Edit} Edit
           </Button>

@@ -1,0 +1,39 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useMutation } from '@tanstack/react-query';
+
+import { logger } from 'lib/logger';
+import { deleteClientDataAction } from 'lib/utils/clientDataActions';
+import useToast from 'lib/utils/useToast';
+
+async function deleteScriptGeneration(uuid: string) {
+  const res = await deleteClientDataAction<{ status: number }>(`v1/scripts/outlines/${uuid}/`);
+
+  if (res.status === 204) {
+    return { success: true };
+  }
+
+  if (res.status === 404) {
+    throw new Error('Script not found');
+  }
+
+  throw new Error(`Unexpected status code: ${res.status}`);
+}
+
+export default function useDeleteScriptGeneration() {
+  const toast = useToast();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: deleteScriptGeneration,
+    onSuccess: () => {
+      toast.success('Success', 'Script deleted successfully');
+      router.refresh();
+    },
+    onError: (error: { detail: string }) => {
+      logger.error(error);
+      toast.error('Something went wrong', error.detail?.toString() || 'Failed to delete script');
+    },
+  });
+}

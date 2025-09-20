@@ -18,6 +18,7 @@ export default function ScriptsTab({
   children,
   onSearch,
   onFilter,
+  onApplyFilters,
   searchValue = '',
   className = '',
 }: ScriptsTabProps) {
@@ -71,6 +72,7 @@ export default function ScriptsTab({
                 <span className="hidden lg:block">Filters</span>
               </Button>
             }
+            onApplyFilters={onApplyFilters}
           />
         </Row>
         <div className="w-full overflow-x-auto overflow-y-visible lg:w-fit">

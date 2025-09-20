@@ -17,7 +17,7 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
       {isError ? (
         <div className="text-white">{error.message?.toString()}</div>
       ) : (
-        <ScriptComponent sections={data.sections} uuid={data?.uuid} />
+        <ScriptComponent sections={data.sections} script={data} />
       )}
     </Col>
   );

@@ -12,10 +12,10 @@ import Row from 'components/ui/Row';
 
 export default function ScriptComponent({
   sections,
-  uuid,
+  script,
 }: {
   sections: ScriptSectionType[];
-  uuid: string;
+  script: any;
 }) {
   return (
     <>
@@ -54,8 +54,7 @@ export default function ScriptComponent({
               {directFileIcon} Download
             </Button>
           }
-          script={uuid}
-          actions={undefined}
+          script={script}
         />
       </Row>
     </>

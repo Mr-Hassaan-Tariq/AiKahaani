@@ -1,39 +1,34 @@
-import { useEffect } from 'react';
+'use client';
+
 import EmptyState from '@/(dashboard)/_components/EmptyState';
 import Icon from '@assets/svg/document-list.svg';
 
 import { EMPTY_STATES } from '../_constants';
-import { useScripts } from '../_hooks/useScripts';
+import { useScriptActions } from '../_hooks/useScriptActions';
 import ScriptList from './ScriptList';
+import { ScriptGeneration } from 'lib/api/types';
 
-export default function ScriptsPage() {
-  const { filteredScripts, searchQuery, actions, loading, refetch, setSelectedMode } = useScripts({
-    useAPI: true,
-    onScriptUpdate: (updatedScripts) => {
-      console.log('Scripts updated:', updatedScripts);
-    },
-  });
+interface ScriptsPageProps {
+  initialScripts?: ScriptGeneration[];
+}
 
-  // Ensure API is filtered to scripts on mount
-  useEffect(() => {
-    setSelectedMode('script');
-    refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+export default function ScriptsPage({ initialScripts = [] }: ScriptsPageProps) {
+  const { actions } = useScriptActions();
+
+  // Filter scripts to only show full scripts
+  const scriptScripts = initialScripts.filter((script) => script.type === 'script');
 
   return (
     <ScriptList
-      scripts={filteredScripts}
+      scripts={scriptScripts}
       actions={actions}
-      loading={loading}
+      loading={false}
       emptyState={
-        searchQuery ? (
-          <EmptyState
-            icon={Icon}
-            title={EMPTY_STATES.scripts.title}
-            description={EMPTY_STATES.scripts.description}
-          />
-        ) : undefined
+        <EmptyState
+          icon={Icon}
+          title={EMPTY_STATES.scripts.title}
+          description={EMPTY_STATES.scripts.description}
+        />
       }
     />
   );

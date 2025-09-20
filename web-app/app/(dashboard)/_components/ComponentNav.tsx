@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { cn } from 'lib/utils';
 import Text from 'components/ui/Text';
 import { Button } from 'components/common/Button';
@@ -8,7 +10,7 @@ interface ComponentNavProps {
   title?: string;
   buttonText?: string;
   buttonIcon?: any;
-  _onButtonClick?: () => void;
+  _onButtonClick?: (() => void) | string;
   className?: string;
   buttonClassName?: string;
 }
@@ -31,10 +33,22 @@ export default function ComponentNav({
       <Text variant="3xl" className="text-[32px] font-semibold text-white">
         {title}
       </Text>
-      <Button className={cn('md:max-w-[200px] lg:max-w-[200px]', buttonClassName)}>
-        {buttonIcon && buttonIcon}
-        <span className="font-bold">{buttonText}</span>
-      </Button>
+      {typeof _onButtonClick === 'string' ? (
+        <Link href={_onButtonClick}>
+          <Button className={cn('md:max-w-[200px] lg:max-w-[200px]', buttonClassName)}>
+            {buttonIcon && buttonIcon}
+            <span className="font-bold">{buttonText}</span>
+          </Button>
+        </Link>
+      ) : (
+        <Button
+          className={cn('md:max-w-[200px] lg:max-w-[200px]', buttonClassName)}
+          onClick={_onButtonClick}
+        >
+          {buttonIcon && buttonIcon}
+          <span className="font-bold">{buttonText}</span>
+        </Button>
+      )}
     </div>
   );
 }

@@ -55,7 +55,7 @@ export interface ScriptActions {
 }
 
 export interface ScriptListProps {
-  scripts: ScriptData[];
+  scripts: ScriptData[] | ScriptFromAPI[];
   actions: ScriptActions;
   loading?: boolean;
   emptyState?: React.ReactNode;
@@ -63,7 +63,7 @@ export interface ScriptListProps {
 }
 
 export interface ScriptCardProps {
-  script: ScriptData;
+  script: ScriptData | ScriptFromAPI;
   actions: ScriptActions;
   className?: string;
 }
@@ -72,6 +72,7 @@ export interface ScriptsTabProps {
   children: React.ReactNode;
   onSearch?: (query: string) => void;
   onFilter?: () => void;
+  onApplyFilters?: (filters: any) => void;
   searchValue?: string;
   className?: string;
 }

@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
+import { convertURLParamsToFilters, FiltersState } from '../_utils/filterUtils';
 import { NoteIcon, TimeIcon, VideoIcon } from './components';
 import Button from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
@@ -10,12 +12,6 @@ import Text from 'components/ui/Text';
 import { Checkbox } from 'components/shadcn_ui/checkbox';
 import { RadioGroup, RadioGroupItem } from 'components/shadcn_ui/radio-group';
 import { Slider } from 'components/shadcn_ui/slider';
-
-export type FiltersState = {
-  lastEdited: string;
-  wordCount: number[];
-  videoDuration: string | null;
-};
 
 interface FilterScriptModalProps {
   trigger: React.ReactNode;
@@ -35,11 +31,25 @@ export default function FilterScriptModal({
   initialFilters = {},
 }: FilterScriptModalProps) {
   const [open, setOpen] = useState(false);
+  const searchParams = useSearchParams();
+
+  // Initialize filters from URL parameters
+  const urlFilters = convertURLParamsToFilters(searchParams);
 
   const [filters, setFilters] = useState<FiltersState>({
     ...defaultFilters,
     ...initialFilters,
+    ...urlFilters,
   });
+
+  // Update filters when URL parameters change
+  useEffect(() => {
+    const urlFilters = convertURLParamsToFilters(searchParams);
+    setFilters((prev) => ({
+      ...prev,
+      ...urlFilters,
+    }));
+  }, [searchParams]);
 
   const updateFilter = <K extends keyof FiltersState>(key: K, value: FiltersState[K]) => {
     setFilters((prev) => ({

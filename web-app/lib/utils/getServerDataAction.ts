@@ -61,23 +61,36 @@ export type ErrorResponse = {
 export async function updateServerDataAction<T>(
   endpoint: string,
   data: unknown,
+  method: 'PATCH' | 'PUT' | 'DELETE' = 'PATCH',
 ): Promise<GetServerDataActionReturnType<T>> {
   try {
     const cookieStore = await cookies();
     const userCookie = cookieStore.get('access_token');
 
-    const res = await fetch(`${baseUrl}${endpoint}`, {
-      method: 'PATCH',
+    const fetchOptions: RequestInit = {
+      method,
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${userCookie?.value}`,
       },
-      body: JSON.stringify(data),
-    });
+    };
+
+    // Only add body for non-DELETE requests
+    if (method !== 'DELETE' && data !== null) {
+      fetchOptions.body = JSON.stringify(data);
+    }
+
+    const res = await fetch(`${baseUrl}${endpoint}`, fetchOptions);
     if (!res.ok) {
       return { isError: true, error: await processError(res), data: undefined };
     }
+
+    // Handle DELETE requests that might not return JSON
+    if (method === 'DELETE' && res.status === 204) {
+      return { isError: false, error: undefined, data: { message: 'Deleted successfully' } as T };
+    }
+
     const responseData = (await res.json()) as T;
     return { isError: false, error: undefined, data: responseData };
   } catch (error) {

@@ -1,39 +1,34 @@
-import { useEffect } from 'react';
+'use client';
+
 import EmptyState from '@/(dashboard)/_components/EmptyState';
 import Icon from '@assets/svg/document-list.svg';
 
 import { EMPTY_STATES } from '../_constants';
-import { useScripts } from '../_hooks/useScripts';
+import { useScriptActions } from '../_hooks/useScriptActions';
 import ScriptList from './ScriptList';
+import { ScriptGeneration } from 'lib/api/types';
 
-export default function OutlinesPage() {
-  const { filteredScripts, searchQuery, actions, loading, refetch, setSelectedMode } = useScripts({
-    useAPI: true,
-    onScriptUpdate: (updatedScripts) => {
-      console.log('Scripts updated:', updatedScripts);
-    },
-  });
+interface OutlinesPageProps {
+  initialScripts?: ScriptGeneration[];
+}
 
-  // Ensure API is filtered to outlines on mount
-  useEffect(() => {
-    setSelectedMode('outline');
-    refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+export default function OutlinesPage({ initialScripts = [] }: OutlinesPageProps) {
+  const { actions } = useScriptActions();
+
+  // Filter scripts to only show outlines
+  const outlineScripts = initialScripts.filter((script) => script.type === 'outline');
 
   return (
     <ScriptList
-      scripts={filteredScripts}
+      scripts={outlineScripts}
       actions={actions}
-      loading={loading}
+      loading={false}
       emptyState={
-        searchQuery ? (
-          <EmptyState
-            icon={Icon}
-            title={EMPTY_STATES.outlines.title}
-            description={EMPTY_STATES.outlines.description}
-          />
-        ) : undefined
+        <EmptyState
+          icon={Icon}
+          title={EMPTY_STATES.outlines.title}
+          description={EMPTY_STATES.outlines.description}
+        />
       }
     />
   );
