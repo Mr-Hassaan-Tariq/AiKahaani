@@ -25,8 +25,8 @@ A modern, scalable full-stack web platform built with Django REST Framework and 
 - **Comprehensive Testing** - pytest with factory-boy for test data
 - **Database Management** - PostgreSQL with migrations
 
-
 ### **Frontend (Next.js)**
+
 - **Next.js 15** - Latest React framework with App Router
 - **React 19** - Latest React features and performance improvements
 - **TypeScript** - Type-safe development experience
@@ -80,7 +80,6 @@ cp .env.frontend-platform.template .env.frontend-platform
 **Important**: Update the following in your environment files:
 
 - **Backend** (`.env.backend`):
-
   - `SECRET_KEY` - Django secret key
   - `DEBUG=1` - Enable debug mode
   - `DATABASE_PASSWORD` - PostgreSQL password
@@ -288,28 +287,28 @@ pnpm type-check
 
 **Main Frontend (`frontend/`)** - Available via Docker:
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start development server |
-| `pnpm build` | Build for production |
-| `pnpm start` | Start production server |
-| `pnpm lint` | Check for linting errors |
-| `pnpm lint:fix` | Auto-fix linting issues |
-| `pnpm format` | Format code and fix issues |
-| `pnpm type-check` | Run TypeScript checking |
-| `pnpm openapi:generate` | Generate API types |
+| Command                 | Description                |
+| ----------------------- | -------------------------- |
+| `pnpm dev`              | Start development server   |
+| `pnpm build`            | Build for production       |
+| `pnpm start`            | Start production server    |
+| `pnpm lint`             | Check for linting errors   |
+| `pnpm lint:fix`         | Auto-fix linting issues    |
+| `pnpm format`           | Format code and fix issues |
+| `pnpm type-check`       | Run TypeScript checking    |
+| `pnpm openapi:generate` | Generate API types         |
 
 **Platform Frontend (`frontend-platform/`)** - Run locally:
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start development server |
-| `pnpm build` | Build for production |
-| `pnpm start` | Start production server |
-| `pnpm lint` | Check for linting errors |
-| `pnpm lint:fix` | Auto-fix linting issues |
-| `pnpm format` | Format code and fix issues |
-| `pnpm type-check` | Run TypeScript checking |
+| Command           | Description                |
+| ----------------- | -------------------------- |
+| `pnpm dev`        | Start development server   |
+| `pnpm build`      | Build for production       |
+| `pnpm start`      | Start production server    |
+| `pnpm lint`       | Check for linting errors   |
+| `pnpm lint:fix`   | Auto-fix linting issues    |
+| `pnpm format`     | Format code and fix issues |
+| `pnpm type-check` | Run TypeScript checking    |
 
 ## 🔐 Authentication
 
