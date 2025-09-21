@@ -46,3 +46,20 @@ export async function deleteScriptGeneration(uuid: string) {
 export async function updateScriptGeneration(uuid: string, updates: Partial<ScriptGeneration>) {
   return await updateServerDataAction<ScriptGeneration>(`v1/scripts/generations/${uuid}/`, updates);
 }
+
+export async function handleDeleteScript(uuid: string) {
+  try {
+    const response = await deleteScriptGeneration(uuid);
+
+    if (response && 'message' in response) {
+      // Handle success, e.g., show a toast notification
+      // Example: toast.success('Script deleted successfully');
+    } else {
+      throw new Error('Unexpected response format');
+    }
+  } catch {
+    // Handle error, e.g., show an error notification
+    // Example: toast.error('Failed to delete script');
+    // Log the error or integrate with an error tracking system
+  }
+}

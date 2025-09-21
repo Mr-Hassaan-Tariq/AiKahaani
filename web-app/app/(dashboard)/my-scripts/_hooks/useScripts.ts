@@ -88,42 +88,52 @@ export function useScripts({
   }, [scripts, searchQuery, selectedMode, useAPI]);
 
   // Script actions
-  const actions: ScriptActions = {
-    onDelete: useCallback(
-      async (id: string) => {
-        if (useAPI) {
-          try {
-            await deleteScriptAPI(id);
-          } catch (err) {
-            console.error('Failed to delete script:', err);
-            throw err;
-          }
-        } else {
-          setLocalLoading(true);
-          try {
-            setLocalScripts((prev) => {
-              const updated = prev.filter((script) => script.id !== id);
-              onScriptUpdate?.(updated);
-              return updated;
-            });
-          } catch (err) {
-            setLocalError('Failed to delete script: ' + (err as Error).message);
-          } finally {
-            setLocalLoading(false);
-          }
+  const onDelete = useCallback(
+    async (id: string) => {
+      if (useAPI) {
+        try {
+          await deleteScriptAPI(id);
+          // Handle success, e.g., show a toast notification
+          // Example: toast.success('Script deleted successfully');
+        } catch (err) {
+          // Handle error, e.g., show an error notification
+          // Example: toast.error('Failed to delete script');
+          throw err;
         }
-      },
-      [useAPI, apiScripts, deleteScriptAPI, onScriptUpdate],
-    ),
+      } else {
+        setLocalLoading(true);
+        try {
+          setLocalScripts((prev) => {
+            const updated = prev.filter((script) => script.id !== id);
+            onScriptUpdate?.(updated);
+            return updated;
+          });
+        } catch (err) {
+          setLocalError('Failed to delete script: ' + (err as Error).message);
+        } finally {
+          setLocalLoading(false);
+        }
+      }
+    },
+    [useAPI, deleteScriptAPI, onScriptUpdate],
+  );
 
-    onEdit: useCallback((id: string) => {
-      console.log('Edit script:', id);
-    }, []),
+  const onEdit = useCallback(() => {
+    // Handle edit logic here
+  }, []);
 
-    onExport: useCallback((id: string) => {
-      console.log('Export script:', id);
-    }, []),
-  };
+  const onExport = useCallback(() => {
+    // Handle export logic here
+  }, []);
+
+  const actions: ScriptActions = useMemo(
+    () => ({
+      onDelete,
+      onEdit,
+      onExport,
+    }),
+    [onDelete, onEdit, onExport],
+  );
 
   const addScript = useCallback(
     (script: Script) => {
@@ -142,12 +152,12 @@ export function useScripts({
     async (id: string, updates: Partial<Script>) => {
       if (useAPI) {
         try {
-          const apiUpdates: any = {};
+          const apiUpdates: Partial<Script> = {};
           if (updates.title) apiUpdates.title = updates.title;
           await updateScriptAPI(id, apiUpdates);
-        } catch (err) {
-          console.error('Failed to update script:', err);
-          throw err;
+        } catch {
+          // Handle error, e.g., show an error notification
+          // Example: toast.error('Failed to update script');
         }
       } else {
         setLocalScripts((prev) => {
@@ -159,7 +169,7 @@ export function useScripts({
         });
       }
     },
-    [useAPI, apiScripts, updateScriptAPI, onScriptUpdate],
+    [useAPI, updateScriptAPI, onScriptUpdate],
   );
 
   const deleteScript = useCallback(

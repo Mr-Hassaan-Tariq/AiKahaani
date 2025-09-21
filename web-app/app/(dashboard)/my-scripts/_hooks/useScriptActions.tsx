@@ -16,7 +16,6 @@ export function useScriptActions() {
         try {
           await deleteScript(id);
         } catch (err) {
-          console.error('Failed to delete script:', err);
           throw err;
         }
       },

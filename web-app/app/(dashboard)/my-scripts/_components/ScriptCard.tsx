@@ -14,7 +14,7 @@ import Text from 'components/ui/Text';
 export default function ScriptCard({ script, actions, className = '' }: ScriptCardProps) {
   const router = useRouter();
   // Handle both original API format and legacy format
-  const isCompleted = script.status === 'generated';
+  const isCompleted = script.type === 'script' && script.status === 'generated';
   const scriptId = script.uuid;
   const scriptStatus = script.type;
   const scriptTitle = script.title;
@@ -29,8 +29,6 @@ export default function ScriptCard({ script, actions, className = '' }: ScriptCa
     ? `${Math.round(script.estimated_duration)} min`
     : '0 min';
   const wordCount = script.word_count ? `${script.word_count} words` : '0 words';
-
-  console.log(script, 'script');
 
   return (
     <Card className={`flex flex-col justify-between text-white lg:p-6 ${className}`}>

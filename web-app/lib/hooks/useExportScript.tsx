@@ -23,10 +23,9 @@ async function exportScript({ uuid, format }: ExportScriptPayload) {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      format: format.toString(),
-    }),
+    body: JSON.stringify({ format }),
   });
 
   if (!res.ok) {

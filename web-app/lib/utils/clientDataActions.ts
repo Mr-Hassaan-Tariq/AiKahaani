@@ -102,12 +102,18 @@ export async function deleteClientDataAction<T>(endpoint: string) {
       Authorization: `Bearer ${token}`,
     },
   });
+
   if (!res.ok) {
-    // if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
     const error = await processError(res);
     logger.error(error);
     throw error;
   }
+
+  // Handle empty responses for DELETE requests
+  if (res.status === 204 || res.status === 200) {
+    return { status: res.status } as T;
+  }
+
   return res.json() as T;
 }
 

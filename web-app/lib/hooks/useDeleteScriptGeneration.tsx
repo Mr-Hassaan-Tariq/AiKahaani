@@ -10,14 +10,20 @@ import useToast from 'lib/utils/useToast';
 async function deleteScriptGeneration(uuid: string) {
   const res = await deleteClientDataAction<{ status: number }>(`v1/scripts/outlines/${uuid}/`);
 
-  if (res.status === 204) {
+  if (res.status === 204 || res.status === 200) {
+    // Debug: Script deleted successfully
+    // Example: logger.info('Script deleted successfully');
     return { success: true };
   }
 
   if (res.status === 404) {
+    // Debug: Script not found
+    // Example: logger.error('Script not found');
     throw new Error('Script not found');
   }
 
+  // Debug: Unexpected status code
+  // Example: logger.error(`Unexpected status code: ${res.status}`);
   throw new Error(`Unexpected status code: ${res.status}`);
 }
 
