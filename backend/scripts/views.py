@@ -25,6 +25,7 @@ from payments.permissions import HasActiveSubscriptionPermission
 
 from .filters import FullScriptFilter, ScriptOutlineFilter, generation_filters
 from .models import FullScript, ScriptOutline, TemplateStyle, Tone
+from .pagination import GenerationsLimitOffsetPagination
 from .serializers import (
     FullScriptSerializer,
     GenerateOutlineRequestSerializer,
@@ -962,7 +963,24 @@ class FullScriptListView(generics.ListAPIView):
 
 @extend_schema(
     summary="List all generations (unified)",
-    description="Retrieve a unified list of both script outlines and full scripts with filtering and sorting options. This endpoint combines both outlines and scripts into a single response with consistent formatting.",
+    description="""
+    Retrieve a unified list of both script outlines and full scripts with comprehensive filtering and sorting options.
+    
+    **Filter Combinations:**
+    - Use `type=script` to apply word_count and duration filters only to scripts
+    - Use `type=outline` to get only outlines (word_count/duration filters ignored)
+    - Combine multiple filters for precise results
+    
+    **Pagination:**
+    - Use `limit` parameter to specify number of items per page (default: 20, max: 100)
+    - Use `offset` parameter to specify starting position (default: 0)
+    - Example: `?limit=10&offset=20` returns items 21-30
+    
+    **Examples:**
+    - `?type=script&word_count_min=500&duration_max=10&limit=15` - Scripts with 500+ words, max 10 min, 15 per page
+    - `?filter_type=saved&search=tutorial&limit=5` - Saved items containing 'tutorial', 5 per page
+    - `?status=generated&ordering=-modified&limit=25&offset=50` - Generated items, newest first, page 3 (items 51-75)
+    """,
     parameters=[
         OpenApiParameter(
             name="search",
@@ -999,41 +1017,85 @@ class FullScriptListView(generics.ListAPIView):
             description="Order by field: created, modified, title, word_count, estimated_duration. Use - for descending (e.g., -created)",
             required=False,
         ),
+        OpenApiParameter(
+            name="limit",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description="Number of items to return per page (default: 20, max: 100)",
+            required=False,
+        ),
+        OpenApiParameter(
+            name="offset",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description="Number of items to skip from the beginning (default: 0)",
+            required=False,
+        ),
+        OpenApiParameter(
+            name="word_count_min",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Minimum word count for scripts (only applies to scripts, outlines are unaffected). Example: 500',
+            required=False
+        ),
+        OpenApiParameter(
+            name="word_count_max",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description='Maximum word count for scripts (only applies to scripts, outlines are unaffected). Example: 2000',
+            required=False
+        ),
+        OpenApiParameter(
+            name="duration_min",
+            type=OpenApiTypes.FLOAT,
+            location=OpenApiParameter.QUERY,
+            description='Minimum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 3.5',
+            required=False
+        ),
+        OpenApiParameter(
+            name="duration_max",
+            type=OpenApiTypes.FLOAT,
+            location=OpenApiParameter.QUERY,
+            description='Maximum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 15.0',
+            required=False
+        )
     ],
     responses={
         200: OpenApiResponse(
             response=UnifiedGenerationSerializer(many=True),
-            description="Generations retrieved successfully",
+            description="Generations retrieved successfully with pagination metadata",
         ),
         404: OpenApiResponse(description="No generations found for the given filters"),
         400: OpenApiResponse(description="Invalid filter parameters"),
     },
 )
-class GenerationsList(APIView):
+class GenerationsList(MethodSpecificThrottleMixin, generics.ListAPIView):
     """
-    Unified listing API for both outlines and scripts.
-    Handles filtering, sorting, and returning data for both outlines and scripts.
+    Unified listing API for both outlines and scripts with pagination.
+    Handles filtering, sorting, and pagination for both outlines and scripts.
     """
 
+    serializer_class = UnifiedGenerationSerializer
+    pagination_class = GenerationsLimitOffsetPagination
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
-    def get(self, request):
+    def get_queryset(self):
         """
-        Handles GET requests for unified outlines and scripts.
-        Allows filtering and sorting of the results based on the provided query parameters.
+        Get filtered queryset based on request parameters.
+        Returns a list of objects that will be serialized and paginated.
         """
         # Get filter parameters from request
-        search = request.GET.get("search", "")
-        status_filter = request.GET.get("status", "")
-        filter_type = request.GET.get("filter_type", "all")
-        type_filter = request.GET.get("type", "")
-        ordering = request.GET.get("ordering", "-created")
+        search = self.request.GET.get("search", "")
+        status_filter = self.request.GET.get("status", "")
+        filter_type = self.request.GET.get("filter_type", "all")
+        type_filter = self.request.GET.get("type", "")
+        ordering = self.request.GET.get("ordering", "-created")
 
         # Get numeric filters
-        word_count_min = request.GET.get("word_count_min")
-        word_count_max = request.GET.get("word_count_max")
-        duration_min = request.GET.get("duration_min")
-        duration_max = request.GET.get("duration_max")
+        word_count_min = self.request.GET.get("word_count_min")
+        word_count_max = self.request.GET.get("word_count_max")
+        duration_min = self.request.GET.get("duration_min")
+        duration_max = self.request.GET.get("duration_max")
 
         # Convert to integers if provided
         try:
@@ -1056,20 +1118,21 @@ class GenerationsList(APIView):
         except (ValueError, TypeError):
             duration_max = None
 
+        # Get filtered querysets using the existing filter function
         filtered_querysets = generation_filters(
             search,
             status_filter,
             filter_type,
             type_filter,
             ordering,
-            user=request.user,
+            user=self.request.user,
             word_count_min=word_count_min,
             word_count_max=word_count_max,
             duration_min=duration_min,
             duration_max=duration_max,
         )
-        serializer = UnifiedGenerationSerializer(filtered_querysets, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return filtered_querysets
 
 
 @extend_schema(
