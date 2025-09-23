@@ -63,12 +63,12 @@ export default function ExportScriptModal({
       { uuid: script.uuid, format: selectedFormat },
       {
         onSuccess: (data) => {
-          console.log('datais ', data);
           // onSuccess: ({ blob, uuid, format }) => {
           // Create download link and trigger download
           const url = data.file_url;
           const a = document.createElement('a');
           a.href = url;
+          a.target = '_blank'; // Open the URL in a new tab
           a.download = `${script.title || 'script'}-${script.uuid}.${data.format}`;
           document.body.appendChild(a);
           a.click();
