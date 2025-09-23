@@ -71,8 +71,6 @@ export default function ExportScriptModal({
 
             const response = await fetch(url);
             console.log('Response status:', response.status);
-            console.log('Response headers:', [...response.headers.entries()]);
-
             if (!response.ok) {
               throw new Error(`HTTP error! status: ${response.status}`);
             }
