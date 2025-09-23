@@ -63,20 +63,15 @@ export default function ExportScriptModal({
       { uuid: script.uuid, format: selectedFormat },
       {
         onSuccess: (data) => {
-          // onSuccess: ({ blob, uuid, format }) => {
-          // Create download link and trigger download
           const url = data.file_url;
           const a = document.createElement('a');
           a.href = url;
-          a.target = '_blank'; // Open the URL in a new tab
-          a.download = `${script.title || 'script'}-${script.uuid}.${data.format}`;
+          a.download = `${script.title || 'script'}-${script.uuid}.${data.format}`; // Always trigger download
           document.body.appendChild(a);
           a.click();
           a.remove();
           window.URL.revokeObjectURL(data.file_url);
 
-          // // Reset form and close modal
-          // setSelectedFormat(null);
           setOpen(false);
         },
         onError: (err) => {
