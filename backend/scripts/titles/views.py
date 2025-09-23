@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.mixins import MethodSpecificThrottleMixin
+from notifications.helpers import NotificationHelper
 from payments.permissions import HasActiveSubscriptionPermission
 from scripts.models import ScriptTitle, TitleTone
 from scripts.services.open_ai import OpenAIScriptService
@@ -80,6 +81,20 @@ class GenerateTitlesView(APIView, MethodSpecificThrottleMixin):
                 titles_count=len(titles),
                 prompt=prompt,
             )
+
+            # Create notification for successful title generation
+            try:
+                NotificationHelper.create_user_notification(
+                    user=request.user,
+                    title="🎬 Titles Generated Successfully!",
+                    message=f"Your {len(titles)} YouTube titles have been generated and are ready for review. Check them out in your dashboard!",
+                    notification_type="title",
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to create title generation notification: {str(e)}"
+                )
+
             return Response(
                 response_serializer.validated_data, status=status.HTTP_200_OK
             )
@@ -182,6 +197,20 @@ class GenerateTitlesOptimizedView(APIView, MethodSpecificThrottleMixin):
                         titles_count=len(titles),
                         prompt=user_prompt,
                         user_provided_title=user_title,  # Store the user provided title
+                    )
+
+                # Create notification for successful optimized title generation
+                try:
+                    optimization_type = "script-based" if script else "title-based"
+                    NotificationHelper.create_user_notification(
+                        user=request.user,
+                        title="✨ Titles Optimized Successfully!",
+                        message=f"Your {len(titles)} optimized YouTube titles have been generated using {optimization_type} optimization. Check them out in your dashboard!",
+                        notification_type="title",
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to create optimized title notification: {str(e)}"
                     )
 
                 return Response(
