@@ -63,27 +63,40 @@ export default function ExportScriptModal({
       { uuid: script.uuid, format: selectedFormat },
       {
         onSuccess: async (data) => {
-          const fileName = `${script.title || 'script'}-${script.uuid}.${data.format}`;
-          const url = `${data.file_url}?t=${Date.now()}`;
+          try {
+            const fileName = `${script.title || 'script'}-${script.uuid}.${data.format}`;
+            const url = `${data.file_url}?t=${Date.now()}`;
 
-          const response = await fetch(url);
-          const blob = await response.blob();
+            console.log('Attempting to download:', url);
 
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = fileName;
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+            const response = await fetch(url);
+            console.log('Response status:', response.status);
+            console.log('Response headers:', [...response.headers.entries()]);
 
-          // Clean up the object URL
-          URL.revokeObjectURL(link.href);
-          setOpen(false);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            console.log('Blob size:', blob.size, 'Blob type:', blob.type);
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+
+            setOpen(false);
+          } catch (error) {
+            console.error('Download failed:', error);
+            // Fallback: open in new tab
+            window.open(`${data.file_url}?t=${Date.now()}`, '_blank');
+          }
         },
         onError: (err) => {
           console.error('Export error:', err);
-          // Error toast is handled in the hook
         },
       },
     );
