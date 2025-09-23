@@ -1,0 +1,17 @@
+👉 Your TubeGenius Access Link
+
+Hi {{ user_name }},
+
+Thanks for signing up!
+
+You can access TubeGenius by clicking here: {{ magic_link }}
+
+Or paste this link into your browser:
+{{ magic_link }}
+
+Enjoy, and let's make YouTube easier than ever.
+
+– Egor from TubeGenius
+
+© 2025 TubeGenius. All rights reserved.
+TubeGenius

@@ -439,8 +439,8 @@ class ScriptOutlineDetailView(
         instance = self.get_object()
         instance.delete()
         return Response(
-            {"message": "Script outline deleted successfully"}, 
-            status=status.HTTP_200_OK
+            {"message": "Script outline deleted successfully"},
+            status=status.HTTP_200_OK,
         )
 
 
@@ -756,12 +756,12 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
     summary="List all generations (unified)",
     description="""
     Retrieve a unified list of both script outlines and full scripts with comprehensive filtering and sorting options.
-    
+
     **Filter Combinations:**
     - Use `type=script` to apply word_count and duration filters only to scripts
     - Use `type=outline` to get only outlines (word_count/duration filters ignored)
     - Combine multiple filters for precise results
-    
+
     **Examples:**
     - `?type=script&word_count_min=500&duration_max=10` - Scripts with 500+ words, max 10 min
     - `?filter_type=saved&search=tutorial` - Saved items containing 'tutorial'
@@ -787,14 +787,14 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
             description='Filter by type: "all" (default), "outline_drafts" (draft/generated outlines only), "script_drafts" (draft/generated scripts only), "saved" (saved items only)',
-            required=False
+            required=False,
         ),
         OpenApiParameter(
             name="type",
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
             description='Filter by generation type: "outline" (outlines only), "script" (scripts only). Use "script" to apply word_count/duration filters effectively.',
-            required=False
+            required=False,
         ),
         OpenApiParameter(
             name="ordering",
@@ -807,30 +807,30 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
             name="word_count_min",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-            description='Minimum word count for scripts (only applies to scripts, outlines are unaffected). Example: 500',
-            required=False
+            description="Minimum word count for scripts (only applies to scripts, outlines are unaffected). Example: 500",
+            required=False,
         ),
         OpenApiParameter(
             name="word_count_max",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-            description='Maximum word count for scripts (only applies to scripts, outlines are unaffected). Example: 2000',
-            required=False
+            description="Maximum word count for scripts (only applies to scripts, outlines are unaffected). Example: 2000",
+            required=False,
         ),
         OpenApiParameter(
             name="duration_min",
             type=OpenApiTypes.FLOAT,
             location=OpenApiParameter.QUERY,
-            description='Minimum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 3.5',
-            required=False
+            description="Minimum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 3.5",
+            required=False,
         ),
         OpenApiParameter(
             name="duration_max",
             type=OpenApiTypes.FLOAT,
             location=OpenApiParameter.QUERY,
-            description='Maximum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 15.0',
-            required=False
-        )
+            description="Maximum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 15.0",
+            required=False,
+        ),
     ],
     responses={
         200: OpenApiResponse(
@@ -1330,8 +1330,13 @@ def _export_txt(script, safe_title, timestamp):
 
 
 def _export_pdf(script, safe_title, timestamp):
+    from io import BytesIO
+
+    from pypdf import PdfReader, PdfWriter
+    from reportlab.lib.colors import darkblue
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
     from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import inch
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
@@ -1341,14 +1346,108 @@ def _export_pdf(script, safe_title, timestamp):
     full_path = os.path.join(settings.MEDIA_ROOT, filepath)
     os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
-    # Write PDF to disk
+    # Create PDF content using ReportLab (for content generation)
+    buffer = BytesIO()
     doc = SimpleDocTemplate(
-        full_path, pagesize=A4, topMargin=1 * inch, bottomMargin=1 * inch
+        buffer,
+        pagesize=A4,
+        topMargin=0.75 * inch,
+        bottomMargin=0.75 * inch,
+        leftMargin=1 * inch,
+        rightMargin=1 * inch,
     )
+
+    # Get default styles and create custom styles
     styles = getSampleStyleSheet()
-    story = [Paragraph(script.title, styles["Heading1"]), Spacer(1, 12)]
-    story.append(Paragraph(script.content, styles["Normal"]))
+
+    # Custom styles for better formatting
+    title_style = ParagraphStyle(
+        "CustomTitle",
+        parent=styles["Heading1"],
+        fontSize=18,
+        spaceAfter=20,
+        alignment=TA_CENTER,
+        textColor=darkblue,
+        fontName="Helvetica-Bold",
+    )
+
+    content_style = ParagraphStyle(
+        "CustomContent",
+        parent=styles["Normal"],
+        fontSize=11,
+        spaceAfter=12,
+        alignment=TA_JUSTIFY,
+        leftIndent=0,
+        rightIndent=0,
+        fontName="Helvetica",
+    )
+
+    # Build the story with better formatting
+    story = []
+
+    # Add title
+    story.append(Paragraph(script.title, title_style))
+    story.append(Spacer(1, 20))
+
+    # Process content to improve formatting
+    content_lines = script.content.split("\n")
+    for line in content_lines:
+        line = line.strip()
+        if not line:
+            story.append(Spacer(1, 6))
+            continue
+
+        # Handle different types of content
+        if line.startswith("[") and line.endswith("]"):
+            # This is a stage direction or section header
+            section_style = ParagraphStyle(
+                "SectionHeader",
+                parent=styles["Heading2"],
+                fontSize=12,
+                spaceAfter=8,
+                spaceBefore=12,
+                textColor=darkblue,
+                fontName="Helvetica-Bold",
+            )
+            story.append(Paragraph(line, section_style))
+        elif line.startswith("**") and line.endswith("**"):
+            # This is a bold section
+            bold_style = ParagraphStyle(
+                "BoldText",
+                parent=styles["Normal"],
+                fontSize=11,
+                spaceAfter=8,
+                spaceBefore=6,
+                fontName="Helvetica-Bold",
+            )
+            story.append(Paragraph(line, bold_style))
+        else:
+            # Regular content
+            story.append(Paragraph(line, content_style))
+
     doc.build(story)
+
+    # Get the PDF content from buffer
+    buffer.seek(0)
+    pdf_content = buffer.getvalue()
+    buffer.close()
+
+    # Use pypdf to process and write the final PDF
+    pdf_writer = PdfWriter()
+
+    # Create a temporary PDF reader from the content
+    temp_buffer = BytesIO(pdf_content)
+    pdf_reader = PdfReader(temp_buffer)
+
+    # Add all pages to the writer using pypdf
+    for page in pdf_reader.pages:
+        pdf_writer.add_page(page)
+
+    # Write the final PDF using pypdf's write method
+    with open(full_path, "wb") as output_file:
+        pdf_writer.write(output_file)
+
+    temp_buffer.close()
 
     file_url = settings.MEDIA_URL + filepath
     return {"file_url": file_url}

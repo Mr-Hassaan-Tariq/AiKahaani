@@ -6,6 +6,7 @@ import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from google.auth.transport import requests as google_requests
@@ -303,14 +304,31 @@ class MagicLinkLoginAPIView(MethodSpecificThrottleMixin, APIView):
         )
         magic_link = f"{settings.FRONTEND_URL}/magic-link?token={token.token}"
 
-        # Send magic link email using Anymail
+        # Send magic link email using template
         try:
+            # Prepare context for template
+            context = {
+                "user_name": user.fullname or user.username,
+                "magic_link": magic_link,
+            }
+
+            # Choose template based on whether user is new or existing
+            if created:
+                # New user signup
+                html_message = render_to_string("mails/magic_link_signup.html", context)
+                plain_message = render_to_string("mails/magic_link_signup.txt", context)
+            else:
+                # Existing user login
+                html_message = render_to_string("mails/magic_link_login.html", context)
+                plain_message = render_to_string("mails/magic_link_login.txt", context)
+
             send_mail(
-                "Your Magic Link",
-                f"Click this link to log in: {magic_link}",
+                "👉 Your TubeGenius Access Link",
+                plain_message,
                 settings.DEFAULT_FROM_EMAIL,
                 [email],
                 fail_silently=False,
+                html_message=html_message,
             )
             return Response(
                 {"message": "Magic link sent to your email"}, status=status.HTTP_200_OK
