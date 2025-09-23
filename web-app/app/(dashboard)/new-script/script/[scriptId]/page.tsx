@@ -10,9 +10,7 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
   return (
     <Col className="gap-8">
       <Col className="w-full items-center">
-        <H3 className="text-center">
-          Full Script: <br /> Top 5 Productivity Hacks That Actually Work
-        </H3>
+        <H3 className="text-center">{data?.title || 'Untitled Script'}</H3>
       </Col>
       {isError ? (
         <div className="text-white">{error.message?.toString()}</div>

@@ -1,3 +1,4 @@
+import PaginationClient from '../../../../components/common/PaginationClient';
 import { getScriptGenerations, ScriptFilters } from '../actions';
 import MyScriptsList from './MyScriptsList';
 import MyScriptsTabWrapper from './MyScriptsTabWrapper';
@@ -13,12 +14,17 @@ interface MyScriptsContentProps {
     word_count_max?: string;
     duration_min?: string;
     duration_max?: string;
+    page?: string;
+    limit?: string;
   };
 }
 
 export default async function MyScriptsContent({ searchParams }: MyScriptsContentProps) {
   const query = searchParams?.query;
   const search = searchParams?.search;
+
+  const currentPage = searchParams?.page ? parseInt(searchParams.page) : 1;
+  const pageSize = searchParams?.limit ? parseInt(searchParams.limit) : 10;
 
   // Build filters object from search params
   const filters: ScriptFilters = {
@@ -33,6 +39,8 @@ export default async function MyScriptsContent({ searchParams }: MyScriptsConten
       : undefined,
     duration_min: searchParams?.duration_min ? parseInt(searchParams.duration_min) : undefined,
     duration_max: searchParams?.duration_max ? parseInt(searchParams.duration_max) : undefined,
+    limit: pageSize,
+    offset: (currentPage - 1) * pageSize,
   };
 
   // Fetch initial data server-side
@@ -41,16 +49,16 @@ export default async function MyScriptsContent({ searchParams }: MyScriptsConten
   // Render content based on query
   const renderContent = () => {
     if (query === 'outlines') {
-      return <OutlinesPage initialScripts={initialScripts} />;
+      return <OutlinesPage initialScripts={initialScripts?.results} />;
     }
 
     if (query === 'scripts') {
-      return <ScriptsPage initialScripts={initialScripts} />;
+      return <ScriptsPage initialScripts={initialScripts?.results} />;
     }
 
     return (
       <MyScriptsList
-        initialScripts={initialScripts}
+        initialScripts={initialScripts?.results}
         error={error}
         isError={isError}
         searchQuery={search}
@@ -58,5 +66,15 @@ export default async function MyScriptsContent({ searchParams }: MyScriptsConten
     );
   };
 
-  return <MyScriptsTabWrapper searchValue={search}>{renderContent()}</MyScriptsTabWrapper>;
+  return (
+    <>
+      <MyScriptsTabWrapper searchValue={search}>{renderContent()}</MyScriptsTabWrapper>
+      <PaginationClient
+        currentPage={currentPage}
+        totalCount={initialScripts?.count || 0}
+        pageSize={pageSize}
+        searchParams={searchParams}
+      />
+    </>
+  );
 }

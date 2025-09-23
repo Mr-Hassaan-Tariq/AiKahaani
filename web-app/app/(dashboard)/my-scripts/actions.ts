@@ -11,6 +11,8 @@ export interface ScriptFilters {
   word_count_max?: number;
   duration_min?: number;
   duration_max?: number;
+  limit?: number;
+  offset?: number;
 }
 
 export async function getScriptGenerations(filters: ScriptFilters = {}) {
@@ -28,11 +30,13 @@ export async function getScriptGenerations(filters: ScriptFilters = {}) {
     params.append('duration_min', filters.duration_min.toString());
   if (filters.duration_max !== undefined)
     params.append('duration_max', filters.duration_max.toString());
+  if (filters.limit !== undefined) params.append('limit', filters.limit.toString());
+  if (filters.offset !== undefined) params.append('offset', filters.offset.toString());
 
   const queryString = params.toString();
   const endpoint = `v1/scripts/generations/${queryString ? `?${queryString}` : ''}`;
 
-  return await getServerDataAction<ScriptGeneration[]>(endpoint);
+  return await getServerDataAction<{ count: number; results: ScriptGeneration[] }>(endpoint);
 }
 
 export async function deleteScriptGeneration(uuid: string) {

@@ -12,7 +12,10 @@ export interface ExportScriptPayload {
   format: 'docx' | 'pdf' | 'txt';
 }
 
-async function exportScript({ uuid, format }: ExportScriptPayload) {
+async function exportScript({
+  uuid,
+  format,
+}: ExportScriptPayload): Promise<{ file_url: string; format: string }> {
   const token = Cookies.get('access_token');
 
   if (!token) {
@@ -41,8 +44,9 @@ async function exportScript({ uuid, format }: ExportScriptPayload) {
     throw new Error(`Export failed with status: ${res.status}`);
   }
 
-  const blob = await res.blob();
-  return { blob, uuid, format };
+  const file = await res.json();
+
+  return { format: format, ...file };
 }
 
 export default function useExportScript() {

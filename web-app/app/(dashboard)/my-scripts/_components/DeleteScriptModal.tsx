@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { useDeleteOutlineGeneration } from 'lib/hooks/useDeleteScriptGeneration';
 import Button from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
 import Row from 'components/ui/Row';
@@ -18,7 +19,14 @@ export default function DeletePhotoModal({
 }) {
   const [open, setOpen] = useState(false);
 
+  const { mutate: deleteScript, isPending: isDeleting } = useDeleteOutlineGeneration();
   function handleDelete() {
+    if (isDeleting) return;
+
+    if (script.type === 'script' && script.status === 'generated') {
+      deleteScript(script.uuid);
+      return;
+    }
     actions.onDelete?.(script.uuid);
     setOpen(false);
   }

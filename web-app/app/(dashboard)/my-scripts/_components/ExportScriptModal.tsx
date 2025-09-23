@@ -62,19 +62,21 @@ export default function ExportScriptModal({
     exportScript(
       { uuid: script.uuid, format: selectedFormat },
       {
-        onSuccess: ({ blob, uuid, format }) => {
+        onSuccess: (data) => {
+          console.log('datais ', data);
+          // onSuccess: ({ blob, uuid, format }) => {
           // Create download link and trigger download
-          const url = window.URL.createObjectURL(blob);
+          const url = data.file_url;
           const a = document.createElement('a');
           a.href = url;
-          a.download = `${script.title || 'script'}-${uuid}.${format}`;
+          a.download = `${script.title || 'script'}-${script.uuid}.${data.format}`;
           document.body.appendChild(a);
           a.click();
           a.remove();
-          window.URL.revokeObjectURL(url);
+          window.URL.revokeObjectURL(data.file_url);
 
-          // Reset form and close modal
-          setSelectedFormat(null);
+          // // Reset form and close modal
+          // setSelectedFormat(null);
           setOpen(false);
         },
         onError: (err) => {
