@@ -139,6 +139,7 @@ INSTALLED_APPS = [
     "payments",
     "scripts",
     "django_filters",
+    "notifications",
 ] + THIRD_PARTY_APPS
 
 ######################################################################
