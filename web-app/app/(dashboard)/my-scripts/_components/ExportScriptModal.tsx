@@ -62,17 +62,25 @@ export default function ExportScriptModal({
     exportScript(
       { uuid: script.uuid, format: selectedFormat },
       {
-        onSuccess: (data) => {
-          const url = data.file_url;
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${script.title || 'script'}-${script.uuid}.${data.format}`; // Always trigger download
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(data.file_url);
+        onSuccess: async (data) => {
+          try {
+            const response = await fetch(data.file_url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
 
-          setOpen(false);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `${script.title || 'script'}-${script.uuid}.${data.format}`; // Force download for all formats
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(blobUrl); // Clean up the blob URL
+
+            setOpen(false);
+          } catch (error) {
+            console.error('Download error:', error);
+          }
         },
         onError: (err) => {
           console.error('Export error:', err);
