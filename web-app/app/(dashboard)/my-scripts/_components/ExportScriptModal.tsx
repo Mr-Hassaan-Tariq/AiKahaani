@@ -62,36 +62,22 @@ export default function ExportScriptModal({
     exportScript(
       { uuid: script.uuid, format: selectedFormat },
       {
-        onSuccess: async (data) => {
-          try {
-            const fileName = `${script.title || 'script'}-${script.uuid}.${data.format}`;
-            const url = `${data.file_url}?t=${Date.now()}`;
-
-            console.log('Attempting to download:', url);
-
-            const response = await fetch(url);
-            console.log('Response status:', response.status);
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const blob = await response.blob();
-            console.log('Blob size:', blob.size, 'Blob type:', blob.type);
-
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-
-            setOpen(false);
-          } catch (error) {
-            console.error('Download failed:', error);
-            // Fallback: open in new tab
-            window.open(`${data.file_url}?t=${Date.now()}`, '_blank');
+        onSuccess: (data) => {
+          if (data.format === 'docx') {
+            // For DOCX: Download/open in current tab
+            const a = document.createElement('a');
+            a.href = data.file_url;
+            a.download = `${script.title || 'script'}-${script.uuid}.${data.format}`;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          } else {
+            // For other formats: Redirect to new page
+            window.open(data.file_url, '_blank');
           }
+
+          setOpen(false);
         },
         onError: (err) => {
           console.error('Export error:', err);
