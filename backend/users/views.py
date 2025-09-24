@@ -19,6 +19,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.mixins import MethodSpecificThrottleMixin
+from notifications.choices import NotificationType
+from notifications.helpers import NotificationHelper
 
 from .models import BlacklistedAccessToken, EmailVerificationToken, MagicLinkToken
 from .serializers import (
@@ -126,6 +128,17 @@ class GoogleLoginAPIView(MethodSpecificThrottleMixin, APIView):
 
             user, created = self.get_or_create_user(idinfo)
             refresh = RefreshToken.for_user(user)
+
+            # Create welcome back notification for successful login
+            try:
+                NotificationHelper.create_user_notification(
+                    user=user,
+                    title="Welcome back to TubeGenius!",
+                    message=f"Welcome back to TubeGenius, {user.fullname or user.username}!",
+                    notification_type=NotificationType.ACCOUNT,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to create login notification: {str(e)}")
 
             data = {
                 "access": str(refresh.access_token),
@@ -574,6 +587,17 @@ class MagicLinkVerifyAPIView(MethodSpecificThrottleMixin, APIView):
             link_token.delete()  # Invalidate the used token
 
             refresh = RefreshToken.for_user(user)
+
+            # Create welcome back notification for successful login
+            try:
+                NotificationHelper.create_user_notification(
+                    user=user,
+                    title="Welcome back to TubeGenius!",
+                    message=f"Welcome back to TubeGenius, {user.fullname or user.username}!",
+                    notification_type=NotificationType.ACCOUNT,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to create login notification: {str(e)}")
 
             return Response(
                 {

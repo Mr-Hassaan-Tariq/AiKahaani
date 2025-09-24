@@ -20,6 +20,7 @@ class Notification(models.Model):
     title = models.CharField(max_length=255)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    metadata = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return f"{self.get_type_display()}: {self.title}"
@@ -30,10 +31,17 @@ class UserNotification(models.Model):
     global_notification = models.ForeignKey(
         Notification, on_delete=models.CASCADE, null=True, blank=True
     )
+    type = models.CharField(
+        max_length=50,
+        choices=NotificationType.choices,
+        null=True,
+        blank=True,
+    )
     message = models.TextField(null=True, blank=True)
     title = models.CharField(max_length=255, null=True, blank=True)
     read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    metadata = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return f"Notif for {self.user.email} - {self.title or self.global_notification.title}"

@@ -1,38 +1,68 @@
+from django.db import models
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.mixins import MethodSpecificThrottleMixin
+from notifications.choices import NotificationType
 from notifications.models import UserNotification
 from notifications.serializers import UserNotificationSerializer
+from scripts.pagination import GenerationsLimitOffsetPagination
 
 
 class UserNotificationListView(MethodSpecificThrottleMixin, generics.ListAPIView):
     serializer_class = UserNotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = GenerationsLimitOffsetPagination
 
     @extend_schema(
         tags=["Notifications"],
-        summary="Get user notifications",
+        summary="List user notifications",
         description="""
-            Retrieve a list of notifications for the authenticated user.
+            Retrieve paginated notifications for the authenticated user.
 
-            - Results are ordered by newest first (`created_at`).
-            - Supports optional filtering by read/unread state.
+            - Requires authentication.
+            - Returns notifications ordered by creation date (newest first).
+            - Optional query parameter 'read' to filter by read/unread status.
+            - Optional query parameter 'type' to filter by notification type.
+            - Supports pagination with 'limit' and 'offset' parameters.
             """,
         parameters=[
             OpenApiParameter(
                 name="read",
                 type=OpenApiTypes.BOOL,
                 location=OpenApiParameter.QUERY,
+                description="Filter notifications by read status (true/false)",
                 required=False,
-                description="Filter notifications by read state. "
-                "`true` = only read, `false` = only unread.",
-            )
+            ),
+            OpenApiParameter(
+                name="type",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=f"Filter notifications by type. Available types: {', '.join([choice[0] for choice in NotificationType.choices])}",
+                required=False,
+                enum=[choice[0] for choice in NotificationType.choices],
+            ),
+            OpenApiParameter(
+                name="limit",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Number of notifications to return per page (default: 20, max: 100)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="offset",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Number of notifications to skip from the beginning (default: 0)",
+                required=False,
+            ),
         ],
-        responses={200: UserNotificationSerializer(many=True)},
     )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
         user = self.request.user
         queryset = UserNotification.objects.filter(user=user).order_by("-created_at")
@@ -41,6 +71,17 @@ class UserNotificationListView(MethodSpecificThrottleMixin, generics.ListAPIView
         read = self.request.query_params.get("read")
         if read is not None:
             queryset = queryset.filter(read=(read.lower() == "true"))
+
+        # Optional filtering by notification type
+        notification_type = self.request.query_params.get("type")
+        if notification_type is not None:
+            # Filter by UserNotification.type if it exists, otherwise by global_notification.type
+            queryset = queryset.filter(
+                models.Q(type=notification_type)
+                | models.Q(
+                    type__isnull=True, global_notification__type=notification_type
+                )
+            )
 
         return queryset
 
