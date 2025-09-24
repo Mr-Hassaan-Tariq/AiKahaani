@@ -210,32 +210,67 @@ Make the title clickable and engaging for YouTube, and the description detailed 
             tone_text = f"Tone: {tones[0] if isinstance(tones, list) else tones}"
 
         return f"""
-Create a detailed script outline for a YouTube video with the following requirements:
+Create a detailed script outline for a YouTube video following proven optimization strategies:
 
 Topic: {description}
 {tone_text}
 Style: {template_style}
 Target Length: {min_length}-{max_length} words
 
-Please structure the outline with:
-1. Hook/Opening (attention-grabbing start)
-2. Introduction (brief topic overview)
-3. Main Content (3-5 key points with subpoints)
-4. Call to Action (engagement request)
-5. Closing (memorable ending)
+## OUTLINE STRUCTURE (Following YouTube Best Practices):
 
-For each section, provide:
+**1. Hook/Opening (≤30 seconds)**
+- Start with ACTION from first line (avoid slow exposition)
+- Create 2-3 open-loop questions that will be resolved later
+- Include a dramatic, emotionally charged micro-scene (3-6 sentences)
+- Ensure hook contains action verbs in first 1-2 sentences
+- Plan for fast-paced visuals with shot changes every 1-3 seconds
+
+**2. Introduction/Context (30-60 seconds)**
+- Anchor viewers so they know they're in the right video
+- Don't repeat title verbatim - add surprising angle while staying coherent
+- If premise is unbelievable, immediately confirm with proof
+- Seed key plot points or value propositions
+
+**3. Main Content (bulk of video)**
+- Deliver on the promise made in title/thumbnail
+- Structure as 3-5 key points with clear subpoints
+- Include specific examples and evidence
+- Plan for visual variety and engagement
+
+**4. Call to Action (after delivering value)**
+- Place after meaningful value has been delivered
+- Encourage engagement without being pushy
+- Include clear next steps for viewers
+
+**5. Closing (memorable ending)**
+- Summarize key takeaways
+- End on a strong, memorable note
+- Avoid abrupt endings
+
+## FOR EACH SECTION, PROVIDE:
 - Brief description of what to cover
-- Key talking points
-- Estimated timing
-- Transition notes
+- Key talking points with specific examples
+- Estimated timing (total video should be appropriate for {template_style} style)
+- Transition notes to next section
+- Visual/editing suggestions where relevant
 
-{f'Make it engaging and blend the {", ".join(tones)} tones naturally throughout the content.' if isinstance(tones, list) and len(tones) > 1 else f'Make it engaging and suitable for the {tones[0] if isinstance(tones, list) else tones} tone.'} Ensure the final script will be between {min_length} and {max_length} words.
+{f'Make it engaging and blend the {", ".join(tones)} tones naturally throughout the content.' if isinstance(tones, list) and len(tones) > 1 else f'Make it engaging and suitable for the {tones[0] if isinstance(tones, list) else tones} tone.'} 
+
+## VALIDATION CHECKLIST:
+- Hook ≤ 30 seconds with action verbs
+- At least 2 open-loop questions in opening
+- No channel trailer/CTA in first 30 seconds
+- Fast-paced intro with visual variety
+- Value delivered early in main content
+- Clear transitions between sections
+
+Ensure the final script will be between {min_length} and {max_length} words.
 """
 
     @staticmethod
     def _build_script_prompt(outline_text: str, script_data: Dict[str, Any]) -> str:
-        """Build prompt for full script generation"""
+        """Build prompt for full script generation using advanced YouTube optimization strategies"""
         tones = script_data.get("tones", ["informative"])
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
@@ -247,23 +282,69 @@ For each section, provide:
             tone_text = f"Tone: {tones[0] if isinstance(tones, list) else tones}"
 
         return f"""
-Based on the following outline, write a complete, detailed YouTube script:
+You are an expert YouTube script writer with deep knowledge of proven optimization strategies. Write a complete, engaging YouTube script following these advanced principles:
 
-OUTLINE:
+## 7 STRATEGIES FOR BETTER OPENINGS:
+
+**S1 - Action-First Openings:**
+- Start with action from the first line, avoid slow exposition
+- Begin inside a dramatic, emotionally charged scene
+- Hook contains an action verb in the first 1-2 sentences
+- Micro-scene length: 3-6 sentences, duration ≤ 30 seconds
+
+**S2 - Open Loops & Reasons to Keep Watching:**
+- Present unanswered questions the video will resolve
+- Include transformation lines: "Learn X to achieve Y"
+- Seed future plot points in first 30-60 seconds
+- At least 2 open-loop questions in the hook
+
+**S3 - Write Hook After Finishing Script:**
+- Preview strongest beats without spoiling outcomes
+- Reference at least 2 later beats in the hook
+- Ensure alignment with title/thumbnail promises
+
+**S4 - Balance Expectations with Surprise:**
+- Don't repeat title/thumbnail verbatim
+- If premise is unbelievable, confirm instantly with proof
+- Anchor viewers within 2 lines so they know they're in the right video
+
+**S5 - Dense Editing & Fast Pace:**
+- Plan 20-45 second fast-cut sequence
+- Layer modalities: visuals + text + SFX + music cues
+- Average shot length ≤ 3 seconds in intro
+- Reduce to baseline pace after hook
+
+**S6 - Get to Main Content Fast:**
+- Hook ≤ 30 seconds (exceptions justified)
+- Start with first value point within 10 seconds of hook end
+- Deliver promised value quickly
+
+**S7 - No Channel Trailer/CTA in Opening:**
+- No subscribe request in first 30 seconds
+- No personal updates in first 30-45 seconds
+- First 10 seconds deliver topic value
+
+## SCRIPT REQUIREMENTS:
+
+OUTLINE TO FOLLOW:
 {outline_text}
 
-REQUIREMENTS:
+TECHNICAL SPECS:
 - {tone_text}
 - Target Length: {min_length}-{max_length} words
-- Write in a conversational, engaging style
-- Include natural transitions between sections
-- Add specific examples and details
 - Write exactly what the speaker should say
-- Include [PAUSE], [VISUAL], or [EMPHASIS] cues where helpful
+- Include [PAUSE], [VISUAL], [EMPHASIS] cues where helpful
+- Add [SHOT CHANGES] and [B-ROLL] suggestions
 - Make it flow naturally when spoken aloud
-- Ensure the final script is between {min_length} and {max_length} words
 
-{f'Write the complete script blending the {", ".join(tones)} tones naturally with engaging content.' if isinstance(tones, list) and len(tones) > 1 else f'Write the complete script in a {tones[0] if isinstance(tones, list) else tones} tone with engaging content.'}
+STRUCTURE VALIDATION:
+- Opening hook ≤ 30 seconds with action verbs
+- At least 2 open-loop questions that resolve later
+- Fast-paced intro with layered visual cues
+- Clear transitions between sections
+- Value delivered early, CTAs placed after value
+
+{f'Write the complete script blending the {", ".join(tones)} tones naturally while following these optimization strategies.' if isinstance(tones, list) and len(tones) > 1 else f'Write the complete script in a {tones[0] if isinstance(tones, list) else tones} tone following these optimization strategies.'}
 """
 
     @staticmethod
