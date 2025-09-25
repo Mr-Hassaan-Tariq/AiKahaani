@@ -15,7 +15,7 @@ import Text from 'components/ui/Text';
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data } = await getUserProfile();
   return (
-    <div className="h-[100dvh] min-h-screen w-full overflow-hidden bg-[#0E0F0C]">
+    <div className="h-[100dvh] min-h-screen w-full bg-[#0E0F0C]">
       <div className="mx-auto flex">
         {/* Desktop Sidebar */}
         <div className="hidden h-screen lg:block lg:w-[265px]">
@@ -69,7 +69,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </Row>
           </Row>
           <div className="mx-auto mt-14 max-w-screen-2xl px-4 py-10 lg:mt-0 lg:px-16 lg:py-16">
-            {children}
+            <div className="relative z-10">{children}</div>
+            <div className="absolute bottom-0 right-0 z-0 rotate-180 bg-[radial-gradient(circle_at_top_left,#1a2e1d,transparent_40%)]">
+              <Image src={'/BgGrid.svg'} width={1000} height={1000} alt="bottomLogo" />
+            </div>
           </div>
         </div>
       </div>

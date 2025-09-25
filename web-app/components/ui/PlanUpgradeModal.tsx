@@ -242,7 +242,7 @@ export function ViewTrialPlanModal({
       trigger={trigger}
       title="Welcome to TubeGenius!"
       description="Your journey to smarter content creation starts now!"
-      className="sm:max-w-[983px]"
+      className="sm:max-w-[983px] lg:max-w-[680px]"
       closeActionButton={null}
       outsideInteract={false}
     >
@@ -442,7 +442,7 @@ function TrailWidget({ data, handleUpgrade, isTrial = false, onOpenAllPlans }: T
           ))}
       </Row>
       {isTrial && (
-        <p className="text-center text-sm text-white">
+        <p className="text-center text-[12px] text-white">
           After 7 days, your plan will automatically continue as the Premium ($45/month){' '}
           <span className="text-[#2BFF13]">Terms & Conditions↗</span>
         </p>
