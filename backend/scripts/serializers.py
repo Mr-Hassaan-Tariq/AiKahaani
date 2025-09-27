@@ -42,6 +42,7 @@ class ScriptOutlineUpdateSerializer(serializers.ModelSerializer):
 
 class FullScriptSerializer(serializers.ModelSerializer):
     outline_title = serializers.CharField(source='outline.title', read_only=True)
+    sections = serializers.JSONField(help_text="Script sections for card-based display")
 
     class Meta:
         model = FullScript
@@ -69,13 +70,14 @@ class GenerateOutlineRequestSerializer(serializers.Serializer):
     description = serializers.CharField(max_length=2000, required=False, allow_blank=True)
     tones = serializers.ListField(
         child=serializers.IntegerField(),
-        min_length=1,
-        help_text="List of tone IDs to use for outline generation"
+        required=False,
+        allow_empty=True,
+        help_text="List of tone IDs to use for outline generation (optional)"
     )
     template_style = serializers.IntegerField(required=False, allow_null=True)
     min_length = serializers.IntegerField(default=100, min_value=50, max_value=5000)
     max_length = serializers.IntegerField(default=1000, min_value=100, max_value=10000)
-    title = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    title = serializers.CharField(max_length=300, required=False, allow_blank=True)
     image = serializers.ImageField(required=False, allow_null=True, help_text="Image file to analyze for generating title/description")
     image_url = serializers.URLField(required=False, allow_blank=True, help_text="Image URL to analyze for generating title/description")
     
@@ -114,7 +116,7 @@ class GenerateScriptRequestSerializer(serializers.Serializer):
     template_style = serializers.CharField(default="medium")
     min_length = serializers.IntegerField(default=1000, min_value=500, max_value=10000)
     max_length = serializers.IntegerField(default=5000, min_value=1000, max_value=20000)
-    title = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    title = serializers.CharField(max_length=300, required=False, allow_blank=True)
 
 
 class GenerateScriptResponseSerializer(serializers.Serializer):

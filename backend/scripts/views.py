@@ -147,7 +147,7 @@ def generate_script_outline(request):
     description = validated_data.get("description", "")
     image = validated_data.get("image")
     image_url = validated_data.get("image_url", "")
-    tone_ids = validated_data["tones"]
+    tone_ids = validated_data.get("tones", [])
     template_style_id = validated_data.get("template_style")
     min_length = validated_data.get("min_length", 100)
     max_length = validated_data.get("max_length", 1000)
@@ -181,12 +181,26 @@ def generate_script_outline(request):
             )
 
     try:
-        tones = Tone.objects.filter(id__in=tone_ids)
-        if len(tones) != len(tone_ids):
-            return Response(
-                {"error": "One or more invalid tone IDs provided"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # Handle optional tones - if no tones provided, use default "Informative" tone
+        if tone_ids:
+            tones = Tone.objects.filter(id__in=tone_ids)
+            if len(tones) != len(tone_ids):
+                return Response(
+                    {"error": "One or more invalid tone IDs provided"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            # Use default "Informative" tone if no tones provided
+            default_tone = Tone.objects.filter(name__iexact="Informative").first()
+            if not default_tone:
+                # If "Informative" doesn't exist, get the first available tone
+                default_tone = Tone.objects.first()
+                if not default_tone:
+                    return Response(
+                        {"error": "No tones available in the system"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+            tones = [default_tone]
 
         template_style = None
         if template_style_id:
@@ -279,10 +293,17 @@ def recreate_script_outline(request, uuid):
         # Get tones from the original outline
         tones = list(original_outline.tones.all())
         if not tones:
-            return Response(
-                {"error": "Cannot recreate outline: original outline has no tones"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            # Use default "Informative" tone if original outline has no tones
+            default_tone = Tone.objects.filter(name__iexact="Informative").first()
+            if not default_tone:
+                # If "Informative" doesn't exist, get the first available tone
+                default_tone = Tone.objects.first()
+                if not default_tone:
+                    return Response(
+                        {"error": "No tones available in the system"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+            tones = [default_tone]
 
         # Try to extract template style from the script if it exists
         template_style = None

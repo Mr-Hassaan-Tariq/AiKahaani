@@ -198,6 +198,10 @@ Make the title clickable and engaging for YouTube, and the description detailed 
     def _build_outline_prompt(script_data: Dict[str, Any]) -> str:
         """Build prompt for outline generation"""
         tones = script_data.get("tones", ["informative"])
+        # Ensure we always have at least one tone
+        if not tones or (isinstance(tones, list) and len(tones) == 0):
+            tones = ["informative"]
+        
         template_style = script_data.get("template_style", "medium")
         description = script_data.get("description", "")
         min_length = script_data.get("min_length", 100)
@@ -272,6 +276,10 @@ Ensure the final script will be between {min_length} and {max_length} words.
     def _build_script_prompt(outline_text: str, script_data: Dict[str, Any]) -> str:
         """Build prompt for full script generation using advanced YouTube optimization strategies"""
         tones = script_data.get("tones", ["informative"])
+        # Ensure we always have at least one tone
+        if not tones or (isinstance(tones, list) and len(tones) == 0):
+            tones = ["informative"]
+            
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
 
@@ -654,12 +662,15 @@ Generate improved, more engaging YouTube title variations that maintain the orig
 
     @staticmethod
     def _parse_script_sections(script_content: str) -> list:
-        """Parse script content into sections"""
+        """Parse script content into sections with timestamps for card-based display"""
         sections = []
-        current_section = {"title": "Opening", "content": ""}
+        current_section = {"title": "Opening", "content": "", "start_time": "0:00", "end_time": "0:10"}
+        section_counter = 0
+        time_per_section = 15  # seconds per section
 
         for line in script_content.split("\n"):
-            if line.strip().upper() in [
+            line_upper = line.strip().upper()
+            if line_upper in [
                 "HOOK:",
                 "INTRODUCTION:",
                 "MAIN CONTENT:",
@@ -668,7 +679,20 @@ Generate improved, more engaging YouTube title variations that maintain the orig
             ]:
                 if current_section["content"].strip():
                     sections.append(current_section)
-                current_section = {"title": line.strip(), "content": ""}
+                    section_counter += 1
+                
+                # Calculate timestamps for new section
+                start_seconds = section_counter * time_per_section
+                end_seconds = (section_counter + 1) * time_per_section
+                start_time = f"{start_seconds // 60}:{start_seconds % 60:02d}"
+                end_time = f"{end_seconds // 60}:{end_seconds % 60:02d}"
+                
+                current_section = {
+                    "title": line.strip().replace(":", ""),
+                    "content": "",
+                    "start_time": start_time,
+                    "end_time": end_time
+                }
             else:
                 current_section["content"] += line + "\n"
 
