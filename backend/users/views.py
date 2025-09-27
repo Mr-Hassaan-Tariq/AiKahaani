@@ -24,6 +24,8 @@ from notifications.helpers import NotificationHelper
 
 from .models import BlacklistedAccessToken, EmailVerificationToken, MagicLinkToken
 from .serializers import (
+    AdminLoginResponseSerializer,
+    AdminLoginSerializer,
     GoogleAuthInputSerializer,
     LogoutSerializer,
     MagicLinkLoginSerializer,
@@ -32,6 +34,8 @@ from .serializers import (
     MagicLinkVerifySuccessResponseSerializer,
     MessageResponseSerializer,
     ProfilePictureUploadSerializer,
+    RefreshTokenResponseSerializer,
+    RefreshTokenSerializer,
     UserDetailsUpdateSerializer,
     UserSerializer,
     UserSignupSerializer,
@@ -755,3 +759,134 @@ class UserProfilePictureAPIView(MethodSpecificThrottleMixin, APIView):
         user.profile_picture = None
         user.save()
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
+
+class AdminLoginView(MethodSpecificThrottleMixin, APIView):
+    """
+    Admin login endpoint that accepts email and password.
+    Only users with admin role can login through this endpoint.
+    """
+
+    permission_classes = [AllowAny]
+    serializer_class = AdminLoginSerializer
+
+    @extend_schema(
+        operation_id="admin_login",
+        summary="Admin Login",
+        description="Login for admin users using email and password. Only users with admin role can access.",
+        request=AdminLoginSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=AdminLoginResponseSerializer, description="Login successful"
+            ),
+            400: OpenApiResponse(
+                response=MessageResponseSerializer,
+                description="Invalid credentials or not admin user",
+            ),
+            429: OpenApiResponse(
+                response=MessageResponseSerializer, description="Too many requests"
+            ),
+        },
+        tags=["Admin"],
+    )
+    def post(self, request):
+        """
+        Admin login with email and password.
+        """
+        serializer = AdminLoginSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = serializer.validated_data["user"]
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+
+        # Create login notification
+        try:
+            NotificationHelper.create_user_notification(
+                user=user,
+                title="Admin Login Successful",
+                message=f"Admin login successful for {user.email}",
+                notification_type=NotificationType.ACCOUNT,
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to create login notification for admin {user.email}: {str(e)}"
+            )
+
+        response_data = {
+            "access_token": str(refresh.access_token),
+            "refresh_token": str(refresh),
+            "user": UserSerializer(user).data,
+            "message": "Admin login successful",
+        }
+
+        logger.info(f"Admin user {user.email} logged in successfully")
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+class RefreshTokenView(MethodSpecificThrottleMixin, APIView):
+    """
+    Refresh token endpoint for all authenticated users.
+    Allows users to get new access tokens using their refresh token.
+    """
+
+    permission_classes = [AllowAny]
+    serializer_class = RefreshTokenSerializer
+
+    @extend_schema(
+        operation_id="refresh_token",
+        summary="Refresh Token",
+        description="Get new access token using refresh token. Available for all users.",
+        request=RefreshTokenSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=RefreshTokenResponseSerializer,
+                description="Token refreshed successfully",
+            ),
+            400: OpenApiResponse(
+                response=MessageResponseSerializer, description="Invalid refresh token"
+            ),
+            429: OpenApiResponse(
+                response=MessageResponseSerializer, description="Too many requests"
+            ),
+        },
+        tags=["Authentication"],
+    )
+    def post(self, request):
+        """
+        Refresh access token using refresh token.
+        """
+        serializer = RefreshTokenSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        refresh_token_value = serializer.validated_data["refresh_token"]
+
+        try:
+            # Create new tokens from the refresh token
+            refresh = RefreshToken(refresh_token_value)
+            new_access_token = refresh.access_token
+            new_refresh_token = str(refresh)
+
+            response_data = {
+                "access_token": str(new_access_token),
+                "refresh_token": new_refresh_token,
+                "message": "Token refreshed successfully",
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception:
+            return Response(
+                {"detail": "Invalid or expired refresh token."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )

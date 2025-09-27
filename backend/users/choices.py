@@ -13,3 +13,8 @@ class LanguageChoices(models.TextChoices):
     JAPANESE = "ja", _("Japanese")
     CHINESE = "zh", _("Chinese")
     ARABIC = "ar", _("Arabic")
+
+
+class UserRoles(models.TextChoices):
+    ADMIN = "admin", "Admin"
+    USER = "user", "User"

@@ -226,3 +226,82 @@ class ProfilePictureUploadSerializer(serializers.Serializer):
                 "Unsupported image type. Use JPEG, PNG, WEBP, or GIF."
             )
         return value
+
+
+class AdminLoginSerializer(serializers.Serializer):
+    """
+    Serializer for admin login with email and password.
+    """
+
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(
+        write_only=True, required=True, style={"input_type": "password"}
+    )
+
+    def validate(self, attrs):
+        """
+        Validate email and password, and check if user has admin role.
+        """
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        # Authenticate the user
+        from django.contrib.auth import authenticate
+
+        user = authenticate(email=email, password=password)
+
+        if not user:
+            raise serializers.ValidationError("Invalid email or password.")
+
+        if not user.is_active:
+            raise serializers.ValidationError("User account is disabled.")
+
+        # Check if user has admin role
+        if not user.is_admin():
+            raise serializers.ValidationError("Access denied. Admin role required.")
+
+        attrs["user"] = user
+        return attrs
+
+
+class AdminLoginResponseSerializer(serializers.Serializer):
+    """
+    Response serializer for admin login.
+    """
+
+    access_token = serializers.CharField()
+    refresh_token = serializers.CharField()
+    user = UserSerializer()
+    message = serializers.CharField()
+
+
+class RefreshTokenSerializer(serializers.Serializer):
+    """
+    Serializer for refresh token request.
+    """
+
+    refresh_token = serializers.CharField(required=True)
+
+    def validate_refresh_token(self, value):
+        """
+        Validate the refresh token.
+        """
+        try:
+            from rest_framework_simplejwt.tokens import RefreshToken
+
+            token = RefreshToken(value)
+            # This will raise an exception if the token is invalid
+            token.verify()
+            return value
+        except Exception:
+            raise serializers.ValidationError("Invalid refresh token.")
+
+
+class RefreshTokenResponseSerializer(serializers.Serializer):
+    """
+    Response serializer for refresh token.
+    """
+
+    access_token = serializers.CharField()
+    refresh_token = serializers.CharField()
+    message = serializers.CharField()

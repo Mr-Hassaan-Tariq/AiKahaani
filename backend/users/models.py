@@ -6,7 +6,15 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
 
-from users.choices import LanguageChoices
+from users.choices import LanguageChoices, UserRoles
+
+
+def get_default_user_roles():
+    """Get or create the default 'user' role and return as queryset"""
+    from users.models import Role
+
+    role, created = Role.objects.get_or_create(name=UserRoles.USER)
+    return [role.pk]
 
 
 class User(AbstractUser, TimeStampedModel):
@@ -28,6 +36,9 @@ class User(AbstractUser, TimeStampedModel):
         default=False,
         help_text="Tracks if user has already used their trial subscription",
     )
+    roles = models.ManyToManyField(
+        "users.Role", blank=True, default=get_default_user_roles
+    )
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 
@@ -38,6 +49,27 @@ class User(AbstractUser, TimeStampedModel):
 
     def __str__(self):
         return self.email
+
+    def is_admin(self):
+        """
+        Check if the user has admin role.
+
+        Returns:
+            bool: True if user has admin role, False otherwise
+        """
+        return self.roles.filter(name=UserRoles.ADMIN).exists()
+
+    def has_role(self, role_name):
+        """
+        Check if the user has a specific role.
+
+        Args:
+            role_name (str): The name of the role to check for
+
+        Returns:
+            bool: True if user has the specified role, False otherwise
+        """
+        return self.roles.filter(name=role_name).exists()
 
 
 class MagicLinkToken(models.Model):
@@ -104,3 +136,16 @@ class BlacklistedAccessToken(TimeStampedModel):
 
     def __str__(self):
         return f"BlacklistedAccessToken(jti={self.jti})"
+
+
+class Role(TimeStampedModel):
+    name = models.CharField(
+        max_length=255, choices=UserRoles.choices, default=UserRoles.USER, unique=True
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Role"
+        verbose_name_plural = "Roles"
