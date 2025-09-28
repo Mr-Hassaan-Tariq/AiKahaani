@@ -17,6 +17,8 @@ export default function ScriptComponent({
   sections: ScriptSectionType[];
   script: any;
 }) {
+  console.log(sections, 'sections............');
+
   return (
     <>
       <Col className="scrollbar h-full w-full space-y-3">

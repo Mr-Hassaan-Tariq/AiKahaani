@@ -66,6 +66,14 @@ export class ApiWrapper {
     // The client automatically handles token management
     // This method can be used for additional initialization if needed
   }
+
+  /**
+   * Refresh access token using refresh token
+   * @returns Promise with new tokens
+   */
+  async refreshToken(): Promise<{ access: string; refresh: string; message: string }> {
+    return this.auth.refreshToken();
+  }
 }
 
 // Create and export a singleton instance

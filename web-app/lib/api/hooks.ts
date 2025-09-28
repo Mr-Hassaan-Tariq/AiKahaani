@@ -90,6 +90,34 @@ export const useAuth = () => {
     setError(null);
   }, []);
 
+  // Refresh token function
+  const refreshToken = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await authService.refreshToken();
+
+      // Update the access token cookie for server-side requests
+      if (typeof window !== 'undefined') {
+        const expires = new Date();
+        expires.setDate(expires.getDate() + 7); // 7 days expiry
+        document.cookie = `access_token=${result.access}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      }
+
+      setIsAuthenticated(true);
+      return result;
+    } catch (err) {
+      const error = err as { message: string };
+      const errorMessage = error.message || 'Token refresh failed';
+      setError(errorMessage);
+      setIsAuthenticated(false);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     user,
     isAuthenticated,
@@ -98,6 +126,7 @@ export const useAuth = () => {
     signup,
     googleAuth,
     logout,
+    refreshToken,
   };
 };
 

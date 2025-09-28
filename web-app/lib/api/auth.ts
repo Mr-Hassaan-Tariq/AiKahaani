@@ -168,4 +168,44 @@ export class AuthService {
       localStorage.removeItem('user_data');
     }
   }
+
+  /**
+   * Refresh access token using refresh token
+   * @returns Promise with new tokens
+   */
+  async refreshToken(): Promise<{ access: string; refresh: string; message: string }> {
+    try {
+      const refreshToken = this.apiClient.getRefreshToken();
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const response = await this.apiClient.post<{
+        access_token: string;
+        refresh_token: string;
+        message: string;
+      }>('/api/auth/refresh/', {
+        refresh_token: refreshToken,
+      });
+
+      if (!response.data) {
+        throw new Error('No data received from refresh token request');
+      }
+
+      // Update tokens in storage
+      this.apiClient.setTokens(response.data.access_token, response.data.refresh_token);
+
+      return {
+        access: response.data.access_token,
+        refresh: response.data.refresh_token,
+        message: response.data.message,
+      };
+    } catch (error) {
+      const apiError = error as { data: ApiError; status: number };
+      throw {
+        status: apiError.status,
+        data: apiError.data,
+      };
+    }
+  }
 }

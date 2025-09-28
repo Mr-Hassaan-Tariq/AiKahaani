@@ -4,6 +4,7 @@ import { Figtree } from 'next/font/google';
 import { GoogleOAuthProvider as OriginalGoogleOAuthProvider } from '@react-oauth/google';
 import { env } from 'env.mjs';
 
+import { AutoRefreshProvider } from 'lib/hooks/useAutoRefresh';
 import ReactQueryProvider from 'lib/reactQuery/ReactQueryProvider';
 import { Toaster } from 'components/shadcn_ui/sonner';
 
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${FIGTREE.variable} bg-black font-figtree`}>
         <OriginalGoogleOAuthProvider clientId={env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
-          <ReactQueryProvider>{children}</ReactQueryProvider>
+          <ReactQueryProvider>
+            <AutoRefreshProvider>{children}</AutoRefreshProvider>
+          </ReactQueryProvider>
           <Toaster
             toastOptions={{
               classNames: {

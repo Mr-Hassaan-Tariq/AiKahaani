@@ -52,7 +52,7 @@ export class ApiClient {
   }
 
   // Get refresh token from localStorage
-  private getRefreshToken(): string | null {
+  getRefreshToken(): string | null {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('refresh_token');
     }
