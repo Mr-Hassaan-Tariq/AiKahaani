@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import ExportScriptModal from '@/(dashboard)/my-scripts/_components/ExportScriptModal';
+import ReactMarkdown from 'react-markdown';
 
 import { directFileIcon } from '../../[outlineId]/_components/components';
 import { ScriptSectionType } from './types';
@@ -27,14 +28,16 @@ export default function ScriptComponent({
             key={e.title}
             className="group cursor-pointer border border-white/20 bg-white/10 backdrop-blur-sm transition-all duration-200 hover:bg-white/15 hover:shadow-lg hover:shadow-white/10"
           >
-            <div className="p-4">
+            <div className="p-2">
               <div className="font-figtree text-base text-white">
                 <span className="font-semibold text-white/90 transition-colors duration-200 group-hover:text-white">
                   {e.title}
                 </span>
-                <span className="ml-2 whitespace-pre-line text-white/70 transition-colors duration-200 group-hover:text-white/80">
-                  {e.content}
-                </span>
+                <div className="ml-2 text-white/70 transition-colors duration-200 group-hover:text-white/80">
+                  <div className="prose prose-invert prose-sm max-w-none whitespace-pre-line [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                    <ReactMarkdown>{e.content}</ReactMarkdown>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>

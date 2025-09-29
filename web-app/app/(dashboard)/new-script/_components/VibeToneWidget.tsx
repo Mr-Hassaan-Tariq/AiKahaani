@@ -20,10 +20,8 @@ export default function VibeToneWidget({ tones, name }: { tones: ToneType[]; nam
   } = useFormContext();
 
   const { onChange } = register(name, {
-    required: 'Tones are required',
     validate: (value: number[]) => {
       if (!Array.isArray(value)) return 'Tones must be an array';
-      if (value.length < 1) return 'You must select at least 1 tone';
       if (value.length > 3) return 'You can only select up to 3 tones';
       return true;
     },

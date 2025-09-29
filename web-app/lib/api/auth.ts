@@ -65,9 +65,13 @@ export class AuthService {
    * Verify magic link token
    * @param token - Magic link token
    */
-  async verifyMagicLink(
-    token: string,
-  ): Promise<{ success: boolean; message?: string; user: VerifiedUser | null; access?: string }> {
+  async verifyMagicLink(token: string): Promise<{
+    success: boolean;
+    message?: string;
+    user: VerifiedUser | null;
+    access?: string;
+    refresh?: string;
+  }> {
     try {
       const response = await this.apiClient.post<{
         success: boolean;
@@ -179,12 +183,11 @@ export class AuthService {
       if (!refreshToken) {
         throw new Error('No refresh token available');
       }
-
       const response = await this.apiClient.post<{
         access_token: string;
         refresh_token: string;
         message: string;
-      }>('/api/auth/refresh/', {
+      }>('/auth/refresh/', {
         refresh_token: refreshToken,
       });
 

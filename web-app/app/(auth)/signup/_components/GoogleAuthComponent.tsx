@@ -28,6 +28,8 @@ export default function GoogleAuthComponent() {
           onSuccess: async (response) => {
             toast.success('Success', 'Successfully logged in');
             Cookies.set('access_token', response.access);
+            Cookies.set('refresh_token', response.refresh);
+            localStorage.setItem('refresh_token', response.refresh);
             SetAccessToken(response.access);
             window.location.href = '/';
           },

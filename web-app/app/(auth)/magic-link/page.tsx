@@ -29,8 +29,9 @@ export default function MagicLinkSent() {
 
         try {
           const response = await authService.verifyMagicLink(token);
-          if (response.user && response.access) {
+          if (response.user && response.access && response.refresh) {
             Cookies.set('access_token', response.access, { expires: 7 });
+            localStorage.setItem('refresh_token', response.refresh);
             setMessage('Verified successfully! Redirecting...');
             setIsError(false);
             setTimeout(() => {

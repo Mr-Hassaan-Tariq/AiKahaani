@@ -53,7 +53,6 @@ export default function Signup() {
 
       const response = await authService.sendMagicLink(formData.email);
 
-      console.log('response is ', response);
       if (response.message === 'Magic link sent to your email') {
         router.push(`/magic-link?email=${encodeURIComponent(formData.email)}`);
       }
