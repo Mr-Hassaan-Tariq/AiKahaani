@@ -140,6 +140,7 @@ INSTALLED_APPS = [
     "scripts",
     "django_filters",
     "notifications",
+    "admins",
 ] + THIRD_PARTY_APPS
 
 ######################################################################

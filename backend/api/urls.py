@@ -27,6 +27,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("stripe/", include("djstripe.urls", namespace="djstripe")),
     path("api/v1/notifications/", include("notifications.urls")),
+    path("api/v1/admin/", include("admins.urls")),
     # dj-stripe webhook endpoint
     path("webhooks/stripe/", include("djstripe.urls", namespace="djstripe-webhooks")),
 ]
