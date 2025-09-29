@@ -157,7 +157,7 @@ def generate_script_outline(request):
         try:
             if image:
                 if hasattr(image, "read") and hasattr(image, "seek"):
-                    image_title, image_description = OpenAIScriptService.analyze_image(
+                    image_title, image_description = OpenAIScriptService.analyze_image_with_assistant(
                         image_file=image
                     )
                 else:
@@ -166,7 +166,7 @@ def generate_script_outline(request):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
             else:
-                image_title, image_description = OpenAIScriptService.analyze_image(
+                image_title, image_description = OpenAIScriptService.analyze_image_with_assistant(
                     image_url=image_url
                 )
 
@@ -214,9 +214,8 @@ def generate_script_outline(request):
             "max_length": max_length,
         }
 
-        outline_text, outline_data, metadata = OpenAIScriptService.generate_outline(
-            script_data
-        )
+        # Use assistant for outline generation with knowledge base
+        outline_text, outline_data, metadata = OpenAIScriptService.generate_outline_with_assistant(script_data)
 
         outline_title = title if title else f"Outline: {description[:50]}"
         outline = ScriptOutline.objects.create(
@@ -342,10 +341,8 @@ def recreate_script_outline(request, uuid):
             "max_length": max_length,
         }
 
-        # Generate new outline using OpenAI service
-        outline_text, outline_data, metadata = OpenAIScriptService.generate_outline(
-            script_data
-        )
+        # Generate new outline using assistant with knowledge base
+        outline_text, outline_data, metadata = OpenAIScriptService.generate_outline_with_assistant(script_data)
 
         # Create new outline with "Recreated" prefix
         new_title = (
@@ -517,8 +514,8 @@ def generate_full_script(request, uuid):
             "max_length": max_length,
         }
 
-        # Generate full script
-        script_content, sections, metadata = OpenAIScriptService.generate_full_script(
+        # Generate full script using assistant with knowledge base
+        script_content, sections, metadata = OpenAIScriptService.generate_full_script_with_assistant(
             outline.outline_text, script_data
         )
 
