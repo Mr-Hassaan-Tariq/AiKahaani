@@ -2,7 +2,7 @@
 import base64
 import logging
 import time
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple,List
 
 import openai
 from django.conf import settings
@@ -357,9 +357,8 @@ STRUCTURE VALIDATION:
 
     @staticmethod
     def _parse_outline_structure(outline_text: str) -> Dict[str, Any]:
-        """Parse outline text into structured data"""
+        """Parse outline text into structured data - simple format for UI"""
         sections = []
-        current_section = None
 
         lines = outline_text.split("\n")
 
@@ -368,54 +367,25 @@ STRUCTURE VALIDATION:
             if not line:
                 continue
 
-            # Detect main section headers (numbered sections like "1. Hook/Opening")
-            if line and line[0].isdigit() and "." in line and not line.startswith("-"):
-                # Save previous section if exists
-                if current_section:
-                    sections.append(current_section)
-
-                # Start new main section
-                current_section = {
-                    "title": line,
-                    "description": "",
-                    "key_points": [],
-                    "timing": "",
-                    "transition": "",
-                }
-
-            # Handle sub-points under current section
-            elif current_section and line.startswith("-"):
-                # Remove the dash and clean up
-                content = line[1:].strip()
-
-                if content.startswith("Description:"):
-                    current_section["description"] = content.replace(
-                        "Description:", ""
-                    ).strip()
-                elif content.startswith("Key talking points:"):
-                    current_section["key_points"].append(
-                        content.replace("Key talking points:", "").strip()
-                    )
-                elif content.startswith("Estimated timing:"):
-                    current_section["timing"] = content.replace(
-                        "Estimated timing:", ""
-                    ).strip()
-                elif content.startswith("Transition notes:"):
-                    current_section["transition"] = content.replace(
-                        "Transition notes:", ""
-                    ).strip()
-                else:
-                    # Generic sub-point
-                    current_section["key_points"].append(content)
-
-            # Handle nested sub-sections (like "Key Point 1: Origin Story")
-            elif current_section and line.startswith("-") and ":" in line:
-                content = line[1:].strip()
-                current_section["key_points"].append(content)
-
-        # Add the last section
-        if current_section:
-            sections.append(current_section)
+            # Look for numbered sections: "1. [Title]: [Description]"
+            if line and line[0].isdigit() and "." in line and ":" in line:
+                # Split on the first colon
+                parts = line.split(":", 1)
+                if len(parts) == 2:
+                    title_part = parts[0].strip()
+                    description = parts[1].strip()
+                    
+                    # Extract title (remove number and period)
+                    title = title_part.split(".", 1)[1].strip() if "." in title_part else title_part
+                    
+                    sections.append({
+                        "title": title,
+                        "description": description,
+                        "key_points": [],
+                        "timing": "",
+                        "transition": "",
+                        "content": description
+                    })
 
         return {"sections": sections}
 
@@ -872,12 +842,14 @@ Generate improved, more engaging YouTube title variations that maintain the orig
     def _parse_script_sections(script_content: str) -> list:
         """Parse script content into sections with timestamps for card-based display"""
         sections = []
-        current_section = {"title": "Opening", "content": "", "start_time": "0:00", "end_time": "0:10"}
+        current_section = None
         section_counter = 0
         time_per_section = 15  # seconds per section
 
         for line in script_content.split("\n"):
             line_upper = line.strip().upper()
+            
+            # Check for section headers
             if line_upper in [
                 "HOOK:",
                 "INTRODUCTION:",
@@ -885,7 +857,8 @@ Generate improved, more engaging YouTube title variations that maintain the orig
                 "CONCLUSION:",
                 "CALL TO ACTION:",
             ]:
-                if current_section["content"].strip():
+                # Save previous section if exists
+                if current_section and current_section["content"].strip():
                     sections.append(current_section)
                     section_counter += 1
                 
@@ -895,17 +868,304 @@ Generate improved, more engaging YouTube title variations that maintain the orig
                 start_time = f"{start_seconds // 60}:{start_seconds % 60:02d}"
                 end_time = f"{end_seconds // 60}:{end_seconds % 60:02d}"
                 
+                # Create new section
                 current_section = {
-                    "title": line.strip().replace(":", ""),
+                    "title": line.strip().replace(":", "").upper(),
                     "content": "",
                     "start_time": start_time,
                     "end_time": end_time
                 }
-            else:
-                current_section["content"] += line + "\n"
+            elif current_section:
+                # Add content to current section
+                if line.strip():  # Only add non-empty lines
+                    current_section["content"] += line.strip() + "\n"
 
-        if current_section["content"].strip():
+        # Add the last section
+        if current_section and current_section["content"].strip():
             sections.append(current_section)
 
         return sections
+
+    # Assistant API Integration Methods
+    @staticmethod
+    def generate_outline_with_assistant(script_data: Dict[str, Any]) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
+        """
+        Generate outline using OpenAI Assistant API with knowledge base
+        """
+        try:
+            start_time = time.time()
+            client = get_openai_client()
+            
+            # Create thread
+            thread = client.beta.threads.create()
+            
+            # Build message content
+            message_content = OpenAIScriptService._build_assistant_outline_message(script_data)
+            
+            # Add message to thread
+            client.beta.threads.messages.create(
+                thread_id=thread.id,
+                role="user",
+                content=message_content
+            )
+            
+            # Run the assistant
+            run = client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id="asst_0DYOjLGGsWULC54slHkY4Lsx"  # Your assistant ID
+            )
+            
+            # Wait for completion
+            outline_text, tokens_used = OpenAIScriptService._wait_for_assistant_completion(client, thread.id, run.id)
+            
+            generation_time = time.time() - start_time
+            
+            # Parse outline structure
+            outline_data = OpenAIScriptService._parse_outline_structure(outline_text)
+            
+            metadata = {
+                "tokens_used": tokens_used,
+                "generation_time": generation_time,
+                "model": "gpt-4-assistant",
+                "assistant_id": "asst_0DYOjLGGsWULC54slHkY4Lsx",
+                "thread_id": thread.id
+            }
+            
+            return outline_text, outline_data, metadata
+            
+        except Exception as e:
+            logger.error(f"Assistant outline generation failed: {str(e)}")
+            raise
+
+    @staticmethod
+    def generate_full_script_with_assistant(outline_text: str, script_data: Dict[str, Any]) -> Tuple[str, List[Dict], Dict[str, Any]]:
+        """
+        Generate full script using OpenAI Assistant API
+        """
+        try:
+            start_time = time.time()
+            client = get_openai_client()
+            
+            # Create thread
+            thread = client.beta.threads.create()
+            
+            # Build script generation message
+            message_content = OpenAIScriptService._build_assistant_script_message(outline_text, script_data)
+            
+            # Add message to thread
+            client.beta.threads.messages.create(
+                thread_id=thread.id,
+                role="user",
+                content=message_content
+            )
+            
+            # Run the assistant
+            run = client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id="asst_0DYOjLGGsWULC54slHkY4Lsx"  # Your assistant ID
+            )
+            
+            # Wait for completion
+            script_content, tokens_used = OpenAIScriptService._wait_for_assistant_completion(client, thread.id, run.id)
+            
+            generation_time = time.time() - start_time
+            
+            # Parse script sections
+            sections = OpenAIScriptService._parse_script_sections(script_content)
+            
+            metadata = {
+                "tokens_used": tokens_used,
+                "generation_time": generation_time,
+                "model": "gpt-4-assistant",
+                "assistant_id": "asst_0DYOjLGGsWULC54slHkY4Lsx",
+                "thread_id": thread.id
+            }
+            
+            return script_content, sections, metadata
+            
+        except Exception as e:
+            logger.error(f"Assistant script generation failed: {str(e)}")
+            raise
+
+    @staticmethod
+    def analyze_image_with_assistant(image_file=None, image_url=None) -> Tuple[str, str]:
+        """
+        Analyze an image using OpenAI Assistant API with Vision capabilities
+        """
+        try:
+            client = get_openai_client()
+            
+            # Create thread
+            thread = client.beta.threads.create()
+            
+            # Build image analysis message
+            if image_file:
+                # Convert uploaded file to base64
+                image_content = image_file.read()
+                image_file.seek(0)
+                base64_image = base64.b64encode(image_content).decode("utf-8")
+                image_url_for_openai = f"data:image/jpeg;base64,{base64_image}"
+            elif image_url:
+                image_url_for_openai = image_url
+            else:
+                raise ValueError("Either image_file or image_url must be provided")
+
+            message_content = f"""Analyze this image and provide:
+1. A catchy, engaging YouTube video title (under 60 characters)
+2. A detailed description of what's happening in the image that could be used for script generation
+
+Format your response as:
+TITLE: [your title here]
+DESCRIPTION: [your description here]
+
+Make the title clickable and engaging for YouTube, and the description detailed enough to generate a good script outline using the storytelling rules and hook techniques from the knowledge base.
+
+Note: Please provide your response in a clear, structured format (not JSON)."""
+
+            # Add message to thread
+            client.beta.threads.messages.create(
+                thread_id=thread.id,
+                role="user",
+                content=[
+                    {"type": "text", "text": message_content},
+                    {"type": "image_url", "image_url": {"url": image_url_for_openai}}
+                ]
+            )
+            
+            # Run the assistant
+            run = client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id="asst_0DYOjLGGsWULC54slHkY4Lsx"  # Your assistant ID
+            )
+            
+            # Wait for completion
+            content, _ = OpenAIScriptService._wait_for_assistant_completion(client, thread.id, run.id)
+            
+            # Parse the response to extract title and description
+            title = ""
+            description = ""
+            
+            lines = content.split("\n")
+            for line in lines:
+                line = line.strip()
+                if line.startswith("TITLE:"):
+                    title = line.replace("TITLE:", "").strip()
+                elif line.startswith("DESCRIPTION:"):
+                    description = line.replace("DESCRIPTION:", "").strip()
+            
+            # If parsing failed, use the whole response as description
+            if not title and not description:
+                description = content.strip()
+                title = "Image Analysis"
+            
+            return title, description
+            
+        except Exception as e:
+            logger.error(f"Assistant image analysis failed: {str(e)}")
+            return "Image Analysis", "An image was provided for analysis."
+
+    @staticmethod
+    def _wait_for_assistant_completion(client, thread_id: str, run_id: str) -> Tuple[str, int]:
+        """Wait for assistant run to complete and return content"""
+        while True:
+            run = client.beta.threads.runs.retrieve(
+                thread_id=thread_id,
+                run_id=run_id
+            )
+            
+            if run.status == 'completed':
+                # Get the latest message
+                messages = client.beta.threads.messages.list(
+                    thread_id=thread_id,
+                    limit=1
+                )
+                
+                content = messages.data[0].content[0].text.value
+                tokens_used = run.usage.total_tokens if run.usage else 0
+                
+                return content, tokens_used
+                
+            elif run.status in ['failed', 'cancelled', 'expired']:
+                raise Exception(f"Run failed with status: {run.status}")
+            
+            time.sleep(1)  # Wait before checking again
+
+    @staticmethod
+    def _build_assistant_outline_message(script_data: Dict[str, Any]) -> str:
+        """Build message for outline generation using assistant"""
+        tones = script_data.get("tones", ["informative"])
+        template_style = script_data.get("template_style", "medium")
+        description = script_data.get("description", "")
+        min_length = script_data.get("min_length", 100)
+        max_length = script_data.get("max_length", 1000)
+        
+        tone_text = f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
+        
+        return f"""Create a concise script outline for a YouTube video using the storytelling rules and hook guidelines from the knowledge base:
+
+Topic: {description}
+{tone_text}
+Style: {template_style}
+Target Length: {min_length}-{max_length} words
+
+Please reference the uploaded files for:
+- 17 rules of storytelling principles
+- Hook people techniques and strategies
+
+Create a simple, numbered outline with 4-6 sections. Each section should have:
+- A brief title (2-5 words)
+- One descriptive sentence explaining what to cover
+
+Format like this:
+1. [Section Title]: [One sentence description]
+2. [Section Title]: [One sentence description]
+3. [Section Title]: [One sentence description]
+4. [Section Title]: [One sentence description]
+5. [Section Title]: [One sentence description]
+
+Apply the storytelling rules and hook techniques from the knowledge base, but keep the outline format simple and concise.
+
+Note: Please provide your response in a clear, structured format (not JSON)."""
+
+    @staticmethod
+    def _build_assistant_script_message(outline_text: str, script_data: Dict[str, Any]) -> str:
+        """Build message for script generation using assistant"""
+        tones = script_data.get("tones", ["informative"])
+        min_length = script_data.get("min_length", 1000)
+        max_length = script_data.get("max_length", 5000)
+        
+        tone_text = f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
+        
+        return f"""Generate a complete YouTube script based on this outline, applying the storytelling rules and hook techniques from the knowledge base:
+
+OUTLINE:
+{outline_text}
+
+REQUIREMENTS:
+- {tone_text}
+- Target Length: {min_length}-{max_length} words
+- Apply the 17 storytelling rules from the knowledge base
+- Use hook techniques to create engaging opening
+- Include [PAUSE], [VISUAL], [EMPHASIS] cues
+- Make it flow naturally when spoken
+
+FORMAT YOUR RESPONSE AS:
+HOOK:
+[Script content for hook section]
+
+INTRODUCTION:
+[Script content for introduction section]
+
+MAIN CONTENT:
+[Script content for main content section]
+
+CONCLUSION:
+[Script content for conclusion section]
+
+CALL TO ACTION:
+[Script content for call to action section]
+
+Reference the uploaded files to ensure the script follows proven storytelling principles and engagement techniques.
+
+Note: Please provide your response in a clear, structured format (not JSON)."""
         
