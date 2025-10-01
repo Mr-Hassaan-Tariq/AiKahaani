@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from users.models import User
 
+from .models import Niche, NichePacing, NicheTone
+
 
 class AdminUserSerializer(serializers.ModelSerializer):
     """
@@ -139,3 +141,125 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
                 "A user with this username already exists."
             )
         return value
+
+
+class NicheToneSerializer(serializers.ModelSerializer):
+    """Serializer for NicheTone model."""
+
+    class Meta:
+        model = NicheTone
+        fields = ["id", "name", "created", "modified"]
+        read_only_fields = ["id", "created", "modified"]
+
+
+class NichePacingSerializer(serializers.ModelSerializer):
+    """Serializer for NichePacing model."""
+
+    class Meta:
+        model = NichePacing
+        fields = ["id", "name", "created", "modified"]
+        read_only_fields = ["id", "created", "modified"]
+
+
+class NicheSerializer(serializers.ModelSerializer):
+    """Serializer for Niche model with tone/pacing creation and deduplication."""
+
+    class Meta:
+        model = Niche
+        fields = [
+            "id",
+            "admin",
+            "title",
+            "tagline",
+            "thumbnail",
+            "script_structure",
+            "tone",
+            "pacing",
+            "top_channels",
+            "best_for",
+            "status",
+            "created",
+            "modified",
+        ]
+        read_only_fields = ["id", "created", "modified"]
+
+    def validate_tone(self, value):
+        """Validate and deduplicate tone list."""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Tone must be a list.")
+        # Remove duplicates and empty strings
+        return list(set(filter(None, [str(item).strip() for item in value])))
+
+    def validate_pacing(self, value):
+        """Validate and deduplicate pacing list."""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Pacing must be a list.")
+        # Remove duplicates and empty strings
+        return list(set(filter(None, [str(item).strip() for item in value])))
+
+    def validate_top_channels(self, value):
+        """Validate and deduplicate top_channels list."""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Top channels must be a list.")
+        # Remove duplicates and empty strings
+        return list(set(filter(None, [str(item).strip() for item in value])))
+
+    def validate_best_for(self, value):
+        """Validate and deduplicate best_for list."""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Best for must be a list.")
+        # Remove duplicates and empty strings
+        return list(set(filter(None, [str(item).strip() for item in value])))
+
+    def create(self, validated_data):
+        """Create niche and handle tone/pacing creation."""
+        tone_list = validated_data.pop("tone", [])
+        pacing_list = validated_data.pop("pacing", [])
+
+        # Create niche instance
+        niche = Niche.objects.create(**validated_data)
+
+        # Handle tone creation
+        if tone_list:
+            self._create_or_get_tones(tone_list)
+            niche.tone = tone_list
+
+        # Handle pacing creation
+        if pacing_list:
+            self._create_or_get_pacings(pacing_list)
+            niche.pacing = pacing_list
+
+        niche.save()
+        return niche
+
+    def update(self, instance, validated_data):
+        """Update niche and handle tone/pacing creation."""
+        tone_list = validated_data.pop("tone", None)
+        pacing_list = validated_data.pop("pacing", None)
+
+        # Update other fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # Handle tone creation/update
+        if tone_list is not None:
+            self._create_or_get_tones(tone_list)
+            instance.tone = tone_list
+
+        # Handle pacing creation/update
+        if pacing_list is not None:
+            self._create_or_get_pacings(pacing_list)
+            instance.pacing = pacing_list
+
+        instance.save()
+        return instance
+
+    def _create_or_get_tones(self, tone_list):
+        """Create NicheTone instances for tones that don't exist."""
+        for tone_name in tone_list:
+            NicheTone.objects.get_or_create(name=tone_name)
+
+    def _create_or_get_pacings(self, pacing_list):
+        """Create NichePacing instances for pacings that don't exist."""
+        for pacing_name in pacing_list:
+            NichePacing.objects.get_or_create(name=pacing_name)

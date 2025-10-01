@@ -6,6 +6,11 @@ from . import views
 # Create router for viewset routes
 router = DefaultRouter()
 router.register(r"users", views.AdminUserListViewSet, basename="admin-users")
+router.register(r"niches", views.NicheViewSet, basename="admin-niches")
+router.register(r"niche-tones", views.NicheToneViewSet, basename="admin-niche-tones")
+router.register(
+    r"niche-pacings", views.NichePacingViewSet, basename="admin-niche-pacings"
+)
 
 urlpatterns = [
     # Statistics endpoint

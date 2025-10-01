@@ -13,9 +13,14 @@ from admins.serializers import (
     AdminUserDetailSerializer,
     AdminUserListSerializer,
     AdminUserUpdateSerializer,
+    NichePacingSerializer,
+    NicheSerializer,
+    NicheToneSerializer,
 )
 from users.models import Role
 from users.permissions import IsAdminPermission
+
+from .models import Niche, NichePacing, NicheTone
 
 User = get_user_model()
 
@@ -371,6 +376,260 @@ class UserStatsView(APIView):
                     "recent_signups": recent_signups,
                 },
                 "message": "User statistics retrieved successfully",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Admin Niches"],
+        summary="List Niches",
+        description="Retrieve a paginated list of niches with filtering and search capabilities.",
+        parameters=[
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number",
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of items per page",
+            ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search by title or tagline",
+            ),
+            OpenApiParameter(
+                name="status",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by status (active/inactive)",
+            ),
+            OpenApiParameter(
+                name="ordering",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Ordering field",
+            ),
+        ],
+    ),
+    create=extend_schema(
+        tags=["Admin Niches"],
+        summary="Create Niche",
+        description="Create a new niche with tone and pacing lists. Missing tones/pacings will be created automatically.",
+    ),
+    retrieve=extend_schema(
+        tags=["Admin Niches"],
+        summary="Get Niche Details",
+        description="Retrieve detailed information about a specific niche.",
+    ),
+    update=extend_schema(
+        tags=["Admin Niches"],
+        summary="Update Niche",
+        description="Update niche information with tone and pacing lists.",
+    ),
+    partial_update=extend_schema(
+        tags=["Admin Niches"],
+        summary="Partial Update Niche",
+        description="Partially update niche information.",
+    ),
+    destroy=extend_schema(
+        tags=["Admin Niches"],
+        summary="Delete Niche",
+        description="Delete a niche.",
+    ),
+)
+class NicheViewSet(ModelViewSet):
+    """
+    Admin API viewset for managing niches.
+    Provides CRUD operations with automatic tone/pacing creation and deduplication.
+    """
+
+    queryset = Niche.objects.all()
+    serializer_class = NicheSerializer
+    permission_classes = [IsAuthenticated, IsAdminPermission]
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ["title", "tagline"]
+    ordering_fields = ["created", "modified", "title"]
+    ordering = ["-created"]
+
+    def get_queryset(self):
+        """Return filtered queryset based on query parameters."""
+        qs = Niche.objects.all()
+
+        # Additional filtering based on query parameters
+        status_filter = self.request.query_params.get("status")
+        if status_filter == "active":
+            qs = qs.filter(status="active")
+        elif status_filter == "inactive":
+            qs = qs.filter(status="inactive")
+
+        return qs.select_related("admin")
+
+    def perform_create(self, serializer):
+        """Set the admin field to the current user when creating a niche."""
+        serializer.save(admin=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        """List all niches with pagination, search, and filtering support."""
+        queryset = self.get_queryset()
+
+        # Apply pagination
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {
+                "data": serializer.data,
+                "message": "Niches retrieved successfully",
+                "count": queryset.count(),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def create(self, request, *args, **kwargs):
+        """Create a new niche with tone/pacing creation and deduplication."""
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            niche = serializer.save(admin=request.user)
+            return Response(
+                {
+                    "data": NicheSerializer(niche).data,
+                    "message": "Niche created successfully",
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(
+            {"errors": serializer.errors, "message": "Failed to create niche"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    def retrieve(self, request, *args, **kwargs):
+        """Retrieve specific niche details."""
+        niche = self.get_object()
+        serializer = self.get_serializer(niche)
+        return Response(
+            {
+                "data": serializer.data,
+                "message": "Niche details retrieved successfully",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def update(self, request, *args, **kwargs):
+        """Update niche details with tone/pacing creation and deduplication."""
+        niche = self.get_object()
+        serializer = self.get_serializer(
+            niche, data=request.data, partial=kwargs.get("partial", False)
+        )
+
+        if serializer.is_valid():
+            updated_niche = serializer.save()
+            return Response(
+                {
+                    "data": NicheSerializer(updated_niche).data,
+                    "message": "Niche updated successfully",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {"errors": serializer.errors, "message": "Failed to update niche"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        """Delete a niche."""
+        niche = self.get_object()
+        niche.delete()
+        return Response(
+            {"message": "Niche deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Admin Niches"],
+        summary="List Niche Tones",
+        description="Retrieve a list of all niche tones.",
+    ),
+    create=extend_schema(
+        tags=["Admin Niches"],
+        summary="Create Niche Tone",
+        description="Create a new niche tone.",
+    ),
+)
+class NicheToneViewSet(ModelViewSet):
+    """
+    Admin API viewset for managing niche tones.
+    """
+
+    queryset = NicheTone.objects.all()
+    serializer_class = NicheToneSerializer
+    permission_classes = [IsAuthenticated, IsAdminPermission]
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ["name"]
+    ordering_fields = ["name", "created"]
+    ordering = ["name"]
+
+    def list(self, request, *args, **kwargs):
+        """List all niche tones."""
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {
+                "data": serializer.data,
+                "message": "Niche tones retrieved successfully",
+                "count": queryset.count(),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Admin Niches"],
+        summary="List Niche Pacings",
+        description="Retrieve a list of all niche pacings.",
+    ),
+    create=extend_schema(
+        tags=["Admin Niches"],
+        summary="Create Niche Pacing",
+        description="Create a new niche pacing.",
+    ),
+)
+class NichePacingViewSet(ModelViewSet):
+    """
+    Admin API viewset for managing niche pacings.
+    """
+
+    queryset = NichePacing.objects.all()
+    serializer_class = NichePacingSerializer
+    permission_classes = [IsAuthenticated, IsAdminPermission]
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ["name"]
+    ordering_fields = ["name", "created"]
+    ordering = ["name"]
+
+    def list(self, request, *args, **kwargs):
+        """List all niche pacings."""
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {
+                "data": serializer.data,
+                "message": "Niche pacings retrieved successfully",
+                "count": queryset.count(),
             },
             status=status.HTTP_200_OK,
         )

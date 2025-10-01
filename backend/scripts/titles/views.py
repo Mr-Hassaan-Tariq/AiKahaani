@@ -64,12 +64,15 @@ class GenerateTitlesView(APIView, MethodSpecificThrottleMixin):
             prompt=prompt, title_count=title_count, tones=tones
         )
 
-        # Prepare response
+        # Prepare response - extract title strings from title objects
+        title_strings = [
+            title.get("title", "") for title in titles if isinstance(title, dict)
+        ]
         tone_message = f" with tones: {', '.join(tones)}" if tones else ""
         response_data = {
-            "titles": titles,
+            "titles": title_strings,
             "metadata": metadata,
-            "message": f"Successfully generated {len(titles)} YouTube titles{tone_message}",
+            "message": f"Successfully generated {len(title_strings)} YouTube titles{tone_message}",
         }
 
         # Validate response
@@ -77,8 +80,8 @@ class GenerateTitlesView(APIView, MethodSpecificThrottleMixin):
         if response_serializer.is_valid():
             ScriptTitle.objects.create(
                 user=request.user,
-                titles=titles,
-                titles_count=len(titles),
+                titles=title_strings,
+                titles_count=len(title_strings),
                 prompt=prompt,
             )
 
@@ -162,12 +165,15 @@ class GenerateTitlesOptimizedView(APIView, MethodSpecificThrottleMixin):
                 tones=tones,
             )
 
-            # Prepare response
+            # Prepare response - extract title strings from title objects
+            title_strings = [
+                title.get("title", "") for title in titles if isinstance(title, dict)
+            ]
             tone_message = f" with tones: {', '.join(tones)}" if tones else ""
             response_data = {
-                "titles": titles,
+                "titles": title_strings,
                 "metadata": metadata,
-                "message": f"Successfully generated {len(titles)} optimized YouTube titles{tone_message}",
+                "message": f"Successfully generated {len(title_strings)} optimized YouTube titles{tone_message}",
             }
 
             # Validate response
@@ -182,8 +188,8 @@ class GenerateTitlesOptimizedView(APIView, MethodSpecificThrottleMixin):
                         user=request.user,
                         script=script,  # Use the script object directly
                         is_optimized_title=True,
-                        titles=titles,
-                        titles_count=len(titles),
+                        titles=title_strings,
+                        titles_count=len(title_strings),
                         prompt=user_prompt,
                         user_provided_title=None,  # Don't store user title when script is provided
                     )
@@ -193,8 +199,8 @@ class GenerateTitlesOptimizedView(APIView, MethodSpecificThrottleMixin):
                         user=request.user,
                         script=None,  # No script reference
                         is_optimized_title=True,
-                        titles=titles,
-                        titles_count=len(titles),
+                        titles=title_strings,
+                        titles_count=len(title_strings),
                         prompt=user_prompt,
                         user_provided_title=user_title,  # Store the user provided title
                     )
