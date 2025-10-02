@@ -27,7 +27,7 @@ class ScriptOutlineSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScriptOutline
         fields = [
-            'uuid', 'title', 'outline_text', 'outline_data', 'order', 'tones',
+            'uuid', 'title', 'outline_text', 'outline_data', 'section_order', 'tones',
             'status', 'version', 'tokens_used', 'generation_time',
             'created', 'modified'
         ]
@@ -37,7 +37,7 @@ class ScriptOutlineSerializer(serializers.ModelSerializer):
 class ScriptOutlineUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScriptOutline
-        fields = ['title', 'outline_text', 'order']
+        fields = ['title', 'outline_text', 'section_order']
 
 
 class FullScriptSerializer(serializers.ModelSerializer):

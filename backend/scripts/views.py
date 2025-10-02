@@ -229,11 +229,15 @@ def generate_script_outline(request):
             "max_length": max_length,
         })
 
+        # Extract default section order from outline_data
+        default_section_order = outline_data.get("section_order", []) if outline_data else []
+
         outline = ScriptOutline.objects.create(
             user=request.user,
             title=outline_title,
             outline_text=outline_text,
             outline_data=outline_data_with_params,  # Save with parameters
+            section_order=default_section_order,  # Set default section order
             original_outline=outline_text,
             status="generated",
             openai_model=metadata["model"],
@@ -367,11 +371,15 @@ def recreate_script_outline(request, uuid):
             else f"Recreated outline from {original_outline.uuid}"
         )
 
+        # Extract default section order from outline_data
+        default_section_order = outline_data.get("section_order", []) if outline_data else []
+
         new_outline = ScriptOutline.objects.create(
             user=request.user,
             title=new_title,
             outline_text=outline_text,
             outline_data=outline_data,
+            section_order=default_section_order,  # Set default section order
             original_outline=outline_text,
             status="generated",
             openai_model=metadata["model"],

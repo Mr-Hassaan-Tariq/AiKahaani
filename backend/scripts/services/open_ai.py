@@ -400,7 +400,13 @@ WORD COUNT ENFORCEMENT:
                         }
                     )
 
-        return {"sections": sections}
+        # Create default section order (0, 1, 2, 3, ... based on number of sections)
+        default_section_order = list(range(len(sections)))
+
+        return {
+            "sections": sections,
+            "section_order": default_section_order
+        }
 
     #     @staticmethod
     #     def generate_titles(
