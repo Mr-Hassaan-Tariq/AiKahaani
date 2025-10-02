@@ -338,3 +338,5 @@ DJSTRIPE_TEST_MODE = STRIPE_TEST_MODE
 # OPENAI Configuration
 ######################################################################
 OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
+OPENAI_ASSISTANT_ID = environ.get("OPENAI_ASSISTANT_ID", "asst_0DYOjLGGsWULC54slHkY4Lsx")
+OPENAI_VECTOR_STORE_ID = environ.get("OPENAI_VECTOR_STORE_ID", "vs_68da779b57b88191a834c9623740a474")

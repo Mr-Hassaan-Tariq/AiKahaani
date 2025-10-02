@@ -925,7 +925,7 @@ Follow TubeGenius principles:
         script_data: Dict[str, Any],
     ) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
         """
-        Generate outline using OpenAI Assistant API with knowledge base
+        Generate outline using OpenAI Assistant API with vector store knowledge base
         """
         try:
             start_time = time.time()
@@ -934,20 +934,26 @@ Follow TubeGenius principles:
             # Create thread
             thread = client.beta.threads.create()
 
-            # Build message content
+            # Build message content (simplified - let assistant use its configured instructions)
             message_content = OpenAIScriptService._build_assistant_outline_message(
                 script_data
             )
 
-            # Add message to thread
+            # Add message to thread WITH VECTOR STORE ATTACHMENT
             client.beta.threads.messages.create(
-                thread_id=thread.id, role="user", content=message_content
+                thread_id=thread.id, 
+                role="user", 
+                content=message_content,
+                attachments=[{
+                    "file_id": settings.OPENAI_VECTOR_STORE_ID,
+                    "tools": [{"type": "file_search"}]
+                }]
             )
 
-            # Run the assistant
+            # Run the assistant (it already has detailed instructions configured)
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
-                assistant_id="asst_0DYOjLGGsWULC54slHkY4Lsx",  # Your assistant ID
+                assistant_id=settings.OPENAI_ASSISTANT_ID,
             )
 
             # Wait for completion
@@ -966,7 +972,8 @@ Follow TubeGenius principles:
                 "tokens_used": tokens_used,
                 "generation_time": generation_time,
                 "model": "gpt-4-assistant",
-                "assistant_id": "asst_0DYOjLGGsWULC54slHkY4Lsx",
+                "assistant_id": settings.OPENAI_ASSISTANT_ID,
+                "vector_store_id": settings.OPENAI_VECTOR_STORE_ID,
                 "thread_id": thread.id,
             }
 
@@ -981,7 +988,7 @@ Follow TubeGenius principles:
         outline_text: str, script_data: Dict[str, Any]
     ) -> Tuple[str, List[Dict], Dict[str, Any]]:
         """
-        Generate full script using OpenAI Assistant API
+        Generate full script using OpenAI Assistant API with vector store knowledge base
         """
         try:
             start_time = time.time()
@@ -990,20 +997,26 @@ Follow TubeGenius principles:
             # Create thread
             thread = client.beta.threads.create()
 
-            # Build script generation message
+            # Build script generation message (simplified)
             message_content = OpenAIScriptService._build_assistant_script_message(
                 outline_text, script_data
             )
 
-            # Add message to thread
+            # Add message to thread WITH VECTOR STORE ATTACHMENT
             client.beta.threads.messages.create(
-                thread_id=thread.id, role="user", content=message_content
+                thread_id=thread.id, 
+                role="user", 
+                content=message_content,
+                attachments=[{
+                    "file_id": settings.OPENAI_VECTOR_STORE_ID,
+                    "tools": [{"type": "file_search"}]
+                }]
             )
 
-            # Run the assistant
+            # Run the assistant (it already has detailed instructions configured)
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
-                assistant_id="asst_0DYOjLGGsWULC54slHkY4Lsx",  # Your assistant ID
+                assistant_id=settings.OPENAI_ASSISTANT_ID,
             )
 
             # Wait for completion
@@ -1022,7 +1035,8 @@ Follow TubeGenius principles:
                 "tokens_used": tokens_used,
                 "generation_time": generation_time,
                 "model": "gpt-4-assistant",
-                "assistant_id": "asst_0DYOjLGGsWULC54slHkY4Lsx",
+                "assistant_id": settings.OPENAI_ASSISTANT_ID,
+                "vector_store_id": settings.OPENAI_VECTOR_STORE_ID,
                 "thread_id": thread.id,
             }
 
@@ -1037,7 +1051,7 @@ Follow TubeGenius principles:
         image_file=None, image_url=None
     ) -> Tuple[str, str]:
         """
-        Analyze an image using OpenAI Assistant API with Vision capabilities
+        Analyze an image using OpenAI Assistant API with Vision capabilities and vector store knowledge base
         """
         try:
             client = get_openai_client()
@@ -1065,11 +1079,11 @@ Format your response as:
 TITLE: [your title here]
 DESCRIPTION: [your description here]
 
-Make the title clickable and engaging for YouTube, and the description detailed enough to generate a good script outline using the storytelling rules and hook techniques from the knowledge base.
+Use the knowledge base files to apply appropriate storytelling rules and hook techniques for creating an engaging title and description.
 
 Note: Please provide your response in a clear, structured format (not JSON)."""
 
-            # Add message to thread
+            # Add message to thread WITH VECTOR STORE ATTACHMENT
             client.beta.threads.messages.create(
                 thread_id=thread.id,
                 role="user",
@@ -1077,12 +1091,16 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
                     {"type": "text", "text": message_content},
                     {"type": "image_url", "image_url": {"url": image_url_for_openai}},
                 ],
+                attachments=[{
+                    "file_id": settings.OPENAI_VECTOR_STORE_ID,
+                    "tools": [{"type": "file_search"}]
+                }]
             )
 
-            # Run the assistant
+            # Run the assistant (it already has detailed instructions configured)
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
-                assistant_id="asst_0DYOjLGGsWULC54slHkY4Lsx",  # Your assistant ID
+                assistant_id=settings.OPENAI_ASSISTANT_ID,
             )
 
             # Wait for completion
@@ -1139,7 +1157,7 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
 
     @staticmethod
     def _build_assistant_outline_message(script_data: Dict[str, Any]) -> str:
-        """Build message for outline generation using assistant"""
+        """Build simplified message for outline generation - let assistant use its configured instructions"""
         tones = script_data.get("tones", ["informative"])
         template_style = script_data.get("template_style", "medium")
         description = script_data.get("description", "")
@@ -1150,42 +1168,20 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
         )
 
-        return f"""Create a concise script outline for a YouTube video using the storytelling rules and hook guidelines from the knowledge base:
+        return f"""Generate a script outline for this YouTube video:
 
 Topic: {description}
 {tone_text}
 Style: {template_style}
-Target Length: {min_length}-{max_length} words (CRITICAL: Final script must be within this exact range)
+Target Length: {min_length}-{max_length} words
 
-Please reference the uploaded files for:
-- 17 rules of storytelling principles
-- Hook people techniques and strategies
-
-Create a simple, numbered outline with 4-6 sections. Each section should have:
-- A brief title (2-5 words)
-- One descriptive sentence explaining what to cover
-
-Format like this:
-1. [Section Title]: [One sentence description]
-2. [Section Title]: [One sentence description]
-3. [Section Title]: [One sentence description]
-4. [Section Title]: [One sentence description]
-5. [Section Title]: [One sentence description]
-
-WORD COUNT REQUIREMENT:
-- The final script generated from this outline MUST be between {min_length} and {max_length} words
-- Plan the outline to ensure the resulting script will meet this word count requirement
-- Consider the depth and detail needed for each section to achieve the target length
-
-Apply the storytelling rules and hook techniques from the knowledge base, but keep the outline format simple and concise.
-
-Note: Please provide your response in a clear, structured format (not JSON)."""
+Please use the knowledge base files to apply the appropriate storytelling rules and hook techniques for this topic and tone."""
 
     @staticmethod
     def _build_assistant_script_message(
         outline_text: str, script_data: Dict[str, Any]
     ) -> str:
-        """Build message for script generation using assistant"""
+        """Build simplified message for script generation - let assistant use its configured instructions"""
         tones = script_data.get("tones", ["informative"])
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
@@ -1194,42 +1190,14 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
         )
 
-        return f"""Generate a complete YouTube script based on this outline, applying the storytelling rules and hook techniques from the knowledge base:
+        return f"""Generate a complete YouTube script based on this outline:
 
 OUTLINE:
 {outline_text}
 
 REQUIREMENTS:
 - {tone_text}
-- Target Length: {min_length}-{max_length} words (CRITICAL: Must be within this exact range)
-- Apply the 17 storytelling rules from the knowledge base
-- Use hook techniques to create engaging opening
-- Include [PAUSE], [VISUAL], [EMPHASIS] cues
-- Make it flow naturally when spoken
+- Target Length: {min_length}-{max_length} words
+- Use the knowledge base files to apply storytelling rules and hook techniques
 
-WORD COUNT ENFORCEMENT:
-- The script MUST be between {min_length} and {max_length} words
-- Count words carefully and ensure the final script meets this requirement
-- If the script is too short, add more detail, examples, or explanations
-- If the script is too long, condense content while maintaining key points
-- This word count constraint is non-negotiable
-
-FORMAT YOUR RESPONSE AS:
-HOOK:
-[Script content for hook section]
-
-INTRODUCTION:
-[Script content for introduction section]
-
-MAIN CONTENT:
-[Script content for main content section]
-
-CONCLUSION:
-[Script content for conclusion section]
-
-CALL TO ACTION:
-[Script content for call to action section]
-
-Reference the uploaded files to ensure the script follows proven storytelling principles and engagement techniques.
-
-Note: Please provide your response in a clear, structured format (not JSON)."""
+Please use the knowledge base files to ensure the script follows proven storytelling principles and engagement techniques."""
