@@ -116,10 +116,10 @@ class ScriptOutline(TimeStampedModel):
     # Raw outline text for editing
     outline_text = models.TextField(help_text="Editable outline text")
 
-    # Order field for client-side ordering
-    order = models.JSONField(
-        default=list, 
-        help_text="Order array for outline sections that clients can update"
+    # User's custom section ordering
+    section_order = models.JSONField(
+        default=list,
+        help_text="Array of section indices representing user's custom ordering of outline sections"
     )
 
     # OpenAI metadata
