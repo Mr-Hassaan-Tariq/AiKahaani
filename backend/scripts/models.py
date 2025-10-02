@@ -116,6 +116,12 @@ class ScriptOutline(TimeStampedModel):
     # Raw outline text for editing
     outline_text = models.TextField(help_text="Editable outline text")
 
+    # Order field for client-side ordering
+    order = models.JSONField(
+        default=list, 
+        help_text="Order array for outline sections that clients can update"
+    )
+
     # OpenAI metadata
     openai_model = models.CharField(max_length=50, default="gpt-4")
     tokens_used = models.IntegerField(default=0)
