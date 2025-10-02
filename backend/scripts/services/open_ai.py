@@ -341,10 +341,8 @@ OUTLINE TO FOLLOW:
 
 TECHNICAL SPECS:
 - {tone_text}
-- Target Length: {min_length}-{max_length} words
+- Target Length: {min_length}-{max_length} words (CRITICAL: Must be within this exact range)
 - Write exactly what the speaker should say
-- Include [PAUSE], [VISUAL], [EMPHASIS] cues where helpful
-- Add [SHOT CHANGES] and [B-ROLL] suggestions
 - Make it flow naturally when spoken aloud
 
 STRUCTURE VALIDATION:
@@ -353,6 +351,13 @@ STRUCTURE VALIDATION:
 - Fast-paced intro with layered visual cues
 - Clear transitions between sections
 - Value delivered early, CTAs placed after value
+
+WORD COUNT ENFORCEMENT:
+- The script MUST be between {min_length} and {max_length} words
+- Count words carefully and ensure the final script meets this requirement
+- If the script is too short, add more detail, examples, or explanations
+- If the script is too long, condense content while maintaining key points
+- This word count constraint is non-negotiable
 
 {f'Write the complete script blending the {", ".join(tones)} tones naturally while following these optimization strategies.' if isinstance(tones, list) and len(tones) > 1 else f'Write the complete script in a {tones[0] if isinstance(tones, list) else tones} tone following these optimization strategies.'}
 """
@@ -1150,7 +1155,7 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
 Topic: {description}
 {tone_text}
 Style: {template_style}
-Target Length: {min_length}-{max_length} words
+Target Length: {min_length}-{max_length} words (CRITICAL: Final script must be within this exact range)
 
 Please reference the uploaded files for:
 - 17 rules of storytelling principles
@@ -1166,6 +1171,11 @@ Format like this:
 3. [Section Title]: [One sentence description]
 4. [Section Title]: [One sentence description]
 5. [Section Title]: [One sentence description]
+
+WORD COUNT REQUIREMENT:
+- The final script generated from this outline MUST be between {min_length} and {max_length} words
+- Plan the outline to ensure the resulting script will meet this word count requirement
+- Consider the depth and detail needed for each section to achieve the target length
 
 Apply the storytelling rules and hook techniques from the knowledge base, but keep the outline format simple and concise.
 
@@ -1191,11 +1201,18 @@ OUTLINE:
 
 REQUIREMENTS:
 - {tone_text}
-- Target Length: {min_length}-{max_length} words
+- Target Length: {min_length}-{max_length} words (CRITICAL: Must be within this exact range)
 - Apply the 17 storytelling rules from the knowledge base
 - Use hook techniques to create engaging opening
 - Include [PAUSE], [VISUAL], [EMPHASIS] cues
 - Make it flow naturally when spoken
+
+WORD COUNT ENFORCEMENT:
+- The script MUST be between {min_length} and {max_length} words
+- Count words carefully and ensure the final script meets this requirement
+- If the script is too short, add more detail, examples, or explanations
+- If the script is too long, condense content while maintaining key points
+- This word count constraint is non-negotiable
 
 FORMAT YOUR RESPONSE AS:
 HOOK:

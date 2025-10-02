@@ -205,6 +205,9 @@ def generate_script_outline(request):
         template_style = None
         if template_style_id:
             template_style = TemplateStyle.objects.get(id=template_style_id)
+            # Use template style word ranges when template is selected
+            min_length = template_style.min_length
+            max_length = template_style.max_length
 
         script_data = {
             "description": description,
@@ -218,11 +221,19 @@ def generate_script_outline(request):
         outline_text, outline_data, metadata = OpenAIScriptService.generate_outline_with_assistant(script_data)
 
         outline_title = title if title else f"Outline: {description[:50]}"
+        # Save the template parameters in outline_data for later use
+        outline_data_with_params = outline_data.copy() if outline_data else {}
+        outline_data_with_params.update({
+            "template_style": template_style.name if template_style else "medium",
+            "min_length": min_length,
+            "max_length": max_length,
+        })
+
         outline = ScriptOutline.objects.create(
             user=request.user,
             title=outline_title,
             outline_text=outline_text,
-            outline_data=outline_data,
+            outline_data=outline_data_with_params,  # Save with parameters
             original_outline=outline_text,
             status="generated",
             openai_model=metadata["model"],
@@ -317,6 +328,11 @@ def recreate_script_outline(request, uuid):
         if original_outline.outline_data:
             min_length = original_outline.outline_data.get("min_length", 100)
             max_length = original_outline.outline_data.get("max_length", 1000)
+        
+        # If template style is available, use its word ranges
+        if template_style:
+            min_length = template_style.min_length
+            max_length = template_style.max_length
 
         # Extract description from the original outline
         # This could be stored in outline_data or we might need to use the title
@@ -496,16 +512,22 @@ def generate_full_script(request, uuid):
     outline = get_object_or_404(ScriptOutline, uuid=uuid, user=request.user)
 
     try:
-        # Get tones from the outline or use request data as fallback
+        # Get tones from the outline (already stored)
         outline_tones = [tone.name for tone in outline.tones.all()]
         if not outline_tones:
-            # Fallback to request data if outline has no tones
-            tone_name = request.data.get("tone", "Informative")
-            outline_tones = [tone_name]
+            outline_tones = ["Informative"]
 
-        template_style_name = request.data.get("template_style", "medium")
-        min_length = request.data.get("min_length", 1000)
-        max_length = request.data.get("max_length", 5000)
+        # Read template style and word ranges from outline_data (stored during generation)
+        template_style_name = outline.outline_data.get("template_style", "medium")
+        min_length = outline.outline_data.get("min_length", 1000)
+        max_length = outline.outline_data.get("max_length", 5000)
+        
+        # Optional: Allow request data to override (for flexibility)
+        if request.data.get("template_style_id"):
+            template_style = TemplateStyle.objects.get(id=request.data["template_style_id"])
+            min_length = template_style.min_length
+            max_length = template_style.max_length
+            template_style_name = template_style.name
 
         script_data = {
             "tones": outline_tones,
