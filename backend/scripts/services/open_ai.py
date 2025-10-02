@@ -364,9 +364,33 @@ WORD COUNT ENFORCEMENT:
 
     @staticmethod
     def _parse_outline_structure(outline_text: str) -> Dict[str, Any]:
-        """Parse outline text into structured data - simple format for UI"""
+        """Parse outline text into structured data - handles both JSON and text formats"""
+        import json
+        
+        # First, try to parse as JSON (from assistant)
+        try:
+            parsed_data = json.loads(outline_text)
+            if "sections" in parsed_data:
+                sections = parsed_data["sections"]
+                # Ensure all sections have required fields
+                for section in sections:
+                    section.setdefault("key_points", [])
+                    section.setdefault("timing", "")
+                    section.setdefault("transition", "")
+                    section.setdefault("content", section.get("description", ""))
+                
+                # Create default section order if not provided
+                default_section_order = parsed_data.get("section_order", list(range(len(sections))))
+                
+                return {
+                    "sections": sections,
+                    "section_order": default_section_order
+                }
+        except json.JSONDecodeError:
+            pass
+        
+        # Fallback to text parsing for backward compatibility
         sections = []
-
         lines = outline_text.split("\n")
 
         for line in lines:
@@ -945,15 +969,11 @@ Follow TubeGenius principles:
                 script_data
             )
 
-            # Add message to thread WITH VECTOR STORE ATTACHMENT
+            # Add message to thread (vector store is already attached to the assistant)
             client.beta.threads.messages.create(
                 thread_id=thread.id, 
                 role="user", 
-                content=message_content,
-                attachments=[{
-                    "file_id": settings.OPENAI_VECTOR_STORE_ID,
-                    "tools": [{"type": "file_search"}]
-                }]
+                content=message_content
             )
 
             # Run the assistant (it already has detailed instructions configured)
@@ -1008,15 +1028,11 @@ Follow TubeGenius principles:
                 outline_text, script_data
             )
 
-            # Add message to thread WITH VECTOR STORE ATTACHMENT
+            # Add message to thread (vector store is already attached to the assistant)
             client.beta.threads.messages.create(
                 thread_id=thread.id, 
                 role="user", 
-                content=message_content,
-                attachments=[{
-                    "file_id": settings.OPENAI_VECTOR_STORE_ID,
-                    "tools": [{"type": "file_search"}]
-                }]
+                content=message_content
             )
 
             # Run the assistant (it already has detailed instructions configured)
@@ -1089,18 +1105,14 @@ Use the knowledge base files to apply appropriate storytelling rules and hook te
 
 Note: Please provide your response in a clear, structured format (not JSON)."""
 
-            # Add message to thread WITH VECTOR STORE ATTACHMENT
+            # Add message to thread (vector store is already attached to the assistant)
             client.beta.threads.messages.create(
                 thread_id=thread.id,
                 role="user",
                 content=[
                     {"type": "text", "text": message_content},
                     {"type": "image_url", "image_url": {"url": image_url_for_openai}},
-                ],
-                attachments=[{
-                    "file_id": settings.OPENAI_VECTOR_STORE_ID,
-                    "tools": [{"type": "file_search"}]
-                }]
+                ]
             )
 
             # Run the assistant (it already has detailed instructions configured)
@@ -1174,14 +1186,16 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
         )
 
-        return f"""Generate a script outline for this YouTube video:
+        return f"""Generate a script outline for this YouTube video in JSON format:
 
 Topic: {description}
 {tone_text}
 Style: {template_style}
 Target Length: {min_length}-{max_length} words
 
-Please use the knowledge base files to apply the appropriate storytelling rules and hook techniques for this topic and tone."""
+Please use the knowledge base files to apply the appropriate storytelling rules and hook techniques for this topic and tone.
+
+Return your response in JSON format with sections array containing title, description, key_points, timing, transition, and content fields."""
 
     @staticmethod
     def _build_assistant_script_message(
@@ -1196,7 +1210,7 @@ Please use the knowledge base files to apply the appropriate storytelling rules 
             f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
         )
 
-        return f"""Generate a complete YouTube script based on this outline:
+        return f"""Generate a complete YouTube script based on this outline in JSON format:
 
 OUTLINE:
 {outline_text}
@@ -1206,4 +1220,6 @@ REQUIREMENTS:
 - Target Length: {min_length}-{max_length} words
 - Use the knowledge base files to apply storytelling rules and hook techniques
 
-Please use the knowledge base files to ensure the script follows proven storytelling principles and engagement techniques."""
+Please use the knowledge base files to ensure the script follows proven storytelling principles and engagement techniques.
+
+Return your response in JSON format."""
