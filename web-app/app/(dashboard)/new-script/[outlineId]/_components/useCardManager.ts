@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { CardData, EditValues, ValidationErrors } from './utils';
 
-export const useCardManager = (initialCards: CardData[]) => {
+export const useCardManager = (initialCards: CardData[], onDelete?: (cardId: number) => void) => {
   const [cards, setCards] = useState<CardData[]>(initialCards);
   const [editingCard, setEditingCard] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<EditValues>({ title: '', description: '' });
@@ -32,7 +32,14 @@ export const useCardManager = (initialCards: CardData[]) => {
 
   const addNewCard = () => {
     const newId = Math.max(...cards.map((card) => card.id), 0) + 1;
-    const newCard: CardData = { id: newId, title: '', description: '' };
+    const newCard: CardData = {
+      id: newId,
+      title: '',
+      description: '',
+      keyPoints: [],
+      timing: '',
+      transition: '',
+    };
 
     setCards((prevCards) => [...prevCards, newCard]);
     setEditingCard(newId);
@@ -62,7 +69,12 @@ export const useCardManager = (initialCards: CardData[]) => {
   };
 
   const deleteCard = (id: number) => {
-    setCards((prevCards) => prevCards.filter((card) => card.id !== id));
+    if (onDelete) {
+      onDelete(id);
+    } else {
+      // Fallback to local deletion if no callback provided
+      setCards((prevCards) => prevCards.filter((card) => card.id !== id));
+    }
   };
 
   const handleInputChange = (field: 'title' | 'description', value: string) => {

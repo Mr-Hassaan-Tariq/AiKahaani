@@ -7,6 +7,8 @@ export const useDragAndDrop = (
   setDraggedCard: (id: number | null) => void,
   dragOverIndex: number | null,
   setDragOverIndex: (index: number | null) => void,
+  originalSectionOrder: number[],
+  onReorder?: (newCards: CardData[], sectionOrder: number[]) => void,
 ) => {
   const handleDragStart = (e: React.DragEvent, cardId: number) => {
     setDraggedCard(cardId);
@@ -36,6 +38,24 @@ export const useDragAndDrop = (
       if (draggedIndex !== -1) {
         const newCards = reorderCards(cards, draggedIndex, dragOverIndex);
         setCards(newCards);
+
+        // Calculate new section order based on the drag operation
+        // We need to reorder the originalSectionOrder array based on the new card positions
+        const newSectionOrder = [...originalSectionOrder];
+
+        // Get the original section index that was dragged
+        const draggedOriginalIndex = originalSectionOrder[draggedIndex];
+
+        // Remove the dragged item from its original position
+        newSectionOrder.splice(draggedIndex, 1);
+
+        // Insert it at the new position
+        newSectionOrder.splice(dragOverIndex, 0, draggedOriginalIndex);
+
+        // Call the callback with new cards and section order
+        if (onReorder) {
+          onReorder(newCards, newSectionOrder);
+        }
       }
     }
 

@@ -51,6 +51,7 @@ export interface OutlineType {
   title: string;
   outline_text: string;
   outline_data: OutlineDataType;
+  section_order: number[];
   status: string;
   version: number;
   tokens_used: number;

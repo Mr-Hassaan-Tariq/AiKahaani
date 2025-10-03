@@ -104,7 +104,7 @@ export class ScriptsService {
     try {
       const token = this.getCookie('access_token');
       const response = await this.apiClient.delete<{ status: number }>(
-        `/v1/scripts/outlines/${uuid}/`,
+        `v1/scripts/outlines/${uuid}/`,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : '',
@@ -154,6 +154,46 @@ export class ScriptsService {
       const apiError = error as { data: ApiError; status: number };
       throw {
         message: apiError.data?.detail || 'Failed to update script generation',
+        errors: apiError.data?.errors,
+        status: apiError.status,
+      };
+    }
+  }
+
+  /**
+   * Update outline section order and data
+   * @param uuid - The UUID of the outline to update
+   * @param sectionOrder - Array of section indices in new order
+   * @param outlineData - Updated outline data with reordered sections
+   * @returns Promise with updated outline data
+   */
+  async updateOutlineOrder(
+    uuid: string,
+    sectionOrder: number[],
+    outlineData: { sections: any[] },
+  ): Promise<any> {
+    try {
+      const token = this.getCookie('access_token');
+      const response = await this.apiClient.patch<any>(
+        `v1/scripts/outlines/${uuid}/`,
+        {
+          section_order: sectionOrder,
+          outline_data: outlineData,
+        },
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+        },
+      );
+      if (!response.data) {
+        throw new Error('No response received from update request');
+      }
+      return response.data;
+    } catch (error) {
+      const apiError = error as { data: ApiError; status: number };
+      throw {
+        message: apiError.data?.detail || 'Failed to update outline order',
         errors: apiError.data?.errors,
         status: apiError.status,
       };

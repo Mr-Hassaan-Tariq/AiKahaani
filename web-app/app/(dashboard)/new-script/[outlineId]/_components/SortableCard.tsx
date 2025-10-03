@@ -3,8 +3,8 @@ import { Trash2 } from 'lucide-react';
 import { CardView } from './CardView';
 import DeleteOutlineSection from './DeleteOutlineSection';
 import { DragHandle } from './DragHandle';
-import { EditForm } from './EditForm';
-import { CardData, isFormValid } from './utils';
+// import { EditForm } from './EditForm';
+import { CardData } from './utils';
 import Card from 'components/ui/Card';
 
 interface SortableCardProps {
@@ -37,23 +37,19 @@ interface SortableCardProps {
 export const SortableCard = ({
   card,
   isEditing,
-  editValues,
-  validationErrors,
+  // editValues,
+  // validationErrors,
   isDragged,
   isDragOver,
   showDropIndicator,
-  titleInputRef,
-  descriptionInputRef,
+  // titleInputRef,
+  // descriptionInputRef,
   onDragStart,
   onDragOver,
   onDragLeave,
   onDrop,
   onDragEnd,
   onEdit,
-  onInputChange,
-  onKeyDown,
-  onSave,
-  onCancel,
   onDelete,
   onTouchStart,
   onTouchMove,
@@ -90,7 +86,7 @@ export const SortableCard = ({
 
         {/* Content */}
         <div className="ml-8 w-full py-4 pr-4">
-          {isEditing ? (
+          {/* {isEditing ? (
             <EditForm
               cardId={card.id}
               editValues={editValues}
@@ -103,9 +99,9 @@ export const SortableCard = ({
               onCancel={onCancel}
               isFormValid={isFormValid(editValues)}
             />
-          ) : (
-            <CardView card={card} onEdit={onEdit} />
-          )}
+          ) : ( */}
+          <CardView card={card} onEdit={onEdit} />
+          {/* )} */}
         </div>
 
         {/* Delete Button */}

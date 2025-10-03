@@ -13,6 +13,7 @@ import { useCardManager } from './_components/useCardManager';
 import { useDragAndDrop } from './_components/useDragAndDrop';
 import useGenerateScript from 'lib/hooks/useGenerateScript';
 import useUpdateOutline from 'lib/hooks/useUpdateOutline';
+import useUpdateOutlineOrder from 'lib/hooks/useUpdateOutlineOrder';
 import { logger } from 'lib/logger';
 import useToast from 'lib/utils/useToast';
 import Button from 'components/ui/Button';
@@ -28,7 +29,16 @@ const convertOutlineToCards = (outline: OutlineType) => {
     return [];
   }
 
-  return outline.outline_data.sections.map((section, index) => ({
+  // Use section_order if available, otherwise use default order
+  const sectionOrder =
+    outline.section_order || outline.outline_data.sections.map((_, index) => index);
+
+  // Reorder sections based on section_order
+  const orderedSections = sectionOrder
+    .map((index) => outline.outline_data.sections[index])
+    .filter(Boolean);
+
+  return orderedSections.map((section, index) => ({
     id: index + 1,
     title: section.title || '',
     description: section.description || '',
@@ -63,11 +73,63 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
   const [edit, setEdit] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const { isPending, mutate: updateOutline } = useUpdateOutline();
+  const { isPending: isUpdatingOrder, mutate: updateOutlineOrder } = useUpdateOutlineOrder();
   const { isPending: isGeneratingScript, mutate: generateScript } = useGenerateScript();
 
   // Convert outline to cards format with fallback
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const initialCards = outline ? convertOutlineToCards(outline) : [];
+
+  // Handle delete callback
+  const handleDelete = (cardId: number) => {
+    if (!outline) return;
+
+    // Find the card to delete
+    const cardToDelete = cards.find((card) => card.id === cardId);
+    if (!cardToDelete) return;
+
+    // Find the index of the card in the current cards array
+    const cardIndex = cards.findIndex((card) => card.id === cardId);
+
+    // Remove the card from local state
+    const newCards = cards.filter((card) => card.id !== cardId);
+    setCards(newCards);
+
+    // Calculate new section_order by removing the deleted section's index
+    // Since cards are ordered according to section_order, we can safely remove by index
+    const newSectionOrder = [...(outline.section_order || [])];
+    if (cardIndex < newSectionOrder.length) {
+      newSectionOrder.splice(cardIndex, 1);
+    }
+
+    console.log('Deleting card with id:', cardId);
+    console.log('Card index:', cardIndex);
+    console.log('Original section_order:', outline.section_order);
+    console.log('New section_order:', newSectionOrder);
+
+    // Convert remaining cards back to outline format
+    const updatedOutlineData = convertCardsToOutline(newCards, outline);
+
+    // Call API to update the outline
+    updateOutlineOrder(
+      {
+        uuid: outline.uuid,
+        sectionOrder: newSectionOrder,
+        outlineData: updatedOutlineData.outline_data,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Success', 'Section deleted successfully');
+        },
+        onError: (error) => {
+          logger.error(error);
+          toast.error('Something went wrong', 'Error deleting section');
+          // Revert the local state on error
+          setCards(cards);
+        },
+      },
+    );
+  };
 
   const {
     cards,
@@ -88,10 +150,51 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
     deleteCard,
     handleInputChange,
     handleKeyDown,
-  } = useCardManager(initialCards);
+  } = useCardManager(initialCards, handleDelete);
+
+  // Handle reorder callback
+  const handleReorder = (newCards: any[], sectionOrder: number[]) => {
+    if (!outline) return;
+
+    console.log('Original section_order:', outline.section_order);
+    console.log('New section_order:', sectionOrder);
+
+    // Convert cards back to outline format with reordered sections
+    const reorderedOutlineData = convertCardsToOutline(newCards, outline);
+    console.log('reorderedOutlineData', reorderedOutlineData);
+
+    // Call API to update the outline order
+    updateOutlineOrder(
+      {
+        uuid: outline.uuid,
+        sectionOrder,
+        outlineData: reorderedOutlineData.outline_data,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Success', 'Section order updated successfully');
+        },
+        onError: (error) => {
+          logger.error(error);
+          toast.error('Something went wrong', 'Error updating section order');
+          // Revert the local state on error
+          setCards(cards);
+        },
+      },
+    );
+  };
 
   const { handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd } =
-    useDragAndDrop(cards, setCards, draggedCard, setDraggedCard, dragOverIndex, setDragOverIndex);
+    useDragAndDrop(
+      cards,
+      setCards,
+      draggedCard,
+      setDraggedCard,
+      dragOverIndex,
+      setDragOverIndex,
+      outline?.section_order || [],
+      handleReorder,
+    );
 
   // Track changes
   useEffect(() => {
@@ -160,7 +263,7 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
 
   return (
     <>
-      {isPending && <PageLoader size="lg" color="white" />}
+      {isPending || (isUpdatingOrder && <PageLoader size="lg" color="white" />)}
       <Col className="scrollbar max-h-[calc(100vh-200px)] w-full space-y-3 overflow-hidden overflow-y-auto">
         {isGeneratingScript ? (
           <LoadingScreen />

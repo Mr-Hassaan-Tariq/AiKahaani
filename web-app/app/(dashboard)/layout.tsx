@@ -68,7 +68,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               </Text>
             </Row>
           </Row>
-          <div className="mx-auto mt-14 max-w-screen-2xl px-4 py-10 lg:mt-0 lg:px-16 lg:py-16">
+          <div className="mx-auto mt-14 max-w-screen-2xl px-4 py-10 lg:mt-0 lg:px-20 lg:py-16">
             <div className="relative z-10">{children}</div>
             <div className="absolute bottom-0 right-0 z-0 rotate-180 bg-[radial-gradient(circle_at_top_left,#1a2e1d,transparent_40%)]">
               <Image src={'/BgGrid.svg'} width={1000} height={1000} alt="bottomLogo" />

@@ -76,7 +76,7 @@ export async function postClientDataAction<T, P>(endpoint: string, body?: P, cus
 
 export async function patchClientDataAction<T, P>(endpoint: string, body?: P) {
   const token = getAuthToken();
-  const res = await fetch(`${baseUrl}/${endpoint}`, {
+  const res = await fetch(`${baseUrl}${endpoint}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',

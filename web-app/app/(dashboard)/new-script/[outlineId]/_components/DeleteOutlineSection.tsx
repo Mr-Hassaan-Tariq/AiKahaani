@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 
-import useToast from 'lib/utils/useToast';
 import Button from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
 import Row from 'components/ui/Row';
@@ -15,23 +14,11 @@ export default function DeleteOutlineSection({
   onDelete: () => void;
   trigger: React.ReactNode;
 }) {
-  const toast = useToast();
   const [open, setOpen] = useState(false);
 
   function handleDelete() {
-    // deleteProfileImage(undefined, {
-    //   onSuccess: () => {
     onDelete();
-    toast.success('Success', 'Deleted successfully');
-    //     setOpen(false);
-    //     router.refresh();
-    //   },
-    //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //   onError: (error: any) => {
-    //     logger.error(error);
-    //     toast.error('Something went wrong', error.message?.toString());
-    //   },
-    // });
+    setOpen(false);
   }
 
   return (

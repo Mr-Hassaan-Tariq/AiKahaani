@@ -2,6 +2,9 @@ export interface CardData {
   id: number;
   title: string;
   description: string;
+  keyPoints: string[];
+  timing: string;
+  transition: string;
 }
 
 export interface EditValues {
