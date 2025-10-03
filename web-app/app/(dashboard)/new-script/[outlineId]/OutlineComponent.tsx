@@ -101,12 +101,6 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
     if (cardIndex < newSectionOrder.length) {
       newSectionOrder.splice(cardIndex, 1);
     }
-
-    console.log('Deleting card with id:', cardId);
-    console.log('Card index:', cardIndex);
-    console.log('Original section_order:', outline.section_order);
-    console.log('New section_order:', newSectionOrder);
-
     // Convert remaining cards back to outline format
     const updatedOutlineData = convertCardsToOutline(newCards, outline);
 
@@ -303,7 +297,7 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
                     className="group cursor-pointer border border-white/20 bg-white/10 backdrop-blur-sm transition-all duration-200 hover:bg-white/15 hover:shadow-lg hover:shadow-white/10"
                     onClick={() => startEditing(card)}
                   >
-                    <div className="p-4">
+                    <div className="">
                       <CardView card={card} onEdit={startEditing} />
                     </div>
                   </Card>
