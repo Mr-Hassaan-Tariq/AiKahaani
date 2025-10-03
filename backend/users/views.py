@@ -131,6 +131,15 @@ class GoogleLoginAPIView(MethodSpecificThrottleMixin, APIView):
                 )
 
             user, created = self.get_or_create_user(idinfo)
+
+            # Check if user is inactive
+            if not user.is_active:
+                logger.warning(f"Inactive user attempted to login: {user.email}")
+                return Response(
+                    {"detail": "Contact Support"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
             refresh = RefreshToken.for_user(user)
 
             # Create welcome back notification for successful login
@@ -316,6 +325,17 @@ class MagicLinkLoginAPIView(MethodSpecificThrottleMixin, APIView):
         user, created = User.objects.get_or_create(
             email=email, defaults={"username": username}
         )
+
+        # Check if user is inactive (only for existing users)
+        if not created and not user.is_active:
+            logger.warning(
+                f"Inactive user attempted to request magic link: {user.email}"
+            )
+            return Response(
+                {"detail": "Contact Support"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         token = MagicLinkToken.objects.create(
             user=user, expires_at=timezone.now() + timedelta(minutes=15)
         )
@@ -588,6 +608,18 @@ class MagicLinkVerifyAPIView(MethodSpecificThrottleMixin, APIView):
                 token=token, expires_at__gt=timezone.now()
             )
             user = link_token.user
+
+            # Check if user is inactive
+            if not user.is_active:
+                logger.warning(
+                    f"Inactive user attempted to verify magic link: {user.email}"
+                )
+                link_token.delete()  # Invalidate the token even for inactive users
+                return Response(
+                    {"detail": "Contact Support"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
             link_token.delete()  # Invalidate the used token
 
             refresh = RefreshToken.for_user(user)
@@ -802,6 +834,14 @@ class AdminLoginView(MethodSpecificThrottleMixin, APIView):
 
         user = serializer.validated_data["user"]
 
+        # Check if user is inactive
+        if not user.is_active:
+            logger.warning(f"Inactive admin user attempted to login: {user.email}")
+            return Response(
+                {"detail": "Contact Support"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
 
@@ -874,6 +914,18 @@ class RefreshTokenView(MethodSpecificThrottleMixin, APIView):
         try:
             # Create new tokens from the refresh token
             refresh = RefreshToken(refresh_token_value)
+            user = refresh.user
+
+            # Check if user is inactive
+            if not user.is_active:
+                logger.warning(
+                    f"Inactive user attempted to refresh token: {user.email}"
+                )
+                return Response(
+                    {"detail": "Contact Support"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
             new_access_token = refresh.access_token
             new_refresh_token = str(refresh)
 
