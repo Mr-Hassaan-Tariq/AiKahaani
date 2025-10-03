@@ -7,6 +7,7 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
   const { scriptId } = await params;
   const { data, isError, error } = await getScript(scriptId);
 
+  console.log('JSON.parse(data.content).scrip is ', data.sections, JSON.parse(data.content).script);
   return (
     <Col className="gap-8">
       <Col className="w-full items-center">
@@ -20,7 +21,7 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
             data.sections.length > 0
               ? data.sections
               : (JSON.parse(data.content).script.map((e: any) => ({
-                  title: `${e.timing}-${e.section}`,
+                  title: `${e.timing}\t\t\t${e.section_title}`,
                   content: e.content,
                 })) ?? [])
           }
