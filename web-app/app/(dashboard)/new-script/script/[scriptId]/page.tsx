@@ -17,7 +17,12 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
       ) : (
         <ScriptComponent
           sections={
-            data.sections.length > 0 ? data.sections : (JSON.parse(data.content).script ?? [])
+            data.sections.length > 0
+              ? data.sections
+              : (JSON.parse(data.content).script.map((e: any) => ({
+                  title: `${e.timing}-${e.section}`,
+                  content: e.content,
+                })) ?? [])
           }
           script={data}
         />

@@ -18,22 +18,20 @@ export default function ScriptComponent({
   sections: ScriptSectionType[];
   script: any;
 }) {
-  console.log(sections, 'sections............');
-
   return (
     <>
       <Col className="scrollbar h-full w-full space-y-3">
         {sections.map((e) => (
           <Card
             key={e.title}
-            className="group cursor-pointer border border-white/20 bg-white/10 backdrop-blur-sm transition-all duration-200 hover:bg-white/15 hover:shadow-lg hover:shadow-white/10"
+            className="cursor-pointer border border-white/20 bg-white/10 p-0 backdrop-blur-sm transition-all duration-200 hover:bg-white/15 hover:shadow-lg hover:shadow-white/10"
           >
-            <div className="p-2">
+            <div className="p-0">
               <div className="font-figtree text-base text-white">
                 <span className="font-semibold text-white/90 transition-colors duration-200 group-hover:text-white">
                   {e.title}
                 </span>
-                <div className="ml-2 text-white/70 transition-colors duration-200 group-hover:text-white/80">
+                <div className="ml-0 text-white/70 transition-colors duration-200 group-hover:text-white/80">
                   <div className="prose prose-invert prose-sm max-w-none whitespace-pre-line [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                     <ReactMarkdown>{e.content}</ReactMarkdown>
                   </div>
