@@ -157,8 +157,10 @@ def generate_script_outline(request):
         try:
             if image:
                 if hasattr(image, "read") and hasattr(image, "seek"):
-                    image_title, image_description = OpenAIScriptService.analyze_image_with_assistant(
-                        image_file=image
+                    image_title, image_description = (
+                        OpenAIScriptService.analyze_image_with_assistant(
+                            image_file=image
+                        )
                     )
                 else:
                     return Response(
@@ -166,8 +168,10 @@ def generate_script_outline(request):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
             else:
-                image_title, image_description = OpenAIScriptService.analyze_image_with_assistant(
-                    image_url=image_url
+                image_title, image_description = (
+                    OpenAIScriptService.analyze_image_with_assistant(
+                        image_url=image_url
+                    )
                 )
 
             title = image_title
@@ -218,19 +222,25 @@ def generate_script_outline(request):
         }
 
         # Use assistant for outline generation with knowledge base
-        outline_text, outline_data, metadata = OpenAIScriptService.generate_outline_with_assistant(script_data)
+        outline_text, outline_data, metadata = (
+            OpenAIScriptService.generate_outline_with_assistant(script_data)
+        )
 
         outline_title = title if title else f"Outline: {description[:50]}"
         # Save the template parameters in outline_data for later use
         outline_data_with_params = outline_data.copy() if outline_data else {}
-        outline_data_with_params.update({
-            "template_style": template_style.name if template_style else "medium",
-            "min_length": min_length,
-            "max_length": max_length,
-        })
+        outline_data_with_params.update(
+            {
+                "template_style": template_style.name if template_style else "medium",
+                "min_length": min_length,
+                "max_length": max_length,
+            }
+        )
 
         # Extract default section order from outline_data
-        default_section_order = outline_data.get("section_order", []) if outline_data else []
+        default_section_order = (
+            outline_data.get("section_order", []) if outline_data else []
+        )
 
         outline = ScriptOutline.objects.create(
             user=request.user,
@@ -332,7 +342,7 @@ def recreate_script_outline(request, uuid):
         if original_outline.outline_data:
             min_length = original_outline.outline_data.get("min_length", 100)
             max_length = original_outline.outline_data.get("max_length", 1000)
-        
+
         # If template style is available, use its word ranges
         if template_style:
             min_length = template_style.min_length
@@ -362,7 +372,9 @@ def recreate_script_outline(request, uuid):
         }
 
         # Generate new outline using assistant with knowledge base
-        outline_text, outline_data, metadata = OpenAIScriptService.generate_outline_with_assistant(script_data)
+        outline_text, outline_data, metadata = (
+            OpenAIScriptService.generate_outline_with_assistant(script_data)
+        )
 
         # Create new outline with "Recreated" prefix
         new_title = (
@@ -372,7 +384,9 @@ def recreate_script_outline(request, uuid):
         )
 
         # Extract default section order from outline_data
-        default_section_order = outline_data.get("section_order", []) if outline_data else []
+        default_section_order = (
+            outline_data.get("section_order", []) if outline_data else []
+        )
 
         new_outline = ScriptOutline.objects.create(
             user=request.user,
@@ -529,10 +543,12 @@ def generate_full_script(request, uuid):
         template_style_name = outline.outline_data.get("template_style", "medium")
         min_length = outline.outline_data.get("min_length", 1000)
         max_length = outline.outline_data.get("max_length", 5000)
-        
+
         # Optional: Allow request data to override (for flexibility)
         if request.data.get("template_style_id"):
-            template_style = TemplateStyle.objects.get(id=request.data["template_style_id"])
+            template_style = TemplateStyle.objects.get(
+                id=request.data["template_style_id"]
+            )
             min_length = template_style.min_length
             max_length = template_style.max_length
             template_style_name = template_style.name
@@ -545,8 +561,10 @@ def generate_full_script(request, uuid):
         }
 
         # Generate full script using assistant with knowledge base
-        script_content, sections, metadata = OpenAIScriptService.generate_full_script_with_assistant(
-            outline.outline_text, script_data
+        script_content, sections, metadata = (
+            OpenAIScriptService.generate_full_script_with_assistant(
+                outline.outline_text, script_data
+            )
         )
 
         # Create FullScript
@@ -1013,17 +1031,17 @@ class FullScriptListView(generics.ListAPIView):
     summary="List all generations (unified)",
     description="""
     Retrieve a unified list of both script outlines and full scripts with comprehensive filtering and sorting options.
-    
+
     **Filter Combinations:**
     - Use `type=script` to apply word_count and duration filters only to scripts
     - Use `type=outline` to get only outlines (word_count/duration filters ignored)
     - Combine multiple filters for precise results
-    
+
     **Pagination:**
     - Use `limit` parameter to specify number of items per page (default: 20, max: 100)
     - Use `offset` parameter to specify starting position (default: 0)
     - Example: `?limit=10&offset=20` returns items 21-30
-    
+
     **Examples:**
     - `?type=script&word_count_min=500&duration_max=10&limit=15` - Scripts with 500+ words, max 10 min, 15 per page
     - `?filter_type=saved&search=tutorial&limit=5` - Saved items containing 'tutorial', 5 per page
@@ -1083,30 +1101,30 @@ class FullScriptListView(generics.ListAPIView):
             name="word_count_min",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-            description='Minimum word count for scripts (only applies to scripts, outlines are unaffected). Example: 500',
-            required=False
+            description="Minimum word count for scripts (only applies to scripts, outlines are unaffected). Example: 500",
+            required=False,
         ),
         OpenApiParameter(
             name="word_count_max",
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
-            description='Maximum word count for scripts (only applies to scripts, outlines are unaffected). Example: 2000',
-            required=False
+            description="Maximum word count for scripts (only applies to scripts, outlines are unaffected). Example: 2000",
+            required=False,
         ),
         OpenApiParameter(
             name="duration_min",
             type=OpenApiTypes.FLOAT,
             location=OpenApiParameter.QUERY,
-            description='Minimum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 3.5',
-            required=False
+            description="Minimum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 3.5",
+            required=False,
         ),
         OpenApiParameter(
             name="duration_max",
             type=OpenApiTypes.FLOAT,
             location=OpenApiParameter.QUERY,
-            description='Maximum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 15.0',
-            required=False
-        )
+            description="Maximum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 15.0",
+            required=False,
+        ),
     ],
     responses={
         200: OpenApiResponse(
@@ -1179,7 +1197,7 @@ class GenerationsList(MethodSpecificThrottleMixin, generics.ListAPIView):
             duration_min=duration_min,
             duration_max=duration_max,
         )
-        
+
         return filtered_querysets
 
 
@@ -1357,12 +1375,34 @@ class ExportScriptView(APIView):
 
 def _export_txt(script, safe_title, timestamp):
     """Export script as plain text file and save to media folder"""
+    import json
+
     content = f"Title: {script.title}\n"
     content += f"Created: {script.created.strftime('%Y-%m-%d %H:%M:%S')}\n"
     content += f"Word Count: {script.word_count}\n"
     content += f"Estimated Duration: {script.estimated_duration:.1f} minutes\n"
     content += "=" * 50 + "\n\n"
-    content += script.content
+
+    # Try to parse as JSON structure first
+    try:
+        script_data = json.loads(script.content)
+        if isinstance(script_data, dict) and "script" in script_data:
+            # Handle structured script format
+            script_sections = script_data["script"]
+            for section in script_sections:
+                if "section" in section:
+                    content += f"\n=== {section['section']} ===\n\n"
+                if "content" in section and isinstance(section["content"], list):
+                    for item in section["content"]:
+                        content += f"{item}\n\n"
+                elif "content" in section and isinstance(section["content"], str):
+                    content += f"{section['content']}\n\n"
+        else:
+            # Fallback to original content if not in expected format
+            content += script.content
+    except (json.JSONDecodeError, KeyError, TypeError):
+        # If JSON parsing fails, use original content
+        content += script.content
 
     filename = f"{safe_title}_{timestamp}.txt"
     filepath = os.path.join("exports", filename)  # subfolder in MEDIA_ROOT
@@ -1378,6 +1418,7 @@ def _export_txt(script, safe_title, timestamp):
 
 
 def _export_pdf(script, safe_title, timestamp):
+    import json
     from io import BytesIO
 
     from pypdf import PdfReader, PdfWriter
@@ -1388,7 +1429,6 @@ def _export_pdf(script, safe_title, timestamp):
     from reportlab.lib.units import inch
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
-    # CAN BE BETTER IMPLEMENTED
     filename = f"{safe_title}_{timestamp}.pdf"
     filepath = os.path.join("exports", filename)
     full_path = os.path.join(settings.MEDIA_ROOT, filepath)
@@ -1419,11 +1459,21 @@ def _export_pdf(script, safe_title, timestamp):
         fontName="Helvetica-Bold",
     )
 
+    section_style = ParagraphStyle(
+        "SectionHeader",
+        parent=styles["Heading2"],
+        fontSize=14,
+        spaceAfter=12,
+        spaceBefore=16,
+        textColor=darkblue,
+        fontName="Helvetica-Bold",
+    )
+
     content_style = ParagraphStyle(
         "CustomContent",
         parent=styles["Normal"],
         fontSize=11,
-        spaceAfter=12,
+        spaceAfter=8,
         alignment=TA_JUSTIFY,
         leftIndent=0,
         rightIndent=0,
@@ -1437,41 +1487,88 @@ def _export_pdf(script, safe_title, timestamp):
     story.append(Paragraph(script.title, title_style))
     story.append(Spacer(1, 20))
 
-    # Process content to improve formatting
-    content_lines = script.content.split("\n")
-    for line in content_lines:
-        line = line.strip()
-        if not line:
-            story.append(Spacer(1, 6))
-            continue
+    # Try to parse as JSON structure first
+    try:
+        script_data = json.loads(script.content)
+        if isinstance(script_data, dict) and "script" in script_data:
+            # Handle structured script format
+            script_sections = script_data["script"]
+            for section in script_sections:
+                if "section" in section:
+                    story.append(Paragraph(section["section"], section_style))
+                    story.append(Spacer(1, 8))
 
-        # Handle different types of content
-        if line.startswith("[") and line.endswith("]"):
-            # This is a stage direction or section header
-            section_style = ParagraphStyle(
-                "SectionHeader",
-                parent=styles["Heading2"],
-                fontSize=12,
-                spaceAfter=8,
-                spaceBefore=12,
-                textColor=darkblue,
-                fontName="Helvetica-Bold",
-            )
-            story.append(Paragraph(line, section_style))
-        elif line.startswith("**") and line.endswith("**"):
-            # This is a bold section
-            bold_style = ParagraphStyle(
-                "BoldText",
-                parent=styles["Normal"],
-                fontSize=11,
-                spaceAfter=8,
-                spaceBefore=6,
-                fontName="Helvetica-Bold",
-            )
-            story.append(Paragraph(line, bold_style))
+                if "content" in section and isinstance(section["content"], list):
+                    for item in section["content"]:
+                        # Clean up the content for PDF formatting
+                        clean_item = str(item).replace("//", "").strip()
+                        if clean_item:
+                            # Check for special formatting
+                            if (
+                                clean_item.startswith("NARRATOR")
+                                or clean_item.startswith("CUT TO")
+                                or clean_item.startswith("VISUAL")
+                            ):
+                                # Format as stage directions
+                                story.append(
+                                    Paragraph(f"<i>{clean_item}</i>", content_style)
+                                )
+                            else:
+                                story.append(Paragraph(clean_item, content_style))
+                            story.append(Spacer(1, 4))
+                elif "content" in section and isinstance(section["content"], str):
+                    clean_content = section["content"].replace("//", "").strip()
+                    if clean_content:
+                        story.append(Paragraph(clean_content, content_style))
+                        story.append(Spacer(1, 8))
         else:
-            # Regular content
-            story.append(Paragraph(line, content_style))
+            # Fallback to original content processing
+            content_lines = script.content.split("\n")
+            for line in content_lines:
+                line = line.strip()
+                if not line:
+                    story.append(Spacer(1, 6))
+                    continue
+
+                # Handle different types of content
+                if line.startswith("[") and line.endswith("]"):
+                    story.append(Paragraph(line, section_style))
+                elif line.startswith("**") and line.endswith("**"):
+                    bold_style = ParagraphStyle(
+                        "BoldText",
+                        parent=styles["Normal"],
+                        fontSize=11,
+                        spaceAfter=8,
+                        spaceBefore=6,
+                        fontName="Helvetica-Bold",
+                    )
+                    story.append(Paragraph(line, bold_style))
+                else:
+                    story.append(Paragraph(line, content_style))
+    except (json.JSONDecodeError, KeyError, TypeError):
+        # If JSON parsing fails, use original content processing
+        content_lines = script.content.split("\n")
+        for line in content_lines:
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 6))
+                continue
+
+            # Handle different types of content
+            if line.startswith("[") and line.endswith("]"):
+                story.append(Paragraph(line, section_style))
+            elif line.startswith("**") and line.endswith("**"):
+                bold_style = ParagraphStyle(
+                    "BoldText",
+                    parent=styles["Normal"],
+                    fontSize=11,
+                    spaceAfter=8,
+                    spaceBefore=6,
+                    fontName="Helvetica-Bold",
+                )
+                story.append(Paragraph(line, bold_style))
+            else:
+                story.append(Paragraph(line, content_style))
 
     doc.build(story)
 
@@ -1502,6 +1599,8 @@ def _export_pdf(script, safe_title, timestamp):
 
 
 def _export_docx(script, safe_title, timestamp):
+    import json
+
     from docx import Document
 
     filename = f"{safe_title}_{timestamp}.docx"
@@ -1510,8 +1609,55 @@ def _export_docx(script, safe_title, timestamp):
     os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
     doc = Document()
-    doc.add_heading(script.title, 0)
-    doc.add_paragraph(script.content)
+
+    # Add title
+    title = doc.add_heading(script.title, 0)
+
+    # Add metadata
+    doc.add_paragraph(f"Created: {script.created.strftime('%Y-%m-%d %H:%M:%S')}")
+    doc.add_paragraph(f"Word Count: {script.word_count}")
+    doc.add_paragraph(f"Estimated Duration: {script.estimated_duration:.1f} minutes")
+    doc.add_paragraph("=" * 50)
+    doc.add_paragraph()  # Add space
+
+    # Try to parse as JSON structure first
+    try:
+        script_data = json.loads(script.content)
+        if isinstance(script_data, dict) and "script" in script_data:
+            # Handle structured script format
+            script_sections = script_data["script"]
+            for section in script_sections:
+                if "section" in section:
+                    # Add section heading
+                    doc.add_heading(section["section"], level=1)
+
+                if "content" in section and isinstance(section["content"], list):
+                    for item in section["content"]:
+                        # Clean up the content for DOCX formatting
+                        clean_item = str(item).replace("//", "").strip()
+                        if clean_item:
+                            # Check for special formatting
+                            if (
+                                clean_item.startswith("NARRATOR")
+                                or clean_item.startswith("CUT TO")
+                                or clean_item.startswith("VISUAL")
+                            ):
+                                # Format as italic stage directions
+                                p = doc.add_paragraph()
+                                p.add_run(clean_item).italic = True
+                            else:
+                                doc.add_paragraph(clean_item)
+                elif "content" in section and isinstance(section["content"], str):
+                    clean_content = section["content"].replace("//", "").strip()
+                    if clean_content:
+                        doc.add_paragraph(clean_content)
+        else:
+            # Fallback to original content if not in expected format
+            doc.add_paragraph(script.content)
+    except (json.JSONDecodeError, KeyError, TypeError):
+        # If JSON parsing fails, use original content
+        doc.add_paragraph(script.content)
+
     doc.save(full_path)
     # TODO: Add file to storage/DELETE AFTER 10 MINUTES
     file_url = settings.MEDIA_URL + filepath
