@@ -15,7 +15,12 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
       {isError ? (
         <div className="text-white">{error.message?.toString()}</div>
       ) : (
-        <ScriptComponent sections={data.sections} script={data} />
+        <ScriptComponent
+          sections={
+            data.sections.length > 0 ? data.sections : (JSON.parse(data.content).script ?? [])
+          }
+          script={data}
+        />
       )}
     </Col>
   );
