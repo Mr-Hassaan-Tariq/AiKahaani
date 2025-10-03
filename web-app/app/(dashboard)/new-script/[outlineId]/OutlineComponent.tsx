@@ -150,12 +150,8 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
   const handleReorder = (newCards: any[], sectionOrder: number[]) => {
     if (!outline) return;
 
-    console.log('Original section_order:', outline.section_order);
-    console.log('New section_order:', sectionOrder);
-
     // Convert cards back to outline format with reordered sections
     const reorderedOutlineData = convertCardsToOutline(newCards, outline);
-    console.log('reorderedOutlineData', reorderedOutlineData);
 
     // Call API to update the outline order
     updateOutlineOrder(
