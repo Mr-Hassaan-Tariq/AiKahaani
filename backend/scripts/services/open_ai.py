@@ -1242,6 +1242,9 @@ REQUIREMENTS:
 - Each object must have proper metadata with tokens_used, generation_time, model, assistant_id, vector_store_id, and thread_id
 - Outline sections must have title, description, key_points, timing, transition, and content
 - Script sections must have title, content, start_time, and end_time
-- The script full_text should be the complete narrative script
+- The script full_text should be the complete narrative script - write the actual script content, not references to documents
+- Do NOT include references to knowledge base documents in the script content
+- Write the complete script as if you are the narrator speaking directly to the audience
+- The full_text should be ready for narration/recording
 
 Return ONLY the JSON response matching the schema structure."""
