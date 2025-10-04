@@ -1,5 +1,6 @@
 export interface ScriptSectionType {
   title: string;
+  timeRange?: string;
   content: string;
 }
 

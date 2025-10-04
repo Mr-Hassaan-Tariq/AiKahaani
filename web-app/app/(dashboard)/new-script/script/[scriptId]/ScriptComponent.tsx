@@ -4,7 +4,7 @@ import { lazy, memo, Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
 import ExportScriptModal from '@/(dashboard)/my-scripts/_components/ExportScriptModal';
 import { ScriptData } from '@/(dashboard)/my-scripts/_types';
-import { Clock } from 'lucide-react';
+import { Clock, Minus } from 'lucide-react';
 
 import { directFileIcon } from '../../[outlineId]/_components/components';
 import { ScriptSectionType } from './types';
@@ -85,8 +85,11 @@ export default function ScriptComponent({
             className="border border-white/20 bg-white/10 p-6 backdrop-blur-sm transition-all duration-200 hover:bg-white/15 hover:shadow-lg hover:shadow-white/10"
           >
             <div className="font-figtree text-base text-white">
-              <span className="flex gap-2 font-semibold text-white/90 transition-colors duration-200 group-hover:text-white">
-                <Clock /> {e.title}
+              <span className="flex items-center gap-2 font-semibold text-white/90 transition-colors duration-200 group-hover:text-white">
+                <Clock />
+                {e.timeRange && e.timeRange}
+                <Minus className="inline-block" />
+                {e.title}
               </span>
               <div className="mt-3 text-white/70 transition-colors duration-200 group-hover:text-white/80">
                 <ContentRenderer content={e.content} />

@@ -9,6 +9,7 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
   const { scriptId } = await params;
   const { data, isError, error } = await getScript(scriptId);
 
+  // console.log('data', data?.sections, JSON.parse(data?.content)?.script?.sections);
   // (JSON.parse(data.content)?.script?.map((e: any) => ({
   //   title: `${e.timing}\t\t\t${e.section_title}`,
   //   content: e.content,
@@ -24,9 +25,14 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
         <ScriptComponent
           sections={
             data.sections.length > 0
-              ? data.sections
-              : JSON.parse(data.content)?.sections?.map((e: any) => ({
-                  title: `${e.timing ?? ''}\t\t\t${e.title ?? ''}`,
+              ? data?.sections?.map((e: any) => ({
+                  timeRange: `${e.start_time ?? ''}-${e.end_time ?? ''}`,
+                  title: e.title ?? '',
+                  content: e.content,
+                }))
+              : JSON.parse(data?.content)?.script?.sections?.map((e: any) => ({
+                  timeRange: `${e.start_time ?? ''}-${e.end_time ?? ''}`,
+                  title: e.title ?? '',
                   content: e.script,
                 }))
           }
