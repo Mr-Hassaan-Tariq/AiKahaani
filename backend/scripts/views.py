@@ -648,10 +648,24 @@ def generate_full_script(request, uuid):
             "max_length": max_length,
         }
 
+        # Prepare structured outline data for script generation
+        import json
+        if outline.outline_data and outline.outline_data.get("sections"):
+            # Use structured outline data with section_order
+            structured_outline = {
+                "sections": outline.outline_data.get("sections", []),
+                "section_order": outline.outline_data.get("section_order", []),
+                "outline_text": outline.outline_text
+            }
+            outline_for_script = json.dumps(structured_outline)
+        else:
+            # Fallback to plain text
+            outline_for_script = outline.outline_text
+
         # Generate full script using assistant with knowledge base
         script_content, sections, metadata = (
             OpenAIScriptService.generate_full_script_with_assistant(
-                outline.outline_text, script_data
+                outline_for_script, script_data
             )
         )
 
