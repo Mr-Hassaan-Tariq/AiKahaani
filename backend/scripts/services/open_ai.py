@@ -24,13 +24,14 @@ def get_openai_client():
     return _client
 
 
-def validate_json_schema(data: Dict[str, Any]) -> bool:
+def validate_json_schema(data: Dict[str, Any], schema_type: str = "auto") -> bool:
     """
     Validate JSON data against the expected schema structure.
-    Since the schema is configured in the Assistant, we just check basic structure.
+    Supports separate outline and script schemas.
     
     Args:
         data: Dictionary to validate
+        schema_type: Type of schema ("outline", "script", or "auto")
     
     Returns:
         bool: True if valid, False otherwise
@@ -39,7 +40,21 @@ def validate_json_schema(data: Dict[str, Any]) -> bool:
         if not isinstance(data, dict):
             return False
         
-        # Check if it has the new schema structure
+        # Handle separate schemas for outline and script
+        if schema_type == "outline":
+            return _validate_outline_schema(data)
+        elif schema_type == "script":
+            return _validate_script_schema(data)
+        elif schema_type == "auto":
+            # Auto-detect schema type
+            if "sections" in data and "section_order" in data and "outline_text" in data:
+                return _validate_outline_schema(data)
+            elif "full_text" in data and "sections" in data:
+                return _validate_script_schema(data)
+            else:
+                return False
+        
+        # Legacy combined format (for backward compatibility)
         if "outline" in data and "script" in data:
             outline = data["outline"]
             script = data["script"]
@@ -71,6 +86,40 @@ def validate_json_schema(data: Dict[str, Any]) -> bool:
     except Exception as e:
         logger.error(f"Schema validation failed: {str(e)}")
         return False
+
+
+def _validate_outline_schema(data: Dict[str, Any]) -> bool:
+    """Validate outline schema structure"""
+    required_keys = ["sections", "section_order", "outline_text", "metadata"]
+    for key in required_keys:
+        if key not in data:
+            return False
+    
+    # Validate metadata structure
+    metadata = data.get("metadata", {})
+    required_metadata = ["tokens_used", "generation_time", "model", "assistant_id", "vector_store_id", "thread_id"]
+    for key in required_metadata:
+        if key not in metadata:
+            return False
+    
+    return True
+
+
+def _validate_script_schema(data: Dict[str, Any]) -> bool:
+    """Validate script schema structure"""
+    required_keys = ["full_text", "sections", "metadata"]
+    for key in required_keys:
+        if key not in data:
+            return False
+    
+    # Validate metadata structure
+    metadata = data.get("metadata", {})
+    required_metadata = ["tokens_used", "generation_time", "model", "assistant_id", "vector_store_id", "thread_id"]
+    for key in required_metadata:
+        if key not in metadata:
+            return False
+    
+    return True
 
 
 class OpenAIScriptService:
@@ -428,7 +477,7 @@ WORD COUNT ENFORCEMENT:
             parsed_data = json.loads(outline_text)
             
             # Validate against schema
-            if validate_json_schema(parsed_data):
+            if validate_json_schema(parsed_data, "outline"):
                 # Handle new schema structure with outline and script
                 if "outline" in parsed_data:
                     outline_data = parsed_data["outline"]
@@ -745,7 +794,7 @@ Follow TubeGenius principles:
             parsed_data = json.loads(script_content)
             
             # Validate against schema
-            if validate_json_schema(parsed_data):
+            if validate_json_schema(parsed_data, "outline"):
                 # Handle new schema structure with outline and script
                 if "script" in parsed_data:
                     script_data = parsed_data["script"]
@@ -841,7 +890,7 @@ Follow TubeGenius principles:
             # Run the assistant (it already has detailed instructions configured)
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
-                assistant_id=settings.OPENAI_ASSISTANT_ID,
+                assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
             )
 
             # Wait for completion
@@ -860,8 +909,8 @@ Follow TubeGenius principles:
                 "tokens_used": tokens_used,
                 "generation_time": generation_time,
                 "model": "gpt-4-assistant",
-                "assistant_id": settings.OPENAI_ASSISTANT_ID,
-                "vector_store_id": settings.OPENAI_VECTOR_STORE_ID,
+                "assistant_id": settings.OPENAI_ASSISTANT_ID_SCRIPT,
+                "vector_store_id": settings.OPENAI_VECTOR_STORE_ID_SCRIPT,
                 "thread_id": thread.id,
             }
 
@@ -898,7 +947,7 @@ Follow TubeGenius principles:
             # Run the assistant (it already has detailed instructions configured)
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
-                assistant_id=settings.OPENAI_ASSISTANT_ID,
+                assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
             )
 
             # Wait for completion
@@ -917,8 +966,8 @@ Follow TubeGenius principles:
                 "tokens_used": tokens_used,
                 "generation_time": generation_time,
                 "model": "gpt-4-assistant",
-                "assistant_id": settings.OPENAI_ASSISTANT_ID,
-                "vector_store_id": settings.OPENAI_VECTOR_STORE_ID,
+                "assistant_id": settings.OPENAI_ASSISTANT_ID_SCRIPT,
+                "vector_store_id": settings.OPENAI_VECTOR_STORE_ID_SCRIPT,
                 "thread_id": thread.id,
             }
 
@@ -978,7 +1027,7 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             # Run the assistant (it already has detailed instructions configured)
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
-                assistant_id=settings.OPENAI_ASSISTANT_ID,
+                assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
             )
 
             # Wait for completion
@@ -1010,135 +1059,6 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             return "Image Analysis", "An image was provided for analysis."
 
     @staticmethod
-    def generate_outline_and_script_with_assistant(
-        script_data: Dict[str, Any],
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        """
-        Generate both outline and script using OpenAI Assistant API with vector store knowledge base
-        Returns the combined structure according to the new JSON schema
-        """
-        try:
-            start_time = time.time()
-            client = get_openai_client()
-
-            # Create thread
-            thread = client.beta.threads.create()
-
-            # Build message content for combined generation
-            message_content = OpenAIScriptService._build_combined_generation_message(script_data)
-
-            # Add message to thread (vector store is already attached to the assistant)
-            client.beta.threads.messages.create(
-                thread_id=thread.id, role="user", content=message_content
-            )
-
-            # Run the assistant (it already has detailed instructions configured)
-            run = client.beta.threads.runs.create(
-                thread_id=thread.id,
-                assistant_id=settings.OPENAI_ASSISTANT_ID,
-            )
-
-            # Wait for completion
-            response_content, tokens_used = (
-                OpenAIScriptService._wait_for_assistant_completion(
-                    client, thread.id, run.id
-                )
-            )
-
-            generation_time = time.time() - start_time
-
-            # Parse the combined response
-            try:
-                parsed_data = json.loads(response_content)
-                
-                # Validate against schema
-                if validate_json_schema(parsed_data):
-                    # Extract outline and script data
-                    outline_data = parsed_data.get("outline", {})
-                    script_data = parsed_data.get("script", {})
-                    
-                    # Ensure metadata is properly structured
-                    if "metadata" not in outline_data:
-                        outline_data["metadata"] = {}
-                    if "metadata" not in script_data:
-                        script_data["metadata"] = {}
-                    
-                    # Add generation metadata
-                    outline_metadata = outline_data["metadata"]
-                    script_metadata = script_data["metadata"]
-                    
-                    outline_metadata.update({
-                        "tokens_used": tokens_used,
-                        "generation_time": generation_time,
-                        "model": "gpt-4-assistant",
-                        "assistant_id": settings.OPENAI_ASSISTANT_ID,
-                        "vector_store_id": settings.OPENAI_VECTOR_STORE_ID,
-                        "thread_id": thread.id,
-                    })
-                    
-                    script_metadata.update({
-                        "tokens_used": tokens_used,
-                        "generation_time": generation_time,
-                        "model": "gpt-4-assistant",
-                        "assistant_id": settings.OPENAI_ASSISTANT_ID,
-                        "vector_store_id": settings.OPENAI_VECTOR_STORE_ID,
-                        "thread_id": thread.id,
-                    })
-                    
-                    return outline_data, script_data
-                else:
-                    # Fallback to legacy parsing if schema doesn't match
-                    raise ValueError("Response doesn't match expected schema")
-                    
-            except json.JSONDecodeError:
-                # Fallback to legacy parsing
-                logger.warning("Could not parse assistant response as JSON, falling back to legacy parsing")
-                
-                # Parse outline structure
-                outline_data = OpenAIScriptService._parse_outline_structure(response_content)
-                
-                # Generate script from outline (using the outline text as basis)
-                outline_text = response_content
-                script_sections = OpenAIScriptService._parse_script_sections(outline_text)
-                
-                # Create metadata structures
-                outline_metadata = {
-                    "tokens_used": tokens_used,
-                    "generation_time": generation_time,
-                    "model": "gpt-4-assistant",
-                    "assistant_id": settings.OPENAI_ASSISTANT_ID,
-                    "vector_store_id": settings.OPENAI_VECTOR_STORE_ID,
-                    "thread_id": thread.id,
-                }
-                
-                script_metadata = {
-                    "tokens_used": tokens_used,
-                    "generation_time": generation_time,
-                    "model": "gpt-4-assistant",
-                    "assistant_id": settings.OPENAI_ASSISTANT_ID,
-                    "vector_store_id": settings.OPENAI_VECTOR_STORE_ID,
-                    "thread_id": thread.id,
-                }
-                
-                # Structure the response according to new schema
-                structured_outline = {
-                    "sections": outline_data.get("sections", []),
-                    "section_order": outline_data.get("section_order", []),
-                    "outline_text": response_content,
-                    "metadata": outline_metadata
-                }
-                
-                structured_script = {
-                    "full_text": response_content,
-                    "sections": script_sections,
-                    "metadata": script_metadata
-                }
-                
-                return structured_outline, structured_script
-
-        except Exception as e:
-            logger.error(f"Assistant combined generation failed: {str(e)}")
-            raise
 
     @staticmethod
     def _wait_for_assistant_completion(
@@ -1214,37 +1134,3 @@ REQUIREMENTS:
 Please use the knowledge base files to ensure the script follows proven storytelling principles and engagement techniques.
 
 Return your response in JSON format."""
-
-    @staticmethod
-    def _build_combined_generation_message(script_data: Dict[str, Any]) -> str:
-        """Build message for combined outline and script generation using the new JSON schema"""
-        tones = script_data.get("tones", ["informative"])
-        template_style = script_data.get("template_style", "medium")
-        description = script_data.get("description", "")
-        min_length = script_data.get("min_length", 1000)
-        max_length = script_data.get("max_length", 5000)
-
-        tone_text = (
-            f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
-        )
-
-        return f"""Generate both a script outline and full script for this YouTube video in the exact JSON schema format:
-
-Topic: {description}
-{tone_text}
-Style: {template_style}
-Target Length: {min_length}-{max_length} words
-
-REQUIREMENTS:
-- Use the knowledge base files to apply storytelling rules and hook techniques
-- Follow the JSON schema exactly as configured in the assistant
-- The response must include both "outline" and "script" objects
-- Each object must have proper metadata with tokens_used, generation_time, model, assistant_id, vector_store_id, and thread_id
-- Outline sections must have title, description, key_points, timing, transition, and content
-- Script sections must have title, content, start_time, and end_time
-- The script full_text should be the complete narrative script - write the actual script content, not references to documents
-- Do NOT include references to knowledge base documents in the script content
-- Write the complete script as if you are the narrator speaking directly to the audience
-- The full_text should be ready for narration/recording
-
-Return ONLY the JSON response matching the schema structure."""
