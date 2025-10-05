@@ -255,7 +255,24 @@ def generate_script_outline(request):
             actual_outline_data = outline_data or {}
             actual_outline_text = outline_text
 
-        outline_title = title if title else f"Outline: {description[:50]}"
+        # Generate title using assistant if not provided
+        if title:
+            outline_title = title
+        else:
+            try:
+                # Use the title generation assistant to create an engaging title
+                generated_titles, title_metadata = OpenAIScriptService.generate_titles(
+                    prompt=description,
+                    title_count=1,  # We only need one title
+                    tones=outline_tones  # Use the same tones as the outline
+                )
+                if generated_titles and len(generated_titles) > 0:
+                    outline_title = generated_titles[0].get("title", f"Outline: {description[:50]}")
+                else:
+                    outline_title = f"Outline: {description[:50]}"
+            except Exception as e:
+                logger.warning(f"Title generation failed: {str(e)}, using fallback")
+                outline_title = f"Outline: {description[:50]}"
         # Save the template parameters in outline_data for later use
         outline_data_with_params = actual_outline_data.copy() if actual_outline_data else {}
         outline_data_with_params.update(
@@ -434,12 +451,25 @@ def recreate_script_outline(request, uuid):
             actual_outline_data = outline_data or {}
             actual_outline_text = outline_text
 
-        # Create new outline with "Recreated" prefix
-        new_title = (
-            f"Recreated: {original_outline.title}"
-            if original_outline.title
-            else f"Recreated outline from {original_outline.uuid}"
-        )
+        # Create new outline with "Recreated" prefix, but generate a fresh title
+        if original_outline.title:
+            # Generate a new title based on the original outline's content
+            try:
+                # Use the title generation assistant to create an engaging title
+                generated_titles, title_metadata = OpenAIScriptService.generate_titles(
+                    prompt=original_outline.description,  # Use the original description
+                    title_count=1,  # We only need one title
+                    tones=tones  # Use the same tones as the new outline
+                )
+                if generated_titles and len(generated_titles) > 0:
+                    new_title = f"Recreated: {generated_titles[0].get('title', original_outline.title)}"
+                else:
+                    new_title = f"Recreated: {original_outline.title}"
+            except Exception as e:
+                logger.warning(f"Title generation failed during recreation: {str(e)}, using fallback")
+                new_title = f"Recreated: {original_outline.title}"
+        else:
+            new_title = f"Recreated outline from {original_outline.uuid}"
 
         # Extract default section order from outline_data
         default_section_order = (
@@ -674,7 +704,7 @@ def generate_full_script(request, uuid):
         full_script = FullScript.objects.create(
             user=request.user,
             outline=outline,
-            title=request.data.get("title", f"Script: {outline.title}"),
+            title=request.data.get("title", outline.title),  # Use the outline title directly
             content=actual_script_text,
             sections=sections,
             status="generated",
