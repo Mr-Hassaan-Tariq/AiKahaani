@@ -947,7 +947,7 @@ Follow TubeGenius principles:
             # Run the assistant (it already has detailed instructions configured)
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
-                assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
+                assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
             )
 
             # Wait for completion
