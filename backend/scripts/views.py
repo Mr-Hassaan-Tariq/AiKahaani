@@ -226,9 +226,38 @@ def generate_script_outline(request):
             OpenAIScriptService.generate_outline_with_assistant(script_data)
         )
 
+        # Extract actual outline data from JSON response
+        import json
+        import re
+        try:
+            outline_json_data = json.loads(outline_text)
+            if isinstance(outline_json_data, dict) and "sections" in outline_json_data:
+                # Extract structured data from JSON response
+                actual_outline_data = {
+                    "sections": outline_json_data.get("sections", []),
+                    "section_order": outline_json_data.get("section_order", []),
+                    "outline_text": outline_json_data.get("outline_text", ""),
+                }
+                # Use the structured outline_text from JSON, not the raw JSON
+                actual_outline_text = outline_json_data.get("outline_text", outline_text)
+                
+                # Clean up any document references
+                actual_outline_text = re.sub(r'■[^■]*?■', '', actual_outline_text)
+                actual_outline_text = re.sub(r'[0-9]+:\d+†[^■]*?■', '', actual_outline_text)
+                actual_outline_text = re.sub(r'\n\s*\n\s*\n', '\n\n', actual_outline_text)
+                actual_outline_text = actual_outline_text.strip()
+            else:
+                # Fallback to original data
+                actual_outline_data = outline_data or {}
+                actual_outline_text = outline_text
+        except (json.JSONDecodeError, TypeError):
+            # Fallback to original data
+            actual_outline_data = outline_data or {}
+            actual_outline_text = outline_text
+
         outline_title = title if title else f"Outline: {description[:50]}"
         # Save the template parameters in outline_data for later use
-        outline_data_with_params = outline_data.copy() if outline_data else {}
+        outline_data_with_params = actual_outline_data.copy() if actual_outline_data else {}
         outline_data_with_params.update(
             {
                 "template_style": template_style.name if template_style else "medium",
@@ -239,16 +268,16 @@ def generate_script_outline(request):
 
         # Extract default section order from outline_data
         default_section_order = (
-            outline_data.get("section_order", []) if outline_data else []
+            actual_outline_data.get("section_order", []) if actual_outline_data else []
         )
 
         outline = ScriptOutline.objects.create(
             user=request.user,
             title=outline_title,
-            outline_text=outline_text,
+            outline_text=actual_outline_text,
             outline_data=outline_data_with_params,  # Save with parameters
             section_order=default_section_order,  # Set default section order
-            original_outline=outline_text,
+            original_outline=actual_outline_text,
             status="generated",
             openai_model=metadata["model"],
             tokens_used=metadata["tokens_used"],
@@ -376,6 +405,35 @@ def recreate_script_outline(request, uuid):
             OpenAIScriptService.generate_outline_with_assistant(script_data)
         )
 
+        # Extract actual outline data from JSON response
+        import json
+        import re
+        try:
+            outline_json_data = json.loads(outline_text)
+            if isinstance(outline_json_data, dict) and "sections" in outline_json_data:
+                # Extract structured data from JSON response
+                actual_outline_data = {
+                    "sections": outline_json_data.get("sections", []),
+                    "section_order": outline_json_data.get("section_order", []),
+                    "outline_text": outline_json_data.get("outline_text", ""),
+                }
+                # Use the structured outline_text from JSON, not the raw JSON
+                actual_outline_text = outline_json_data.get("outline_text", outline_text)
+                
+                # Clean up any document references
+                actual_outline_text = re.sub(r'■[^■]*?■', '', actual_outline_text)
+                actual_outline_text = re.sub(r'[0-9]+:\d+†[^■]*?■', '', actual_outline_text)
+                actual_outline_text = re.sub(r'\n\s*\n\s*\n', '\n\n', actual_outline_text)
+                actual_outline_text = actual_outline_text.strip()
+            else:
+                # Fallback to original data
+                actual_outline_data = outline_data or {}
+                actual_outline_text = outline_text
+        except (json.JSONDecodeError, TypeError):
+            # Fallback to original data
+            actual_outline_data = outline_data or {}
+            actual_outline_text = outline_text
+
         # Create new outline with "Recreated" prefix
         new_title = (
             f"Recreated: {original_outline.title}"
@@ -385,16 +443,16 @@ def recreate_script_outline(request, uuid):
 
         # Extract default section order from outline_data
         default_section_order = (
-            outline_data.get("section_order", []) if outline_data else []
+            actual_outline_data.get("section_order", []) if actual_outline_data else []
         )
 
         new_outline = ScriptOutline.objects.create(
             user=request.user,
             title=new_title,
-            outline_text=outline_text,
-            outline_data=outline_data,
+            outline_text=actual_outline_text,
+            outline_data=actual_outline_data,
             section_order=default_section_order,  # Set default section order
-            original_outline=outline_text,
+            original_outline=actual_outline_text,
             status="generated",
             openai_model=metadata["model"],
             tokens_used=metadata["tokens_used"],
