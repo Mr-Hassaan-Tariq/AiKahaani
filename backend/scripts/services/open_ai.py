@@ -1106,6 +1106,10 @@ Target Length: {min_length}-{max_length} words
 
 Please use the knowledge base files to apply the appropriate storytelling rules and hook techniques for this topic and tone.
 
+REQUIREMENTS:
+- DO NOT include any document references, citations, or knowledge base file names in the outline content
+- Write clean, engaging outline sections without referencing source documents
+
 Return your response in JSON format with sections array containing title, description, key_points, timing, transition, and content fields."""
 
     @staticmethod
@@ -1130,7 +1134,10 @@ REQUIREMENTS:
 - {tone_text}
 - Target Length: {min_length}-{max_length} words
 - Use the knowledge base files to apply storytelling rules and hook techniques
+- DO NOT include any document references, citations, or knowledge base file names in the script content
+- Write the complete script as if you are the narrator speaking directly to the audience
+- The full_text should be ready for narration/recording without any references
 
-Please use the knowledge base files to ensure the script follows proven storytelling principles and engagement techniques.
+Please use the knowledge base files to ensure the script follows proven storytelling principles and engagement techniques, but do not reference them in the final script content.
 
 Return your response in JSON format."""
