@@ -632,6 +632,31 @@ def generate_full_script(request, uuid):
             script_data = json.loads(script_content)
             if isinstance(script_data, dict) and "full_text" in script_data:
                 actual_script_text = script_data["full_text"]
+                
+                # Validate section order matches outline using section_order array
+                if "sections" in script_data and outline.outline_data:
+                    outline_sections = outline.outline_data.get("sections", [])
+                    section_order = outline.outline_data.get("section_order", [])
+                    script_sections = script_data.get("sections", [])
+                    
+                    # Check if section order matches outline order
+                    if len(script_sections) == len(outline_sections):
+                        # Use section_order array if available, otherwise use sequential order
+                        if section_order and len(section_order) == len(outline_sections):
+                            # Validate using section_order array
+                            for i, order_index in enumerate(section_order):
+                                if order_index < len(outline_sections) and i < len(script_sections):
+                                    outline_sec = outline_sections[order_index]
+                                    script_sec = script_sections[i]
+                                    if outline_sec.get("title") != script_sec.get("title"):
+                                        logger.warning(f"Section order mismatch at position {i} (section_order[{i}]={order_index}): outline='{outline_sec.get('title')}' vs script='{script_sec.get('title')}'")
+                        else:
+                            # Fallback to sequential validation
+                            for i, (outline_sec, script_sec) in enumerate(zip(outline_sections, script_sections)):
+                                if outline_sec.get("title") != script_sec.get("title"):
+                                    logger.warning(f"Section order mismatch at index {i}: outline='{outline_sec.get('title')}' vs script='{script_sec.get('title')}'")
+                    else:
+                        logger.warning(f"Section count mismatch: outline has {len(outline_sections)}, script has {len(script_sections)}")
             else:
                 actual_script_text = script_content
         except (json.JSONDecodeError, TypeError):

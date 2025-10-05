@@ -1125,19 +1125,40 @@ Return your response in JSON format with sections array containing title, descri
             f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
         )
 
-        return f"""Generate a complete YouTube script based on this outline in JSON format:
+        return f"""You are an expert YouTube script writer. Generate a complete script based EXACTLY on the provided outline below.
 
-OUTLINE:
-{outline_text}
-
-REQUIREMENTS:
+CRITICAL REQUIREMENTS:
+- Follow the provided outline structure EXACTLY - do not create your own topics or sections
+- Use the outline sections, titles, and content as your guide
+- Transform the outline points into engaging script content
+- Maintain the EXACT same section order and flow as specified in the outline
 - {tone_text}
 - Target Length: {min_length}-{max_length} words
-- Use the knowledge base files to apply storytelling rules and hook techniques
+- Use knowledge base files to apply storytelling rules and hook techniques
 - DO NOT include any document references, citations, or knowledge base file names in the script content
 - Write the complete script as if you are the narrator speaking directly to the audience
 - The full_text should be ready for narration/recording without any references
 
-Please use the knowledge base files to ensure the script follows proven storytelling principles and engagement techniques, but do not reference them in the final script content.
+PROVIDED OUTLINE TO FOLLOW:
+{outline_text}
 
-Return your response in JSON format."""
+STRICT SECTION ORDER REQUIREMENTS:
+1. Use the EXACT section titles from the outline in the SAME order
+2. Do not skip, reorder, or combine sections
+3. CRITICAL: If the outline contains a "section_order" array, use it to determine the exact sequence of sections
+4. The section_order array contains the correct order of sections (e.g., [0, 1, 2, 3, 4])
+5. Each script section must correspond to the outline sections in the order specified by section_order
+6. Maintain the exact chronological flow from the outline using section_order as the guide
+
+INSTRUCTIONS:
+1. Parse the outline to extract the section_order array if present
+2. Use section_order to determine the correct sequence of sections
+3. Convert each outline section into engaging script content IN THE ORDER specified by section_order
+4. Use the exact section titles from the outline, following the section_order sequence
+5. Transform key points into narrative script format while preserving structure
+6. Use storytelling techniques from the knowledge base to make it engaging
+7. Ensure the script flows naturally from section to section as specified by section_order
+8. Do not add, remove, or reorder sections - follow the section_order array strictly
+9. Each script section should have the same title as its corresponding outline section in the correct order
+
+Return your response in JSON format with full_text and sections array, ensuring sections follow the exact order specified by the section_order array."""
