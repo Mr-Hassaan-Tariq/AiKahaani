@@ -567,12 +567,23 @@ def generate_full_script(request, uuid):
             )
         )
 
+        # Extract actual script text from JSON response
+        import json
+        try:
+            script_data = json.loads(script_content)
+            if isinstance(script_data, dict) and "full_text" in script_data:
+                actual_script_text = script_data["full_text"]
+            else:
+                actual_script_text = script_content
+        except (json.JSONDecodeError, TypeError):
+            actual_script_text = script_content
+
         # Create FullScript
         full_script = FullScript.objects.create(
             user=request.user,
             outline=outline,
             title=request.data.get("title", f"Script: {outline.title}"),
-            content=script_content,
+            content=actual_script_text,
             sections=sections,
             status="generated",
             openai_model=metadata["model"],
@@ -1383,13 +1394,14 @@ def _export_txt(script, safe_title, timestamp):
     content += f"Estimated Duration: {script.estimated_duration:.1f} minutes\n"
     content += "=" * 50 + "\n\n"
 
-    # Try to parse as JSON structure first
+    # Content should now be clean script text (not JSON)
+    # Try to parse as JSON first for backward compatibility
     try:
         script_data = json.loads(script.content)
         if isinstance(script_data, dict):
-            # Handle new script schema format
+            # Handle legacy JSON format
             if "full_text" in script_data and "sections" in script_data:
-                # New format: direct script data
+                # Legacy JSON format: extract full_text
                 content += script_data["full_text"]
             elif "script" in script_data:
                 # Legacy format: nested script structure
@@ -1418,7 +1430,7 @@ def _export_txt(script, safe_title, timestamp):
             # Fallback to original content if not in expected format
             content += script.content
     except (json.JSONDecodeError, KeyError, TypeError):
-        # If JSON parsing fails, use original content
+        # Content is now clean script text (new format)
         content += script.content
 
     filename = f"{safe_title}_{timestamp}.txt"
