@@ -213,9 +213,12 @@ def generate_script_outline(request):
             min_length = template_style.min_length
             max_length = template_style.max_length
 
+        # Extract tone names for title generation
+        outline_tones = [tone.name for tone in tones]
+
         script_data = {
             "description": description,
-            "tones": [tone.name for tone in tones],
+            "tones": outline_tones,
             "template_style": template_style.name if template_style else "medium",
             "min_length": min_length,
             "max_length": max_length,
@@ -648,10 +651,24 @@ def generate_full_script(request, uuid):
             "max_length": max_length,
         }
 
+        # Prepare structured outline data for script generation
+        import json
+        if outline.outline_data and outline.outline_data.get("sections"):
+            # Use structured outline data with section_order
+            structured_outline = {
+                "sections": outline.outline_data.get("sections", []),
+                "section_order": outline.outline_data.get("section_order", []),
+                "outline_text": outline.outline_text
+            }
+            outline_for_script = json.dumps(structured_outline)
+        else:
+            # Fallback to plain text
+            outline_for_script = outline.outline_text
+
         # Generate full script using assistant with knowledge base
         script_content, sections, metadata = (
             OpenAIScriptService.generate_full_script_with_assistant(
-                outline.outline_text, script_data
+                outline_for_script, script_data
             )
         )
 
@@ -1527,7 +1544,7 @@ def _export_txt(script, safe_title, timestamp):
                 content += script_data["full_text"]
             elif "script" in script_data:
                 # Legacy format: nested script structure
-                script_sections = script_data["script"]
+            script_sections = script_data["script"]
                 if isinstance(script_sections, dict) and "sections" in script_sections:
                     # Handle script sections
                     for section in script_sections["sections"]:
@@ -1537,14 +1554,14 @@ def _export_txt(script, safe_title, timestamp):
                             content += f"{section['content']}\n\n"
                 elif isinstance(script_sections, list):
                     # Handle legacy list format
-                    for section in script_sections:
-                        if "section" in section:
-                            content += f"\n=== {section['section']} ===\n\n"
-                        if "content" in section and isinstance(section["content"], list):
-                            for item in section["content"]:
-                                content += f"{item}\n\n"
-                        elif "content" in section and isinstance(section["content"], str):
-                            content += f"{section['content']}\n\n"
+            for section in script_sections:
+                if "section" in section:
+                    content += f"\n=== {section['section']} ===\n\n"
+                if "content" in section and isinstance(section["content"], list):
+                    for item in section["content"]:
+                        content += f"{item}\n\n"
+                elif "content" in section and isinstance(section["content"], str):
+                    content += f"{section['content']}\n\n"
             else:
                 # Fallback to original content if not in expected format
                 content += script.content
@@ -1653,7 +1670,7 @@ def _export_pdf(script, safe_title, timestamp):
                         story.append(Spacer(1, 4))
             elif "script" in script_data:
                 # Legacy format: nested script structure
-                script_sections = script_data["script"]
+            script_sections = script_data["script"]
                 if isinstance(script_sections, dict) and "sections" in script_sections:
                     # Handle new script sections format
                     for section in script_sections["sections"]:
@@ -1667,34 +1684,34 @@ def _export_pdf(script, safe_title, timestamp):
                                 story.append(Spacer(1, 8))
                 elif isinstance(script_sections, list):
                     # Handle legacy list format
-                    for section in script_sections:
-                        if "section" in section:
-                            story.append(Paragraph(section["section"], section_style))
-                            story.append(Spacer(1, 8))
+            for section in script_sections:
+                if "section" in section:
+                    story.append(Paragraph(section["section"], section_style))
+                    story.append(Spacer(1, 8))
 
-                        if "content" in section and isinstance(section["content"], list):
-                            for item in section["content"]:
-                                # Clean up the content for PDF formatting
-                                clean_item = str(item).replace("//", "").strip()
-                                if clean_item:
-                                    # Check for special formatting
-                                    if (
-                                        clean_item.startswith("NARRATOR")
-                                        or clean_item.startswith("CUT TO")
-                                        or clean_item.startswith("VISUAL")
-                                    ):
-                                        # Format as stage directions
-                                        story.append(
-                                            Paragraph(f"<i>{clean_item}</i>", content_style)
-                                        )
-                                    else:
-                                        story.append(Paragraph(clean_item, content_style))
-                                    story.append(Spacer(1, 4))
-                        elif "content" in section and isinstance(section["content"], str):
-                            clean_content = section["content"].replace("//", "").strip()
-                            if clean_content:
-                                story.append(Paragraph(clean_content, content_style))
-                                story.append(Spacer(1, 8))
+                if "content" in section and isinstance(section["content"], list):
+                    for item in section["content"]:
+                        # Clean up the content for PDF formatting
+                        clean_item = str(item).replace("//", "").strip()
+                        if clean_item:
+                            # Check for special formatting
+                            if (
+                                clean_item.startswith("NARRATOR")
+                                or clean_item.startswith("CUT TO")
+                                or clean_item.startswith("VISUAL")
+                            ):
+                                # Format as stage directions
+                                story.append(
+                                    Paragraph(f"<i>{clean_item}</i>", content_style)
+                                )
+                            else:
+                                story.append(Paragraph(clean_item, content_style))
+                            story.append(Spacer(1, 4))
+                elif "content" in section and isinstance(section["content"], str):
+                    clean_content = section["content"].replace("//", "").strip()
+                    if clean_content:
+                        story.append(Paragraph(clean_content, content_style))
+                        story.append(Spacer(1, 8))
         else:
             # Fallback to original content processing
             content_lines = script.content.split("\n")
@@ -1808,7 +1825,7 @@ def _export_docx(script, safe_title, timestamp):
                         doc.add_paragraph(clean_line)
             elif "script" in script_data:
                 # Legacy format: nested script structure
-                script_sections = script_data["script"]
+            script_sections = script_data["script"]
                 if isinstance(script_sections, dict) and "sections" in script_sections:
                     # Handle new script sections format
                     for section in script_sections["sections"]:
@@ -1821,31 +1838,31 @@ def _export_docx(script, safe_title, timestamp):
                                 doc.add_paragraph(clean_content)
                 elif isinstance(script_sections, list):
                     # Handle legacy list format
-                    for section in script_sections:
-                        if "section" in section:
-                            # Add section heading
-                            doc.add_heading(section["section"], level=1)
+            for section in script_sections:
+                if "section" in section:
+                    # Add section heading
+                    doc.add_heading(section["section"], level=1)
 
-                        if "content" in section and isinstance(section["content"], list):
-                            for item in section["content"]:
-                                # Clean up the content for DOCX formatting
-                                clean_item = str(item).replace("//", "").strip()
-                                if clean_item:
-                                    # Check for special formatting
-                                    if (
-                                        clean_item.startswith("NARRATOR")
-                                        or clean_item.startswith("CUT TO")
-                                        or clean_item.startswith("VISUAL")
-                                    ):
-                                        # Format as italic stage directions
-                                        p = doc.add_paragraph()
-                                        p.add_run(clean_item).italic = True
-                                    else:
-                                        doc.add_paragraph(clean_item)
-                        elif "content" in section and isinstance(section["content"], str):
-                            clean_content = section["content"].replace("//", "").strip()
-                            if clean_content:
-                                doc.add_paragraph(clean_content)
+                if "content" in section and isinstance(section["content"], list):
+                    for item in section["content"]:
+                        # Clean up the content for DOCX formatting
+                        clean_item = str(item).replace("//", "").strip()
+                        if clean_item:
+                            # Check for special formatting
+                            if (
+                                clean_item.startswith("NARRATOR")
+                                or clean_item.startswith("CUT TO")
+                                or clean_item.startswith("VISUAL")
+                            ):
+                                # Format as italic stage directions
+                                p = doc.add_paragraph()
+                                p.add_run(clean_item).italic = True
+                            else:
+                                doc.add_paragraph(clean_item)
+                elif "content" in section and isinstance(section["content"], str):
+                    clean_content = section["content"].replace("//", "").strip()
+                    if clean_content:
+                        doc.add_paragraph(clean_content)
             else:
                 # Fallback to original content if not in expected format
                 doc.add_paragraph(script.content)
