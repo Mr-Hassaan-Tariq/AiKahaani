@@ -1386,17 +1386,34 @@ def _export_txt(script, safe_title, timestamp):
     # Try to parse as JSON structure first
     try:
         script_data = json.loads(script.content)
-        if isinstance(script_data, dict) and "script" in script_data:
-            # Handle structured script format
-            script_sections = script_data["script"]
-            for section in script_sections:
-                if "section" in section:
-                    content += f"\n=== {section['section']} ===\n\n"
-                if "content" in section and isinstance(section["content"], list):
-                    for item in section["content"]:
-                        content += f"{item}\n\n"
-                elif "content" in section and isinstance(section["content"], str):
-                    content += f"{section['content']}\n\n"
+        if isinstance(script_data, dict):
+            # Handle new script schema format
+            if "full_text" in script_data and "sections" in script_data:
+                # New format: direct script data
+                content += script_data["full_text"]
+            elif "script" in script_data:
+                # Legacy format: nested script structure
+                script_sections = script_data["script"]
+                if isinstance(script_sections, dict) and "sections" in script_sections:
+                    # Handle script sections
+                    for section in script_sections["sections"]:
+                        if "title" in section:
+                            content += f"\n=== {section['title']} ===\n\n"
+                        if "content" in section:
+                            content += f"{section['content']}\n\n"
+                elif isinstance(script_sections, list):
+                    # Handle legacy list format
+                    for section in script_sections:
+                        if "section" in section:
+                            content += f"\n=== {section['section']} ===\n\n"
+                        if "content" in section and isinstance(section["content"], list):
+                            for item in section["content"]:
+                                content += f"{item}\n\n"
+                        elif "content" in section and isinstance(section["content"], str):
+                            content += f"{section['content']}\n\n"
+            else:
+                # Fallback to original content if not in expected format
+                content += script.content
         else:
             # Fallback to original content if not in expected format
             content += script.content
@@ -1490,37 +1507,60 @@ def _export_pdf(script, safe_title, timestamp):
     # Try to parse as JSON structure first
     try:
         script_data = json.loads(script.content)
-        if isinstance(script_data, dict) and "script" in script_data:
-            # Handle structured script format
-            script_sections = script_data["script"]
-            for section in script_sections:
-                if "section" in section:
-                    story.append(Paragraph(section["section"], section_style))
-                    story.append(Spacer(1, 8))
+        if isinstance(script_data, dict):
+            # Handle new script schema format
+            if "full_text" in script_data and "sections" in script_data:
+                # New format: use full_text for main content
+                content_lines = script_data["full_text"].split("\n")
+                for line in content_lines:
+                    clean_line = line.strip()
+                    if clean_line:
+                        story.append(Paragraph(clean_line, content_style))
+                        story.append(Spacer(1, 4))
+            elif "script" in script_data:
+                # Legacy format: nested script structure
+                script_sections = script_data["script"]
+                if isinstance(script_sections, dict) and "sections" in script_sections:
+                    # Handle new script sections format
+                    for section in script_sections["sections"]:
+                        if "title" in section:
+                            story.append(Paragraph(section["title"], section_style))
+                            story.append(Spacer(1, 8))
+                        if "content" in section:
+                            clean_content = section["content"].replace("//", "").strip()
+                            if clean_content:
+                                story.append(Paragraph(clean_content, content_style))
+                                story.append(Spacer(1, 8))
+                elif isinstance(script_sections, list):
+                    # Handle legacy list format
+                    for section in script_sections:
+                        if "section" in section:
+                            story.append(Paragraph(section["section"], section_style))
+                            story.append(Spacer(1, 8))
 
-                if "content" in section and isinstance(section["content"], list):
-                    for item in section["content"]:
-                        # Clean up the content for PDF formatting
-                        clean_item = str(item).replace("//", "").strip()
-                        if clean_item:
-                            # Check for special formatting
-                            if (
-                                clean_item.startswith("NARRATOR")
-                                or clean_item.startswith("CUT TO")
-                                or clean_item.startswith("VISUAL")
-                            ):
-                                # Format as stage directions
-                                story.append(
-                                    Paragraph(f"<i>{clean_item}</i>", content_style)
-                                )
-                            else:
-                                story.append(Paragraph(clean_item, content_style))
-                            story.append(Spacer(1, 4))
-                elif "content" in section and isinstance(section["content"], str):
-                    clean_content = section["content"].replace("//", "").strip()
-                    if clean_content:
-                        story.append(Paragraph(clean_content, content_style))
-                        story.append(Spacer(1, 8))
+                        if "content" in section and isinstance(section["content"], list):
+                            for item in section["content"]:
+                                # Clean up the content for PDF formatting
+                                clean_item = str(item).replace("//", "").strip()
+                                if clean_item:
+                                    # Check for special formatting
+                                    if (
+                                        clean_item.startswith("NARRATOR")
+                                        or clean_item.startswith("CUT TO")
+                                        or clean_item.startswith("VISUAL")
+                                    ):
+                                        # Format as stage directions
+                                        story.append(
+                                            Paragraph(f"<i>{clean_item}</i>", content_style)
+                                        )
+                                    else:
+                                        story.append(Paragraph(clean_item, content_style))
+                                    story.append(Spacer(1, 4))
+                        elif "content" in section and isinstance(section["content"], str):
+                            clean_content = section["content"].replace("//", "").strip()
+                            if clean_content:
+                                story.append(Paragraph(clean_content, content_style))
+                                story.append(Spacer(1, 8))
         else:
             # Fallback to original content processing
             content_lines = script.content.split("\n")
@@ -1623,34 +1663,58 @@ def _export_docx(script, safe_title, timestamp):
     # Try to parse as JSON structure first
     try:
         script_data = json.loads(script.content)
-        if isinstance(script_data, dict) and "script" in script_data:
-            # Handle structured script format
-            script_sections = script_data["script"]
-            for section in script_sections:
-                if "section" in section:
-                    # Add section heading
-                    doc.add_heading(section["section"], level=1)
+        if isinstance(script_data, dict):
+            # Handle new script schema format
+            if "full_text" in script_data and "sections" in script_data:
+                # New format: use full_text for main content
+                content_lines = script_data["full_text"].split("\n")
+                for line in content_lines:
+                    clean_line = line.strip()
+                    if clean_line:
+                        doc.add_paragraph(clean_line)
+            elif "script" in script_data:
+                # Legacy format: nested script structure
+                script_sections = script_data["script"]
+                if isinstance(script_sections, dict) and "sections" in script_sections:
+                    # Handle new script sections format
+                    for section in script_sections["sections"]:
+                        if "title" in section:
+                            # Add section heading
+                            doc.add_heading(section["title"], level=1)
+                        if "content" in section:
+                            clean_content = section["content"].replace("//", "").strip()
+                            if clean_content:
+                                doc.add_paragraph(clean_content)
+                elif isinstance(script_sections, list):
+                    # Handle legacy list format
+                    for section in script_sections:
+                        if "section" in section:
+                            # Add section heading
+                            doc.add_heading(section["section"], level=1)
 
-                if "content" in section and isinstance(section["content"], list):
-                    for item in section["content"]:
-                        # Clean up the content for DOCX formatting
-                        clean_item = str(item).replace("//", "").strip()
-                        if clean_item:
-                            # Check for special formatting
-                            if (
-                                clean_item.startswith("NARRATOR")
-                                or clean_item.startswith("CUT TO")
-                                or clean_item.startswith("VISUAL")
-                            ):
-                                # Format as italic stage directions
-                                p = doc.add_paragraph()
-                                p.add_run(clean_item).italic = True
-                            else:
-                                doc.add_paragraph(clean_item)
-                elif "content" in section and isinstance(section["content"], str):
-                    clean_content = section["content"].replace("//", "").strip()
-                    if clean_content:
-                        doc.add_paragraph(clean_content)
+                        if "content" in section and isinstance(section["content"], list):
+                            for item in section["content"]:
+                                # Clean up the content for DOCX formatting
+                                clean_item = str(item).replace("//", "").strip()
+                                if clean_item:
+                                    # Check for special formatting
+                                    if (
+                                        clean_item.startswith("NARRATOR")
+                                        or clean_item.startswith("CUT TO")
+                                        or clean_item.startswith("VISUAL")
+                                    ):
+                                        # Format as italic stage directions
+                                        p = doc.add_paragraph()
+                                        p.add_run(clean_item).italic = True
+                                    else:
+                                        doc.add_paragraph(clean_item)
+                        elif "content" in section and isinstance(section["content"], str):
+                            clean_content = section["content"].replace("//", "").strip()
+                            if clean_content:
+                                doc.add_paragraph(clean_content)
+            else:
+                # Fallback to original content if not in expected format
+                doc.add_paragraph(script.content)
         else:
             # Fallback to original content if not in expected format
             doc.add_paragraph(script.content)
