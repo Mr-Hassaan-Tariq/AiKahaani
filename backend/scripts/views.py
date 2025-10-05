@@ -569,6 +569,7 @@ def generate_full_script(request, uuid):
 
         # Extract actual script text from JSON response
         import json
+        import re
         try:
             script_data = json.loads(script_content)
             if isinstance(script_data, dict) and "full_text" in script_data:
@@ -577,6 +578,14 @@ def generate_full_script(request, uuid):
                 actual_script_text = script_content
         except (json.JSONDecodeError, TypeError):
             actual_script_text = script_content
+
+        # Clean up any document references that might have slipped through
+        # Remove patterns like ■3:11†YOUTUBE STORYTELLING STRATEGY■
+        actual_script_text = re.sub(r'■[^■]*?■', '', actual_script_text)
+        actual_script_text = re.sub(r'[0-9]+:\d+†[^■]*?■', '', actual_script_text)
+        # Clean up any extra whitespace
+        actual_script_text = re.sub(r'\n\s*\n\s*\n', '\n\n', actual_script_text)
+        actual_script_text = actual_script_text.strip()
 
         # Create FullScript
         full_script = FullScript.objects.create(
