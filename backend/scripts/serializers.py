@@ -1,13 +1,13 @@
 # serializers.py
-from .models import Tone, TemplateStyle, ScriptOutline, FullScript
-
 from rest_framework import serializers
+
+from .models import FullScript, ScriptOutline, TemplateStyle, Tone
 
 
 class ToneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tone
-        fields = ['id', 'name']
+        fields = ["id", "name"]
 
 
 class TemplateStyleSerializer(serializers.ModelSerializer):
@@ -15,7 +15,15 @@ class TemplateStyleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TemplateStyle
-        fields = ['id', 'name', 'min_length', 'max_length', 'duration', 'description', 'word_range']
+        fields = [
+            "id",
+            "name",
+            "min_length",
+            "max_length",
+            "duration",
+            "description",
+            "word_range",
+        ]
 
     def get_word_range(self, obj):
         return f"~{obj.min_length}-{obj.max_length} words"
@@ -23,38 +31,102 @@ class TemplateStyleSerializer(serializers.ModelSerializer):
 
 class ScriptOutlineSerializer(serializers.ModelSerializer):
     tones = ToneSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = ScriptOutline
         fields = [
-            'uuid', 'title', 'outline_text', 'outline_data', 'section_order', 'tones',
-            'status', 'version', 'tokens_used', 'generation_time',
-            'created', 'modified'
+            "uuid",
+            "title",
+            "outline_text",
+            "outline_data",
+            "section_order",
+            "tones",
+            "status",
+            "version",
+            "tokens_used",
+            "generation_time",
+            "created",
+            "modified",
         ]
-        read_only_fields = ['uuid', 'tokens_used', 'generation_time', 'version']
+        read_only_fields = ["uuid", "tokens_used", "generation_time", "version"]
 
 
 class ScriptOutlineUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScriptOutline
-        fields = ['title', 'outline_text', 'section_order']
+        fields = ["title", "outline_text", "outline_data", "section_order"]
+
+    def update(self, instance, validated_data):
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        logger.info(
+            f"ScriptOutlineUpdateSerializer.update called for instance: {instance.uuid}"
+        )
+        logger.info(f"Validated data: {validated_data}")
+
+        # Handle outline_data updates
+        if "outline_data" in validated_data:
+            outline_data = validated_data["outline_data"]
+            current_outline_data = instance.outline_data or {}
+            current_sections = current_outline_data.get("sections", [])
+
+            # If new sections are provided
+            if "sections" in outline_data:
+                new_sections = outline_data["sections"]
+
+                # Always update section_order to match the number of sections provided
+                new_section_order = list(range(len(new_sections)))
+                # Check if we're adding new sections (more sections than current)
+                if len(new_sections) > len(current_sections):
+                    # Add new sections to the end of current sections
+                    current_sections.extend(new_sections[len(current_sections) :])
+
+                    # Update the outline_data with merged sections
+                    updated_outline_data = current_outline_data.copy()
+                    updated_outline_data["sections"] = current_sections
+
+                    # Update the validated_data
+                    validated_data["outline_data"] = updated_outline_data
+                    validated_data["section_order"] = new_section_order
+                else:
+                    # Replace all sections (editing existing sections)
+                    validated_data["section_order"] = new_section_order
+
+        # Call the parent update method
+        return super().update(instance, validated_data)
 
 
 class FullScriptSerializer(serializers.ModelSerializer):
-    outline_title = serializers.CharField(source='outline.title', read_only=True)
+    outline_title = serializers.CharField(source="outline.title", read_only=True)
     sections = serializers.JSONField(help_text="Script sections for card-based display")
 
     class Meta:
         model = FullScript
         fields = [
-            'uuid', 'title', 'content', 'sections', 'word_count',
-            'estimated_duration', 'status', 'version', 'is_published',
-            'tokens_used', 'generation_time', 'outline_title',
-            'created', 'modified'
+            "uuid",
+            "title",
+            "content",
+            "sections",
+            "word_count",
+            "estimated_duration",
+            "status",
+            "version",
+            "is_published",
+            "tokens_used",
+            "generation_time",
+            "outline_title",
+            "created",
+            "modified",
         ]
         read_only_fields = [
-            'uuid', 'word_count', 'estimated_duration',
-            'tokens_used', 'generation_time', 'version'
+            "uuid",
+            "word_count",
+            "estimated_duration",
+            "tokens_used",
+            "generation_time",
+            "version",
         ]
 
 
@@ -67,42 +139,52 @@ class ScriptGeneratorConfigResponseSerializer(serializers.Serializer):
 
 
 class GenerateOutlineRequestSerializer(serializers.Serializer):
-    description = serializers.CharField(max_length=2000, required=False, allow_blank=True)
+    description = serializers.CharField(
+        max_length=2000, required=False, allow_blank=True
+    )
     tones = serializers.ListField(
         child=serializers.IntegerField(),
         required=False,
         allow_empty=True,
-        help_text="List of tone IDs to use for outline generation (optional)"
+        help_text="List of tone IDs to use for outline generation (optional)",
     )
     template_style = serializers.IntegerField(required=False, allow_null=True)
     min_length = serializers.IntegerField(default=100, min_value=50, max_value=5000)
     max_length = serializers.IntegerField(default=1000, min_value=100, max_value=10000)
     title = serializers.CharField(max_length=300, required=False, allow_blank=True)
-    image = serializers.ImageField(required=False, allow_null=True, help_text="Image file to analyze for generating title/description")
-    image_url = serializers.URLField(required=False, allow_blank=True, help_text="Image URL to analyze for generating title/description")
-    
+    image = serializers.ImageField(
+        required=False,
+        allow_null=True,
+        help_text="Image file to analyze for generating title/description",
+    )
+    image_url = serializers.URLField(
+        required=False,
+        allow_blank=True,
+        help_text="Image URL to analyze for generating title/description",
+    )
+
     def validate(self, data):
         """Ensure either description, image file, or image URL is provided"""
-        description = data.get('description', '').strip()
-        image = data.get('image')
-        image_url = data.get('image_url', '').strip()
-        
+        description = data.get("description", "").strip()
+        image = data.get("image")
+        image_url = data.get("image_url", "").strip()
+
         if not description and not image and not image_url:
             raise serializers.ValidationError(
                 "Either 'description', 'image' file, or 'image_url' must be provided."
             )
-        
+
         # Ensure only one image input method is used
         if image and image_url:
             raise serializers.ValidationError(
                 "Please provide either an image file or image URL, not both."
             )
-        
+
         # If image (file or URL) is provided, description and title are not needed
         if image or image_url:
-            data['description'] = ''  # Clear description if image is provided
-            data['title'] = ''  # Clear title if image is provided
-        
+            data["description"] = ""  # Clear description if image is provided
+            data["title"] = ""  # Clear title if image is provided
+
         return data
 
 
@@ -128,6 +210,7 @@ class UnifiedGenerationSerializer(serializers.Serializer):
     """
     Unified serializer for listing both outlines and scripts
     """
+
     uuid = serializers.UUIDField()
     title = serializers.CharField()
     type = serializers.CharField()  # 'outline' or 'script'
@@ -145,8 +228,11 @@ class StatusUpdateSerializer(serializers.Serializer):
     """
     Serializer for updating status of outlines and scripts
     """
-    status = serializers.ChoiceField(choices=[
-        ('draft', 'Draft'),
-        ('generated', 'Generated'),
-        ('saved', 'Saved'),
-    ])
+
+    status = serializers.ChoiceField(
+        choices=[
+            ("draft", "Draft"),
+            ("generated", "Generated"),
+            ("saved", "Saved"),
+        ]
+    )
