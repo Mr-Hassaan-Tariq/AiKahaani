@@ -3,10 +3,10 @@
 import { OutlineType } from '@/(dashboard)/new-script/types';
 import { useMutation } from '@tanstack/react-query';
 
-import { putClientDataAction } from 'lib/utils/clientDataActions';
+import { patchClientDataAction } from 'lib/utils/clientDataActions';
 
 async function updateOutline(params: Partial<OutlineType>) {
-  return await putClientDataAction<Partial<OutlineType>, Partial<OutlineType>>(
+  return await patchClientDataAction<Partial<OutlineType>, Partial<OutlineType>>(
     `v1/scripts/outlines/${params?.uuid}/`,
     params,
   );
