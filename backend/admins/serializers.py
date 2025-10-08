@@ -164,6 +164,8 @@ class NichePacingSerializer(serializers.ModelSerializer):
 class NicheSerializer(serializers.ModelSerializer):
     """Serializer for Niche model with tone/pacing creation and deduplication."""
 
+    thumbnail_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Niche
         fields = [
@@ -172,6 +174,7 @@ class NicheSerializer(serializers.ModelSerializer):
             "title",
             "tagline",
             "thumbnail",
+            "thumbnail_url",
             "script_structure",
             "tone",
             "pacing",
@@ -181,7 +184,16 @@ class NicheSerializer(serializers.ModelSerializer):
             "created",
             "modified",
         ]
-        read_only_fields = ["id", "created", "modified"]
+        read_only_fields = ["id", "created", "modified", "thumbnail_url"]
+
+    def get_thumbnail_url(self, obj):
+        """Get the full URL for the thumbnail image."""
+        if obj.thumbnail:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.thumbnail.url)
+            return obj.thumbnail.url
+        return None
 
     def validate_tone(self, value):
         """Validate and deduplicate tone list."""
@@ -198,11 +210,49 @@ class NicheSerializer(serializers.ModelSerializer):
         return list(set(filter(None, [str(item).strip() for item in value])))
 
     def validate_top_channels(self, value):
-        """Validate and deduplicate top_channels list."""
+        """
+        Validate top_channels format.
+        Expected format: [{"name": "Channel Name", "link": "https://..."}]
+        """
         if not isinstance(value, list):
             raise serializers.ValidationError("Top channels must be a list.")
-        # Remove duplicates and empty strings
-        return list(set(filter(None, [str(item).strip() for item in value])))
+
+        for idx, channel in enumerate(value):
+            if not isinstance(channel, dict):
+                raise serializers.ValidationError(
+                    f"Channel at index {idx} must be a dictionary with 'name' and 'link' keys."
+                )
+
+            # Check required keys
+            if "name" not in channel:
+                raise serializers.ValidationError(
+                    f"Channel at index {idx} is missing required 'name' field."
+                )
+            if "link" not in channel:
+                raise serializers.ValidationError(
+                    f"Channel at index {idx} is missing required 'link' field."
+                )
+
+            # Validate that name and link are non-empty strings
+            if not isinstance(channel["name"], str) or not channel["name"].strip():
+                raise serializers.ValidationError(
+                    f"Channel at index {idx} must have a non-empty 'name' field."
+                )
+            if not isinstance(channel["link"], str) or not channel["link"].strip():
+                raise serializers.ValidationError(
+                    f"Channel at index {idx} must have a non-empty 'link' field."
+                )
+
+            # Check for extra keys (optional but good practice)
+            allowed_keys = {"name", "link"}
+            extra_keys = set(channel.keys()) - allowed_keys
+            if extra_keys:
+                raise serializers.ValidationError(
+                    f"Channel at index {idx} contains unexpected fields: {', '.join(extra_keys)}. "
+                    f"Only 'name' and 'link' are allowed."
+                )
+
+        return value
 
     def validate_best_for(self, value):
         """Validate and deduplicate best_for list."""

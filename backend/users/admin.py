@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 from django.core.exceptions import ValidationError
-from django.forms import ModelForm
+from django.forms import CharField, ModelForm, PasswordInput
 
 from .models import Role, User
 
@@ -45,24 +46,99 @@ class UserAdminForm(ModelForm):
                 raise ValidationError("A user with this username already exists.")
         return username
 
+
+class UserChangeFormWithPassword(UserChangeForm):
+    """
+    Custom user change form with password confirmation fields.
+    """
+
+    password1 = CharField(
+        label="New Password",
+        widget=PasswordInput(attrs={"autocomplete": "new-password"}),
+        required=False,
+        help_text="Leave blank to keep the current password.",
+    )
+    password2 = CharField(
+        label="Confirm New Password",
+        widget=PasswordInput(attrs={"autocomplete": "new-password"}),
+        required=False,
+        help_text="Enter the same password as above, for verification.",
+    )
+
+    class Meta:
+        model = User
+        fields = "__all__"
+
+    def clean_password2(self):
+        """
+        Validate that the two password entries match.
+        """
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+
+        if password1 and password2:
+            if password1 != password2:
+                raise ValidationError("The two password fields didn't match.")
+
+        return password2
+
     def clean(self):
         """
-        Validate password and roles requirements.
+        Validate password fields.
         """
         cleaned_data = super().clean()
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
 
-        # Check if this is a new user (no pk) or password is being set
-        if not self.instance.pk or self.data.get("password1"):
-            password1 = self.data.get("password1")
+        # If one password field is filled, both must be filled
+        if password1 or password2:
             if not password1:
-                raise ValidationError("Password is required for user creation.")
+                raise ValidationError("Please fill in both password fields.")
+            if not password2:
+                raise ValidationError("Please confirm your password.")
 
         return cleaned_data
+
+    def save(self, commit=True):
+        """
+        Save the user with hashed password.
+        """
+        user = super().save(commit=False)
+        password = self.cleaned_data.get("password1")
+
+        if password:
+            user.set_password(password)  # This will hash the password
+
+        if commit:
+            user.save()
+        return user
+
+
+class UserCreationFormWithPassword(UserCreationForm):
+    """
+    Custom user creation form with proper password handling.
+    """
+
+    class Meta:
+        model = User
+        fields = ("email", "username", "fullname")
+
+    def save(self, commit=True):
+        """
+        Save the user with hashed password.
+        """
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password1"])  # This will hash the password
+
+        if commit:
+            user.save()
+        return user
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    form = UserAdminForm
+    form = UserChangeFormWithPassword
+    add_form = UserCreationFormWithPassword
 
     list_display = (
         "email",
@@ -78,7 +154,14 @@ class UserAdmin(BaseUserAdmin):
     ordering = ("-date_joined",)
 
     fieldsets = (
-        (None, {"fields": ("email", "password")}),
+        (None, {"fields": ("email",)}),
+        (
+            "Password",
+            {
+                "fields": ("password1", "password2"),
+                "description": "Enter a new password only if you want to change it. Leave blank to keep the current password.",
+            },
+        ),
         (
             "Personal info",
             {"fields": ("username", "fullname", "first_name", "last_name")},
@@ -126,16 +209,6 @@ class UserAdmin(BaseUserAdmin):
         return "No roles"
 
     get_roles_display.short_description = "Roles"
-
-    def clean_password2(self, form):
-        """
-        Validate that the two password entries match.
-        """
-        password1 = form.cleaned_data.get("password1")
-        password2 = form.cleaned_data.get("password2")
-        if password1 and password2 and password1 != password2:
-            raise ValidationError("Passwords don't match")
-        return password2
 
     def response_add(self, request, obj, post_url_continue=None):
         """

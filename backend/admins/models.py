@@ -41,7 +41,7 @@ class Niche(TimeStampedModel):
     pacing = models.JSONField(default=list, blank=True)  # List of pacing names
     top_channels = models.JSONField(
         default=list, blank=True
-    )  # e.g. ["@Hook", "@WatchData"]
+    )  # e.g. [{"name": "Channel Name", "link": "https://youtube.com/..."}]
     best_for = models.JSONField(
         default=list, blank=True
     )  # e.g. ["Education","Crime & Mystery"]
