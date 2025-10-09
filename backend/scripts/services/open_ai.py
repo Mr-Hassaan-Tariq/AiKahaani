@@ -709,12 +709,19 @@ CRITICAL: Outline detail = script length
 VERIFY: Each section has 80-150w description + 5-8 detailed key points
 """
             
+            # Set reasonable max completion tokens for outline (typically 500-1000 words)
+            # Outlines are much shorter than scripts
+            max_outline_tokens = 3000  # Enough for detailed outline with JSON structure
+            
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
                 assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
                 additional_instructions=length_instructions,
-                tool_choice={"type": "file_search"}
+                tool_choice={"type": "file_search"},
+                max_completion_tokens=max_outline_tokens
             )
+            
+            logger.info(f"[ASSISTANT_RUN] Set max_completion_tokens to {max_outline_tokens} for outline")
             
             logger.info(f"[ASSISTANT_RUN] Started outline generation run: {run.id}")
 
@@ -854,12 +861,21 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
                     words_needed = min_length - previous_word_count if previous_word_count > 0 else min_length
                     length_instructions += f"\n⚠️ RETRY #{attempt}: Previous={previous_word_count:,}w, Need +{words_needed:,}w more. Expand examples & stories!"
                 
+                # Calculate reasonable max completion tokens based on target length
+                # For a 3000 word script: ~4000 tokens for text + 2000 for JSON structure = 6000 total
+                # Add 50% buffer for safety
+                estimated_tokens = int((max_length * 1.5) + 2000)  # 1.5 tokens per word + JSON overhead
+                max_tokens = min(estimated_tokens, 10000)  # Cap at 10k to prevent excessive usage
+                
                 run = client.beta.threads.runs.create(
                     thread_id=thread.id,
                     assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
                     additional_instructions=length_instructions,
-                    tool_choice={"type": "file_search"}
+                    tool_choice={"type": "file_search"},
+                    max_completion_tokens=max_tokens
                 )
+                
+                logger.info(f"[ASSISTANT_RUN] Set max_completion_tokens to {max_tokens} (target script: {max_length} words)")
                 
                 logger.info(f"[ASSISTANT_RUN] Started script generation run: {run.id} (Attempt {attempt + 1}/{max_retries + 1})")
 
@@ -968,6 +984,14 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
                     # Track word count even on exception if available
                     if 'word_count' in locals():
                         previous_word_count = word_count
+                    
+                    # Check if it's a rate limit error and add delay
+                    error_str = str(e).lower()
+                    if 'rate_limit' in error_str or 'rate limit' in error_str:
+                        wait_time = 10  # Wait 10 seconds between attempts on rate limit
+                        logger.warning(f"Rate limit detected, waiting {wait_time}s before retry")
+                        time.sleep(wait_time)
+                    
                     logger.warning(f"Attempt {attempt + 1} failed, retrying: {str(e)}")
                     continue
 
@@ -1246,11 +1270,12 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
 
     @staticmethod
     def _wait_for_assistant_completion(
-        client, thread_id: str, run_id: str
+        client, thread_id: str, run_id: str, max_retries: int = 3
     ) -> Tuple[str, int]:
         """Wait for assistant run to complete and return content"""
         logger.info(f"[ASSISTANT_RUN] Waiting for completion: thread_id={thread_id}, run_id={run_id}")
         
+        retry_count = 0
         while True:
             run = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
             
@@ -1279,10 +1304,43 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             elif run.status in ["failed", "cancelled", "expired"]:
                 # Get detailed error information
                 error_details = "No error details available"
+                error_code = "unknown"
                 if hasattr(run, 'last_error') and run.last_error:
                     error_code = getattr(run.last_error, 'code', 'unknown')
                     error_message = getattr(run.last_error, 'message', 'unknown')
                     error_details = f"Code: {error_code}, Message: {error_message}"
+                
+                # Handle rate limit errors with retry
+                if error_code == 'rate_limit_exceeded' and retry_count < max_retries:
+                    retry_count += 1
+                    
+                    # Try to parse wait time from error message
+                    wait_time = 2 ** retry_count  # Default exponential backoff
+                    if 'Please try again in' in error_message:
+                        match = re.search(r'try again in ([\d.]+)s', error_message)
+                        if match:
+                            suggested_wait = float(match.group(1))
+                            wait_time = max(suggested_wait, wait_time)
+                    
+                    logger.warning(f"[RATE_LIMIT] Rate limit hit. Retry {retry_count}/{max_retries} after {wait_time:.1f}s")
+                    logger.info(f"[RATE_LIMIT] Error message: {error_message}")
+                    time.sleep(wait_time)
+                    
+                    # Create a new run with the same parameters
+                    try:
+                        # Get the original run details to recreate it
+                        new_run = client.beta.threads.runs.create(
+                            thread_id=thread_id,
+                            assistant_id=run.assistant_id,
+                            instructions=run.instructions,
+                            tool_choice=run.tool_choice,
+                        )
+                        run_id = new_run.id
+                        logger.info(f"[RATE_LIMIT] Created new run {run_id} after rate limit")
+                        continue
+                    except Exception as retry_error:
+                        logger.error(f"[RATE_LIMIT] Failed to create retry run: {str(retry_error)}")
+                        raise
                 
                 logger.error(f"[ASSISTANT_RUN] ✗ Run failed with status: {run.status}")
                 logger.error(f"[ASSISTANT_RUN] Error details: {error_details}")
