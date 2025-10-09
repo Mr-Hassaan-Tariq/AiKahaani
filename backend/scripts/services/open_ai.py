@@ -691,33 +691,22 @@ Follow TubeGenius principles:
             words_per_section_max = max_length // suggested_sections
             
             length_instructions = f"""
-🚨🚨🚨 OUTLINE DEPTH REQUIREMENT - CRITICAL FOR SCRIPT LENGTH 🚨🚨🚨
+🚨 OUTLINE FOR {min_length:,}-{max_length:,} WORD SCRIPT ({min_duration:.1f}-{max_duration:.1f} min video)
 
-This outline must support a final script of {min_length:,} to {max_length:,} WORDS.
-Expected video duration: {min_duration:.1f} to {max_duration:.1f} minutes
+STRUCTURE: {suggested_sections}-{max_sections} detailed sections (each supports {words_per_section_min:,}-{words_per_section_max:,}w script)
 
-MANDATORY OUTLINE STRUCTURE FOR {min_length:,}-{max_length:,} WORD SCRIPTS:
-- Create {suggested_sections} to {max_sections} HIGHLY DETAILED sections
-- Each section must support ~{words_per_section_min:,}-{words_per_section_max:,} words of final script content
-- Each section REQUIRES:
-  * Detailed description: 80-150 words (not just 1-2 sentences!)
-  * 5-8 specific key points (each point should be a full sentence of guidance)
-  * Timing estimate for that section
-  * Transition guidance to next section
-  * Specific examples, angles, or story elements to include
+EACH SECTION MUST HAVE:
+• Description: 80-150 words (NOT 1-2 sentences!)
+• Key points: 5-8 detailed sentences of specific guidance
+• Timing estimate
+• Transition to next section
+• Specific examples/stories/angles to include
 
-CRITICAL: The outline detail DIRECTLY determines final script length!
-- Sparse outline = short script (WILL FAIL)
-- Detailed outline with rich descriptions and many key points = proper length script
+CRITICAL: Outline detail = script length
+• Sparse outline → short script (FAILS)
+• Rich outline (500-800w total) → proper script length
 
-REQUIRED DEPTH PER SECTION:
-- Title: Clear, descriptive section title
-- Description: 80-150 words explaining what this section covers and how to approach it
-- Key Points: 5-8 detailed points (each a full sentence providing specific guidance)
-- Include suggestions for examples, analogies, or stories to use
-- Provide context on why this section matters and how it connects
-
-Remember: Outline word count should be 500-800+ words to support a {min_length:,} word script!
+VERIFY: Each section has 80-150w description + 5-8 detailed key points
 """
             
             run = client.beta.threads.runs.create(
@@ -840,51 +829,30 @@ Remember: Outline word count should be 500-800+ words to support a {min_length:,
                 safe_target = target_mid + safety_buffer
                 
                 length_instructions = f"""
-🚨🚨🚨 ABSOLUTE REQUIREMENT - SCRIPT WILL BE REJECTED IF LENGTH IS WRONG 🚨🚨🚨
+🚨 MANDATORY: {min_length:,}-{max_length:,} WORDS (Target: {safe_target:,})
+Scripts under {min_length:,} words = AUTOMATIC REJECTION
 
-MANDATORY WORD COUNT: MINIMUM {min_length:,} words (HARD FLOOR - DO NOT GO BELOW)
-Acceptable range: {min_length:,} to {max_length:,} words
-TARGET: {safe_target:,} words (aim HIGH to ensure you don't fall short)
+SECTION LENGTH FORMULA:
+- Hook/Intro: 400-500 words
+- EACH main section: 450-550 words (80-100w intro + 3x100-120w points + 50-80w transition)
+- Conclusion/CTA: 300-400 words
 
-⚠️ CRITICAL: Scripts under {min_length:,} words will be AUTOMATICALLY REJECTED.
-⚠️ You are being measured on the 'full_text' field word count - COUNT CAREFULLY!
+EXPANSION TECHNIQUES (USE ALL):
+1. Examples: Add concrete story/case for every claim (50-100w each)
+2. Analogies: Compare to familiar concepts (40-80w each)
+3. Elaborate: Turn 1 sentence into 3-4 with "what/why/how"
+4. Context: Add "why this matters" for all points
+5. Storytelling: Setup→tension→resolution for facts
+6. Engagement: Rhetorical questions, direct address
+7. Transitions: 2-3 sentence bridges between sections
+8. Background: Provide context before new concepts
 
-MANDATORY EXPANSION FORMULA:
-Count your outline sections. For {min_length:,} words minimum:
-- Hook/Intro: 400-500 words (establish context, set stakes, engage viewer)
-- EACH main content section: 450-550 words MINIMUM
-  * Opening paragraph (80-100 words): Set up the section topic
-  * 3-4 main points (100-120 words EACH): Deep dive with examples
-  * Transition paragraph (50-80 words): Bridge to next section
-- Conclusion/CTA: 300-400 words (recap, final thoughts, strong call to action)
-
-CONCRETE EXPANSION TECHNIQUES (USE ALL OF THESE):
-1. EXAMPLES: Every claim needs a concrete example (adds 50-100 words each)
-2. ANALOGIES: Compare complex ideas to familiar concepts (adds 40-80 words each)
-3. ELABORATION: Never state something in one sentence when you can explain it in 3-4
-4. CONTEXT: Add "why this matters" and "how this connects" for every point
-5. STORYTELLING: Turn facts into mini-narratives with setup, tension, resolution
-6. RHETORICAL DEVICES: Questions, repetition for emphasis, direct address to viewer
-7. TRANSITIONS: 2-3 sentence bridges between ALL major points and sections
-8. BACKGROUND: Provide relevant context before introducing new concepts
-
-WORD COUNT VERIFICATION CHECKLIST:
-□ Hook/Introduction: 400+ words? ___
-□ Each main section: 450+ words? ___  
-□ Conclusion: 300+ words? ___
-□ TOTAL in full_text field: {min_length:,}+ words? ___
-
-DO NOT PROCEED until you verify your full_text meets minimum {min_length:,} words.
+VERIFY: full_text field has {min_length:,}+ words before submitting.
 """
                 
                 if attempt > 0:
                     words_needed = min_length - previous_word_count if previous_word_count > 0 else min_length
-                    length_instructions += f"\n\n⚠️⚠️⚠️ RETRY #{attempt} - PREVIOUS ATTEMPT REJECTED ⚠️⚠️⚠️\n"
-                    if previous_word_count > 0:
-                        length_instructions += f"Previous script: {previous_word_count:,} words (need {words_needed:,} MORE words)\n"
-                    length_instructions += f"You were TOO SHORT. You MUST add significantly more content.\n"
-                    length_instructions += f"ADD {words_needed:,}+ words by expanding examples, adding stories, and elaborating on each point.\n"
-                    length_instructions += f"This is attempt {attempt + 1}/{max_retries + 1} - GET TO {min_length:,}+ WORDS!"
+                    length_instructions += f"\n⚠️ RETRY #{attempt}: Previous={previous_word_count:,}w, Need +{words_needed:,}w more. Expand examples & stories!"
                 
                 run = client.beta.threads.runs.create(
                     thread_id=thread.id,
@@ -1309,8 +1277,20 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
                 return content, tokens_used
 
             elif run.status in ["failed", "cancelled", "expired"]:
+                # Get detailed error information
+                error_details = "No error details available"
+                if hasattr(run, 'last_error') and run.last_error:
+                    error_code = getattr(run.last_error, 'code', 'unknown')
+                    error_message = getattr(run.last_error, 'message', 'unknown')
+                    error_details = f"Code: {error_code}, Message: {error_message}"
+                
                 logger.error(f"[ASSISTANT_RUN] ✗ Run failed with status: {run.status}")
-                raise Exception(f"Run failed with status: {run.status}")
+                logger.error(f"[ASSISTANT_RUN] Error details: {error_details}")
+                
+                # Log the full run object for debugging
+                logger.error(f"[ASSISTANT_RUN] Full run details: {run}")
+                
+                raise Exception(f"Run failed with status: {run.status}. Details: {error_details}")
 
             time.sleep(1)  # Wait before checking again
 
@@ -1327,33 +1307,28 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
         )
 
-        return f"""Generate a DETAILED script outline for this YouTube video in JSON format:
+        return f"""Generate DETAILED outline in JSON for:
 
-Topic: {description}
-{tone_text}
-Style: {template_style}
-Target Script Length: {min_length:,}-{max_length:,} words
+Topic: {description} | {tone_text} | Style: {template_style} | Target: {min_length:,}-{max_length:,}w script
 
-Please use the knowledge base files to apply the appropriate storytelling rules and hook techniques for this topic and tone.
+Use knowledge base storytelling rules for this topic/tone.
 
-CRITICAL OUTLINE REQUIREMENTS:
-- Each section MUST have a detailed description (80-150 words minimum)
-- Each section MUST include 5-8 specific, detailed key points
-- Each key point should be a full sentence providing concrete guidance
-- Include specific examples, angles, stories, or techniques to use in each section
-- Add timing estimates and transition guidance
-- The outline depth determines the final script length - make it VERY detailed!
+REQUIREMENTS (CRITICAL):
+• Each section: 80-150w description + 5-8 detailed key point sentences
+• Include specific examples, stories, techniques to use
+• Add timing + transition guidance
+• Outline depth = script length (sparse = FAILS, detailed = success)
 
-STRUCTURE REQUIREMENTS:
-- DO NOT include any document references, citations, or knowledge base file names in the outline content
-- Write clean, engaging outline sections without referencing source documents
-- Each section description should explain WHAT to cover and HOW to approach it
-- Key points should be specific, actionable content guidance (not vague bullets)
-- Include suggestions for examples, analogies, rhetorical questions, or storytelling elements
+STRUCTURE:
+• NO document references/citations
+• Clean, engaging sections
+• Descriptions explain WHAT to cover + HOW to approach
+• Actionable key points (not vague bullets)
+• Suggest examples, analogies, rhetorical questions
 
-Return your response in JSON format with sections array containing title, description, key_points, timing, transition, and content fields.
+Return JSON: sections array with title, description, key_points, timing, transition, content
 
-REMEMBER: A sparse outline produces a short script. A detailed outline with rich descriptions and many key points produces a properly-sized script!"""
+REMEMBER: Rich outline (500-800w) → proper script. Sparse outline → short script (fails)!"""
 
     @staticmethod
     def _build_assistant_script_message(
@@ -1371,41 +1346,33 @@ REMEMBER: A sparse outline produces a short script. A detailed outline with rich
         # Calculate concrete targets
         target_words = (min_length + max_length) // 2
         
-        return f"""You are an expert YouTube script writer. Generate a complete script based EXACTLY on the provided outline below.
+        return f"""Expert YouTube script writer: Generate complete script from outline below.
 
-🎯 PRIMARY SUCCESS CRITERION: MINIMUM {min_length:,} WORDS IN THE full_text FIELD 🎯
-Range: {min_length:,}-{max_length:,} words | Target: {target_words:,} words
-⚠️ Scripts under {min_length:,} words = AUTOMATIC REJECTION ⚠️
+🎯 MANDATORY: {min_length:,}-{max_length:,} WORDS in full_text field (Target: {target_words:,})
+Under {min_length:,} = REJECTION
 
-CONCRETE LENGTH REQUIREMENTS PER SECTION:
-- Hook/Opening: 400-500 words minimum
-- Each main content section: 450-550 words minimum
-- Conclusion/CTA: 300-400 words minimum
+PER-SECTION FORMULA:
+- Hook: 400-500w | Each main section: 450-550w | Conclusion: 300-400w
 
-HOW TO WRITE 450+ WORDS PER SECTION (FOLLOW THIS FORMULA):
-1. OPENING (80-100 words): Introduce the section topic with context
-2. POINT 1 (100-120 words): First key point with detailed example/story
-3. POINT 2 (100-120 words): Second key point with detailed example/story  
-4. POINT 3 (100-120 words): Third key point with detailed example/story
-5. TRANSITION (50-80 words): Bridge to next section with summary
+450W SECTION STRUCTURE:
+1. Intro (80-100w) 2. Point 1 w/example (100-120w) 3. Point 2 w/example (100-120w) 
+4. Point 3 w/example (100-120w) 5. Transition (50-80w)
 
-MANDATORY EXPANSION TECHNIQUES (USE EVERY ONE):
-✓ EXAMPLES: Turn every claim into a mini-story with concrete details (50-100 words each)
-✓ ELABORATION: Explain the "what, why, how" for every point (never just state it)
-✓ ANALOGIES: Compare abstract concepts to familiar things viewers understand
-✓ BACKGROUND: Provide context before introducing new ideas
-✓ TRANSITIONS: 2-3 sentences between ALL major points and sections
-✓ ENGAGEMENT: Rhetorical questions, direct address ("you might be wondering...")
-✓ VIVID LANGUAGE: Paint pictures with descriptive, sensory details
+EXPAND WITH:
+• Examples: Concrete stories (50-100w each)
+• Elaboration: what/why/how (3-4 sentences vs 1)
+• Analogies: Familiar comparisons
+• Transitions: 2-3 sentences between sections
+• Engagement: Questions, direct address
+• Context: "Why this matters" for all points
 
-CRITICAL REQUIREMENTS:
-- Follow the provided outline structure EXACTLY - maintain section titles and order
-- Preserve apostrophes and punctuation in section titles exactly as in outline
+CRITICAL:
+- Follow outline structure EXACTLY, preserve section titles/apostrophes as-is
 - {tone_text}
-- Use knowledge base files to apply storytelling rules and hook techniques
-- DO NOT include document references or citations in the script content
-- Write as if narrating directly to the audience
-- The full_text field must contain {min_length:,}+ words for narration
+- Use knowledge base storytelling rules
+- NO document references/citations
+- Write for direct narration
+- Verify full_text ≥{min_length:,}w before submitting
 
 PROVIDED OUTLINE TO FOLLOW:
 {outline_text}
