@@ -159,7 +159,7 @@ def generate_script_outline(request):
                 if hasattr(image, "read") and hasattr(image, "seek"):
                     image_title, image_description = (
                         OpenAIScriptService.analyze_image_with_assistant(
-                            image_file=image
+                            image_file=image, user=request.user
                         )
                     )
                 else:
@@ -170,7 +170,7 @@ def generate_script_outline(request):
             else:
                 image_title, image_description = (
                     OpenAIScriptService.analyze_image_with_assistant(
-                        image_url=image_url
+                        image_url=image_url, user=request.user
                     )
                 )
 
@@ -226,7 +226,7 @@ def generate_script_outline(request):
 
         # Use assistant for outline generation with knowledge base
         outline_text, outline_data, metadata = (
-            OpenAIScriptService.generate_outline_with_assistant(script_data)
+            OpenAIScriptService.generate_outline_with_assistant(script_data, user=request.user)
         )
 
         # Extract actual outline data from JSON response
@@ -422,7 +422,7 @@ def recreate_script_outline(request, uuid):
 
         # Generate new outline using assistant with knowledge base
         outline_text, outline_data, metadata = (
-            OpenAIScriptService.generate_outline_with_assistant(script_data)
+            OpenAIScriptService.generate_outline_with_assistant(script_data, user=request.user)
         )
 
         # Extract actual outline data from JSON response
@@ -668,7 +668,7 @@ def generate_full_script(request, uuid):
         # Generate full script using assistant with knowledge base
         script_content, sections, metadata = (
             OpenAIScriptService.generate_full_script_with_assistant(
-                outline_for_script, script_data
+                outline_for_script, script_data, user=request.user
             )
         )
 

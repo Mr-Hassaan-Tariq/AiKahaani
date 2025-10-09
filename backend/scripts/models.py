@@ -233,3 +233,95 @@ class ScriptTitle(TimeStampedModel):
 
 class TitleTone(TimeStampedModel):
     name = models.CharField(max_length=100, unique=True)
+
+
+class OpenAIRunLog(TimeStampedModel):
+    """
+    Log of OpenAI Assistant API runs for debugging and client transparency
+    """
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="openai_run_logs",
+        help_text="The user who triggered this run",
+        null=True,
+        blank=True,
+    )
+    
+    # Core OpenAI identifiers
+    thread_id = models.CharField(max_length=255, help_text="OpenAI thread ID")
+    run_id = models.CharField(max_length=255, help_text="OpenAI run ID")
+    assistant_id = models.CharField(max_length=255, help_text="OpenAI assistant ID")
+    
+    # Usage metrics
+    tokens_used = models.IntegerField(default=0, help_text="Total tokens consumed")
+    word_count = models.IntegerField(default=0, help_text="Word count of generated output")
+    
+    # File search tracking
+    file_search_used = models.BooleanField(
+        default=False, 
+        help_text="Whether file search (vector store) was used"
+    )
+    file_search_snippets = models.JSONField(
+        default=list,
+        help_text="Sample of file search snippets/citations used",
+        blank=True
+    )
+    
+    # Additional metadata
+    run_type = models.CharField(
+        max_length=50,
+        choices=[
+            ("title_generation", "Title Generation"),
+            ("outline_generation", "Outline Generation"),
+            ("script_generation", "Script Generation"),
+            ("image_analysis", "Image Analysis"),
+        ],
+        help_text="Type of generation performed"
+    )
+    generation_time = models.FloatField(default=0.0, help_text="Time in seconds")
+    model = models.CharField(max_length=100, default="gpt-4", help_text="Model used")
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("completed", "Completed"),
+            ("failed", "Failed"),
+            ("cancelled", "Cancelled"),
+        ],
+        default="completed"
+    )
+    
+    # Optional references to generated content
+    script_outline = models.ForeignKey(
+        ScriptOutline,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="run_logs"
+    )
+    full_script = models.ForeignKey(
+        FullScript,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="run_logs"
+    )
+    script_title = models.ForeignKey(
+        ScriptTitle,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="run_logs"
+    )
+    
+    def __str__(self):
+        return f"{self.run_type} - {self.run_id[:8]} ({self.tokens_used} tokens)"
+    
+    class Meta:
+        ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["thread_id"]),
+            models.Index(fields=["run_id"]),
+            models.Index(fields=["user", "-created"]),
+        ]

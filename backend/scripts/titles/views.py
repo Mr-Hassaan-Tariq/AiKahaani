@@ -61,7 +61,7 @@ class GenerateTitlesView(APIView, MethodSpecificThrottleMixin):
         title_count = validated_data["title_count"]
         tones = validated_data.get("tones", [])
         titles, metadata = OpenAIScriptService.generate_titles(
-            prompt=prompt, title_count=title_count, tones=tones
+            prompt=prompt, title_count=title_count, tones=tones, user=request.user
         )
 
         # Prepare response - extract title strings from title objects
@@ -163,6 +163,7 @@ class GenerateTitlesOptimizedView(APIView, MethodSpecificThrottleMixin):
                 user_prompt=user_prompt,
                 title_count=title_count,
                 tones=tones,
+                user=request.user,
             )
 
             # Prepare response - extract title strings from title objects

@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     FullScript,
+    OpenAIRunLog,
     Script,
     ScriptOutline,
     ScriptTitle,
@@ -119,3 +120,62 @@ class TitleToneAdmin(admin.ModelAdmin):
     search_fields = ("name",)
     ordering = ("name",)
     readonly_fields = ("created", "modified")
+
+
+@admin.register(OpenAIRunLog)
+class OpenAIRunLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "uuid",
+        "run_type",
+        "user",
+        "tokens_used",
+        "word_count",
+        "file_search_used",
+        "status",
+        "generation_time",
+        "created",
+    )
+    list_filter = ("run_type", "status", "file_search_used", "created")
+    search_fields = ("thread_id", "run_id", "assistant_id", "user__email")
+    readonly_fields = (
+        "uuid",
+        "created",
+        "modified",
+        "thread_id",
+        "run_id",
+        "assistant_id",
+        "tokens_used",
+        "word_count",
+        "file_search_used",
+        "file_search_snippets",
+        "run_type",
+        "generation_time",
+        "model",
+        "status",
+    )
+    raw_id_fields = ("user", "script_outline", "full_script", "script_title")
+    list_per_page = 20
+    ordering = ("-created",)
+    
+    fieldsets = (
+        ("Run Information", {
+            "fields": ("uuid", "run_type", "status", "user")
+        }),
+        ("OpenAI Identifiers", {
+            "fields": ("thread_id", "run_id", "assistant_id", "model")
+        }),
+        ("Metrics", {
+            "fields": ("tokens_used", "word_count", "generation_time")
+        }),
+        ("File Search", {
+            "fields": ("file_search_used", "file_search_snippets")
+        }),
+        ("References", {
+            "fields": ("script_outline", "full_script", "script_title"),
+            "classes": ("collapse",)
+        }),
+        ("Timestamps", {
+            "fields": ("created", "modified"),
+            "classes": ("collapse",)
+        }),
+    )
