@@ -805,6 +805,9 @@ Remember: Outline word count should be 500-800+ words to support a {min_length:,
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
         
+        # Track previous attempt word count for better retry messaging
+        previous_word_count = 0
+        
         for attempt in range(max_retries + 1):
             try:
                 start_time = time.time()
@@ -832,39 +835,56 @@ Remember: Outline word count should be 500-800+ words to support a {min_length:,
                 target_mid = (min_length + max_length) // 2
                 target_duration = target_mid / 150
                 
+                # Add safety buffer to target - aim higher than minimum to account for AI variability
+                safety_buffer = int(min_length * 0.1)  # 10% buffer
+                safe_target = target_mid + safety_buffer
+                
                 length_instructions = f"""
 🚨🚨🚨 ABSOLUTE REQUIREMENT - SCRIPT WILL BE REJECTED IF LENGTH IS WRONG 🚨🚨🚨
 
-MANDATORY WORD COUNT: {min_length:,} to {max_length:,} WORDS (TARGET: ~{target_mid:,} words)
-This is a PASS/FAIL requirement. Scripts outside this range will be REJECTED.
+MANDATORY WORD COUNT: MINIMUM {min_length:,} words (HARD FLOOR - DO NOT GO BELOW)
+Acceptable range: {min_length:,} to {max_length:,} words
+TARGET: {safe_target:,} words (aim HIGH to ensure you don't fall short)
 
-REQUIRED LENGTH STRATEGY:
-1. AIM FOR {target_mid:,} words as your target (middle of the range)
-2. Write your script section by section, tracking cumulative word count
-3. Each section should be SUBSTANTIALLY DETAILED with examples, explanations, and narrative
+⚠️ CRITICAL: Scripts under {min_length:,} words will be AUTOMATICALLY REJECTED.
+⚠️ You are being measured on the 'full_text' field word count - COUNT CAREFULLY!
 
-HOW TO REACH {min_length:,}+ WORDS:
-- Expand each outline point into 2-4 full sentences of narration
-- Add concrete examples, analogies, and illustrations for every key point
-- Include transitional phrases between ideas
-- Elaborate on the "why" and "how" behind each concept
-- Add relevant context, backstory, or setup for each section
-- Use descriptive language and paint vivid pictures with words
-- Include rhetorical questions and direct audience engagement
-- Add 3-5 sentences of setup/context at the start of each major section
+MANDATORY EXPANSION FORMULA:
+Count your outline sections. For {min_length:,} words minimum:
+- Hook/Intro: 400-500 words (establish context, set stakes, engage viewer)
+- EACH main content section: 450-550 words MINIMUM
+  * Opening paragraph (80-100 words): Set up the section topic
+  * 3-4 main points (100-120 words EACH): Deep dive with examples
+  * Transition paragraph (50-80 words): Bridge to next section
+- Conclusion/CTA: 300-400 words (recap, final thoughts, strong call to action)
 
-WORD COUNT CHECKPOINTS (for {target_mid:,} word target):
-- Introduction/Hook: ~{target_mid // 6:,} words
-- Each main section: ~{target_mid // 5:,} words minimum
-- Conclusion/CTA: ~{target_mid // 8:,} words
+CONCRETE EXPANSION TECHNIQUES (USE ALL OF THESE):
+1. EXAMPLES: Every claim needs a concrete example (adds 50-100 words each)
+2. ANALOGIES: Compare complex ideas to familiar concepts (adds 40-80 words each)
+3. ELABORATION: Never state something in one sentence when you can explain it in 3-4
+4. CONTEXT: Add "why this matters" and "how this connects" for every point
+5. STORYTELLING: Turn facts into mini-narratives with setup, tension, resolution
+6. RHETORICAL DEVICES: Questions, repetition for emphasis, direct address to viewer
+7. TRANSITIONS: 2-3 sentence bridges between ALL major points and sections
+8. BACKGROUND: Provide relevant context before introducing new concepts
 
-CRITICAL: Count your words as you write. If you're at the last section and only have {min_length - 500:,} words, you MUST expand significantly. DO NOT submit a script under {min_length:,} words.
+WORD COUNT VERIFICATION CHECKLIST:
+□ Hook/Introduction: 400+ words? ___
+□ Each main section: 450+ words? ___  
+□ Conclusion: 300+ words? ___
+□ TOTAL in full_text field: {min_length:,}+ words? ___
 
-Before submitting: Verify your full_text field contains {min_length:,}-{max_length:,} words.
+DO NOT PROCEED until you verify your full_text meets minimum {min_length:,} words.
 """
                 
                 if attempt > 0:
-                    length_instructions += f"\n\n⚠️⚠️⚠️ RETRY #{attempt} - PREVIOUS ATTEMPT FAILED ⚠️⚠️⚠️\nPrevious script was REJECTED for being TOO SHORT. You MUST write MORE content this time.\nDo NOT repeat the same mistake. EXPAND every section significantly.\nThis is attempt {attempt + 1}/{max_retries + 1} - make it count!"
+                    words_needed = min_length - previous_word_count if previous_word_count > 0 else min_length
+                    length_instructions += f"\n\n⚠️⚠️⚠️ RETRY #{attempt} - PREVIOUS ATTEMPT REJECTED ⚠️⚠️⚠️\n"
+                    if previous_word_count > 0:
+                        length_instructions += f"Previous script: {previous_word_count:,} words (need {words_needed:,} MORE words)\n"
+                    length_instructions += f"You were TOO SHORT. You MUST add significantly more content.\n"
+                    length_instructions += f"ADD {words_needed:,}+ words by expanding examples, adding stories, and elaborating on each point.\n"
+                    length_instructions += f"This is attempt {attempt + 1}/{max_retries + 1} - GET TO {min_length:,}+ WORDS!"
                 
                 run = client.beta.threads.runs.create(
                     thread_id=thread.id,
@@ -967,7 +987,8 @@ Before submitting: Verify your full_text field contains {min_length:,}-{max_leng
                     return script_content, sections, metadata
                 
                 else:
-                    # Retry
+                    # Retry - save word count for next attempt's messaging
+                    previous_word_count = word_count
                     logger.warning(f"[LENGTH_CHECK] Retrying script generation. Current: {word_count} words, Required: {min_length}-{max_length}")
                     continue
 
@@ -976,6 +997,9 @@ Before submitting: Verify your full_text field contains {min_length:,}-{max_leng
                     logger.error(f"Assistant script generation failed after {max_retries + 1} attempts: {str(e)}")
                     raise
                 else:
+                    # Track word count even on exception if available
+                    if 'word_count' in locals():
+                        previous_word_count = word_count
                     logger.warning(f"Attempt {attempt + 1} failed, retrying: {str(e)}")
                     continue
 
@@ -1344,31 +1368,44 @@ REMEMBER: A sparse outline produces a short script. A detailed outline with rich
             f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
         )
 
+        # Calculate concrete targets
+        target_words = (min_length + max_length) // 2
+        
         return f"""You are an expert YouTube script writer. Generate a complete script based EXACTLY on the provided outline below.
 
-PRIMARY SUCCESS CRITERION: WORD COUNT (CRITICAL - YOU MUST USE THESE):
-**MANDATORY: {min_length:,}-{max_length:,} WORDS** (Target: ~{(min_length + max_length) // 2:,} words)
-This is NON-NEGOTIABLE. Scripts outside this range will be REJECTED.
+🎯 PRIMARY SUCCESS CRITERION: MINIMUM {min_length:,} WORDS IN THE full_text FIELD 🎯
+Range: {min_length:,}-{max_length:,} words | Target: {target_words:,} words
+⚠️ Scripts under {min_length:,} words = AUTOMATIC REJECTION ⚠️
+
+CONCRETE LENGTH REQUIREMENTS PER SECTION:
+- Hook/Opening: 400-500 words minimum
+- Each main content section: 450-550 words minimum
+- Conclusion/CTA: 300-400 words minimum
+
+HOW TO WRITE 450+ WORDS PER SECTION (FOLLOW THIS FORMULA):
+1. OPENING (80-100 words): Introduce the section topic with context
+2. POINT 1 (100-120 words): First key point with detailed example/story
+3. POINT 2 (100-120 words): Second key point with detailed example/story  
+4. POINT 3 (100-120 words): Third key point with detailed example/story
+5. TRANSITION (50-80 words): Bridge to next section with summary
+
+MANDATORY EXPANSION TECHNIQUES (USE EVERY ONE):
+✓ EXAMPLES: Turn every claim into a mini-story with concrete details (50-100 words each)
+✓ ELABORATION: Explain the "what, why, how" for every point (never just state it)
+✓ ANALOGIES: Compare abstract concepts to familiar things viewers understand
+✓ BACKGROUND: Provide context before introducing new ideas
+✓ TRANSITIONS: 2-3 sentences between ALL major points and sections
+✓ ENGAGEMENT: Rhetorical questions, direct address ("you might be wondering...")
+✓ VIVID LANGUAGE: Paint pictures with descriptive, sensory details
 
 CRITICAL REQUIREMENTS:
-- Follow the provided outline structure EXACTLY - do not create your own topics or sections
-- Use the outline sections, titles, and content as your guide
-- Transform the outline points into DETAILED, EXPANDED script content with examples and elaboration
-- Maintain the EXACT same section order and flow as specified in the outline
+- Follow the provided outline structure EXACTLY - maintain section titles and order
+- Preserve apostrophes and punctuation in section titles exactly as in outline
 - {tone_text}
 - Use knowledge base files to apply storytelling rules and hook techniques
-- DO NOT include any document references, citations, or knowledge base file names in the script content
-- Write the complete script as if you are the narrator speaking directly to the audience
-- The full_text should be ready for narration/recording without any references
-
-LENGTH EXPANSION TECHNIQUES (CRITICAL - YOU MUST USE THESE):
-- Turn each bullet point into 2-4 full narrative sentences
-- Add concrete examples, stories, and analogies for EVERY major point
-- Include setup context and transitions between sections (3-5 sentences each)
-- Elaborate with "why this matters" and "how it works" explanations
-- Use vivid, descriptive language to paint pictures with words
-- Add rhetorical questions and direct audience engagement throughout
-- Include relevant background information and context setting
+- DO NOT include document references or citations in the script content
+- Write as if narrating directly to the audience
+- The full_text field must contain {min_length:,}+ words for narration
 
 PROVIDED OUTLINE TO FOLLOW:
 {outline_text}
