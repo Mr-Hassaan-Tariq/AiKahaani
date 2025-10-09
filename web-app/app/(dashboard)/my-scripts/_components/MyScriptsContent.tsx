@@ -24,7 +24,7 @@ export default async function MyScriptsContent({ searchParams }: MyScriptsConten
   const search = searchParams?.search;
 
   const currentPage = searchParams?.page ? parseInt(searchParams.page) : 1;
-  const pageSize = searchParams?.limit ? parseInt(searchParams.limit) : 10;
+  const pageSize = searchParams?.limit ? parseInt(searchParams.limit) : 12;
 
   // Build filters object from search params
   const filters: ScriptFilters = {

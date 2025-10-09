@@ -14,6 +14,18 @@ import Text from 'components/ui/Text';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data } = await getUserProfile();
+
+  // 🧠 Helper to get initials from name or username
+  const getInitials = (name?: string, username?: string) => {
+    const base = name || username || '';
+    if (!base) return 'U';
+    const parts = base.trim().split(' ');
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  };
+
+  const initials = getInitials(data?.fullname, data?.username);
+
   return (
     <div className="h-[100dvh] min-h-screen w-full bg-[#0E0F0C]">
       <div className="mx-auto flex">
@@ -29,16 +41,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <Link href="/">
                 <Image src={mainLogo} alt="mainLogo" className="object-cover" />
               </Link>
-              <Row className="gap-4">
+              <Row className="items-center gap-4">
                 <MobileDrawer />
-                <ClientImage
-                  src={data?.profile_picture || ''}
-                  alt="DP"
-                  width={100}
-                  height={100}
-                  priority={true}
-                  className="h-8 w-8 rounded-full bg-gray-600 object-cover"
-                />
+                {data?.profile_picture ? (
+                  <ClientImage
+                    src={data.profile_picture}
+                    alt="DP"
+                    width={100}
+                    height={100}
+                    priority={true}
+                    className="h-8 w-8 rounded-full bg-gray-600 object-cover"
+                  />
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-600 text-xs font-bold text-white">
+                    {initials}
+                  </div>
+                )}
                 <MobileMenu />
               </Row>
             </Row>
@@ -47,28 +65,37 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
         {/* Main Content Area */}
         <div className="scrollbar max-h-screen min-h-screen w-full overflow-y-auto">
-          <Row className="sticky top-0 z-50 hidden h-20 w-full rounded-br-3xl border-b border-[#BAFF381F] bg-[#161616] px-8 text-white backdrop-blur-lg lg:flex">
+          {/* Sticky Navbar */}
+          <Row className="sticky top-0 z-50 hidden h-20 w-full items-center justify-between rounded-br-3xl border-b border-[#BAFF381F] bg-[#161616]/80 px-8 text-white backdrop-blur-lg lg:flex">
             <Text variant="base" className="flex gap-4 text-white">
               Plan:
               <PlanUpgradeModal align="start" />
             </Text>
 
-            <Row>
+            <Row className="items-center gap-3">
               <Dropdown />
-              <ClientImage
-                src={data?.profile_picture || ''}
-                alt="DP"
-                width={100}
-                height={100}
-                priority={true}
-                className="h-10 w-10 rounded-full bg-gray-600 object-cover"
-              />
+              {data?.profile_picture ? (
+                <ClientImage
+                  src={data.profile_picture}
+                  alt="DP"
+                  width={100}
+                  height={100}
+                  priority={true}
+                  className="h-10 w-10 rounded-full bg-gray-600 object-cover"
+                />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-600 text-sm font-bold text-white">
+                  {initials}
+                </div>
+              )}
               <Text variant="base" className="text-white">
-                {data?.fullname || ''}
+                {data?.fullname || data?.username || ''}
               </Text>
             </Row>
           </Row>
-          <div className="mx-auto mt-14 max-w-screen-2xl px-4 py-10 lg:mt-0 lg:px-20 lg:py-16">
+
+          {/* Content */}
+          <div className="relative mx-auto mt-14 max-w-screen-2xl px-4 py-10 lg:mt-0 lg:px-20 lg:py-16">
             <div className="relative z-10">{children}</div>
             <div className="absolute bottom-0 right-0 z-0 rotate-180 bg-[radial-gradient(circle_at_top_left,#1a2e1d,transparent_40%)]">
               <Image src={'/BgGrid.svg'} width={1000} height={1000} alt="bottomLogo" />
