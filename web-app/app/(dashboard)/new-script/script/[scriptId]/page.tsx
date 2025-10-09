@@ -1,4 +1,5 @@
 import { ScriptData } from '@/(dashboard)/my-scripts/_types';
+import CopyAllButton from '@/(dashboard)/new-script/_components/CopyAllButton';
 
 import { getScript } from './actions';
 import ScriptComponent from './ScriptComponent';
@@ -9,35 +10,38 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
   const { scriptId } = await params;
   const { data, isError, error } = await getScript(scriptId);
 
-  // console.log('data', data?.sections, JSON.parse(data?.content)?.script?.sections);
-  // (JSON.parse(data.content)?.script?.map((e: any) => ({
-  //   title: `${e.timing}\t\t\t${e.section_title}`,
-  //   content: e.content,
-  // })) ?? [])
+  const sections =
+    data?.sections && data?.sections?.length > 0
+      ? data.sections.map((e: any) => ({
+          timeRange: `${e.start_time ?? ''}-${e.end_time ?? ''}`,
+          title: e.title ?? '',
+          content: e.content,
+        }))
+      : JSON.parse(data?.content || '{}')?.script?.sections?.map((e: any) => ({
+          timeRange: `${e.start_time ?? ''}-${e.end_time ?? ''}`,
+          title: e.title ?? '',
+          content: e.script,
+        })) || [];
+
+  const allContent = sections
+    ?.map((e: any) => `${e.timeRange} ${e.title}\n${e.content}`)
+    .join('\n\n');
+
   return (
     <Col className="gap-8">
-      <Col className="w-full items-center">
-        <H3 className="text-center">{data?.title || 'Untitled Script'}</H3>
+      <Col className="w-full">
+        <div className="flex w-full items-center justify-between">
+          <H3 className="text-white">{data?.title || 'Untitled Script'}</H3>
+          <div className="flex justify-end">
+            <CopyAllButton text={allContent} />
+          </div>
+        </div>
       </Col>
+
       {isError ? (
         <div className="text-white">{error.message?.toString()}</div>
       ) : (
-        <ScriptComponent
-          sections={
-            data.sections.length > 0
-              ? data?.sections?.map((e: any) => ({
-                  timeRange: `${e.start_time ?? ''}-${e.end_time ?? ''}`,
-                  title: e.title ?? '',
-                  content: e.content,
-                }))
-              : JSON.parse(data?.content)?.script?.sections?.map((e: any) => ({
-                  timeRange: `${e.start_time ?? ''}-${e.end_time ?? ''}`,
-                  title: e.title ?? '',
-                  content: e.script,
-                }))
-          }
-          script={data as ScriptData}
-        />
+        <ScriptComponent sections={sections} script={data as ScriptData} />
       )}
     </Col>
   );

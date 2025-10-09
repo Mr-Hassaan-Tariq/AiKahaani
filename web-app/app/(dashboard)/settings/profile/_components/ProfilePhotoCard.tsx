@@ -10,7 +10,22 @@ import Col from 'components/ui/Col';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
-export default function ProfilePhotoCard({ profileImage }: { profileImage?: string }) {
+export default function ProfilePhotoCard({
+  profileImage,
+  fullName,
+}: {
+  profileImage?: string;
+  fullName?: string;
+}) {
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  };
+
+  const initials = getInitials(fullName);
+
   return (
     <Card>
       <Col className="gap-6 lg:gap-8">
@@ -30,16 +45,20 @@ export default function ProfilePhotoCard({ profileImage }: { profileImage?: stri
               e.currentTarget.src = brokenImage.src;
             }}
           /> */}
-
-          <ClientImage
-            src={profileImage || ''}
-            alt="DP"
-            width={500}
-            height={500}
-            priority={true}
-            className="h-[120px] w-[120px] rounded-full bg-white/10 object-cover"
-          />
-
+          {profileImage ? (
+            <ClientImage
+              src={profileImage}
+              alt="DP"
+              width={500}
+              height={500}
+              priority={true}
+              className="h-[120px] w-[120px] rounded-full bg-white/10 object-cover"
+            />
+          ) : (
+            <div className="flex h-[120px] w-[120px] items-center justify-center rounded-full bg-white/10 text-3xl font-bold text-white">
+              {initials}
+            </div>
+          )}
           <Col className="gap-6">
             <Col className="gap-3">
               <Row className="justify-normal">
@@ -58,7 +77,7 @@ export default function ProfilePhotoCard({ profileImage }: { profileImage?: stri
             <Row className="justify-center lg:justify-normal">
               <ChangePhotoModal
                 trigger={
-                  <Button variant="gray" className="flex w-fit items-center ...">
+                  <Button variant="gray" className="flex w-fit items-center">
                     {changePhotoIcon} Change photo
                   </Button>
                 }

@@ -47,7 +47,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
         {/* Main Content Area */}
         <div className="scrollbar max-h-screen min-h-screen w-full overflow-y-auto">
-          <Row className="hidden h-20 w-full rounded-br-3xl border-b border-[#BAFF381F] bg-[#161616] px-8 text-white lg:flex">
+          <Row className="sticky top-0 z-50 hidden h-20 w-full rounded-br-3xl border-b border-[#BAFF381F] bg-[#161616] px-8 text-white backdrop-blur-lg lg:flex">
             <Text variant="base" className="flex gap-4 text-white">
               Plan:
               <PlanUpgradeModal align="start" />

@@ -6,9 +6,9 @@ import Text from 'components/ui/Text';
 
 export function LoadingScreen() {
   return (
-    <Col className="relative h-[calc(100dvh-350px)] w-full animate-pulse items-center justify-center">
+    <Col className="relative h-[calc(96dvh-350px)] w-full animate-pulse items-center justify-center">
       <div className="absolute">
-        <Row>
+        <Row className="mt-[-45px]">
           {editIcon}
           <Text variant="lg" className="font-figtree font-bold tracking-normal text-white">
             Analyzing your topic and outlining key points...
