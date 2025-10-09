@@ -4,7 +4,7 @@ import json
 import logging
 import re
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import openai
 from django.conf import settings
@@ -310,7 +310,7 @@ Make the title clickable and engaging for YouTube, and the description detailed 
 
     @staticmethod
     def generate_titles(
-        prompt: str, title_count: int = 6, tones: list = None
+        prompt: str, title_count: int = 6, tones: list = None, user=None, save_log: bool = True
     ) -> Tuple[list, Dict[str, Any]]:
         """
         Generate YouTube titles using the OpenAI Assistant API (with vector store KB).
@@ -320,6 +320,8 @@ Make the title clickable and engaging for YouTube, and the description detailed 
             prompt: Description or context for the video title generation
             title_count: Number of title variations to generate (default: 6)
             tones: List of tones/styles to apply (max 3, optional)
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
 
         Returns:
             Tuple of (list of title dicts, metadata dict)
@@ -347,11 +349,17 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                 ],
             )
 
-            # Run the assistant
+            # Run the assistant with explicit file_search requirement
+            # Force file_search to ensure knowledge base is used
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
                 assistant_id=settings.OPENAI_ASSISTANT_ID_TITLES,
+                # Note: tool_choice forces the assistant to use file_search
+                # Remove this if you want the assistant to decide when to use it
+                tool_choice={"type": "file_search"}  # Uncomment to force file search
             )
+            
+            logger.info(f"[ASSISTANT_RUN] Started title generation run: {run.id}")
 
             # Wait for completion
             titles_content, tokens_used = (
@@ -364,6 +372,14 @@ Make the title clickable and engaging for YouTube, and the description detailed 
 
             # Parse JSON titles
             titles = OpenAIScriptService._parse_generated_titles(titles_content)
+            
+            # Calculate word count
+            word_count = sum(len(t.get("title", "").split()) for t in titles)
+
+            # Extract file search info
+            file_search_used, file_search_snippets = OpenAIScriptService._extract_file_search_info(
+                client, thread.id, run.id
+            )
 
             metadata = {
                 "tokens_used": tokens_used,
@@ -372,11 +388,30 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                 "assistant_id": settings.OPENAI_ASSISTANT_ID_TITLES,
                 "vector_store_id": settings.OPENAI_VECTOR_STORE_ID_TITLES,
                 "thread_id": thread.id,
+                "run_id": run.id,
                 "title_count": len(titles),
+                "file_search_used": file_search_used,
+                "word_count": word_count,
             }
 
             if tones:
                 metadata["tones_used"] = tones
+
+            # Save run log to database
+            if save_log:
+                OpenAIScriptService._save_run_log(
+                    user=user,
+                    thread_id=thread.id,
+                    run_id=run.id,
+                    assistant_id=settings.OPENAI_ASSISTANT_ID_TITLES,
+                    tokens_used=tokens_used,
+                    word_count=word_count,
+                    file_search_used=file_search_used,
+                    file_search_snippets=file_search_snippets,
+                    run_type="title_generation",
+                    generation_time=generation_time,
+                    model="gpt-4-assistant",
+                )
 
             return titles, metadata
 
@@ -473,7 +508,7 @@ REQUIREMENTS:
 
     @staticmethod
     def generate_optimized_titles(
-        script=None, user_title=None, user_prompt=None, title_count=5, tones=None
+        script=None, user_title=None, user_prompt=None, title_count=5, tones=None, user=None
     ) -> Tuple[list, Dict[str, Any]]:
         """
         Generate optimized YouTube titles from script content or user-provided title.
@@ -485,6 +520,7 @@ REQUIREMENTS:
             user_prompt: User instructions for optimization
             title_count: Number of title variations to generate (default: 5)
             tones: List of tones/styles to apply (optional)
+            user: User object for logging (optional)
 
         Returns:
             Tuple of (list of title dicts, metadata dict)
@@ -526,7 +562,7 @@ Follow TubeGenius principles:
 
         # Reuse core generator so both paths output structured metadata
         return OpenAIScriptService.generate_titles(
-            prompt=optimization_prompt, title_count=title_count, tones=tones
+            prompt=optimization_prompt, title_count=title_count, tones=tones, user=user
         )
 
     @staticmethod
@@ -611,13 +647,24 @@ Follow TubeGenius principles:
     @staticmethod
     def generate_outline_with_assistant(
         script_data: Dict[str, Any],
+        user=None,
+        save_log: bool = True,
     ) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
         """
         Generate outline using OpenAI Assistant API with vector store knowledge base
+        
+        Args:
+            script_data: Dictionary containing script parameters
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
         """
         try:
             start_time = time.time()
             client = get_openai_client()
+            
+            # Extract length requirements from script_data
+            min_length = script_data.get("min_length", 1000)
+            max_length = script_data.get("max_length", 5000)
 
             # Create thread
             thread = client.beta.threads.create()
@@ -632,11 +679,38 @@ Follow TubeGenius principles:
                 thread_id=thread.id, role="user", content=message_content
             )
 
-            # Run the assistant (it already has detailed instructions configured)
+            # Run the assistant with additional length enforcement instructions
+            # Force file_search to ensure knowledge base is used
+            
+            # Calculate expected duration (assuming ~150 words per minute narration speed)
+            min_duration = min_length / 150
+            max_duration = max_length / 150
+            suggested_sections = max(3, min_length // 500)
+            max_sections = max(5, max_length // 400)
+            words_per_section_min = min_length // suggested_sections
+            words_per_section_max = max_length // suggested_sections
+            
+            length_instructions = f"""
+🚨 OUTLINE LENGTH PLANNING 🚨
+This outline must support a final script of {min_length:,} to {max_length:,} WORDS.
+Expected video duration: {min_duration:.1f} to {max_duration:.1f} minutes
+
+Calculate required sections and depth:
+- For {min_length:,}-{max_length:,} words, create {suggested_sections} to {max_sections} detailed sections
+- Each section should support ~{words_per_section_min:,}-{words_per_section_max:,} words of content
+- Include detailed descriptions (50-100 words each) and 3-5 key points per section
+- The outline depth DIRECTLY determines script length - make it detailed enough!
+- Remember: {min_length:,} words = ~{min_duration:.1f} minutes of narration
+"""
+            
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
                 assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
+                additional_instructions=length_instructions,
+                tool_choice={"type": "file_search"}
             )
+            
+            logger.info(f"[ASSISTANT_RUN] Started outline generation run: {run.id}")
 
             # Wait for completion
             outline_text, tokens_used = (
@@ -649,15 +723,42 @@ Follow TubeGenius principles:
 
             # Parse outline structure
             outline_data = OpenAIScriptService._parse_outline_structure(outline_text)
+            
+            # Calculate word count
+            word_count = len(outline_text.split())
+
+            # Extract file search info
+            file_search_used, file_search_snippets = OpenAIScriptService._extract_file_search_info(
+                client, thread.id, run.id
+            )
 
             metadata = {
                 "tokens_used": tokens_used,
                 "generation_time": generation_time,
                 "model": "gpt-4-assistant",
-                "assistant_id": settings.OPENAI_ASSISTANT_ID_SCRIPT,
+                "assistant_id": settings.OPENAI_ASSISTANT_ID_OUTLINE,
                 "vector_store_id": settings.OPENAI_VECTOR_STORE_ID_SCRIPT,
                 "thread_id": thread.id,
+                "run_id": run.id,
+                "file_search_used": file_search_used,
+                "word_count": word_count,
             }
+
+            # Save run log to database
+            if save_log:
+                OpenAIScriptService._save_run_log(
+                    user=user,
+                    thread_id=thread.id,
+                    run_id=run.id,
+                    assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
+                    tokens_used=tokens_used,
+                    word_count=word_count,
+                    file_search_used=file_search_used,
+                    file_search_snippets=file_search_snippets,
+                    run_type="outline_generation",
+                    generation_time=generation_time,
+                    model="gpt-4-assistant",
+                )
 
             return outline_text, outline_data, metadata
 
@@ -667,69 +768,191 @@ Follow TubeGenius principles:
 
     @staticmethod
     def generate_full_script_with_assistant(
-        outline_text: str, script_data: Dict[str, Any]
+        outline_text: str, 
+        script_data: Dict[str, Any],
+        user=None,
+        save_log: bool = True,
+        max_retries: int = 3,
     ) -> Tuple[str, List[Dict], Dict[str, Any]]:
         """
         Generate full script using OpenAI Assistant API with vector store knowledge base
+        Includes word count validation and retry logic.
+        
+        Args:
+            outline_text: The outline text to generate script from
+            script_data: Dictionary containing script parameters
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
+            max_retries: Maximum retry attempts if length doesn't match (default: 2)
         """
-        try:
-            start_time = time.time()
-            client = get_openai_client()
+        min_length = script_data.get("min_length", 1000)
+        max_length = script_data.get("max_length", 5000)
+        
+        for attempt in range(max_retries + 1):
+            try:
+                start_time = time.time()
+                client = get_openai_client()
 
-            # Create thread
-            thread = client.beta.threads.create()
+                # Create thread
+                thread = client.beta.threads.create()
 
-            # Build script generation message (simplified)
-            message_content = OpenAIScriptService._build_assistant_script_message(
-                outline_text, script_data
-            )
+                # Build script generation message (simplified)
+                message_content = OpenAIScriptService._build_assistant_script_message(
+                    outline_text, script_data
+                )
 
-            # Add message to thread (vector store is already attached to the assistant)
-            client.beta.threads.messages.create(
-                thread_id=thread.id, role="user", content=message_content
-            )
+                # Add message to thread (vector store is already attached to the assistant)
+                client.beta.threads.messages.create(
+                    thread_id=thread.id, role="user", content=message_content
+                )
 
-            # Run the assistant (it already has detailed instructions configured)
-            run = client.beta.threads.runs.create(
-                thread_id=thread.id,
-                assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
-            )
+                # Run the assistant with additional length enforcement instructions
+                # Force file_search to ensure knowledge base is used
+                
+                # Calculate expected duration (assuming ~150 words per minute narration speed)
+                min_duration = min_length / 150
+                max_duration = max_length / 150
+                target_mid = (min_length + max_length) // 2
+                target_duration = target_mid / 150
+                
+                length_instructions = f"""
+🚨 CRITICAL LENGTH REQUIREMENT FOR THIS SCRIPT 🚨
+MANDATORY WORD COUNT: {min_length:,} to {max_length:,} WORDS
+Target video duration: {min_duration:.1f} to {max_duration:.1f} minutes (~{target_duration:.1f} min ideal)
 
-            # Wait for completion
-            script_content, tokens_used = (
-                OpenAIScriptService._wait_for_assistant_completion(
+You MUST count words as you write and ensure the final script is EXACTLY between {min_length:,} and {max_length:,} words.
+- If under {min_length:,}: ADD more detail, examples, elaboration
+- If over {max_length:,}: CONDENSE and tighten the prose
+- Ideal target: ~{target_mid:,} words = ~{target_duration:.1f} minutes of narration
+- This is the PRIMARY success criterion - length compliance is MANDATORY
+
+Before submitting, verify your word count is within {min_length:,}-{max_length:,} range.
+"""
+                
+                if attempt > 0:
+                    length_instructions += f"\n⚠️ RETRY #{attempt}: Previous script was REJECTED for incorrect length. This is attempt {attempt + 1}/{max_retries + 1}."
+                
+                run = client.beta.threads.runs.create(
+                    thread_id=thread.id,
+                    assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
+                    additional_instructions=length_instructions,
+                    tool_choice={"type": "file_search"}
+                )
+                
+                logger.info(f"[ASSISTANT_RUN] Started script generation run: {run.id} (Attempt {attempt + 1}/{max_retries + 1})")
+
+                # Wait for completion
+                script_content, tokens_used = (
+                    OpenAIScriptService._wait_for_assistant_completion(
+                        client, thread.id, run.id
+                    )
+                )
+
+                generation_time = time.time() - start_time
+
+                # Parse script sections
+                sections = OpenAIScriptService._parse_script_sections(script_content)
+                
+                # Calculate word count and validate
+                word_count = len(script_content.split())
+                is_valid, actual_word_count = OpenAIScriptService._validate_word_count(
+                    script_content, min_length, max_length, "Script"
+                )
+
+                # Extract file search info
+                file_search_used, file_search_snippets = OpenAIScriptService._extract_file_search_info(
                     client, thread.id, run.id
                 )
-            )
 
-            generation_time = time.time() - start_time
+                metadata = {
+                    "tokens_used": tokens_used,
+                    "generation_time": generation_time,
+                    "model": "gpt-4-assistant",
+                    "assistant_id": settings.OPENAI_ASSISTANT_ID_SCRIPT,
+                    "vector_store_id": settings.OPENAI_VECTOR_STORE_ID_SCRIPT,
+                    "thread_id": thread.id,
+                    "run_id": run.id,
+                    "file_search_used": file_search_used,
+                    "word_count": word_count,
+                    "length_valid": is_valid,
+                    "attempt": attempt + 1,
+                }
 
-            # Parse script sections
-            sections = OpenAIScriptService._parse_script_sections(script_content)
+                # If length is valid or this is the last attempt, return the result
+                if is_valid:
+                    logger.info(f"[LENGTH_CHECK] ✓ Script generation successful with valid length on attempt {attempt + 1}")
+                    
+                    # Save run log to database
+                    if save_log:
+                        OpenAIScriptService._save_run_log(
+                            user=user,
+                            thread_id=thread.id,
+                            run_id=run.id,
+                            assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
+                            tokens_used=tokens_used,
+                            word_count=word_count,
+                            file_search_used=file_search_used,
+                            file_search_snippets=file_search_snippets,
+                            run_type="script_generation",
+                            generation_time=generation_time,
+                            model="gpt-4-assistant",
+                        )
+                    
+                    return script_content, sections, metadata
+                
+                elif attempt == max_retries:
+                    # Last attempt, return even if invalid
+                    logger.warning(f"[LENGTH_CHECK] ⚠️ Returning script after {max_retries + 1} attempts. Word count {word_count} is outside range {min_length}-{max_length}")
+                    
+                    # Save run log to database
+                    if save_log:
+                        OpenAIScriptService._save_run_log(
+                            user=user,
+                            thread_id=thread.id,
+                            run_id=run.id,
+                            assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
+                            tokens_used=tokens_used,
+                            word_count=word_count,
+                            file_search_used=file_search_used,
+                            file_search_snippets=file_search_snippets,
+                            run_type="script_generation",
+                            generation_time=generation_time,
+                            model="gpt-4-assistant",
+                        )
+                    
+                    return script_content, sections, metadata
+                
+                else:
+                    # Retry
+                    logger.warning(f"[LENGTH_CHECK] Retrying script generation. Current: {word_count} words, Required: {min_length}-{max_length}")
+                    continue
 
-            metadata = {
-                "tokens_used": tokens_used,
-                "generation_time": generation_time,
-                "model": "gpt-4-assistant",
-                "assistant_id": settings.OPENAI_ASSISTANT_ID_SCRIPT,
-                "vector_store_id": settings.OPENAI_VECTOR_STORE_ID_SCRIPT,
-                "thread_id": thread.id,
-            }
-
-            return script_content, sections, metadata
-
-        except Exception as e:
-            logger.error(f"Assistant script generation failed: {str(e)}")
-            raise
+            except Exception as e:
+                if attempt == max_retries:
+                    logger.error(f"Assistant script generation failed after {max_retries + 1} attempts: {str(e)}")
+                    raise
+                else:
+                    logger.warning(f"Attempt {attempt + 1} failed, retrying: {str(e)}")
+                    continue
 
     @staticmethod
     def analyze_image_with_assistant(
-        image_file=None, image_url=None
+        image_file=None, 
+        image_url=None,
+        user=None,
+        save_log: bool = True,
     ) -> Tuple[str, str]:
         """
         Analyze an image using OpenAI Assistant API with Vision capabilities and vector store knowledge base
+        
+        Args:
+            image_file: Django UploadedFile object (optional)
+            image_url: URL of the image to analyze (optional)
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
         """
         try:
+            start_time = time.time()
             client = get_openai_client()
 
             # Create thread
@@ -770,15 +993,23 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             )
 
             # Run the assistant (it already has detailed instructions configured)
+            # Force file_search to ensure knowledge base is used
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
                 assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
+                # Note: tool_choice forces the assistant to use file_search
+                # Remove this if you want the assistant to decide when to use it
+                tool_choice={"type": "file_search"}  # Uncomment to force file search
             )
+            
+            logger.info(f"[ASSISTANT_RUN] Started image analysis run: {run.id}")
 
             # Wait for completion
-            content, _ = OpenAIScriptService._wait_for_assistant_completion(
+            content, tokens_used = OpenAIScriptService._wait_for_assistant_completion(
                 client, thread.id, run.id
             )
+            
+            generation_time = time.time() - start_time
 
             # Parse the response to extract title and description
             title = ""
@@ -796,6 +1027,30 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             if not title and not description:
                 description = content.strip()
                 title = "Image Analysis"
+            
+            # Calculate word count
+            word_count = len(content.split())
+
+            # Extract file search info
+            file_search_used, file_search_snippets = OpenAIScriptService._extract_file_search_info(
+                client, thread.id, run.id
+            )
+
+            # Save run log to database
+            if save_log:
+                OpenAIScriptService._save_run_log(
+                    user=user,
+                    thread_id=thread.id,
+                    run_id=run.id,
+                    assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
+                    tokens_used=tokens_used,
+                    word_count=word_count,
+                    file_search_used=file_search_used,
+                    file_search_snippets=file_search_snippets,
+                    run_type="image_analysis",
+                    generation_time=generation_time,
+                    model="gpt-4-assistant",
+                )
 
             return title, description
 
@@ -804,16 +1059,175 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             return "Image Analysis", "An image was provided for analysis."
 
     @staticmethod
+    def _extract_file_search_info(client, thread_id: str, run_id: str) -> Tuple[bool, List[Dict]]:
+        """
+        Extract file search usage and snippets from run steps
+        
+        Returns:
+            Tuple of (file_search_used, file_search_snippets)
+        """
+        try:
+            logger.info(f"[FILE_SEARCH_CHECK] Checking file search usage for run_id: {run_id}")
+            
+            # Get run steps to check for file_search tool usage
+            run_steps = client.beta.threads.runs.steps.list(
+                thread_id=thread_id,
+                run_id=run_id
+            )
+            
+            logger.info(f"[FILE_SEARCH_CHECK] Found {len(run_steps.data)} steps in run")
+            
+            file_search_used = False
+            file_search_snippets = []
+            
+            for idx, step in enumerate(run_steps.data):
+                logger.info(f"[FILE_SEARCH_CHECK] Step {idx + 1}: type={getattr(step, 'type', 'unknown')}, "
+                           f"step_details_type={getattr(step.step_details, 'type', 'unknown') if hasattr(step, 'step_details') else 'no_details'}")
+                
+                # Check if this step used file_search tool
+                if hasattr(step, 'step_details') and hasattr(step.step_details, 'type'):
+                    if step.step_details.type == 'tool_calls':
+                        tool_calls = step.step_details.tool_calls
+                        logger.info(f"[FILE_SEARCH_CHECK] Step {idx + 1} has {len(tool_calls)} tool calls")
+                        
+                        for tool_idx, tool_call in enumerate(tool_calls):
+                            tool_type = getattr(tool_call, 'type', 'unknown')
+                            logger.info(f"[FILE_SEARCH_CHECK] Tool call {tool_idx + 1}: type={tool_type}")
+                            
+                            if tool_type == 'file_search':
+                                file_search_used = True
+                                logger.info(f"[FILE_SEARCH_CHECK] ✓ FILE_SEARCH TOOL DETECTED in step {idx + 1}")
+                                
+                                # Extract snippets if available
+                                if hasattr(tool_call, 'file_search') and hasattr(tool_call.file_search, 'results'):
+                                    results = tool_call.file_search.results
+                                    logger.info(f"[FILE_SEARCH_CHECK] Found {len(results)} file search results")
+                                    
+                                    for res_idx, result in enumerate(results[:3]):  # Limit to 3 samples
+                                        snippet = {
+                                            'file_id': getattr(result, 'file_id', None),
+                                            'file_name': getattr(result, 'file_name', None),
+                                            'score': getattr(result, 'score', None),
+                                        }
+                                        
+                                        logger.info(f"[FILE_SEARCH_CHECK] Result {res_idx + 1}: "
+                                                   f"file_name={snippet.get('file_name', 'N/A')}, "
+                                                   f"score={snippet.get('score', 'N/A')}")
+                                        
+                                        # Add content snippet if available
+                                        if hasattr(result, 'content') and result.content:
+                                            content_items = result.content[:1]  # Take first content item
+                                            for content_item in content_items:
+                                                if hasattr(content_item, 'text'):
+                                                    snippet['text'] = content_item.text[:200]  # Limit to 200 chars
+                                                    logger.info(f"[FILE_SEARCH_CHECK] Content preview: {snippet['text'][:100]}...")
+                                        
+                                        file_search_snippets.append(snippet)
+                                else:
+                                    logger.warning(f"[FILE_SEARCH_CHECK] file_search tool detected but no results available")
+            
+            if file_search_used:
+                logger.info(f"[FILE_SEARCH_CHECK] ✓ FINAL RESULT: File search WAS used, {len(file_search_snippets)} snippets extracted")
+            else:
+                logger.warning(f"[FILE_SEARCH_CHECK] ✗ FINAL RESULT: File search NOT detected in any steps")
+            
+            return file_search_used, file_search_snippets
+            
+        except Exception as e:
+            logger.error(f"[FILE_SEARCH_CHECK] Failed to extract file search info: {str(e)}", exc_info=True)
+            return False, []
+    
+    @staticmethod
+    def _save_run_log(
+        user,
+        thread_id: str,
+        run_id: str,
+        assistant_id: str,
+        tokens_used: int,
+        word_count: int,
+        file_search_used: bool,
+        file_search_snippets: List[Dict],
+        run_type: str,
+        generation_time: float,
+        model: str = "gpt-4",
+        status: str = "completed",
+        script_outline=None,
+        full_script=None,
+        script_title=None,
+    ):
+        """
+        Save OpenAI run log to database
+        """
+        try:
+            from scripts.models import OpenAIRunLog
+            
+            run_log = OpenAIRunLog.objects.create(
+                user=user,
+                thread_id=thread_id,
+                run_id=run_id,
+                assistant_id=assistant_id,
+                tokens_used=tokens_used,
+                word_count=word_count,
+                file_search_used=file_search_used,
+                file_search_snippets=file_search_snippets,
+                run_type=run_type,
+                generation_time=generation_time,
+                model=model,
+                status=status,
+                script_outline=script_outline,
+                full_script=full_script,
+                script_title=script_title,
+            )
+            
+            logger.info(f"Saved run log {run_log.uuid} for run_id {run_id}")
+            return run_log
+            
+        except Exception as e:
+            logger.error(f"Failed to save run log: {str(e)}")
+            return None
+
+    @staticmethod
+    def _validate_word_count(content: str, min_length: int, max_length: int, content_type: str = "content") -> Tuple[bool, int]:
+        """
+        Validate if content meets word count requirements
+        
+        Returns:
+            Tuple of (is_valid, actual_word_count)
+        """
+        word_count = len(content.split())
+        is_valid = min_length <= word_count <= max_length
+        
+        if is_valid:
+            logger.info(f"[LENGTH_CHECK] ✓ {content_type} word count {word_count} is within range {min_length}-{max_length}")
+        else:
+            logger.warning(f"[LENGTH_CHECK] ✗ {content_type} word count {word_count} is OUTSIDE range {min_length}-{max_length}")
+            if word_count < min_length:
+                logger.warning(f"[LENGTH_CHECK] Content is {min_length - word_count} words SHORT")
+            else:
+                logger.warning(f"[LENGTH_CHECK] Content is {word_count - max_length} words OVER")
+        
+        return is_valid, word_count
 
     @staticmethod
     def _wait_for_assistant_completion(
         client, thread_id: str, run_id: str
     ) -> Tuple[str, int]:
         """Wait for assistant run to complete and return content"""
+        logger.info(f"[ASSISTANT_RUN] Waiting for completion: thread_id={thread_id}, run_id={run_id}")
+        
         while True:
             run = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
+            
+            logger.debug(f"[ASSISTANT_RUN] Current status: {run.status}")
 
             if run.status == "completed":
+                logger.info(f"[ASSISTANT_RUN] ✓ Run completed successfully")
+                
+                # Log tool usage if available
+                if hasattr(run, 'tools') and run.tools:
+                    tool_names = [getattr(tool, 'type', 'unknown') for tool in run.tools]
+                    logger.info(f"[ASSISTANT_RUN] Tools available on assistant: {tool_names}")
+                
                 # Get the latest message
                 messages = client.beta.threads.messages.list(
                     thread_id=thread_id, limit=1
@@ -821,10 +1235,13 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
 
                 content = messages.data[0].content[0].text.value
                 tokens_used = run.usage.total_tokens if run.usage else 0
+                
+                logger.info(f"[ASSISTANT_RUN] Response length: {len(content)} chars, Tokens used: {tokens_used}")
 
                 return content, tokens_used
 
             elif run.status in ["failed", "cancelled", "expired"]:
+                logger.error(f"[ASSISTANT_RUN] ✗ Run failed with status: {run.status}")
                 raise Exception(f"Run failed with status: {run.status}")
 
             time.sleep(1)  # Wait before checking again
@@ -847,13 +1264,13 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
 Topic: {description}
 {tone_text}
 Style: {template_style}
-Target Length: {min_length}-{max_length} words
 
 Please use the knowledge base files to apply the appropriate storytelling rules and hook techniques for this topic and tone.
 
 REQUIREMENTS:
 - DO NOT include any document references, citations, or knowledge base file names in the outline content
 - Write clean, engaging outline sections without referencing source documents
+- Create detailed sections with rich descriptions and key points
 
 Return your response in JSON format with sections array containing title, description, key_points, timing, transition, and content fields."""
 
@@ -878,7 +1295,7 @@ CRITICAL REQUIREMENTS:
 - Transform the outline points into engaging script content
 - Maintain the EXACT same section order and flow as specified in the outline
 - {tone_text}
-- Target Length: {min_length}-{max_length} words
+- **WORD COUNT: {min_length}-{max_length} words (STRICTLY ENFORCED)**
 - Use knowledge base files to apply storytelling rules and hook techniques
 - DO NOT include any document references, citations, or knowledge base file names in the script content
 - Write the complete script as if you are the narrator speaking directly to the audience
