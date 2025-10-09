@@ -853,10 +853,20 @@ Before submitting, verify your word count is within {min_length:,}-{max_length:,
                 # Parse script sections
                 sections = OpenAIScriptService._parse_script_sections(script_content)
                 
-                # Calculate word count and validate
-                word_count = len(script_content.split())
+                # Extract actual script text from JSON for accurate word count
+                actual_script_text = script_content  # Default to full content
+                try:
+                    script_data = json.loads(script_content)
+                    if isinstance(script_data, dict) and "full_text" in script_data:
+                        actual_script_text = script_data["full_text"]
+                except json.JSONDecodeError:
+                    # Not JSON, use raw content
+                    pass
+                
+                # Calculate word count and validate using actual script text
+                word_count = len(actual_script_text.split())
                 is_valid, actual_word_count = OpenAIScriptService._validate_word_count(
-                    script_content, min_length, max_length, "Script"
+                    actual_script_text, min_length, max_length, "Script"
                 )
 
                 # Extract file search info
