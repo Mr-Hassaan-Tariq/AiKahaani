@@ -691,16 +691,33 @@ Follow TubeGenius principles:
             words_per_section_max = max_length // suggested_sections
             
             length_instructions = f"""
-🚨 OUTLINE LENGTH PLANNING 🚨
+🚨🚨🚨 OUTLINE DEPTH REQUIREMENT - CRITICAL FOR SCRIPT LENGTH 🚨🚨🚨
+
 This outline must support a final script of {min_length:,} to {max_length:,} WORDS.
 Expected video duration: {min_duration:.1f} to {max_duration:.1f} minutes
 
-Calculate required sections and depth:
-- For {min_length:,}-{max_length:,} words, create {suggested_sections} to {max_sections} detailed sections
-- Each section should support ~{words_per_section_min:,}-{words_per_section_max:,} words of content
-- Include detailed descriptions (50-100 words each) and 3-5 key points per section
-- The outline depth DIRECTLY determines script length - make it detailed enough!
-- Remember: {min_length:,} words = ~{min_duration:.1f} minutes of narration
+MANDATORY OUTLINE STRUCTURE FOR {min_length:,}-{max_length:,} WORD SCRIPTS:
+- Create {suggested_sections} to {max_sections} HIGHLY DETAILED sections
+- Each section must support ~{words_per_section_min:,}-{words_per_section_max:,} words of final script content
+- Each section REQUIRES:
+  * Detailed description: 80-150 words (not just 1-2 sentences!)
+  * 5-8 specific key points (each point should be a full sentence of guidance)
+  * Timing estimate for that section
+  * Transition guidance to next section
+  * Specific examples, angles, or story elements to include
+
+CRITICAL: The outline detail DIRECTLY determines final script length!
+- Sparse outline = short script (WILL FAIL)
+- Detailed outline with rich descriptions and many key points = proper length script
+
+REQUIRED DEPTH PER SECTION:
+- Title: Clear, descriptive section title
+- Description: 80-150 words explaining what this section covers and how to approach it
+- Key Points: 5-8 detailed points (each a full sentence providing specific guidance)
+- Include suggestions for examples, analogies, or stories to use
+- Provide context on why this section matters and how it connects
+
+Remember: Outline word count should be 500-800+ words to support a {min_length:,} word script!
 """
             
             run = client.beta.threads.runs.create(
@@ -772,7 +789,7 @@ Calculate required sections and depth:
         script_data: Dict[str, Any],
         user=None,
         save_log: bool = True,
-        max_retries: int = 3,
+        max_retries: int = 4,
     ) -> Tuple[str, List[Dict], Dict[str, Any]]:
         """
         Generate full script using OpenAI Assistant API with vector store knowledge base
@@ -783,7 +800,7 @@ Calculate required sections and depth:
             script_data: Dictionary containing script parameters
             user: User object for logging (optional)
             save_log: Whether to save run log to database (default: True)
-            max_retries: Maximum retry attempts if length doesn't match (default: 2)
+            max_retries: Maximum retry attempts if length doesn't match (default: 4)
         """
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
@@ -816,21 +833,38 @@ Calculate required sections and depth:
                 target_duration = target_mid / 150
                 
                 length_instructions = f"""
-🚨 CRITICAL LENGTH REQUIREMENT FOR THIS SCRIPT 🚨
-MANDATORY WORD COUNT: {min_length:,} to {max_length:,} WORDS
-Target video duration: {min_duration:.1f} to {max_duration:.1f} minutes (~{target_duration:.1f} min ideal)
+🚨🚨🚨 ABSOLUTE REQUIREMENT - SCRIPT WILL BE REJECTED IF LENGTH IS WRONG 🚨🚨🚨
 
-You MUST count words as you write and ensure the final script is EXACTLY between {min_length:,} and {max_length:,} words.
-- If under {min_length:,}: ADD more detail, examples, elaboration
-- If over {max_length:,}: CONDENSE and tighten the prose
-- Ideal target: ~{target_mid:,} words = ~{target_duration:.1f} minutes of narration
-- This is the PRIMARY success criterion - length compliance is MANDATORY
+MANDATORY WORD COUNT: {min_length:,} to {max_length:,} WORDS (TARGET: ~{target_mid:,} words)
+This is a PASS/FAIL requirement. Scripts outside this range will be REJECTED.
 
-Before submitting, verify your word count is within {min_length:,}-{max_length:,} range.
+REQUIRED LENGTH STRATEGY:
+1. AIM FOR {target_mid:,} words as your target (middle of the range)
+2. Write your script section by section, tracking cumulative word count
+3. Each section should be SUBSTANTIALLY DETAILED with examples, explanations, and narrative
+
+HOW TO REACH {min_length:,}+ WORDS:
+- Expand each outline point into 2-4 full sentences of narration
+- Add concrete examples, analogies, and illustrations for every key point
+- Include transitional phrases between ideas
+- Elaborate on the "why" and "how" behind each concept
+- Add relevant context, backstory, or setup for each section
+- Use descriptive language and paint vivid pictures with words
+- Include rhetorical questions and direct audience engagement
+- Add 3-5 sentences of setup/context at the start of each major section
+
+WORD COUNT CHECKPOINTS (for {target_mid:,} word target):
+- Introduction/Hook: ~{target_mid // 6:,} words
+- Each main section: ~{target_mid // 5:,} words minimum
+- Conclusion/CTA: ~{target_mid // 8:,} words
+
+CRITICAL: Count your words as you write. If you're at the last section and only have {min_length - 500:,} words, you MUST expand significantly. DO NOT submit a script under {min_length:,} words.
+
+Before submitting: Verify your full_text field contains {min_length:,}-{max_length:,} words.
 """
                 
                 if attempt > 0:
-                    length_instructions += f"\n⚠️ RETRY #{attempt}: Previous script was REJECTED for incorrect length. This is attempt {attempt + 1}/{max_retries + 1}."
+                    length_instructions += f"\n\n⚠️⚠️⚠️ RETRY #{attempt} - PREVIOUS ATTEMPT FAILED ⚠️⚠️⚠️\nPrevious script was REJECTED for being TOO SHORT. You MUST write MORE content this time.\nDo NOT repeat the same mistake. EXPAND every section significantly.\nThis is attempt {attempt + 1}/{max_retries + 1} - make it count!"
                 
                 run = client.beta.threads.runs.create(
                     thread_id=thread.id,
@@ -1269,20 +1303,33 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
         )
 
-        return f"""Generate a script outline for this YouTube video in JSON format:
+        return f"""Generate a DETAILED script outline for this YouTube video in JSON format:
 
 Topic: {description}
 {tone_text}
 Style: {template_style}
+Target Script Length: {min_length:,}-{max_length:,} words
 
 Please use the knowledge base files to apply the appropriate storytelling rules and hook techniques for this topic and tone.
 
-REQUIREMENTS:
+CRITICAL OUTLINE REQUIREMENTS:
+- Each section MUST have a detailed description (80-150 words minimum)
+- Each section MUST include 5-8 specific, detailed key points
+- Each key point should be a full sentence providing concrete guidance
+- Include specific examples, angles, stories, or techniques to use in each section
+- Add timing estimates and transition guidance
+- The outline depth determines the final script length - make it VERY detailed!
+
+STRUCTURE REQUIREMENTS:
 - DO NOT include any document references, citations, or knowledge base file names in the outline content
 - Write clean, engaging outline sections without referencing source documents
-- Create detailed sections with rich descriptions and key points
+- Each section description should explain WHAT to cover and HOW to approach it
+- Key points should be specific, actionable content guidance (not vague bullets)
+- Include suggestions for examples, analogies, rhetorical questions, or storytelling elements
 
-Return your response in JSON format with sections array containing title, description, key_points, timing, transition, and content fields."""
+Return your response in JSON format with sections array containing title, description, key_points, timing, transition, and content fields.
+
+REMEMBER: A sparse outline produces a short script. A detailed outline with rich descriptions and many key points produces a properly-sized script!"""
 
     @staticmethod
     def _build_assistant_script_message(
@@ -1299,17 +1346,29 @@ Return your response in JSON format with sections array containing title, descri
 
         return f"""You are an expert YouTube script writer. Generate a complete script based EXACTLY on the provided outline below.
 
+PRIMARY SUCCESS CRITERION: WORD COUNT (CRITICAL - YOU MUST USE THESE):
+**MANDATORY: {min_length:,}-{max_length:,} WORDS** (Target: ~{(min_length + max_length) // 2:,} words)
+This is NON-NEGOTIABLE. Scripts outside this range will be REJECTED.
+
 CRITICAL REQUIREMENTS:
 - Follow the provided outline structure EXACTLY - do not create your own topics or sections
 - Use the outline sections, titles, and content as your guide
-- Transform the outline points into engaging script content
+- Transform the outline points into DETAILED, EXPANDED script content with examples and elaboration
 - Maintain the EXACT same section order and flow as specified in the outline
 - {tone_text}
-- **WORD COUNT: {min_length}-{max_length} words (STRICTLY ENFORCED)**
 - Use knowledge base files to apply storytelling rules and hook techniques
 - DO NOT include any document references, citations, or knowledge base file names in the script content
 - Write the complete script as if you are the narrator speaking directly to the audience
 - The full_text should be ready for narration/recording without any references
+
+LENGTH EXPANSION TECHNIQUES (CRITICAL - YOU MUST USE THESE):
+- Turn each bullet point into 2-4 full narrative sentences
+- Add concrete examples, stories, and analogies for EVERY major point
+- Include setup context and transitions between sections (3-5 sentences each)
+- Elaborate with "why this matters" and "how it works" explanations
+- Use vivid, descriptive language to paint pictures with words
+- Add rhetorical questions and direct audience engagement throughout
+- Include relevant background information and context setting
 
 PROVIDED OUTLINE TO FOLLOW:
 {outline_text}
