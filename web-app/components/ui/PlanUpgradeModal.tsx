@@ -66,7 +66,11 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
   };
 
   const billingCycle = data?.plan?.product?.metadata.billing_cycle || data?.plan?.billing_cycle;
-  const start = data?.start_date ? dayjs(data.start_date) : null;
+  const start = data?.current_period_start
+    ? dayjs(data.current_period_start)
+    : data?.start_date
+      ? dayjs(data.start_date)
+      : null;
   const computedEndDate = (() => {
     if (!start || !billingCycle) return null;
     if (billingCycle === 'weekly') return start.add(7, 'day');
@@ -358,88 +362,91 @@ function TrailWidget({ data, handleUpgrade, isTrial = false, onOpenAllPlans }: T
     <>
       <Row className="scrollbar-hide scroll-fade-x w-full gap-6 overflow-clip overflow-x-auto">
         {data &&
-          data.map((e, index) => (
-            <Card key={index} className={cn(cardCss, 'hover:bg-white/[.16 ] min-w-[300px]')}>
-              <Col className="h-fit gap-6">
-                <Col className="gap-4">
-                  {e?.description && (
-                    <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-[10px] leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md md:text-xs">
-                      {/* Try TubeGenius for 7 days — just $1 */}
-                      {e?.description}
-                    </div>
-                  )}
-                  <Row>
-                    <Row>
-                      {trailIcon}
-                      <Text variant="2xl" className="text-lg text-white lg:text-2xl">
-                        {e?.name}
-                      </Text>
-                    </Row>
-                    <Row className="items-end gap-1">
-                      <Text variant="3xl" className="text-lg text-white lg:text-2xl">
-                        ${e?.price} /
-                      </Text>
-                      <Text variant="sm" className="mb-1 text-brand-secondary">
-                        {e?.billing_cycle}
-                      </Text>
-                    </Row>
-                  </Row>
-                </Col>
-
-                <Separator className="w-full bg-white/[.16]" />
-
-                <Col className="scrollbar-hide scroll-fade-y h-40 gap-4 overflow-y-auto">
-                  {e?.features &&
-                    Object.keys(JSON.parse(e?.features)).map((feature: string) => (
-                      <Row key={feature} className="justify-normal gap-2">
-                        {JSON.parse(e?.features)[feature] ? (
-                          <CircleCheck size={24} className="text-[#00B559]" />
-                        ) : (
-                          <CircleX size={24} className="text-[#FF5050]" />
-                        )}
-                        <Text variant="base" className="capitalize text-white">
-                          {feature?.replace(/_/g, ' ')}
-                        </Text>
+          data.map(
+            (e, index) =>
+              e?.features.length && (
+                <Card key={index} className={cn(cardCss, 'hover:bg-white/[.16 ] min-w-[300px]')}>
+                  <Col className="h-fit gap-6">
+                    <Col className="gap-4">
+                      {e?.description && (
+                        <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-[10px] leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md md:text-xs">
+                          {/* Try TubeGenius for 7 days — just $1 */}
+                          {e?.description}
+                        </div>
+                      )}
+                      <Row>
+                        <Row>
+                          {trailIcon}
+                          <Text variant="2xl" className="text-lg text-white lg:text-2xl">
+                            {e?.name}
+                          </Text>
+                        </Row>
+                        <Row className="items-end gap-1">
+                          <Text variant="3xl" className="text-lg text-white lg:text-2xl">
+                            ${e?.price} /
+                          </Text>
+                          <Text variant="sm" className="mb-1 text-brand-secondary">
+                            {e?.billing_cycle}
+                          </Text>
+                        </Row>
                       </Row>
-                    ))}
-                </Col>
+                    </Col>
 
-                <Separator className="w-full bg-white/[.16]" />
+                    <Separator className="w-full bg-white/[.16]" />
 
-                {isTrial && (
-                  <Row className="justify-normal gap-2 text-white">
-                    <Info size={16} />
-                    <Text variant="xs">Note: Auto-upgrades to Basic plan after trial ends</Text>
-                  </Row>
-                )}
+                    <Col className="scrollbar-hide scroll-fade-y h-40 gap-4 overflow-y-auto">
+                      {e?.features &&
+                        Object.keys(JSON.parse(e?.features)).map((feature: string) => (
+                          <Row key={feature} className="justify-normal gap-2">
+                            {JSON.parse(e?.features)[feature] ? (
+                              <CircleCheck size={24} className="text-[#00B559]" />
+                            ) : (
+                              <CircleX size={24} className="text-[#FF5050]" />
+                            )}
+                            <Text variant="base" className="capitalize text-white">
+                              {feature?.replace(/_/g, ' ')}
+                            </Text>
+                          </Row>
+                        ))}
+                    </Col>
 
-                {!isTrial && (
-                  <Button
-                    className="mt-auto"
-                    onClick={() => e?.id && handleUpgrade(e.id as string)}
-                  >
-                    Upgrade now
-                  </Button>
-                )}
+                    <Separator className="w-full bg-white/[.16]" />
 
-                {isTrial && (
-                  <Row className="mt-auto gap-3">
-                    <Button variant="gray" className="flex-1 bg-black" onClick={onOpenAllPlans}>
-                      <Row className="md:text-md items-center gap-2 text-sm">
-                        Other Plans <ChevronRight />
+                    {isTrial && (
+                      <Row className="justify-normal gap-2 text-white">
+                        <Info size={16} />
+                        <Text variant="xs">Note: Auto-upgrades to Basic plan after trial ends</Text>
                       </Row>
-                    </Button>
-                    <Button
-                      className="md:text-md flex-1 text-sm"
-                      onClick={() => e?.id && handleUpgrade(e.id as string)}
-                    >
-                      Start trial for $1
-                    </Button>
-                  </Row>
-                )}
-              </Col>
-            </Card>
-          ))}
+                    )}
+
+                    {!isTrial && (
+                      <Button
+                        className="mt-auto"
+                        onClick={() => e?.id && handleUpgrade(e.id as string)}
+                      >
+                        Upgrade now
+                      </Button>
+                    )}
+
+                    {isTrial && (
+                      <Row className="mt-auto gap-3">
+                        <Button variant="gray" className="flex-1 bg-black" onClick={onOpenAllPlans}>
+                          <Row className="md:text-md items-center gap-2 text-sm">
+                            Other Plans <ChevronRight />
+                          </Row>
+                        </Button>
+                        <Button
+                          className="md:text-md flex-1 text-sm"
+                          onClick={() => e?.id && handleUpgrade(e.id as string)}
+                        >
+                          Start trial for $1
+                        </Button>
+                      </Row>
+                    )}
+                  </Col>
+                </Card>
+              ),
+          )}
       </Row>
       {isTrial && (
         <p className="text-center text-[12px] text-white">
