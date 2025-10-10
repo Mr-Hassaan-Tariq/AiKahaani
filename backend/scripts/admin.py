@@ -30,9 +30,10 @@ class ScriptAdmin(admin.ModelAdmin):
     autocomplete_fields = ("template_style",)
     filter_horizontal = ("tones",)
     ordering = ("-created",)
-    
+
     def get_tones(self, obj):
         return ", ".join([tone.name for tone in obj.tones.all()])
+
     get_tones.short_description = "Tones"
 
 
@@ -75,16 +76,25 @@ class TemplateStyleAdmin(admin.ModelAdmin):
 
 @admin.register(ScriptOutline)
 class ScriptOutlineAdmin(admin.ModelAdmin):
-    list_display = ("uuid", "title", "script", "get_tones", "status", "version", "created")
+    list_display = (
+        "uuid",
+        "title",
+        "user",
+        "get_tones",
+        "status",
+        "version",
+        "created",
+    )
     list_filter = ("status", "openai_model", "tones")
     search_fields = ("title", "outline_text")
     readonly_fields = ("uuid", "created", "modified", "tokens_used", "generation_time")
-    raw_id_fields = ("script",)
+    raw_id_fields = ("user",)
     filter_horizontal = ("tones",)
     ordering = ("-created",)
-    
+
     def get_tones(self, obj):
         return ", ".join([tone.name for tone in obj.tones.all()])
+
     get_tones.short_description = "Tones"
 
 
@@ -156,26 +166,21 @@ class OpenAIRunLogAdmin(admin.ModelAdmin):
     raw_id_fields = ("user", "script_outline", "full_script", "script_title")
     list_per_page = 20
     ordering = ("-created",)
-    
+
     fieldsets = (
-        ("Run Information", {
-            "fields": ("uuid", "run_type", "status", "user")
-        }),
-        ("OpenAI Identifiers", {
-            "fields": ("thread_id", "run_id", "assistant_id", "model")
-        }),
-        ("Metrics", {
-            "fields": ("tokens_used", "word_count", "generation_time")
-        }),
-        ("File Search", {
-            "fields": ("file_search_used", "file_search_snippets")
-        }),
-        ("References", {
-            "fields": ("script_outline", "full_script", "script_title"),
-            "classes": ("collapse",)
-        }),
-        ("Timestamps", {
-            "fields": ("created", "modified"),
-            "classes": ("collapse",)
-        }),
+        ("Run Information", {"fields": ("uuid", "run_type", "status", "user")}),
+        (
+            "OpenAI Identifiers",
+            {"fields": ("thread_id", "run_id", "assistant_id", "model")},
+        ),
+        ("Metrics", {"fields": ("tokens_used", "word_count", "generation_time")}),
+        ("File Search", {"fields": ("file_search_used", "file_search_snippets")}),
+        (
+            "References",
+            {
+                "fields": ("script_outline", "full_script", "script_title"),
+                "classes": ("collapse",),
+            },
+        ),
+        ("Timestamps", {"fields": ("created", "modified"), "classes": ("collapse",)}),
     )

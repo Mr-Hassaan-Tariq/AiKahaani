@@ -93,14 +93,6 @@ class ScriptOutline(TimeStampedModel):
         null=True,
         blank=True,
     )
-    script = models.OneToOneField(
-        "Script",
-        on_delete=models.CASCADE,
-        related_name="outline",
-        null=True,
-        blank=True,
-        help_text="Optional reference to original script (if created from script)",
-    )
     title = models.CharField(max_length=300, blank=True)
 
     # Tones for this outline (can be multiple)
@@ -119,7 +111,7 @@ class ScriptOutline(TimeStampedModel):
     # User's custom section ordering
     section_order = models.JSONField(
         default=list,
-        help_text="Array of section indices representing user's custom ordering of outline sections"
+        help_text="Array of section indices representing user's custom ordering of outline sections",
     )
 
     # OpenAI metadata
@@ -239,6 +231,7 @@ class OpenAIRunLog(TimeStampedModel):
     """
     Log of OpenAI Assistant API runs for debugging and client transparency
     """
+
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         User,
@@ -248,27 +241,28 @@ class OpenAIRunLog(TimeStampedModel):
         null=True,
         blank=True,
     )
-    
+
     # Core OpenAI identifiers
     thread_id = models.CharField(max_length=255, help_text="OpenAI thread ID")
     run_id = models.CharField(max_length=255, help_text="OpenAI run ID")
     assistant_id = models.CharField(max_length=255, help_text="OpenAI assistant ID")
-    
+
     # Usage metrics
     tokens_used = models.IntegerField(default=0, help_text="Total tokens consumed")
-    word_count = models.IntegerField(default=0, help_text="Word count of generated output")
-    
+    word_count = models.IntegerField(
+        default=0, help_text="Word count of generated output"
+    )
+
     # File search tracking
     file_search_used = models.BooleanField(
-        default=False, 
-        help_text="Whether file search (vector store) was used"
+        default=False, help_text="Whether file search (vector store) was used"
     )
     file_search_snippets = models.JSONField(
         default=list,
         help_text="Sample of file search snippets/citations used",
-        blank=True
+        blank=True,
     )
-    
+
     # Additional metadata
     run_type = models.CharField(
         max_length=50,
@@ -278,7 +272,7 @@ class OpenAIRunLog(TimeStampedModel):
             ("script_generation", "Script Generation"),
             ("image_analysis", "Image Analysis"),
         ],
-        help_text="Type of generation performed"
+        help_text="Type of generation performed",
     )
     generation_time = models.FloatField(default=0.0, help_text="Time in seconds")
     model = models.CharField(max_length=100, default="gpt-4", help_text="Model used")
@@ -289,35 +283,35 @@ class OpenAIRunLog(TimeStampedModel):
             ("failed", "Failed"),
             ("cancelled", "Cancelled"),
         ],
-        default="completed"
+        default="completed",
     )
-    
+
     # Optional references to generated content
     script_outline = models.ForeignKey(
         ScriptOutline,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="run_logs"
+        related_name="run_logs",
     )
     full_script = models.ForeignKey(
         FullScript,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="run_logs"
+        related_name="run_logs",
     )
     script_title = models.ForeignKey(
         ScriptTitle,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="run_logs"
+        related_name="run_logs",
     )
-    
+
     def __str__(self):
         return f"{self.run_type} - {self.run_id[:8]} ({self.tokens_used} tokens)"
-    
+
     class Meta:
         ordering = ["-created"]
         indexes = [

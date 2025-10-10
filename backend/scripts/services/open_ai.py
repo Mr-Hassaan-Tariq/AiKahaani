@@ -691,24 +691,37 @@ Follow TubeGenius principles:
             words_per_section_max = max_length // suggested_sections
             
             length_instructions = f"""
-🚨 OUTLINE LENGTH PLANNING 🚨
-This outline must support a final script of {min_length:,} to {max_length:,} WORDS.
-Expected video duration: {min_duration:.1f} to {max_duration:.1f} minutes
+🚨 OUTLINE FOR {min_length:,}-{max_length:,} WORD SCRIPT ({min_duration:.1f}-{max_duration:.1f} min video)
 
-Calculate required sections and depth:
-- For {min_length:,}-{max_length:,} words, create {suggested_sections} to {max_sections} detailed sections
-- Each section should support ~{words_per_section_min:,}-{words_per_section_max:,} words of content
-- Include detailed descriptions (50-100 words each) and 3-5 key points per section
-- The outline depth DIRECTLY determines script length - make it detailed enough!
-- Remember: {min_length:,} words = ~{min_duration:.1f} minutes of narration
+STRUCTURE: {suggested_sections}-{max_sections} detailed sections (each supports {words_per_section_min:,}-{words_per_section_max:,}w script)
+
+EACH SECTION MUST HAVE:
+• Description: 80-150 words (NOT 1-2 sentences!)
+• Key points: 5-8 detailed sentences of specific guidance
+• Timing estimate
+• Transition to next section
+• Specific examples/stories/angles to include
+
+CRITICAL: Outline detail = script length
+• Sparse outline → short script (FAILS)
+• Rich outline (500-800w total) → proper script length
+
+VERIFY: Each section has 80-150w description + 5-8 detailed key points
 """
+            
+            # Set reasonable max completion tokens for outline (typically 500-1000 words)
+            # Outlines are much shorter than scripts
+            max_outline_tokens = 3000  # Enough for detailed outline with JSON structure
             
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
                 assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
                 additional_instructions=length_instructions,
-                tool_choice={"type": "file_search"}
+                tool_choice={"type": "file_search"},
+                max_completion_tokens=max_outline_tokens
             )
+            
+            logger.info(f"[ASSISTANT_RUN] Set max_completion_tokens to {max_outline_tokens} for outline")
             
             logger.info(f"[ASSISTANT_RUN] Started outline generation run: {run.id}")
 
@@ -772,7 +785,7 @@ Calculate required sections and depth:
         script_data: Dict[str, Any],
         user=None,
         save_log: bool = True,
-        max_retries: int = 3,
+        max_retries: int = 4,
     ) -> Tuple[str, List[Dict], Dict[str, Any]]:
         """
         Generate full script using OpenAI Assistant API with vector store knowledge base
@@ -783,10 +796,13 @@ Calculate required sections and depth:
             script_data: Dictionary containing script parameters
             user: User object for logging (optional)
             save_log: Whether to save run log to database (default: True)
-            max_retries: Maximum retry attempts if length doesn't match (default: 2)
+            max_retries: Maximum retry attempts if length doesn't match (default: 4)
         """
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
+        
+        # Track previous attempt word count for better retry messaging
+        previous_word_count = 0
         
         for attempt in range(max_retries + 1):
             try:
@@ -815,29 +831,51 @@ Calculate required sections and depth:
                 target_mid = (min_length + max_length) // 2
                 target_duration = target_mid / 150
                 
+                # Add safety buffer to target - aim higher than minimum to account for AI variability
+                safety_buffer = int(min_length * 0.1)  # 10% buffer
+                safe_target = target_mid + safety_buffer
+                
                 length_instructions = f"""
-🚨 CRITICAL LENGTH REQUIREMENT FOR THIS SCRIPT 🚨
-MANDATORY WORD COUNT: {min_length:,} to {max_length:,} WORDS
-Target video duration: {min_duration:.1f} to {max_duration:.1f} minutes (~{target_duration:.1f} min ideal)
+🚨 MANDATORY: {min_length:,}-{max_length:,} WORDS (Target: {safe_target:,})
+Scripts under {min_length:,} words = AUTOMATIC REJECTION
 
-You MUST count words as you write and ensure the final script is EXACTLY between {min_length:,} and {max_length:,} words.
-- If under {min_length:,}: ADD more detail, examples, elaboration
-- If over {max_length:,}: CONDENSE and tighten the prose
-- Ideal target: ~{target_mid:,} words = ~{target_duration:.1f} minutes of narration
-- This is the PRIMARY success criterion - length compliance is MANDATORY
+SECTION LENGTH FORMULA:
+- Hook/Intro: 400-500 words
+- EACH main section: 450-550 words (80-100w intro + 3x100-120w points + 50-80w transition)
+- Conclusion/CTA: 300-400 words
 
-Before submitting, verify your word count is within {min_length:,}-{max_length:,} range.
+EXPANSION TECHNIQUES (USE ALL):
+1. Examples: Add concrete story/case for every claim (50-100w each)
+2. Analogies: Compare to familiar concepts (40-80w each)
+3. Elaborate: Turn 1 sentence into 3-4 with "what/why/how"
+4. Context: Add "why this matters" for all points
+5. Storytelling: Setup→tension→resolution for facts
+6. Engagement: Rhetorical questions, direct address
+7. Transitions: 2-3 sentence bridges between sections
+8. Background: Provide context before new concepts
+
+VERIFY: full_text field has {min_length:,}+ words before submitting.
 """
                 
                 if attempt > 0:
-                    length_instructions += f"\n⚠️ RETRY #{attempt}: Previous script was REJECTED for incorrect length. This is attempt {attempt + 1}/{max_retries + 1}."
+                    words_needed = min_length - previous_word_count if previous_word_count > 0 else min_length
+                    length_instructions += f"\n⚠️ RETRY #{attempt}: Previous={previous_word_count:,}w, Need +{words_needed:,}w more. Expand examples & stories!"
+                
+                # Calculate reasonable max completion tokens based on target length
+                # For a 3000 word script: ~4000 tokens for text + 2000 for JSON structure = 6000 total
+                # Add 50% buffer for safety
+                estimated_tokens = int((max_length * 1.5) + 2000)  # 1.5 tokens per word + JSON overhead
+                max_tokens = min(estimated_tokens, 10000)  # Cap at 10k to prevent excessive usage
                 
                 run = client.beta.threads.runs.create(
                     thread_id=thread.id,
                     assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
                     additional_instructions=length_instructions,
-                    tool_choice={"type": "file_search"}
+                    tool_choice={"type": "file_search"},
+                    max_completion_tokens=max_tokens
                 )
+                
+                logger.info(f"[ASSISTANT_RUN] Set max_completion_tokens to {max_tokens} (target script: {max_length} words)")
                 
                 logger.info(f"[ASSISTANT_RUN] Started script generation run: {run.id} (Attempt {attempt + 1}/{max_retries + 1})")
 
@@ -853,10 +891,20 @@ Before submitting, verify your word count is within {min_length:,}-{max_length:,
                 # Parse script sections
                 sections = OpenAIScriptService._parse_script_sections(script_content)
                 
-                # Calculate word count and validate
-                word_count = len(script_content.split())
+                # Extract actual script text from JSON for accurate word count
+                actual_script_text = script_content  # Default to full content
+                try:
+                    script_data = json.loads(script_content)
+                    if isinstance(script_data, dict) and "full_text" in script_data:
+                        actual_script_text = script_data["full_text"]
+                except json.JSONDecodeError:
+                    # Not JSON, use raw content
+                    pass
+                
+                # Calculate word count and validate using actual script text
+                word_count = len(actual_script_text.split())
                 is_valid, actual_word_count = OpenAIScriptService._validate_word_count(
-                    script_content, min_length, max_length, "Script"
+                    actual_script_text, min_length, max_length, "Script"
                 )
 
                 # Extract file search info
@@ -923,7 +971,8 @@ Before submitting, verify your word count is within {min_length:,}-{max_length:,
                     return script_content, sections, metadata
                 
                 else:
-                    # Retry
+                    # Retry - save word count for next attempt's messaging
+                    previous_word_count = word_count
                     logger.warning(f"[LENGTH_CHECK] Retrying script generation. Current: {word_count} words, Required: {min_length}-{max_length}")
                     continue
 
@@ -932,6 +981,17 @@ Before submitting, verify your word count is within {min_length:,}-{max_length:,
                     logger.error(f"Assistant script generation failed after {max_retries + 1} attempts: {str(e)}")
                     raise
                 else:
+                    # Track word count even on exception if available
+                    if 'word_count' in locals():
+                        previous_word_count = word_count
+                    
+                    # Check if it's a rate limit error and add delay
+                    error_str = str(e).lower()
+                    if 'rate_limit' in error_str or 'rate limit' in error_str:
+                        wait_time = 10  # Wait 10 seconds between attempts on rate limit
+                        logger.warning(f"Rate limit detected, waiting {wait_time}s before retry")
+                        time.sleep(wait_time)
+                    
                     logger.warning(f"Attempt {attempt + 1} failed, retrying: {str(e)}")
                     continue
 
@@ -1210,11 +1270,12 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
 
     @staticmethod
     def _wait_for_assistant_completion(
-        client, thread_id: str, run_id: str
+        client, thread_id: str, run_id: str, max_retries: int = 3
     ) -> Tuple[str, int]:
         """Wait for assistant run to complete and return content"""
         logger.info(f"[ASSISTANT_RUN] Waiting for completion: thread_id={thread_id}, run_id={run_id}")
         
+        retry_count = 0
         while True:
             run = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
             
@@ -1241,8 +1302,53 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
                 return content, tokens_used
 
             elif run.status in ["failed", "cancelled", "expired"]:
+                # Get detailed error information
+                error_details = "No error details available"
+                error_code = "unknown"
+                if hasattr(run, 'last_error') and run.last_error:
+                    error_code = getattr(run.last_error, 'code', 'unknown')
+                    error_message = getattr(run.last_error, 'message', 'unknown')
+                    error_details = f"Code: {error_code}, Message: {error_message}"
+                
+                # Handle rate limit errors with retry
+                if error_code == 'rate_limit_exceeded' and retry_count < max_retries:
+                    retry_count += 1
+                    
+                    # Try to parse wait time from error message
+                    wait_time = 2 ** retry_count  # Default exponential backoff
+                    if 'Please try again in' in error_message:
+                        match = re.search(r'try again in ([\d.]+)s', error_message)
+                        if match:
+                            suggested_wait = float(match.group(1))
+                            wait_time = max(suggested_wait, wait_time)
+                    
+                    logger.warning(f"[RATE_LIMIT] Rate limit hit. Retry {retry_count}/{max_retries} after {wait_time:.1f}s")
+                    logger.info(f"[RATE_LIMIT] Error message: {error_message}")
+                    time.sleep(wait_time)
+                    
+                    # Create a new run with the same parameters
+                    try:
+                        # Get the original run details to recreate it
+                        new_run = client.beta.threads.runs.create(
+                            thread_id=thread_id,
+                            assistant_id=run.assistant_id,
+                            instructions=run.instructions,
+                            tool_choice=run.tool_choice,
+                        )
+                        run_id = new_run.id
+                        logger.info(f"[RATE_LIMIT] Created new run {run_id} after rate limit")
+                        continue
+                    except Exception as retry_error:
+                        logger.error(f"[RATE_LIMIT] Failed to create retry run: {str(retry_error)}")
+                        raise
+                
                 logger.error(f"[ASSISTANT_RUN] ✗ Run failed with status: {run.status}")
-                raise Exception(f"Run failed with status: {run.status}")
+                logger.error(f"[ASSISTANT_RUN] Error details: {error_details}")
+                
+                # Log the full run object for debugging
+                logger.error(f"[ASSISTANT_RUN] Full run details: {run}")
+                
+                raise Exception(f"Run failed with status: {run.status}. Details: {error_details}")
 
             time.sleep(1)  # Wait before checking again
 
@@ -1259,20 +1365,28 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
         )
 
-        return f"""Generate a script outline for this YouTube video in JSON format:
+        return f"""Generate DETAILED outline in JSON for:
 
-Topic: {description}
-{tone_text}
-Style: {template_style}
+Topic: {description} | {tone_text} | Style: {template_style} | Target: {min_length:,}-{max_length:,}w script
 
-Please use the knowledge base files to apply the appropriate storytelling rules and hook techniques for this topic and tone.
+Use knowledge base storytelling rules for this topic/tone.
 
-REQUIREMENTS:
-- DO NOT include any document references, citations, or knowledge base file names in the outline content
-- Write clean, engaging outline sections without referencing source documents
-- Create detailed sections with rich descriptions and key points
+REQUIREMENTS (CRITICAL):
+• Each section: 80-150w description + 5-8 detailed key point sentences
+• Include specific examples, stories, techniques to use
+• Add timing + transition guidance
+• Outline depth = script length (sparse = FAILS, detailed = success)
 
-Return your response in JSON format with sections array containing title, description, key_points, timing, transition, and content fields."""
+STRUCTURE:
+• NO document references/citations
+• Clean, engaging sections
+• Descriptions explain WHAT to cover + HOW to approach
+• Actionable key points (not vague bullets)
+• Suggest examples, analogies, rhetorical questions
+
+Return JSON: sections array with title, description, key_points, timing, transition, content
+
+REMEMBER: Rich outline (500-800w) → proper script. Sparse outline → short script (fails)!"""
 
     @staticmethod
     def _build_assistant_script_message(
@@ -1287,19 +1401,36 @@ Return your response in JSON format with sections array containing title, descri
             f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
         )
 
-        return f"""You are an expert YouTube script writer. Generate a complete script based EXACTLY on the provided outline below.
+        # Calculate concrete targets
+        target_words = (min_length + max_length) // 2
+        
+        return f"""Expert YouTube script writer: Generate complete script from outline below.
 
-CRITICAL REQUIREMENTS:
-- Follow the provided outline structure EXACTLY - do not create your own topics or sections
-- Use the outline sections, titles, and content as your guide
-- Transform the outline points into engaging script content
-- Maintain the EXACT same section order and flow as specified in the outline
+🎯 MANDATORY: {min_length:,}-{max_length:,} WORDS in full_text field (Target: {target_words:,})
+Under {min_length:,} = REJECTION
+
+PER-SECTION FORMULA:
+- Hook: 400-500w | Each main section: 450-550w | Conclusion: 300-400w
+
+450W SECTION STRUCTURE:
+1. Intro (80-100w) 2. Point 1 w/example (100-120w) 3. Point 2 w/example (100-120w) 
+4. Point 3 w/example (100-120w) 5. Transition (50-80w)
+
+EXPAND WITH:
+• Examples: Concrete stories (50-100w each)
+• Elaboration: what/why/how (3-4 sentences vs 1)
+• Analogies: Familiar comparisons
+• Transitions: 2-3 sentences between sections
+• Engagement: Questions, direct address
+• Context: "Why this matters" for all points
+
+CRITICAL:
+- Follow outline structure EXACTLY, preserve section titles/apostrophes as-is
 - {tone_text}
-- **WORD COUNT: {min_length}-{max_length} words (STRICTLY ENFORCED)**
-- Use knowledge base files to apply storytelling rules and hook techniques
-- DO NOT include any document references, citations, or knowledge base file names in the script content
-- Write the complete script as if you are the narrator speaking directly to the audience
-- The full_text should be ready for narration/recording without any references
+- Use knowledge base storytelling rules
+- NO document references/citations
+- Write for direct narration
+- Verify full_text ≥{min_length:,}w before submitting
 
 PROVIDED OUTLINE TO FOLLOW:
 {outline_text}
