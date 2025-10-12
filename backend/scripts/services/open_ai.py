@@ -356,7 +356,7 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                 assistant_id=settings.OPENAI_ASSISTANT_ID_TITLES,
                 # Note: tool_choice forces the assistant to use file_search
                 # Remove this if you want the assistant to decide when to use it
-                tool_choice={"type": "file_search"}  # Uncomment to force file search
+                # tool_choice={"type": "file_search"}  # Uncomment to force file search
             )
             
             logger.info(f"[ASSISTANT_RUN] Started title generation run: {run.id}")
@@ -717,7 +717,7 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points
                 thread_id=thread.id,
                 assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
                 additional_instructions=length_instructions,
-                tool_choice={"type": "file_search"},
+                # tool_choice={"type": "file_search"},
                 max_completion_tokens=max_outline_tokens
             )
             
@@ -871,7 +871,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
                     thread_id=thread.id,
                     assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
                     additional_instructions=length_instructions,
-                    tool_choice={"type": "file_search"},
+                    # tool_choice={"type": "file_search"},
                     max_completion_tokens=max_tokens
                 )
                 
@@ -1059,7 +1059,7 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
                 assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
                 # Note: tool_choice forces the assistant to use file_search
                 # Remove this if you want the assistant to decide when to use it
-                tool_choice={"type": "file_search"}  # Uncomment to force file search
+                # tool_choice={"type": "file_search"}  # Uncomment to force file search
             )
             
             logger.info(f"[ASSISTANT_RUN] Started image analysis run: {run.id}")
