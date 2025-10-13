@@ -783,57 +783,48 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points
         script_data: Dict[str, Any],
         user=None,
         save_log: bool = True,
-        max_retries: int = 4,
     ) -> Tuple[str, List[Dict], Dict[str, Any]]:
         """
         Generate full script using OpenAI Assistant API with vector store knowledge base
-        Includes word count validation and retry logic.
         
         Args:
             outline_text: The outline text to generate script from
             script_data: Dictionary containing script parameters
             user: User object for logging (optional)
             save_log: Whether to save run log to database (default: True)
-            max_retries: Maximum retry attempts if length doesn't match (default: 4)
         """
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
         
-        # Track previous attempt word count for better retry messaging
-        previous_word_count = 0
-        
-        for attempt in range(max_retries + 1):
-            try:
-                start_time = time.time()
-                client = get_openai_client()
+        try:
+            start_time = time.time()
+            client = get_openai_client()
 
-                # Create thread
-                thread = client.beta.threads.create()
+            # Create thread
+            thread = client.beta.threads.create()
 
-                # Build script generation message (simplified)
-                message_content = OpenAIScriptService._build_assistant_script_message(
-                    outline_text, script_data
-                )
+            # Build script generation message (simplified)
+            message_content = OpenAIScriptService._build_assistant_script_message(
+                outline_text, script_data
+            )
 
-                # Add message to thread (vector store is already attached to the assistant)
-                client.beta.threads.messages.create(
-                    thread_id=thread.id, role="user", content=message_content
-                )
+            # Add message to thread (vector store is already attached to the assistant)
+            client.beta.threads.messages.create(
+                thread_id=thread.id, role="user", content=message_content
+            )
 
-                # Run the assistant with additional length enforcement instructions
-                # Force file_search to ensure knowledge base is used
-                
-                # Calculate expected duration (assuming ~150 words per minute narration speed)
-                min_duration = min_length / 150
-                max_duration = max_length / 150
-                target_mid = (min_length + max_length) // 2
-                target_duration = target_mid / 150
-                
-                # Add safety buffer to target - aim higher than minimum to account for AI variability
-                safety_buffer = int(min_length * 0.1)  # 10% buffer
-                safe_target = target_mid + safety_buffer
-                
-                length_instructions = f"""
+            # Run the assistant with additional length enforcement instructions
+            # Calculate expected duration (assuming ~150 words per minute narration speed)
+            min_duration = min_length / 150
+            max_duration = max_length / 150
+            target_mid = (min_length + max_length) // 2
+            target_duration = target_mid / 150
+            
+            # Add safety buffer to target - aim higher than minimum to account for AI variability
+            safety_buffer = int(min_length * 0.1)  # 10% buffer
+            safe_target = target_mid + safety_buffer
+            
+            length_instructions = f"""
 🚨 MANDATORY: {min_length:,}-{max_length:,} WORDS (Target: {safe_target:,})
 Scripts under {min_length:,} words = AUTOMATIC REJECTION
 
@@ -854,142 +845,96 @@ EXPANSION TECHNIQUES (USE ALL):
 
 VERIFY: full_text field has {min_length:,}+ words before submitting.
 """
-                
-                if attempt > 0:
-                    words_needed = min_length - previous_word_count if previous_word_count > 0 else min_length
-                    length_instructions += f"\n⚠️ RETRY #{attempt}: Previous={previous_word_count:,}w, Need +{words_needed:,}w more. Expand examples & stories!"
-                
-                # Calculate reasonable max completion tokens based on target length
-                # For a 3000 word script: ~4000 tokens for text + 2000 for JSON structure = 6000 total
-                # Add 50% buffer for safety
-                estimated_tokens = int((max_length * 1.5) + 2000)  # 1.5 tokens per word + JSON overhead
-                max_tokens = min(estimated_tokens, 10000)  # Cap at 10k to prevent excessive usage
-                
-                run = client.beta.threads.runs.create(
-                    thread_id=thread.id,
-                    assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
-                    additional_instructions=length_instructions,
-                    # tool_choice={"type": "file_search"},
-                    max_completion_tokens=max_tokens
-                )
-                
-                logger.info(f"[SCRIPT] Attempt {attempt + 1}/{max_retries + 1} (run: {run.id[:8]}..., target: {min_length}-{max_length}w)")
+            
+            # Calculate reasonable max completion tokens based on target length
+            # For a 3000 word script: ~4000 tokens for text + 2000 for JSON structure = 6000 total
+            # Add 50% buffer for safety
+            estimated_tokens = int((max_length * 1.5) + 2000)  # 1.5 tokens per word + JSON overhead
+            max_tokens = min(estimated_tokens, 10000)  # Cap at 10k to prevent excessive usage
+            
+            run = client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
+                additional_instructions=length_instructions,
+                # tool_choice={"type": "file_search"},
+                max_completion_tokens=max_tokens
+            )
+            
+            logger.info(f"[SCRIPT] Started generation (run: {run.id[:8]}..., target: {min_length}-{max_length}w)")
 
-                # Wait for completion
-                script_content, tokens_used = (
-                    OpenAIScriptService._wait_for_assistant_completion(
-                        client, thread.id, run.id
-                    )
-                )
-
-                generation_time = time.time() - start_time
-
-                # Parse script sections
-                sections = OpenAIScriptService._parse_script_sections(script_content)
-                
-                # Extract actual script text from JSON for accurate word count
-                actual_script_text = script_content  # Default to full content
-                try:
-                    script_data = json.loads(script_content)
-                    if isinstance(script_data, dict) and "full_text" in script_data:
-                        actual_script_text = script_data["full_text"]
-                except json.JSONDecodeError:
-                    # Not JSON, use raw content
-                    pass
-                
-                # Calculate word count and validate using actual script text
-                word_count = len(actual_script_text.split())
-                is_valid, actual_word_count = OpenAIScriptService._validate_word_count(
-                    actual_script_text, min_length, max_length, "Script"
-                )
-
-                # Extract file search info
-                file_search_used, file_search_snippets = OpenAIScriptService._extract_file_search_info(
+            # Wait for completion
+            script_content, tokens_used = (
+                OpenAIScriptService._wait_for_assistant_completion(
                     client, thread.id, run.id
                 )
+            )
 
-                metadata = {
-                    "tokens_used": tokens_used,
-                    "generation_time": generation_time,
-                    "model": "gpt-4-assistant",
-                    "assistant_id": settings.OPENAI_ASSISTANT_ID_SCRIPT,
-                    "vector_store_id": settings.OPENAI_VECTOR_STORE_ID_SCRIPT,
-                    "thread_id": thread.id,
-                    "run_id": run.id,
-                    "file_search_used": file_search_used,
-                    "word_count": word_count,
-                    "length_valid": is_valid,
-                    "attempt": attempt + 1,
-                }
+            generation_time = time.time() - start_time
 
-                # If length is valid or this is the last attempt, return the result
-                if is_valid:
-                    logger.info(f"[SCRIPT] ✓ Success: {word_count}w (attempt {attempt + 1}, {generation_time:.1f}s)")
-                    
-                    # Save run log to database
-                    if save_log:
-                        OpenAIScriptService._save_run_log(
-                            user=user,
-                            thread_id=thread.id,
-                            run_id=run.id,
-                            assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
-                            tokens_used=tokens_used,
-                            word_count=word_count,
-                            file_search_used=file_search_used,
-                            file_search_snippets=file_search_snippets,
-                            run_type="script_generation",
-                            generation_time=generation_time,
-                            model="gpt-4-assistant",
-                        )
-                    
-                    return script_content, sections, metadata
-                
-                elif attempt == max_retries:
-                    # Last attempt, return even if invalid
-                    logger.warning(f"[SCRIPT] ⚠️ Final attempt: {word_count}w (target: {min_length}-{max_length}w)")
-                    
-                    # Save run log to database
-                    if save_log:
-                        OpenAIScriptService._save_run_log(
-                            user=user,
-                            thread_id=thread.id,
-                            run_id=run.id,
-                            assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
-                            tokens_used=tokens_used,
-                            word_count=word_count,
-                            file_search_used=file_search_used,
-                            file_search_snippets=file_search_snippets,
-                            run_type="script_generation",
-                            generation_time=generation_time,
-                            model="gpt-4-assistant",
-                        )
-                    
-                    return script_content, sections, metadata
-                
-                else:
-                    # Retry - save word count for next attempt's messaging
-                    previous_word_count = word_count
-                    logger.warning(f"[SCRIPT] Retry: {word_count}w (need {min_length}-{max_length}w)")
-                    continue
+            # Parse script sections
+            sections = OpenAIScriptService._parse_script_sections(script_content)
+            
+            # Extract actual script text from JSON for accurate word count
+            actual_script_text = script_content  # Default to full content
+            try:
+                script_data = json.loads(script_content)
+                if isinstance(script_data, dict) and "full_text" in script_data:
+                    actual_script_text = script_data["full_text"]
+            except json.JSONDecodeError:
+                # Not JSON, use raw content
+                pass
+            
+            # Calculate word count
+            word_count = len(actual_script_text.split())
+            is_valid, actual_word_count = OpenAIScriptService._validate_word_count(
+                actual_script_text, min_length, max_length, "Script"
+            )
 
-            except Exception as e:
-                if attempt == max_retries:
-                    logger.error(f"[SCRIPT] Failed after {max_retries + 1} attempts: {str(e)}")
-                    raise
-                else:
-                    # Track word count even on exception if available
-                    if 'word_count' in locals():
-                        previous_word_count = word_count
-                    
-                    # Check if it's a rate limit error and add delay
-                    error_str = str(e).lower()
-                    if 'rate_limit' in error_str or 'rate limit' in error_str:
-                        wait_time = 10
-                        logger.warning(f"[SCRIPT] Rate limit, waiting {wait_time}s")
-                        time.sleep(wait_time)
-                    else:
-                        logger.warning(f"[SCRIPT] Attempt {attempt + 1} failed: {str(e)[:100]}")
-                    continue
+            # Extract file search info
+            file_search_used, file_search_snippets = OpenAIScriptService._extract_file_search_info(
+                client, thread.id, run.id
+            )
+
+            metadata = {
+                "tokens_used": tokens_used,
+                "generation_time": generation_time,
+                "model": "gpt-4-assistant",
+                "assistant_id": settings.OPENAI_ASSISTANT_ID_SCRIPT,
+                "vector_store_id": settings.OPENAI_VECTOR_STORE_ID_SCRIPT,
+                "thread_id": thread.id,
+                "run_id": run.id,
+                "file_search_used": file_search_used,
+                "word_count": word_count,
+                "length_valid": is_valid,
+            }
+
+            # Log result (success or warning about word count)
+            if is_valid:
+                logger.info(f"[SCRIPT] ✓ Success: {word_count}w ({generation_time:.1f}s)")
+            else:
+                logger.warning(f"[SCRIPT] ⚠️ Word count mismatch: {word_count}w (target: {min_length}-{max_length}w)")
+            
+            # Save run log to database
+            if save_log:
+                OpenAIScriptService._save_run_log(
+                    user=user,
+                    thread_id=thread.id,
+                    run_id=run.id,
+                    assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
+                    tokens_used=tokens_used,
+                    word_count=word_count,
+                    file_search_used=file_search_used,
+                    file_search_snippets=file_search_snippets,
+                    run_type="script_generation",
+                    generation_time=generation_time,
+                    model="gpt-4-assistant",
+                )
+            
+            return script_content, sections, metadata
+
+        except Exception as e:
+            logger.error(f"[SCRIPT] Generation failed: {str(e)}")
+            raise
 
     @staticmethod
     def analyze_image_with_assistant(
