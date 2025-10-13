@@ -717,13 +717,11 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points
                 thread_id=thread.id,
                 assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
                 additional_instructions=length_instructions,
-                tool_choice={"type": "file_search"},
+                # tool_choice={"type": "file_search"},
                 max_completion_tokens=max_outline_tokens
             )
             
-            logger.info(f"[ASSISTANT_RUN] Set max_completion_tokens to {max_outline_tokens} for outline")
-            
-            logger.info(f"[ASSISTANT_RUN] Started outline generation run: {run.id}")
+            logger.info(f"[OUTLINE] Started generation (run: {run.id[:8]}..., max_tokens: {max_outline_tokens})")
 
             # Wait for completion
             outline_text, tokens_used = (
@@ -871,13 +869,11 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
                     thread_id=thread.id,
                     assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
                     additional_instructions=length_instructions,
-                    tool_choice={"type": "file_search"},
+                    # tool_choice={"type": "file_search"},
                     max_completion_tokens=max_tokens
                 )
                 
-                logger.info(f"[ASSISTANT_RUN] Set max_completion_tokens to {max_tokens} (target script: {max_length} words)")
-                
-                logger.info(f"[ASSISTANT_RUN] Started script generation run: {run.id} (Attempt {attempt + 1}/{max_retries + 1})")
+                logger.info(f"[SCRIPT] Attempt {attempt + 1}/{max_retries + 1} (run: {run.id[:8]}..., target: {min_length}-{max_length}w)")
 
                 # Wait for completion
                 script_content, tokens_used = (
@@ -973,7 +969,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
                 else:
                     # Retry - save word count for next attempt's messaging
                     previous_word_count = word_count
-                    logger.warning(f"[LENGTH_CHECK] Retrying script generation. Current: {word_count} words, Required: {min_length}-{max_length}")
+                    logger.warning(f"[SCRIPT] Retry: {word_count}w (need {min_length}-{max_length}w)")
                     continue
 
             except Exception as e:
@@ -988,11 +984,11 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
                     # Check if it's a rate limit error and add delay
                     error_str = str(e).lower()
                     if 'rate_limit' in error_str or 'rate limit' in error_str:
-                        wait_time = 10  # Wait 10 seconds between attempts on rate limit
-                        logger.warning(f"Rate limit detected, waiting {wait_time}s before retry")
+                        wait_time = 10
+                        logger.warning(f"[SCRIPT] Rate limit, waiting {wait_time}s")
                         time.sleep(wait_time)
-                    
-                    logger.warning(f"Attempt {attempt + 1} failed, retrying: {str(e)}")
+                    else:
+                        logger.warning(f"[SCRIPT] Attempt {attempt + 1} failed: {str(e)[:100]}")
                     continue
 
     @staticmethod
@@ -1272,77 +1268,82 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
         logger.info(f"[ASSISTANT_RUN] Waiting for completion: thread={thread_id[:8]}..., run={run_id[:8]}...")
         
         retry_count = 0
+        iteration = 0
+        start_time = time.time()
+        
         while True:
-            run = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
-            iteration += 1
-            
-            # Only log status every 10 seconds to reduce log spam
-            if iteration % 10 == 0:
-                logger.debug(f"[ASSISTANT_RUN] Still waiting... ({iteration}s, status: {run.status})")
-
-            if run.status == "completed":
-                logger.info(f"[ASSISTANT_RUN] ✓ Completed in {iteration}s")
+            try:
+                run = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
+                iteration += 1
                 
-                # Get the latest message
-                messages = client.beta.threads.messages.list(
-                    thread_id=thread_id, limit=1
-                )
+                # Only log status every 10 seconds to reduce log spam
+                if iteration % 10 == 0:
+                    logger.debug(f"[ASSISTANT_RUN] Still waiting... ({iteration}s, status: {run.status})")
 
-                content = messages.data[0].content[0].text.value
-                tokens_used = run.usage.total_tokens if run.usage else 0
-                
-                logger.debug(f"[ASSISTANT_RUN] Response: {len(content)} chars, {tokens_used} tokens")
-
-                return content, tokens_used
-
-            elif run.status in ["failed", "cancelled", "expired"]:
-                # Get detailed error information
-                error_details = "No error details available"
-                error_code = "unknown"
-                if hasattr(run, 'last_error') and run.last_error:
-                    error_code = getattr(run.last_error, 'code', 'unknown')
-                    error_message = getattr(run.last_error, 'message', 'unknown')
-                    error_details = f"Code: {error_code}, Message: {error_message}"
-                
-                # Handle rate limit errors with retry
-                if error_code == 'rate_limit_exceeded' and retry_count < max_retries:
-                    retry_count += 1
+                if run.status == "completed":
+                    elapsed = time.time() - start_time
+                    logger.info(f"[ASSISTANT_RUN] ✓ Completed in {elapsed:.1f}s ({iteration} iterations)")
                     
-                    # Try to parse wait time from error message
-                    wait_time = 2 ** retry_count  # Default exponential backoff
-                    if 'Please try again in' in error_message:
-                        match = re.search(r'try again in ([\d.]+)s', error_message)
-                        if match:
-                            suggested_wait = float(match.group(1))
-                            wait_time = max(suggested_wait, wait_time)
+                    # Get the latest message
+                    messages = client.beta.threads.messages.list(
+                        thread_id=thread_id, limit=1
+                    )
+
+                    content = messages.data[0].content[0].text.value
+                    tokens_used = run.usage.total_tokens if run.usage else 0
                     
-                    logger.warning(f"[RATE_LIMIT] Rate limit hit. Retry {retry_count}/{max_retries} after {wait_time:.1f}s")
-                    logger.info(f"[RATE_LIMIT] Error message: {error_message}")
-                    time.sleep(wait_time)
+                    logger.debug(f"[ASSISTANT_RUN] Response: {len(content)} chars, {tokens_used} tokens")
+
+                    return content, tokens_used
+
+                elif run.status in ["failed", "cancelled", "expired"]:
+                    # Get detailed error information
+                    error_details = "No error details available"
+                    error_code = "unknown"
+                    if hasattr(run, 'last_error') and run.last_error:
+                        error_code = getattr(run.last_error, 'code', 'unknown')
+                        error_message = getattr(run.last_error, 'message', 'unknown')
+                        error_details = f"Code: {error_code}, Message: {error_message}"
                     
-                    # Create a new run with the same parameters
-                    try:
-                        # Get the original run details to recreate it
-                        new_run = client.beta.threads.runs.create(
-                            thread_id=thread_id,
-                            assistant_id=run.assistant_id,
-                            instructions=run.instructions,
-                            tool_choice=run.tool_choice,
-                        )
-                        run_id = new_run.id
-                        logger.info(f"[RATE_LIMIT] Created new run {run_id} after rate limit")
-                        continue
-                    except Exception as retry_error:
-                        logger.error(f"[RATE_LIMIT] Failed to create retry run: {str(retry_error)}")
-                        raise
-                
-                logger.error(f"[ASSISTANT_RUN] ✗ Run failed with status: {run.status}")
-                logger.error(f"[ASSISTANT_RUN] Error details: {error_details}")
-                
-                # Log the full run object for debugging
-                logger.error(f"[ASSISTANT_RUN] Full run details: {run}")
-                
-                raise Exception(f"Run failed with status: {run.status}. Details: {error_details}")
+                    # Handle rate limit errors with retry
+                    if error_code == 'rate_limit_exceeded' and retry_count < max_retries:
+                        retry_count += 1
+                        
+                        # Try to parse wait time from error message
+                        wait_time = 2 ** retry_count  # Default exponential backoff
+                        if 'Please try again in' in error_message:
+                            match = re.search(r'try again in ([\d.]+)s', error_message)
+                            if match:
+                                suggested_wait = float(match.group(1))
+                                wait_time = max(suggested_wait, wait_time)
+                        
+                        logger.warning(f"[RATE_LIMIT] Retry {retry_count}/{max_retries} after {wait_time:.1f}s: {error_message[:100]}")
+                        time.sleep(wait_time)
+                        
+                        # Create a new run with the same parameters
+                        try:
+                            new_run = client.beta.threads.runs.create(
+                                thread_id=thread_id,
+                                assistant_id=run.assistant_id,
+                                instructions=run.instructions,
+                                tool_choice=run.tool_choice,
+                            )
+                            run_id = new_run.id
+                            logger.info(f"[RATE_LIMIT] Retry run created: {run_id[:8]}...")
+                            continue
+                        except Exception as retry_error:
+                            logger.error(f"[RATE_LIMIT] Retry failed: {str(retry_error)}")
+                            raise
+                    
+                    logger.error(f"[ASSISTANT_RUN] ✗ Failed: {run.status} - {error_details}")
+                    
+                    raise Exception(f"Run failed with status: {run.status}. Details: {error_details}")
+
+            except Exception as e:
+                # Handle any API errors during polling
+                elapsed = time.time() - start_time
+                logger.error(f"[ASSISTANT_RUN] API error after {elapsed:.1f}s: {str(e)}")
+                raise Exception(f"Assistant API error: {str(e)}")
 
             time.sleep(1)  # Wait before checking again
 
