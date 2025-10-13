@@ -356,10 +356,10 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                 assistant_id=settings.OPENAI_ASSISTANT_ID_TITLES,
                 # Note: tool_choice forces the assistant to use file_search
                 # Remove this if you want the assistant to decide when to use it
-                tool_choice={"type": "file_search"}  # Uncomment to force file search
+                # tool_choice={"type": "file_search"}  # Uncomment to force file search
             )
             
-            logger.info(f"[ASSISTANT_RUN] Started title generation run: {run.id}")
+            logger.info(f"[TITLES] Started generation (run: {run.id[:8]}..., count: {title_count})")
 
             # Wait for completion
             titles_content, tokens_used = (
@@ -928,7 +928,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
 
                 # If length is valid or this is the last attempt, return the result
                 if is_valid:
-                    logger.info(f"[LENGTH_CHECK] ✓ Script generation successful with valid length on attempt {attempt + 1}")
+                    logger.info(f"[SCRIPT] ✓ Success: {word_count}w (attempt {attempt + 1}, {generation_time:.1f}s)")
                     
                     # Save run log to database
                     if save_log:
@@ -950,7 +950,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
                 
                 elif attempt == max_retries:
                     # Last attempt, return even if invalid
-                    logger.warning(f"[LENGTH_CHECK] ⚠️ Returning script after {max_retries + 1} attempts. Word count {word_count} is outside range {min_length}-{max_length}")
+                    logger.warning(f"[SCRIPT] ⚠️ Final attempt: {word_count}w (target: {min_length}-{max_length}w)")
                     
                     # Save run log to database
                     if save_log:
@@ -978,7 +978,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
 
             except Exception as e:
                 if attempt == max_retries:
-                    logger.error(f"Assistant script generation failed after {max_retries + 1} attempts: {str(e)}")
+                    logger.error(f"[SCRIPT] Failed after {max_retries + 1} attempts: {str(e)}")
                     raise
                 else:
                     # Track word count even on exception if available
@@ -1059,7 +1059,7 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
                 assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
                 # Note: tool_choice forces the assistant to use file_search
                 # Remove this if you want the assistant to decide when to use it
-                tool_choice={"type": "file_search"}  # Uncomment to force file search
+                # tool_choice={"type": "file_search"}  # Uncomment to force file search
             )
             
             logger.info(f"[ASSISTANT_RUN] Started image analysis run: {run.id}")
@@ -1257,14 +1257,10 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
         word_count = len(content.split())
         is_valid = min_length <= word_count <= max_length
         
-        if is_valid:
-            logger.info(f"[LENGTH_CHECK] ✓ {content_type} word count {word_count} is within range {min_length}-{max_length}")
-        else:
-            logger.warning(f"[LENGTH_CHECK] ✗ {content_type} word count {word_count} is OUTSIDE range {min_length}-{max_length}")
-            if word_count < min_length:
-                logger.warning(f"[LENGTH_CHECK] Content is {min_length - word_count} words SHORT")
-            else:
-                logger.warning(f"[LENGTH_CHECK] Content is {word_count - max_length} words OVER")
+        # Only log validation failures to reduce noise
+        if not is_valid:
+            diff = min_length - word_count if word_count < min_length else word_count - max_length
+            logger.debug(f"[LENGTH] {content_type}: {word_count}w ({'short' if word_count < min_length else 'over'} by {diff}w)")
         
         return is_valid, word_count
 
@@ -1273,21 +1269,19 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
         client, thread_id: str, run_id: str, max_retries: int = 3
     ) -> Tuple[str, int]:
         """Wait for assistant run to complete and return content"""
-        logger.info(f"[ASSISTANT_RUN] Waiting for completion: thread_id={thread_id}, run_id={run_id}")
+        logger.info(f"[ASSISTANT_RUN] Waiting for completion: thread={thread_id[:8]}..., run={run_id[:8]}...")
         
         retry_count = 0
         while True:
             run = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
+            iteration += 1
             
-            logger.debug(f"[ASSISTANT_RUN] Current status: {run.status}")
+            # Only log status every 10 seconds to reduce log spam
+            if iteration % 10 == 0:
+                logger.debug(f"[ASSISTANT_RUN] Still waiting... ({iteration}s, status: {run.status})")
 
             if run.status == "completed":
-                logger.info(f"[ASSISTANT_RUN] ✓ Run completed successfully")
-                
-                # Log tool usage if available
-                if hasattr(run, 'tools') and run.tools:
-                    tool_names = [getattr(tool, 'type', 'unknown') for tool in run.tools]
-                    logger.info(f"[ASSISTANT_RUN] Tools available on assistant: {tool_names}")
+                logger.info(f"[ASSISTANT_RUN] ✓ Completed in {iteration}s")
                 
                 # Get the latest message
                 messages = client.beta.threads.messages.list(
@@ -1297,7 +1291,7 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
                 content = messages.data[0].content[0].text.value
                 tokens_used = run.usage.total_tokens if run.usage else 0
                 
-                logger.info(f"[ASSISTANT_RUN] Response length: {len(content)} chars, Tokens used: {tokens_used}")
+                logger.debug(f"[ASSISTANT_RUN] Response: {len(content)} chars, {tokens_used} tokens")
 
                 return content, tokens_used
 

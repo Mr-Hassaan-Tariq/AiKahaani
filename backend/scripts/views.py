@@ -226,12 +226,15 @@ def generate_script_outline(request):
 
         # Use assistant for outline generation with knowledge base
         outline_text, outline_data, metadata = (
-            OpenAIScriptService.generate_outline_with_assistant(script_data, user=request.user)
+            OpenAIScriptService.generate_outline_with_assistant(
+                script_data, user=request.user
+            )
         )
 
         # Extract actual outline data from JSON response
         import json
         import re
+
         try:
             outline_json_data = json.loads(outline_text)
             if isinstance(outline_json_data, dict) and "sections" in outline_json_data:
@@ -242,12 +245,18 @@ def generate_script_outline(request):
                     "outline_text": outline_json_data.get("outline_text", ""),
                 }
                 # Use the structured outline_text from JSON, not the raw JSON
-                actual_outline_text = outline_json_data.get("outline_text", outline_text)
-                
+                actual_outline_text = outline_json_data.get(
+                    "outline_text", outline_text
+                )
+
                 # Clean up any document references
-                actual_outline_text = re.sub(r'■[^■]*?■', '', actual_outline_text)
-                actual_outline_text = re.sub(r'[0-9]+:\d+†[^■]*?■', '', actual_outline_text)
-                actual_outline_text = re.sub(r'\n\s*\n\s*\n', '\n\n', actual_outline_text)
+                actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
+                actual_outline_text = re.sub(
+                    r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text
+                )
+                actual_outline_text = re.sub(
+                    r"\n\s*\n\s*\n", "\n\n", actual_outline_text
+                )
                 actual_outline_text = actual_outline_text.strip()
             else:
                 # Fallback to original data
@@ -267,17 +276,21 @@ def generate_script_outline(request):
                 generated_titles, title_metadata = OpenAIScriptService.generate_titles(
                     prompt=description,
                     title_count=1,  # We only need one title
-                    tones=outline_tones  # Use the same tones as the outline
+                    tones=outline_tones,  # Use the same tones as the outline
                 )
                 if generated_titles and len(generated_titles) > 0:
-                    outline_title = generated_titles[0].get("title", f"Outline: {description[:50]}")
+                    outline_title = generated_titles[0].get(
+                        "title", f"Outline: {description[:50]}"
+                    )
                 else:
                     outline_title = f"Outline: {description[:50]}"
             except Exception as e:
                 logger.warning(f"Title generation failed: {str(e)}, using fallback")
                 outline_title = f"Outline: {description[:50]}"
         # Save the template parameters in outline_data for later use
-        outline_data_with_params = actual_outline_data.copy() if actual_outline_data else {}
+        outline_data_with_params = (
+            actual_outline_data.copy() if actual_outline_data else {}
+        )
         outline_data_with_params.update(
             {
                 "template_style": template_style.name if template_style else "medium",
@@ -422,12 +435,15 @@ def recreate_script_outline(request, uuid):
 
         # Generate new outline using assistant with knowledge base
         outline_text, outline_data, metadata = (
-            OpenAIScriptService.generate_outline_with_assistant(script_data, user=request.user)
+            OpenAIScriptService.generate_outline_with_assistant(
+                script_data, user=request.user
+            )
         )
 
         # Extract actual outline data from JSON response
         import json
         import re
+
         try:
             outline_json_data = json.loads(outline_text)
             if isinstance(outline_json_data, dict) and "sections" in outline_json_data:
@@ -438,12 +454,18 @@ def recreate_script_outline(request, uuid):
                     "outline_text": outline_json_data.get("outline_text", ""),
                 }
                 # Use the structured outline_text from JSON, not the raw JSON
-                actual_outline_text = outline_json_data.get("outline_text", outline_text)
-                
+                actual_outline_text = outline_json_data.get(
+                    "outline_text", outline_text
+                )
+
                 # Clean up any document references
-                actual_outline_text = re.sub(r'■[^■]*?■', '', actual_outline_text)
-                actual_outline_text = re.sub(r'[0-9]+:\d+†[^■]*?■', '', actual_outline_text)
-                actual_outline_text = re.sub(r'\n\s*\n\s*\n', '\n\n', actual_outline_text)
+                actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
+                actual_outline_text = re.sub(
+                    r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text
+                )
+                actual_outline_text = re.sub(
+                    r"\n\s*\n\s*\n", "\n\n", actual_outline_text
+                )
                 actual_outline_text = actual_outline_text.strip()
             else:
                 # Fallback to original data
@@ -462,14 +484,16 @@ def recreate_script_outline(request, uuid):
                 generated_titles, title_metadata = OpenAIScriptService.generate_titles(
                     prompt=original_outline.description,  # Use the original description
                     title_count=1,  # We only need one title
-                    tones=tones  # Use the same tones as the new outline
+                    tones=tones,  # Use the same tones as the new outline
                 )
                 if generated_titles and len(generated_titles) > 0:
                     new_title = f"Recreated: {generated_titles[0].get('title', original_outline.title)}"
                 else:
                     new_title = f"Recreated: {original_outline.title}"
             except Exception as e:
-                logger.warning(f"Title generation failed during recreation: {str(e)}, using fallback")
+                logger.warning(
+                    f"Title generation failed during recreation: {str(e)}, using fallback"
+                )
                 new_title = f"Recreated: {original_outline.title}"
         else:
             new_title = f"Recreated outline from {original_outline.uuid}"
@@ -533,10 +557,8 @@ class ScriptOutlineDetailView(
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get_queryset(self):
-        return (
-            ScriptOutline.objects.filter(user=self.request.user)
-            .select_related("script")
-            .prefetch_related("script__tones", "tones")
+        return ScriptOutline.objects.filter(user=self.request.user).prefetch_related(
+            "tones"
         )
 
     def get_serializer_class(self):
@@ -653,12 +675,13 @@ def generate_full_script(request, uuid):
 
         # Prepare structured outline data for script generation
         import json
+
         if outline.outline_data and outline.outline_data.get("sections"):
             # Use structured outline data with section_order
             structured_outline = {
                 "sections": outline.outline_data.get("sections", []),
                 "section_order": outline.outline_data.get("section_order", []),
-                "outline_text": outline.outline_text
+                "outline_text": outline.outline_text,
             }
             outline_for_script = json.dumps(structured_outline)
         else:
@@ -675,35 +698,50 @@ def generate_full_script(request, uuid):
         # Extract actual script text from JSON response
         import json
         import re
+
         try:
             script_data = json.loads(script_content)
             if isinstance(script_data, dict) and "full_text" in script_data:
                 actual_script_text = script_data["full_text"]
-                
+
                 # Validate section order matches outline using section_order array
                 if "sections" in script_data and outline.outline_data:
                     outline_sections = outline.outline_data.get("sections", [])
                     section_order = outline.outline_data.get("section_order", [])
                     script_sections = script_data.get("sections", [])
-                    
+
                     # Check if section order matches outline order
                     if len(script_sections) == len(outline_sections):
                         # Use section_order array if available, otherwise use sequential order
-                        if section_order and len(section_order) == len(outline_sections):
+                        if section_order and len(section_order) == len(
+                            outline_sections
+                        ):
                             # Validate using section_order array
                             for i, order_index in enumerate(section_order):
-                                if order_index < len(outline_sections) and i < len(script_sections):
+                                if order_index < len(outline_sections) and i < len(
+                                    script_sections
+                                ):
                                     outline_sec = outline_sections[order_index]
                                     script_sec = script_sections[i]
-                                    if outline_sec.get("title") != script_sec.get("title"):
-                                        logger.warning(f"Section order mismatch at position {i} (section_order[{i}]={order_index}): outline='{outline_sec.get('title')}' vs script='{script_sec.get('title')}'")
+                                    if outline_sec.get("title") != script_sec.get(
+                                        "title"
+                                    ):
+                                        logger.warning(
+                                            f"Section order mismatch at position {i} (section_order[{i}]={order_index}): outline='{outline_sec.get('title')}' vs script='{script_sec.get('title')}'"
+                                        )
                         else:
                             # Fallback to sequential validation
-                            for i, (outline_sec, script_sec) in enumerate(zip(outline_sections, script_sections)):
+                            for i, (outline_sec, script_sec) in enumerate(
+                                zip(outline_sections, script_sections)
+                            ):
                                 if outline_sec.get("title") != script_sec.get("title"):
-                                    logger.warning(f"Section order mismatch at index {i}: outline='{outline_sec.get('title')}' vs script='{script_sec.get('title')}'")
+                                    logger.warning(
+                                        f"Section order mismatch at index {i}: outline='{outline_sec.get('title')}' vs script='{script_sec.get('title')}'"
+                                    )
                     else:
-                        logger.warning(f"Section count mismatch: outline has {len(outline_sections)}, script has {len(script_sections)}")
+                        logger.warning(
+                            f"Section count mismatch: outline has {len(outline_sections)}, script has {len(script_sections)}"
+                        )
             else:
                 actual_script_text = script_content
         except (json.JSONDecodeError, TypeError):
@@ -711,17 +749,19 @@ def generate_full_script(request, uuid):
 
         # Clean up any document references that might have slipped through
         # Remove patterns like ■3:11†YOUTUBE STORYTELLING STRATEGY■
-        actual_script_text = re.sub(r'■[^■]*?■', '', actual_script_text)
-        actual_script_text = re.sub(r'[0-9]+:\d+†[^■]*?■', '', actual_script_text)
+        actual_script_text = re.sub(r"■[^■]*?■", "", actual_script_text)
+        actual_script_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_script_text)
         # Clean up any extra whitespace
-        actual_script_text = re.sub(r'\n\s*\n\s*\n', '\n\n', actual_script_text)
+        actual_script_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_script_text)
         actual_script_text = actual_script_text.strip()
 
         # Create FullScript
         full_script = FullScript.objects.create(
             user=request.user,
             outline=outline,
-            title=request.data.get("title", outline.title),  # Use the outline title directly
+            title=request.data.get(
+                "title", outline.title
+            ),  # Use the outline title directly
             content=actual_script_text,
             sections=sections,
             status="generated",
@@ -764,7 +804,7 @@ class FullScriptDetailView(
 
     def get_queryset(self):
         return FullScript.objects.filter(user=self.request.user).select_related(
-            "outline", "outline__script"
+            "outline"
         )
 
     @extend_schema(
@@ -860,9 +900,10 @@ class ScriptOutlineListView(MethodSpecificThrottleMixin, generics.ListAPIView):
 
     def get_queryset(self):
         return (
-            ScriptOutline.objects.filter(user=self.request.user)
-            .select_related("script")
-            .prefetch_related("script__tones", "tones")
+            ScriptOutline.objects.filter(
+                user=self.request.user, full_scripts__isnull=True
+            )
+            .prefetch_related("tones")
             .order_by("-created")
         )
 
@@ -963,216 +1004,7 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
     def get_queryset(self):
         return (
             FullScript.objects.filter(user=self.request.user)
-            .select_related("outline", "outline__script")
-            .order_by("-created")
-        )
-
-
-@extend_schema(
-    summary="List all generations (unified)",
-    description="""
-    Retrieve a unified list of both script outlines and full scripts with comprehensive filtering and sorting options.
-
-    **Filter Combinations:**
-    - Use `type=script` to apply word_count and duration filters only to scripts
-    - Use `type=outline` to get only outlines (word_count/duration filters ignored)
-    - Combine multiple filters for precise results
-
-    **Examples:**
-    - `?type=script&word_count_min=500&duration_max=10` - Scripts with 500+ words, max 10 min
-    - `?filter_type=saved&search=tutorial` - Saved items containing 'tutorial'
-    - `?status=generated&ordering=-modified` - Generated items, newest first
-    """,
-    parameters=[
-        OpenApiParameter(
-            name="search",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description="Search by title or content",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="status",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description="Filter by status (draft, generated, saved)",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="filter_type",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description='Filter by type: "all" (default), "outline_drafts" (draft/generated outlines only), "script_drafts" (draft/generated scripts only), "saved" (saved items only)',
-            required=False,
-        ),
-        OpenApiParameter(
-            name="type",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description='Filter by generation type: "outline" (outlines only), "script" (scripts only). Use "script" to apply word_count/duration filters effectively.',
-            required=False,
-        ),
-        OpenApiParameter(
-            name="ordering",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description="Order by field (created, modified, title). Use - for descending (e.g., -created)",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="word_count_min",
-            type=OpenApiTypes.INT,
-            location=OpenApiParameter.QUERY,
-            description="Minimum word count for scripts (only applies to scripts, outlines are unaffected). Example: 500",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="word_count_max",
-            type=OpenApiTypes.INT,
-            location=OpenApiParameter.QUERY,
-            description="Maximum word count for scripts (only applies to scripts, outlines are unaffected). Example: 2000",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="duration_min",
-            type=OpenApiTypes.FLOAT,
-            location=OpenApiParameter.QUERY,
-            description="Minimum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 3.5",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="duration_max",
-            type=OpenApiTypes.FLOAT,
-            location=OpenApiParameter.QUERY,
-            description="Maximum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 15.0",
-            required=False,
-        ),
-    ],
-    responses={
-        200: OpenApiResponse(
-            response=ScriptOutlineSerializer(many=True),
-            description="Script outlines retrieved successfully",
-        )
-    },
-)
-class ScriptOutlineListView(generics.ListAPIView):
-    """
-    List all script outlines with filtering and search
-    """
-
-    serializer_class = ScriptOutlineSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class = ScriptOutlineFilter
-    ordering_fields = ["created", "modified", "title"]
-    ordering = ["-created"]
-    permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
-
-    def get_queryset(self):
-        return (
-            ScriptOutline.objects.filter(user=self.request.user)
-            .select_related("script")
-            .prefetch_related("script__tones", "tones")
-            .order_by("-created")
-        )
-
-
-@extend_schema(
-    summary="List all full scripts",
-    description="Retrieve a paginated list of all full scripts with filtering options",
-    parameters=[
-        OpenApiParameter(
-            name="search",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description="Search by title or content",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="status",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description="Filter by status (generating, generated, edited, finalized, published)",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="is_published",
-            type=OpenApiTypes.BOOL,
-            location=OpenApiParameter.QUERY,
-            description="Filter by published status",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="filter_type",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description="Filter by type: all, outline_drafts, script_drafts, saved",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="word_count_min",
-            type=OpenApiTypes.INT,
-            location=OpenApiParameter.QUERY,
-            description="Minimum word count",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="word_count_max",
-            type=OpenApiTypes.INT,
-            location=OpenApiParameter.QUERY,
-            description="Maximum word count",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="duration_min",
-            type=OpenApiTypes.FLOAT,
-            location=OpenApiParameter.QUERY,
-            description="Minimum estimated duration in minutes",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="duration_max",
-            type=OpenApiTypes.FLOAT,
-            location=OpenApiParameter.QUERY,
-            description="Maximum estimated duration in minutes",
-            required=False,
-        ),
-        OpenApiParameter(
-            name="ordering",
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description="Order by field (created, modified, title, word_count, estimated_duration). Use - for descending (e.g., -created)",
-            required=False,
-        ),
-    ],
-    responses={
-        200: OpenApiResponse(
-            response=FullScriptSerializer(many=True),
-            description="Full scripts retrieved successfully",
-        )
-    },
-)
-class FullScriptListView(generics.ListAPIView):
-    """
-    List all full scripts with filtering and search
-    """
-
-    serializer_class = FullScriptSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class = FullScriptFilter
-    ordering_fields = [
-        "created",
-        "modified",
-        "title",
-        "word_count",
-        "estimated_duration",
-    ]
-    ordering = ["-created"]
-    permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
-
-    def get_queryset(self):
-        return (
-            FullScript.objects.filter(user=self.request.user)
-            .select_related("outline", "outline__script")
+            .select_related("outline")
             .order_by("-created")
         )
 
@@ -1557,10 +1389,14 @@ def _export_txt(script, safe_title, timestamp):
                     for section in script_sections:
                         if "section" in section:
                             content += f"\n=== {section['section']} ===\n\n"
-                        if "content" in section and isinstance(section["content"], list):
+                        if "content" in section and isinstance(
+                            section["content"], list
+                        ):
                             for item in section["content"]:
                                 content += f"{item}\n\n"
-                        elif "content" in section and isinstance(section["content"], str):
+                        elif "content" in section and isinstance(
+                            section["content"], str
+                        ):
                             content += f"{section['content']}\n\n"
                 else:
                     # Fallback to original content if not in expected format
@@ -1689,7 +1525,9 @@ def _export_pdf(script, safe_title, timestamp):
                             story.append(Paragraph(section["section"], section_style))
                             story.append(Spacer(1, 8))
 
-                        if "content" in section and isinstance(section["content"], list):
+                        if "content" in section and isinstance(
+                            section["content"], list
+                        ):
                             for item in section["content"]:
                                 # Clean up the content for PDF formatting
                                 clean_item = str(item).replace("//", "").strip()
@@ -1702,12 +1540,18 @@ def _export_pdf(script, safe_title, timestamp):
                                     ):
                                         # Format as stage directions
                                         story.append(
-                                            Paragraph(f"<i>{clean_item}</i>", content_style)
+                                            Paragraph(
+                                                f"<i>{clean_item}</i>", content_style
+                                            )
                                         )
                                     else:
-                                        story.append(Paragraph(clean_item, content_style))
+                                        story.append(
+                                            Paragraph(clean_item, content_style)
+                                        )
                                     story.append(Spacer(1, 4))
-                        elif "content" in section and isinstance(section["content"], str):
+                        elif "content" in section and isinstance(
+                            section["content"], str
+                        ):
                             clean_content = section["content"].replace("//", "").strip()
                             if clean_content:
                                 story.append(Paragraph(clean_content, content_style))
@@ -1802,7 +1646,7 @@ def _export_docx(script, safe_title, timestamp):
     doc = Document()
 
     # Add title
-    title = doc.add_heading(script.title, 0)
+    doc.add_heading(script.title, 0)
 
     # Add metadata
     doc.add_paragraph(f"Created: {script.created.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -1843,7 +1687,9 @@ def _export_docx(script, safe_title, timestamp):
                             # Add section heading
                             doc.add_heading(section["section"], level=1)
 
-                        if "content" in section and isinstance(section["content"], list):
+                        if "content" in section and isinstance(
+                            section["content"], list
+                        ):
                             for item in section["content"]:
                                 # Clean up the content for DOCX formatting
                                 clean_item = str(item).replace("//", "").strip()
@@ -1859,7 +1705,9 @@ def _export_docx(script, safe_title, timestamp):
                                         p.add_run(clean_item).italic = True
                                     else:
                                         doc.add_paragraph(clean_item)
-                        elif "content" in section and isinstance(section["content"], str):
+                        elif "content" in section and isinstance(
+                            section["content"], str
+                        ):
                             clean_content = section["content"].replace("//", "").strip()
                             if clean_content:
                                 doc.add_paragraph(clean_content)
