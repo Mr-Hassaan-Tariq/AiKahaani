@@ -54,6 +54,18 @@ class SignupView(MethodSpecificThrottleMixin, APIView):
         serializer = UserSignupSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+
+            # Create welcome notification for new user signup
+            try:
+                NotificationHelper.create_user_notification(
+                    user=user,
+                    title="Welcome to TubeGenius!",
+                    message=f"Welcome to TubeGenius, {user.fullname or user.username}! Start exploring viral niches and create amazing scripts.",
+                    notification_type=NotificationType.ACCOUNT,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to create signup notification: {str(e)}")
+
             user_data = UserSerializer(user, context={"request": request}).data
             return Response(
                 {"message": "User created successfully", "user": user_data},

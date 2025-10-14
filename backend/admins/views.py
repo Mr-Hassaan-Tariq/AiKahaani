@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.openapi import OpenApiExample, OpenApiParameter
@@ -18,6 +20,8 @@ from admins.serializers import (
     NicheSerializer,
     NicheToneSerializer,
 )
+from notifications.choices import NotificationType
+from notifications.helpers import NotificationHelper
 from scripts.pagination import GenerationsLimitOffsetPagination
 from users.models import Role
 from users.permissions import IsAdminPermission
@@ -26,6 +30,7 @@ from .filters import NicheFilter, NichePacingFilter, NicheToneFilter
 from .models import Niche, NichePacing, NicheTone
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 @extend_schema_view(
@@ -655,6 +660,23 @@ class NicheViewSet(ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             niche = serializer.save(admin=request.user)
+
+            # Create notification for new niche creation
+            try:
+                NotificationHelper.create_global_notification(
+                    title="New Niche Added!",
+                    message=f"A new niche '{niche.title}' has been added to TubeGenius. Check it out and start creating amazing scripts!",
+                    notification_type=NotificationType.FEATURE,
+                    metadata={
+                        "niche": {
+                            "label": niche.title,
+                            "link": f"/niches?id={niche.id}",
+                        },
+                    },
+                )
+            except Exception as e:
+                logger.warning(f"Failed to create niche notification: {str(e)}")
+
             return Response(
                 {
                     "data": NicheSerializer(niche).data,
@@ -688,6 +710,23 @@ class NicheViewSet(ModelViewSet):
 
         if serializer.is_valid():
             updated_niche = serializer.save()
+
+            # Create notification for niche update
+            try:
+                NotificationHelper.create_global_notification(
+                    title="Niche Updated!",
+                    message=f"The niche '{updated_niche.title}' has been updated with new features and improvements. Explore the latest changes!",
+                    notification_type=NotificationType.FEATURE,
+                    metadata={
+                        "niche": {
+                            "label": updated_niche.title,
+                            "link": f"/niches?id={updated_niche.id}",
+                        },
+                    },
+                )
+            except Exception as e:
+                logger.warning(f"Failed to create niche update notification: {str(e)}")
+
             return Response(
                 {
                     "data": NicheSerializer(updated_niche).data,
@@ -704,6 +743,24 @@ class NicheViewSet(ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         """Delete a niche."""
         niche = self.get_object()
+        niche_title = niche.title  # Store title before deletion
+
+        # Create notification for niche deletion
+        try:
+            NotificationHelper.create_global_notification(
+                title="Niche Removed",
+                message=f"The niche '{niche_title}' has been removed from TubeGenius. Check out other available niches!",
+                notification_type=NotificationType.FEATURE,
+                metadata={
+                    "niche": {
+                        "label": niche_title,
+                        "link": "/niches",
+                    },
+                },
+            )
+        except Exception as e:
+            logger.warning(f"Failed to create niche deletion notification: {str(e)}")
+
         niche.delete()
         return Response(
             {"message": "Niche deleted successfully"},

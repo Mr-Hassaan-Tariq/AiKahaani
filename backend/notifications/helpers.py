@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 
 from notifications.choices import DeliveryChannel, NotificationType
-from notifications.models import Notification, UserNotification
+from notifications.models import UserNotification
 
 User = get_user_model()
 
@@ -22,11 +22,14 @@ class NotificationHelper:
         message: str,
         notification_type: NotificationType = NotificationType.SCRIPT,
         delivery_channel: DeliveryChannel = DeliveryChannel.IN_APP,
+        metadata: dict = None,
     ) -> UserNotification:
         return UserNotification.objects.create(
             user=user,
             title=title,
             message=message,
+            type=notification_type,
+            metadata=metadata or {},
         )
 
     @staticmethod
@@ -35,25 +38,86 @@ class NotificationHelper:
         message: str,
         notification_type: NotificationType = NotificationType.FEATURE,
         delivery_channel: DeliveryChannel = DeliveryChannel.IN_APP,
-    ) -> Notification:
+        metadata: dict = None,
+    ) -> List[UserNotification]:
         """
-        Create a global notification that can be sent to all users.
+        Create a global notification that is sent to all users.
+        Creates individual UserNotification records for each user in the system.
 
         Args:
             title: Notification title
             message: Notification message
             notification_type: Type of notification (default: FEATURE)
             delivery_channel: Delivery channel (default: IN_APP)
+            metadata: Additional metadata dictionary (default: None)
 
         Returns:
-            Notification instance
+            List of UserNotification instances created for all users
         """
-        return Notification.objects.create(
-            title=title,
-            message=message,
-            type=notification_type,
-            delivery_channel=delivery_channel,
-        )
+        # Get all active users
+        users = User.objects.filter(is_active=True)
+
+        # Create notifications for all users in bulk
+        notifications = []
+        with transaction.atomic():
+            for user in users:
+                notification = UserNotification.objects.create(
+                    user=user,
+                    title=title,
+                    message=message,
+                    type=notification_type,
+                    metadata=metadata or {},
+                )
+                notifications.append(notification)
+
+        return notifications
+
+    @staticmethod
+    def create_global_notification_for_users(
+        users: List[Union[User, int]],
+        title: str,
+        message: str,
+        notification_type: NotificationType = NotificationType.FEATURE,
+        delivery_channel: DeliveryChannel = DeliveryChannel.IN_APP,
+        metadata: dict = None,
+    ) -> List[UserNotification]:
+        """
+        Create a global notification for specific users only.
+        Useful for sending notifications to a subset of users (e.g., admins, specific user groups).
+
+        Args:
+            users: List of User instances or user IDs to send notification to
+            title: Notification title
+            message: Notification message
+            notification_type: Type of notification (default: FEATURE)
+            delivery_channel: Delivery channel (default: IN_APP)
+            metadata: Additional metadata dictionary (default: None)
+
+        Returns:
+            List of UserNotification instances created for specified users
+        """
+        # Convert user IDs to User instances if needed
+        user_objects = []
+        for user in users:
+            if isinstance(user, int):
+                user_objects.append(User.objects.get(id=user))
+            else:
+                user_objects.append(user)
+
+        # Create notifications for specified users in bulk
+        notifications = []
+        with transaction.atomic():
+            for user in user_objects:
+                notification = UserNotification.objects.create(
+                    user=user,
+                    title=title,
+                    message=message,
+                    type=notification_type,
+                    metadata=metadata or {},
+                )
+                notifications.append(notification)
+
+        return notifications
 
     @staticmethod
     def create_bulk_user_notifications(
@@ -63,6 +127,7 @@ class NotificationHelper:
         notification_type: NotificationType = NotificationType.SCRIPT,
         delivery_channel: DeliveryChannel = DeliveryChannel.IN_APP,
         read: bool = False,
+        metadata: dict = None,
     ) -> List[UserNotification]:
         """
         Create notifications for multiple users in bulk.
@@ -74,6 +139,7 @@ class NotificationHelper:
             notification_type: Type of notification (default: SCRIPT)
             delivery_channel: Delivery channel (default: IN_APP)
             read: Whether the notifications are read (default: False)
+            metadata: Additional metadata dictionary (default: None)
 
         Returns:
             List of UserNotification instances
@@ -91,7 +157,12 @@ class NotificationHelper:
         with transaction.atomic():
             for user in user_objects:
                 notification = UserNotification.objects.create(
-                    user=user, title=title, message=message, read=read
+                    user=user,
+                    title=title,
+                    message=message,
+                    type=notification_type,
+                    read=read,
+                    metadata=metadata or {},
                 )
                 notifications.append(notification)
 
