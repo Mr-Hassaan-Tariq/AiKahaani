@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import ComponentNav from '@/(dashboard)/_components/ComponentNav';
+import { toast } from 'sonner'; // if you're using a toast library
 
 import { RightCircle } from './components';
+import { postClientDataAction } from 'lib/utils/clientDataActions';
 import { Tabs, TabsList, TabsTrigger } from 'components/shadcn_ui/tabs';
 
 const tabsPath = [
@@ -16,17 +19,34 @@ const tabsPath = [
 export default function NotificationTabs({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [loading, setLoading] = useState(false);
+
   const query = searchParams.get('query');
   const activeTab =
     tabsPath.find((tab) => tab.path === pathname + '?query=' + query) ?? tabsPath[0];
+
+  const handleMarkAllRead = async () => {
+    try {
+      setLoading(true);
+      const response = await postClientDataAction('v1/notifications/read-all/');
+      console.log('response', response);
+      toast.success('All notifications marked as read');
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+      toast.error('Something went wrong!');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex grow flex-col gap-5">
       <ComponentNav
         title="Notifications"
-        buttonText="Mark all as read"
+        buttonText={loading ? 'Marking...' : 'Mark all as read'}
         buttonIcon={RightCircle}
-        _onButtonClick={() => console.log('Profile updated!')}
+        _onButtonClick={handleMarkAllRead}
+        disabled={loading}
       />
       <div className="w-full overflow-x-auto overflow-y-visible lg:w-fit">
         <Tabs defaultValue={activeTab.label} className="min-w-[550px]">

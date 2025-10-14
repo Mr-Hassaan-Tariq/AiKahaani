@@ -1,10 +1,14 @@
+'use client';
+
 import Image from 'next/image';
 import RightSvg from '@assets/svg/right.svg';
 
+import { postClientDataAction } from 'lib/utils/clientDataActions';
 import Col from 'components/ui/Col';
 import Row from 'components/ui/Row';
 
 interface NotificationItemProps {
+  id: number;
   title: string;
   description: string;
   time: string;
@@ -12,9 +16,11 @@ interface NotificationItemProps {
   actionLink?: string;
   isNew?: boolean;
   icon?: any;
+  onRead?: (id: number) => void;
 }
 
 export default function NotificationItem({
+  id,
   title,
   description,
   time,
@@ -22,11 +28,26 @@ export default function NotificationItem({
   actionLink,
   isNew = false,
   icon,
+  onRead,
 }: NotificationItemProps) {
+  const handleMarkAsRead = async () => {
+    if (!isNew) return;
+    try {
+      await postClientDataAction(`v1/notifications/${id}/read/`, {});
+      onRead?.(id);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
   return (
     <>
+      {/* Desktop */}
       <div className="hidden md:block">
-        <Row className="mb-3 items-start justify-between rounded-xl border border-[var(--Stroke-Surface,#BAFF381F)] bg-[var(--Bg-Surface,#161616)] p-5 text-white">
+        <Row
+          onClick={handleMarkAsRead}
+          className="mb-3 cursor-pointer items-start justify-between rounded-xl border border-[var(--Stroke-Surface,#BAFF381F)] bg-[var(--Bg-Surface,#161616)] p-5 text-white hover:bg-[#1C1C1C]"
+        >
           <Col className="items-start gap-3">
             <Row className="items-center gap-2">
               <Image src={icon} alt="icon" width={20} height={20} />
@@ -34,6 +55,7 @@ export default function NotificationItem({
             </Row>
             <p className="text-sm text-[#AAACA6]">{description}</p>
           </Col>
+
           <Col className="justify-end">
             <Row className="items-center justify-end gap-2">
               {isNew && (
@@ -45,6 +67,7 @@ export default function NotificationItem({
               )}
               <p className="text-sm font-medium text-[#AAACA6]">{time}</p>
             </Row>
+
             {actionText && actionLink && (
               <a
                 href={actionLink}
@@ -56,8 +79,13 @@ export default function NotificationItem({
           </Col>
         </Row>
       </div>
+
+      {/* Mobile */}
       <div className="block md:hidden">
-        <Col className="mb-3 items-start justify-between rounded-xl border border-[var(--Stroke-Surface,#BAFF381F)] bg-[var(--Bg-Surface,#161616)] p-3 text-white">
+        <Col
+          onClick={handleMarkAsRead}
+          className="mb-3 cursor-pointer items-start justify-between rounded-xl border border-[var(--Stroke-Surface,#BAFF381F)] bg-[var(--Bg-Surface,#161616)] p-3 text-white hover:bg-[#1C1C1C]"
+        >
           <Row className="items-center justify-end gap-2">
             {isNew && (
               <>
@@ -68,6 +96,7 @@ export default function NotificationItem({
             )}
             <p className="text-sm font-medium text-[#AAACA6]">{time}</p>
           </Row>
+
           <Col className="items-start gap-2">
             <Row className="items-center gap-2">
               <Image src={icon} alt="icon" width={20} height={20} />
@@ -75,6 +104,7 @@ export default function NotificationItem({
             </Row>
             <p className="text-sm text-[#AAACA6]">{description}</p>
           </Col>
+
           {actionText && actionLink && (
             <a
               href={actionLink}

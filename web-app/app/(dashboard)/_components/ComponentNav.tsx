@@ -13,6 +13,7 @@ interface ComponentNavProps {
   _onButtonClick?: (() => void) | string;
   className?: string;
   buttonClassName?: string;
+  disabled?: boolean;
 }
 
 export default function ComponentNav({
@@ -22,6 +23,7 @@ export default function ComponentNav({
   _onButtonClick,
   className,
   buttonClassName,
+  disabled = false,
 }: ComponentNavProps) {
   return (
     <div
@@ -33,9 +35,13 @@ export default function ComponentNav({
       <Text variant="3xl" className="text-[32px] font-semibold text-white">
         {title}
       </Text>
+
       {typeof _onButtonClick === 'string' ? (
         <Link href={_onButtonClick}>
-          <Button className={cn('md:max-w-[200px] lg:max-w-[200px]', buttonClassName)}>
+          <Button
+            className={cn('md:max-w-[200px] lg:max-w-[200px]', buttonClassName)}
+            disabled={disabled}
+          >
             {buttonIcon && buttonIcon}
             <span className="font-bold">{buttonText}</span>
           </Button>
@@ -44,6 +50,7 @@ export default function ComponentNav({
         <Button
           className={cn('md:max-w-[200px] lg:max-w-[200px]', buttonClassName)}
           onClick={_onButtonClick}
+          disabled={disabled}
         >
           {buttonIcon && buttonIcon}
           <span className="font-bold">{buttonText}</span>
