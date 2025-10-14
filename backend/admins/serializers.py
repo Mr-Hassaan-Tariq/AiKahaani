@@ -178,6 +178,36 @@ class NichePacingSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created", "modified"]
 
 
+class UserNicheListSerializer(serializers.ModelSerializer):
+    """Simplified serializer for user niche list (active niches only)."""
+
+    thumbnail_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Niche
+        fields = [
+            "id",
+            "title",
+            "tagline",
+            "thumbnail_url",
+            "tone",
+            "pacing",
+            "top_channels",
+            "best_for",
+        ]
+        read_only_fields = ["id", "thumbnail_url"]
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_thumbnail_url(self, obj):
+        """Get the full URL for the thumbnail image."""
+        if obj.thumbnail:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.thumbnail.url)
+            return obj.thumbnail.url
+        return None
+
+
 class NicheSerializer(serializers.ModelSerializer):
     """Serializer for Niche model with tone/pacing creation and deduplication."""
 

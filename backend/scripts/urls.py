@@ -20,8 +20,8 @@ urlpatterns = [
     ),
     # Title generation endpoints
     path("titles/", include("scripts.titles.urls")),
-    # Test endpoint for word count strategy
-    path("test/word-count-strategy/", views.test_word_count_strategy, name="test-word-count-strategy"),
+    # Niches endpoint for users
+    path("niches/", include("scripts.niches_urls")),
     # Unified listing API (replaces separate outline and script lists)
     path("generations/", views.GenerationsList.as_view(), name="generations-list"),
     # Individual CRUD (kept for backward compatibility)
@@ -30,11 +30,6 @@ urlpatterns = [
         "outlines/<uuid:uuid>/",
         views.ScriptOutlineDetailView.as_view(),
         name="outline-detail",
-    ),
-    path(
-        "<uuid:uuid>/export/",
-        views.ExportScriptView.as_view(),
-        name="export-script",
     ),
     path("", views.FullScriptListView.as_view(), name="full-script-list"),
     path(
