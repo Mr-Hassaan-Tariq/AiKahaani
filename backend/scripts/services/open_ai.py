@@ -11,6 +11,8 @@ from django.conf import settings
 
 # Import the storytelling manual
 from .prompt import prompt as storytelling_manual
+# Import word count strategy
+from .word_count_strategy import WordCountStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -764,33 +766,42 @@ Follow TubeGenius principles:
             system_prompt = OpenAIScriptService._build_outline_system_prompt()
             user_prompt = OpenAIScriptService._build_outline_user_prompt(script_data)
 
-            # Calculate expected duration and structure
+            # Calculate expected duration and structure using word count strategy
+            wc_strategy = WordCountStrategy(script_data.get("template_style", "medium"))
+            
+            # Use strategy to calculate section targets
+            suggested_sections = wc_strategy.config["suggested_sections"]
+            word_targets = wc_strategy.calculate_section_word_targets(suggested_sections)
+            
             min_duration = min_length / 150
             max_duration = max_length / 150
-            suggested_sections = max(3, min_length // 500)
-            max_sections = max(5, max_length // 400)
-            words_per_section_min = min_length // suggested_sections
-            words_per_section_max = max_length // suggested_sections
+            words_per_section_min = word_targets["intro"]
+            words_per_section_max = word_targets["main_sections"]
             
-            # Enhanced prompt with length enforcement
+            # Enhanced prompt with word count strategy integration
             enhanced_prompt = f"""{user_prompt}
 
 🚨 OUTLINE FOR {min_length:,}-{max_length:,} WORD SCRIPT ({min_duration:.1f}-{max_duration:.1f} min video)
 
-STRUCTURE: {suggested_sections}-{max_sections} detailed sections (each supports {words_per_section_min:,}-{words_per_section_max:,}w script)
+STRUCTURE: {suggested_sections} sections with specific word count targets:
+• Hook/Intro: {word_targets['intro']} words
+• Main Sections: {word_targets['main_sections']} words each ({word_targets['main_sections_count']} sections)
+• Conclusion: {word_targets['conclusion']} words
+• Total Target: {word_targets['total_target']} words
 
 EACH SECTION MUST HAVE:
 • Description: 80-150 words (NOT 1-2 sentences!)
 • Key points: 5-8 detailed sentences of specific guidance
+• Target word count: {word_targets['intro'] if 'intro' in locals() else words_per_section_min} words
 • Timing estimate
 • Transition to next section
 • Specific examples/stories/angles to include
 
 CRITICAL: Outline detail = script length
 • Sparse outline → short script (FAILS)
-• Rich outline (500-800w total) → proper script length
+• Rich outline with word targets → precise script length
 
-VERIFY: Each section has 80-150w description + 5-8 detailed key points"""
+VERIFY: Each section has 80-150w description + 5-8 detailed key points + word count target"""
 
             # Use Chat Completions API instead of Assistant API
             response = client.chat.completions.create(
@@ -1029,6 +1040,275 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
         except Exception as e:
             logger.error(f"[SCRIPT] Generation failed: {str(e)}")
             raise
+
+    @staticmethod
+    def generate_script_with_word_count_strategy(
+        outline_text: str,
+        script_data: Dict[str, Any],
+        user=None,
+        save_log: bool = True,
+    ) -> Tuple[str, List[Dict], Dict[str, Any]]:
+        """
+        Generate full script using section-based word count strategy
+        
+        This method implements the new word count completion strategy that:
+        1. Calculates word targets for each section
+        2. Generates each section individually with specific storytelling strategies
+        3. Validates and expands content to meet word count requirements
+        4. Combines sections into a cohesive script
+        
+        Args:
+            outline_text: The outline text to generate script from
+            script_data: Dictionary containing script parameters
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
+        """
+        min_length = script_data.get("min_length", 1000)
+        max_length = script_data.get("max_length", 5000)
+        template_style = script_data.get("template_style", "medium")
+        
+        try:
+            start_time = time.time()
+            client = get_openai_client()
+            
+            # Initialize word count strategy
+            wc_strategy = WordCountStrategy(template_style)
+            
+            # Parse outline to get sections
+            import json
+            try:
+                outline_data = json.loads(outline_text)
+                sections = outline_data.get("sections", [])
+            except json.JSONDecodeError:
+                # Fallback to basic parsing
+                sections = [{"title": "Main Content", "description": outline_text, "key_points": []}]
+            
+            # Calculate word targets for each section
+            num_sections = len(sections)
+            word_targets = wc_strategy.calculate_section_word_targets(num_sections)
+            
+            logger.info(f"[WC_STRATEGY] Starting section-based generation: {num_sections} sections, target: {word_targets['total_target']} words")
+            
+            # Generate each section individually
+            generated_sections = []
+            total_tokens_used = 0
+            total_words_generated = 0
+            
+            for i, section in enumerate(sections):
+                section_type = wc_strategy._determine_section_type(i, num_sections)
+                
+                # Determine word target for this section
+                if section_type.value == "hook_intro":
+                    section_word_target = word_targets["intro"]
+                elif section_type.value == "conclusion":
+                    section_word_target = word_targets["conclusion"]
+                else:
+                    section_word_target = word_targets["main_sections"]
+                
+                # Build section-specific prompt
+                storytelling_manual_formatted = format_storytelling_manual_for_prompt()
+                section_prompt = wc_strategy.build_section_specific_prompt(
+                    section_data=section,
+                    section_index=i,
+                    total_sections=num_sections,
+                    word_target=section_word_target,
+                    storytelling_manual=storytelling_manual_formatted
+                )
+                
+                # Generate section content
+                logger.info(f"[WC_STRATEGY] Generating section {i+1}/{num_sections}: '{section.get('title', 'Untitled')}' ({section_word_target} words)")
+                
+                section_content, section_tokens = OpenAIScriptService._generate_single_section(
+                    section_prompt, section_word_target, client
+                )
+                
+                # Validate word count
+                is_valid, actual_words, message = wc_strategy.validate_word_count(
+                    section_content, section_word_target
+                )
+                
+                logger.info(f"[WC_STRATEGY] Section {i+1}: {message}")
+                
+                # Expand if needed
+                if not is_valid and actual_words < section_word_target * 0.9:
+                    logger.info(f"[WC_STRATEGY] Expanding section {i+1} to meet word target")
+                    expansion_strategies = wc_strategy.get_expansion_strategies(section_type)
+                    
+                    expansion_prompt = f"""
+Expand the following content to {section_word_target} words using these strategies:
+{', '.join(expansion_strategies)}
+
+Current content ({actual_words} words):
+{section_content}
+
+Requirements:
+- Target: {section_word_target} words minimum
+- Maintain the same tone and style
+- Add examples, details, and elaboration
+- Keep the core message intact
+
+RESPONSE FORMAT: Return JSON object with this exact structure:
+{{
+    "content": "Your expanded script content here...",
+    "word_count": {section_word_target},
+    "expansion_applied": true
+}}
+"""
+                    
+                    section_content, expansion_tokens = OpenAIScriptService._generate_single_section(
+                        expansion_prompt, section_word_target, client
+                    )
+                    section_tokens += expansion_tokens
+                    
+                    # Validate again
+                    is_valid, actual_words, message = wc_strategy.validate_word_count(
+                        section_content, section_word_target
+                    )
+                    logger.info(f"[WC_STRATEGY] After expansion: {message}")
+                
+                # Store generated section
+                generated_sections.append({
+                    "title": section.get("title", f"Section {i+1}"),
+                    "content": section_content,
+                    "word_count": actual_words,
+                    "target_words": section_word_target,
+                    "section_type": section_type.value,
+                    "is_valid": is_valid
+                })
+                
+                total_tokens_used += section_tokens
+                total_words_generated += actual_words
+            
+            # Calculate timing for sections
+            generated_sections = wc_strategy.calculate_timing_for_sections(generated_sections)
+            
+            # Combine sections into full script
+            full_script_text = OpenAIScriptService._combine_sections(generated_sections)
+            
+            # Final validation
+            final_is_valid, final_word_count, final_message = wc_strategy.validate_word_count(
+                full_script_text, word_targets["total_target"], tolerance=0.15
+            )
+            
+            logger.info(f"[WC_STRATEGY] Final result: {final_message}")
+            
+            # Format sections for JSON schema response
+            formatted_sections = wc_strategy.format_sections_for_json_schema(generated_sections)
+            
+            generation_time = time.time() - start_time
+            
+            # Generate metadata
+            thread_id = f"wc_strategy_{int(time.time())}"
+            run_id = f"wc_run_{int(time.time())}"
+            
+            metadata = {
+                "tokens_used": total_tokens_used,
+                "generation_time": generation_time,
+                "model": settings.OPENAI_MODEL,
+                "assistant_id": "wc-strategy",
+                "vector_store_id": "none",
+                "thread_id": thread_id,
+                "run_id": run_id,
+                "file_search_used": False,
+                "word_count": final_word_count,
+                "length_valid": final_is_valid,
+                "strategy_used": "section_based",
+                "sections_generated": len(generated_sections),
+                "template_style": template_style
+            }
+            
+            # Save run log
+            if save_log:
+                OpenAIScriptService._save_run_log(
+                    user=user,
+                    thread_id=thread_id,
+                    run_id=run_id,
+                    assistant_id="wc-strategy",
+                    tokens_used=total_tokens_used,
+                    word_count=final_word_count,
+                    file_search_used=False,
+                    file_search_snippets=[],
+                    run_type="script_generation",
+                    generation_time=generation_time,
+                    model=settings.OPENAI_MODEL,
+                )
+            
+            # Return in the proper JSON schema format
+            return {
+                "full_text": full_script_text,
+                "sections": formatted_sections,
+                "metadata": metadata
+            }
+            
+        except Exception as e:
+            logger.error(f"[WC_STRATEGY] Generation failed: {str(e)}")
+            raise
+
+    @staticmethod
+    def _generate_single_section(section_prompt: str, word_target: int, client) -> Tuple[str, int]:
+        """
+        Generate content for a single section with word count enforcement
+        
+        Returns:
+            Tuple of (content, tokens_used)
+        """
+        # Calculate reasonable max tokens for the target word count
+        estimated_tokens = int(word_target * 1.5) + 500  # 1.5 tokens per word + buffer
+        max_tokens = min(estimated_tokens, 4000)  # Cap at 4k tokens
+        
+        response = client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": "You are an expert YouTube script writer. Follow all instructions precisely, especially word count requirements."},
+                {"role": "user", "content": section_prompt}
+            ],
+            max_tokens=max_tokens,
+            temperature=0.7,
+            response_format={"type": "json_object"},
+        )
+        
+        content = response.choices[0].message.content
+        tokens_used = response.usage.total_tokens if response.usage else 0
+        
+        # Parse JSON response to extract content
+        try:
+            import json
+            section_data = json.loads(content)
+            if isinstance(section_data, dict) and "content" in section_data:
+                return section_data["content"], tokens_used
+            else:
+                logger.warning(f"[WC_STRATEGY] Invalid JSON structure in section response: {content[:200]}...")
+                return content, tokens_used
+        except json.JSONDecodeError as e:
+            logger.warning(f"[WC_STRATEGY] Failed to parse JSON response: {str(e)}, using raw content")
+            return content, tokens_used
+
+    @staticmethod
+    def _combine_sections(sections: List[Dict]) -> str:
+        """
+        Combine individual sections into a cohesive full script
+        
+        Args:
+            sections: List of generated sections with content
+            
+        Returns:
+            Combined script text
+        """
+        combined_parts = []
+        
+        for section in sections:
+            title = section["title"]
+            content = section["content"]
+            
+            # Add section header
+            combined_parts.append(f"=== {title.upper()} ===")
+            combined_parts.append("")
+            
+            # Add section content
+            combined_parts.append(content)
+            combined_parts.append("")
+        
+        return "\n".join(combined_parts)
 
     @staticmethod
     def analyze_image_with_assistant(

@@ -25,27 +25,27 @@ class Command(BaseCommand):
                 if created:
                     self.stdout.write(f'Created tone: {tone_name}')
 
-            # Create Template Styles
+            # Create Template Styles (based on 140 WPM average English speaking rate)
             template_styles_data = [
                 {
                     'name': 'Short',
-                    'min_length': 2600,
-                    'max_length': 3000,
-                    'duration': 20,  # ~20 minutes
+                    'min_length': 2800,  # 20 min * 140 WPM
+                    'max_length': 3000,  # ~21.4 min * 140 WPM
+                    'duration': 20,  # 20 minutes
                     'description': 'Great for concise explainers or presentations'
                 },
                 {
                     'name': 'Medium',
-                    'min_length': 5200,
-                    'max_length': 6000,
-                    'duration': 40,  # ~40 minutes
+                    'min_length': 5600,  # 40 min * 140 WPM
+                    'max_length': 6000,  # ~42.9 min * 140 WPM
+                    'duration': 40,  # 40 minutes
                     'description': 'Ideal for in-depth videos, product demos, interviews'
                 },
                 {
                     'name': 'Long',
-                    'min_length': 7800,
-                    'max_length': 9000,
-                    'duration': 60,  # ~60 minutes
+                    'min_length': 8400,  # 60 min * 140 WPM
+                    'max_length': 9000,  # ~64.3 min * 140 WPM
+                    'duration': 60,  # 60 minutes
                     'description': 'Best for comprehensive tutorials, webinars, lectures'
                 },
                 {

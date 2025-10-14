@@ -766,19 +766,23 @@ def generate_full_script(request, uuid):
             logger.info(f"[SCRIPT_GENERATION] Using plain text outline for user {request.user.id} - "
                        f"Length: {len(outline_for_script)}")
 
-        # Generate full script using assistant with knowledge base
-        logger.info(f"[SCRIPT_GENERATION] Starting OpenAI script generation for user {request.user.id}")
-        script_content, sections, metadata = (
-            OpenAIScriptService.generate_full_script_with_assistant(
+        # Generate full script using new word count strategy
+        logger.info(f"[SCRIPT_GENERATION] Starting section-based script generation for user {request.user.id}")
+        script_response = (
+            OpenAIScriptService.generate_script_with_word_count_strategy(
                 outline_for_script, script_data, user=request.user
             )
         )
+        
+        # Extract components from JSON response
+        script_content = script_response["full_text"]
+        sections = script_response["sections"]
+        metadata = script_response["metadata"]
         logger.info(f"[SCRIPT_GENERATION] OpenAI script generation completed for user {request.user.id} - "
                    f"Tokens used: {metadata.get('tokens_used', 0)}, Generation time: {metadata.get('generation_time', 0):.2f}s, "
                    f"Model: {metadata.get('model', 'unknown')}")
 
-        # Parse JSON response - OpenAI should always return valid JSON
-        import json
+        # Process script response - new word count strategy returns plain text
         import re
 
         logger.debug(f"[SCRIPT_GENERATION] Processing script response for user {request.user.id}")
@@ -788,57 +792,13 @@ def generate_full_script(request, uuid):
             logger.error(f"[SCRIPT_GENERATION] OpenAI returned empty response for user {request.user.id}")
             raise ValueError("OpenAI returned empty response - this indicates an API error or rate limiting")
         
-        try:
-            # Parse JSON directly - API enforces JSON format
-            logger.debug(f"[SCRIPT_GENERATION] Parsing JSON content length: {len(script_content)}")
-            
-            script_data = json.loads(script_content)
-            if not isinstance(script_data, dict) or "full_text" not in script_data:
-                raise ValueError("Invalid JSON structure: missing 'full_text' field")
-            
-            actual_script_text = script_data["full_text"]
-            if not actual_script_text:
-                raise ValueError("Invalid JSON structure: empty 'full_text' field")
-                
-            logger.info(f"[SCRIPT_GENERATION] Parsed JSON script for user {request.user.id} - "
-                       f"Script text length: {len(actual_script_text)}")
+        # The new word count strategy returns plain text content directly
+        actual_script_text = script_content
+        logger.info(f"[SCRIPT_GENERATION] Using plain text script for user {request.user.id} - "
+                   f"Script text length: {len(actual_script_text)}")
 
-            # Validate section order matches outline using section_order array
-            if "sections" in script_data and outline.outline_data:
-                outline_sections = outline.outline_data.get("sections", [])
-                section_order = outline.outline_data.get("section_order", [])
-                script_sections = script_data.get("sections", [])
-
-                # Check if section order matches outline order
-                if len(script_sections) == len(outline_sections):
-                    # Use section_order array if available, otherwise use sequential order
-                    if section_order and len(section_order) == len(outline_sections):
-                        # Validate using section_order array
-                        for i, order_index in enumerate(section_order):
-                            if order_index < len(outline_sections) and i < len(script_sections):
-                                outline_sec = outline_sections[order_index]
-                                script_sec = script_sections[i]
-                                if outline_sec.get("title") != script_sec.get("title"):
-                                    logger.warning(
-                                        f"[SCRIPT_GENERATION] Section order mismatch at position {i} (section_order[{i}]={order_index}) for user {request.user.id}: outline='{outline_sec.get('title')}' vs script='{script_sec.get('title')}'"
-                                    )
-                    else:
-                        # Fallback to sequential validation
-                        for i, (outline_sec, script_sec) in enumerate(zip(outline_sections, script_sections)):
-                            if outline_sec.get("title") != script_sec.get("title"):
-                                logger.warning(
-                                    f"[SCRIPT_GENERATION] Section order mismatch at index {i} for user {request.user.id}: outline='{outline_sec.get('title')}' vs script='{script_sec.get('title')}'"
-                                )
-                else:
-                    logger.warning(
-                        f"[SCRIPT_GENERATION] Section count mismatch for user {request.user.id}: outline has {len(outline_sections)}, script has {len(script_sections)}"
-                    )
-                       
-        except (json.JSONDecodeError, TypeError, ValueError) as e:
-            logger.error(f"[SCRIPT_GENERATION] JSON parsing failed for user {request.user.id}: {str(e)}")
-            logger.error(f"[SCRIPT_GENERATION] Raw response length: {len(script_content)}")
-            logger.error(f"[SCRIPT_GENERATION] Raw response (first 500 chars): {script_content[:500]}...")
-            raise ValueError(f"OpenAI returned invalid JSON response: {str(e)}")
+        # Note: Section order validation is handled within the word count strategy method
+        # The sections list is already provided by the strategy method
 
         # Clean up any document references that might have slipped through
         # Remove patterns like ■3:11†YOUTUBE STORYTELLING STRATEGY■
@@ -1348,6 +1308,57 @@ def update_script_status(request, script_uuid):
         return Response(response_serializer.data)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    summary="Test word count strategy",
+    description="Test the new word count completion strategy with different template styles",
+    responses={
+        200: OpenApiResponse(description="Word count strategy test results"),
+    },
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
+def test_word_count_strategy(request):
+    """
+    Test endpoint for the new word count strategy
+    """
+    from scripts.services.word_count_strategy import WordCountStrategy
+    
+    template_style = request.GET.get("template", "medium")
+    
+    try:
+        strategy = WordCountStrategy(template_style)
+        targets = strategy.calculate_section_word_targets()
+        
+        # Test different section counts
+        test_results = {
+            "template_style": template_style,
+            "default_targets": targets,
+            "custom_sections_test": {}
+        }
+        
+        # Test with different section counts
+        for sections in [4, 6, 8]:
+            custom_targets = strategy.calculate_section_word_targets(sections)
+            test_results["custom_sections_test"][sections] = {
+                "total_target": custom_targets["total_target"],
+                "intro_words": custom_targets["intro"],
+                "main_words": custom_targets["main_sections"],
+                "conclusion_words": custom_targets["conclusion"]
+            }
+        
+        return Response({
+            "message": "Word count strategy test completed successfully",
+            "results": test_results
+        })
+        
+    except Exception as e:
+        logger.error(f"Word count strategy test failed: {str(e)}")
+        return Response(
+            {"error": f"Test failed: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 @extend_schema(

@@ -192,7 +192,8 @@ class FullScript(TimeStampedModel):
     def save(self, *args, **kwargs):
         if self.content:
             self.word_count = len(self.content.split())
-            self.estimated_duration = self.word_count / 150
+            # Use 140 WPM (words per minute) for average English speaking rate
+            self.estimated_duration = self.word_count / 140
         super().save(*args, **kwargs)
 
     def __str__(self):
