@@ -87,7 +87,9 @@ class WordCountStrategy:
             
         min_words = self.config["min_words"]
         max_words = self.config["max_words"]
-        target_words = (min_words + max_words) // 2
+        
+        # Aim for 70% of the range (closer to max) instead of average to ensure we meet minimum requirements
+        target_words = int(min_words + (max_words - min_words) * 0.7)
         
         # Calculate base words per section
         base_words_per_section = target_words // num_sections
@@ -224,13 +226,14 @@ STORYTELLING MANUAL REFERENCE:
 {storytelling_manual}
 
 REQUIREMENTS:
-- Write exactly {word_target} words (±10% tolerance)
+- Write exactly {word_target} words (±5% tolerance - STRICT REQUIREMENT)
 - Follow the storytelling strategies listed above
 - Ensure content flows naturally and maintains engagement
 - Include specific examples, sensory details, and emotional beats
 - Write in a conversational, YouTube-friendly tone
 
-VERIFY: Count words before submitting - content must be {word_target} words minimum.
+CRITICAL: Count words before submitting - content must be {word_target} words minimum.
+FAILURE TO MEET WORD COUNT WILL RESULT IN REGENERATION.
 
 RESPONSE FORMAT: Return JSON object with this exact structure:
 {{
@@ -415,32 +418,32 @@ TRANSITION SPECIFIC:
         
         return "\n".join(formatted)
     
-    def validate_word_count(self, content: str, target_words: int, tolerance: float = 0.1) -> Tuple[bool, int, str]:
+    def validate_word_count(self, content: str, target_words: int, tolerance: float = 0.05) -> Tuple[bool, int, str]:
         """
-        Validate if content meets word count requirements
+        Validate if content meets word count requirements with stricter tolerance
         
         Args:
             content: Content to validate
             target_words: Target word count
-            tolerance: Acceptable deviation (0.1 = 10%)
+            tolerance: Acceptable deviation (0.05 = 5% for stricter enforcement)
             
         Returns:
             Tuple of (is_valid, actual_words, message)
         """
         actual_words = len(content.split())
-        min_acceptable = int(target_words * (1 - tolerance))
-        max_acceptable = int(target_words * (1 + tolerance))
+        min_acceptable = int(target_words * (1 - tolerance))  # 95% instead of 90%
+        max_acceptable = int(target_words * (1 + tolerance))  # 105% instead of 110%
         
         is_valid = min_acceptable <= actual_words <= max_acceptable
         
         if is_valid:
-            message = f"✓ Word count OK: {actual_words} words (target: {target_words})"
+            message = f"✓ Word count OK: {actual_words} words (target: {target_words}, range: {min_acceptable}-{max_acceptable})"
         elif actual_words < min_acceptable:
             short_by = min_acceptable - actual_words
-            message = f"⚠️ Too short: {actual_words} words (need {short_by} more, target: {target_words})"
+            message = f"⚠️ Too short: {actual_words} words (need {short_by} more, target: {target_words}, min: {min_acceptable})"
         else:
             over_by = actual_words - max_acceptable
-            message = f"⚠️ Too long: {actual_words} words ({over_by} over target: {target_words})"
+            message = f"⚠️ Too long: {actual_words} words ({over_by} over target: {target_words}, max: {max_acceptable})"
         
         return is_valid, actual_words, message
     

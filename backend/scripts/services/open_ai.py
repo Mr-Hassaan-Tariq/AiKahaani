@@ -1152,23 +1152,27 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                 
                 logger.info(f"[WC_STRATEGY] Section {i+1}: {message}")
                 
-                # Expand if needed
-                if not is_valid and actual_words < section_word_target * 0.9:
+                # Expand if needed (more aggressive - trigger at 95% instead of 90%)
+                if not is_valid and actual_words < section_word_target * 0.95:
                     logger.info(f"[WC_STRATEGY] Expanding section {i+1} to meet word target")
                     expansion_strategies = wc_strategy.get_expansion_strategies(section_type)
                     
                     expansion_prompt = f"""
-Expand the following content to {section_word_target} words using these strategies:
+Expand the following content to EXACTLY {section_word_target} words using these strategies:
 {', '.join(expansion_strategies)}
 
 Current content ({actual_words} words):
 {section_content}
 
+CRITICAL: You must reach {section_word_target} words minimum. Add more detail, examples, and elaboration.
+
 Requirements:
-- Target: {section_word_target} words minimum
+- Target: {section_word_target} words minimum (currently {actual_words})
 - Maintain the same tone and style
 - Add examples, details, and elaboration
 - Keep the core message intact
+- DO NOT fall short of the word count
+- Use storytelling strategies to add depth and engagement
 
 RESPONSE FORMAT: Return JSON object with this exact structure:
 {{
@@ -1208,9 +1212,9 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
             # Combine sections into full script
             full_script_text = OpenAIScriptService._combine_sections(generated_sections)
             
-            # Final validation
+            # Final validation (stricter tolerance for better word count compliance)
             final_is_valid, final_word_count, final_message = wc_strategy.validate_word_count(
-                full_script_text, word_targets["total_target"], tolerance=0.15
+                full_script_text, word_targets["total_target"], tolerance=0.05
             )
             
             logger.info(f"[WC_STRATEGY] Final result: {final_message}")
@@ -1349,7 +1353,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
         response = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[
-                {"role": "system", "content": "You are an expert YouTube script writer. Follow all instructions precisely, especially word count requirements."},
+                {"role": "system", "content": f"You are an expert YouTube script writer. CRITICAL: You must generate exactly {word_target} words (±5% tolerance). Word count is MANDATORY and non-negotiable. Count your words before responding. Failure to meet word count will result in regeneration."},
                 {"role": "user", "content": section_prompt}
             ],
             max_tokens=max_tokens,
