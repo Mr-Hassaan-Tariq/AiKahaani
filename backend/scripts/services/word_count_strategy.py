@@ -246,56 +246,116 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
         
         guidance_map = {
             SectionType.HOOK_INTRO: """
-HOOK/INTRO STRATEGIES (S1-S7):
-- Open with action from the first line (S1)
-- Create open loops and explicit reasons to keep watching (S2)
-- Balance delivering expectations with artfully defying them (S4)
-- Edit densely and keep early pace fast (S5)
-- Get to main content fast - avoid standalone intro (S6)
-- NO channel trailers or subscribe requests (S7)
+CRITICAL HOOK REQUIREMENTS (S1-S7 ENFORCEMENT):
+- S1: MUST start with ACTION VERB in first sentence (not "Imagine" or "Picture this")
+- S2: MUST create 2-3 SPECIFIC open loops with concrete questions
+- S4: MUST subvert expectations while staying on-topic
+- S5: MUST include specific sensory details and fast pacing
+- S7: ABSOLUTELY NO channel trailers, personal updates, or CTAs
 
-APPLY: Use dramatic metaphors, seed plot points, create curiosity hooks.
+HOOK FAILURE EXAMPLES TO AVOID:
+❌ "Imagine this..." (vague, no action)
+❌ "Picture this scene..." (generic setup)
+❌ "Let me tell you about..." (boring intro)
+❌ "In today's video..." (channel trailer style)
+
+HOOK SUCCESS EXAMPLES:
+✅ "Sarah's phone buzzed at 3 AM with a message that would change everything."
+✅ "The explosion shattered the silence at exactly 11:47 PM."
+✅ "Three months ago, Mark discovered something in his basement that shouldn't exist."
+✅ "The system crashed at the worst possible moment - during a live broadcast."
+
+HOOK VALIDATION CHECKLIST:
+□ Starts with action verb (not "Imagine," "Picture," "Let me")
+□ Creates 2-3 specific, concrete questions
+□ Includes vivid sensory details
+□ Subverts expectations while staying on-topic
+□ No CTAs or channel references
 """,
             SectionType.MAIN_CONTENT: """
-MAIN CONTENT STRATEGIES (P01-P17):
-- Show transformation: Beginning → Middle → End (P01)
-- Use concrete, sensory details (P02)
-- Link beats with "therefore," "but," "because" (P03)
-- Vary sentence length for rhythm (P04)
-- Make audience feel what character felt (P05)
-- Build attachment before big events (P06)
-- Remove tangents and confusing details (P07)
-- Focus on best, fascinating, extreme (P08)
-- Remove jargon and clichés (P09)
-- Write at high-school reading level (P10)
-- Define goal, obstacle, consequences (P11)
-- Plant open loops and manage curiosity threads (P12)
-- Remove unnecessary words (P13)
-- Use vivid word choices (P14)
-- Show, don't tell (P15)
-- Defy expectations with twists (P16)
-- Write with visual in mind (P17)
+MAIN CONTENT STRATEGIES (P01-P17 ENFORCEMENT):
+- P01: EVERY section must show transformation: Before → Conflict → After
+- P02: MINIMUM 3 concrete sensory details per section (no generic adjectives)
+- P03: Link beats with "therefore," "but," "because" (not "and then")
+- P05: Create emotional progression, not just setup + mystery
+- P09: NO overdramatic phrasing - write like talking to a friend
+- P10: 8th-10th grade reading level, spoken English flow
+- P12: Plant 2-3 specific open loops per section
 
-APPLY: Use mini-stories, examples, analogies, and clear transitions.
+SENSORY DETAIL REQUIREMENTS (P02):
+✅ "The smell of ozone filled the air as the machine hummed with a metallic vibration"
+✅ "Cold air bit at exposed skin while footsteps echoed off concrete walls"
+✅ "The coffee tasted burnt, and the clock ticked loudly in the silent room"
+
+❌ "creepy atmosphere" → "the air smelled of mildew and something metallic"
+❌ "mysterious glow" → "the light pulsed like a heartbeat, casting shadows that moved"
+❌ "haunting silence" → "only the sound of water dripping and distant traffic"
+
+VOICE REQUIREMENTS (P09/P10):
+✅ "So here's what actually happened..."
+✅ "But wait, there's something weird about this..."
+✅ "Now, you're probably thinking..."
+✅ "Here's the thing that got me..."
+
+❌ "shadowy silhouettes" → "dark shapes"
+❌ "haunting mysteries" → "weird stuff that happened"
+❌ "questions that linger" → "things we still don't know"
+
+CURIOSITY THREAD EXAMPLES (P12):
+✅ "But why did the system fail at exactly 11:47 PM? And what was in that encrypted file?"
+✅ "The real question is: did Sarah know what she was downloading? We'll find out in a moment."
+✅ "This raises three critical questions: Who had access? When did they know? And what happened next?"
+
+❌ "If you think that's strange..." (vague, generic)
+❌ "But there's more to this story..." (no specific question)
+❌ "Stay tuned for more..." (no curiosity hook)
+
+TRANSFORMATION CHECKLIST (P01):
+□ What changes from beginning to end of this section?
+□ What emotion does the audience feel at the start vs. end?
+□ What realization or insight is gained?
+□ How does this section advance the overall transformation arc?
 """,
             SectionType.CONCLUSION: """
-CONCLUSION STRATEGIES:
-- Complete the transformation arc (P01)
-- Resolve open loops and deliver payoffs (P12)
-- End chapters strong with cliffhangers (BONUS-02)
-- Place most important idea at sentence end (BONUS-04)
-- Show consequences of the journey
+CONCLUSION REQUIREMENTS (BONUS-02/BONUS-04 ENFORCEMENT):
+- End with emotional reflection or haunting unresolved question
+- NO cliché phrases like "stay curious," "stay brave," "that's all for today"
+- Create original, deeper reflection that ties to the transformation arc
+- Use strong sentence endings with key insights
 
-APPLY: Provide closure while maintaining engagement, summarize key takeaways.
+CONCLUSION FAILURES:
+❌ "Stay curious, stay brave" (cliché)
+❌ "That's all for today" (generic)
+❌ "Thanks for watching" (CTA, not reflection)
+❌ "Until next time" (channel trailer style)
+
+CONCLUSION SUCCESS EXAMPLES:
+✅ "The question is: if this happened to them, what else don't we know?"
+✅ "But the real mystery isn't what happened - it's why we're still talking about it today."
+✅ "Sarah never found out who sent that message. And maybe that's the point."
+✅ "The system still runs today, but nobody talks about what happened that night."
+
+CONCLUSION VALIDATION CHECKLIST:
+□ Ends with emotional reflection or haunting unresolved question
+□ No cliché phrases or CTAs
+□ Ties back to the transformation arc
+□ Creates original, deeper insight
 """,
             SectionType.TRANSITION: """
-TRANSITION STRATEGIES:
-- Link beats with causal connectors (P03)
-- Vary sentence length for flow (P04)
-- Plant open loops for next section (P12)
-- Remove unnecessary words (P13)
+TRANSITION STRATEGIES (P03, P04, P12, P13):
+- P03: Link beats with causal connectors ("therefore," "but," "because")
+- P04: Vary sentence length for flow and rhythm
+- P12: Plant open loops for next section with specific questions
+- P13: Remove unnecessary words, keep concise
 
-APPLY: Create smooth bridges between sections, maintain momentum.
+TRANSITION EXAMPLES:
+✅ "But this discovery led to something even more disturbing..."
+✅ "However, what happened next would change everything they thought they knew."
+✅ "The question is: why did this happen? And more importantly, what happens next?"
+
+❌ "Now let's move on to..." (generic transition)
+❌ "In the next part..." (boring setup)
+❌ "Speaking of which..." (weak connection)
 """
         }
         
@@ -468,3 +528,163 @@ TRANSITION SPECIFIC:
             formatted_sections.append(formatted_section)
         
         return formatted_sections
+    
+    def validate_section_quality(self, section_content: str, section_type: SectionType) -> Tuple[bool, List[str]]:
+        """
+        Validate section content against storytelling requirements
+        Returns (is_valid, error_messages)
+        """
+        errors = []
+        
+        if section_type == SectionType.HOOK_INTRO:
+            # Check for S1 compliance - action verb start
+            if not self._has_action_verb_start(section_content):
+                errors.append("Hook must start with action verb (S1) - avoid 'Imagine,' 'Picture,' 'Let me'")
+            
+            # Check for S2 compliance - specific open loops
+            if not self._has_specific_open_loops(section_content):
+                errors.append("Hook must create 2-3 specific open loops with concrete questions (S2)")
+            
+            # Check for S7 compliance - no CTAs
+            if self._has_channel_ctas(section_content):
+                errors.append("Hook must NOT include channel trailers or CTAs (S7)")
+        
+        # Check for P02 compliance - concrete sensory details (less strict for conclusions)
+        if section_type != SectionType.CONCLUSION and not self._has_concrete_sensory_details(section_content):
+            errors.append("Section must include concrete sensory details (P02) - avoid generic adjectives")
+        
+        # Check for P01 compliance - transformation arc
+        if section_type == SectionType.MAIN_CONTENT and not self._has_transformation_arc(section_content):
+            errors.append("Main content must show transformation/change (P01) - not just setup + mystery")
+        
+        # Check for P09/P10 compliance - natural voice
+        if self._has_overdramatic_phrasing(section_content):
+            errors.append("Content must use natural, spoken English (P09/P10) - avoid overdramatic phrasing")
+        
+        # Check for P12 compliance - specific curiosity threads
+        if section_type in [SectionType.MAIN_CONTENT, SectionType.TRANSITION] and not self._has_specific_curiosity_threads(section_content):
+            errors.append("Section must plant specific curiosity threads (P12) - avoid vague 'stay tuned'")
+        
+        # Check for BONUS-02/BONUS-04 compliance - strong conclusions
+        if section_type == SectionType.CONCLUSION:
+            if self._has_cliche_conclusion(section_content):
+                errors.append("Conclusion must avoid clichés like 'stay curious' (BONUS-02/BONUS-04)")
+            if not self._has_emotional_reflection(section_content):
+                errors.append("Conclusion must end with emotional reflection or haunting unresolved question")
+        
+        return len(errors) == 0, errors
+    
+    def _has_action_verb_start(self, content: str) -> bool:
+        """Check if content starts with action verb (S1 compliance)"""
+        first_sentence = content.split('.')[0].strip()
+        weak_starters = ['imagine', 'picture', 'let me', 'in today', 'welcome', 'hi', 'hello']
+        return not any(first_sentence.lower().startswith(starter) for starter in weak_starters)
+    
+    def _has_specific_open_loops(self, content: str) -> bool:
+        """Check if content creates specific open loops (S2 compliance)"""
+        question_indicators = ['?', 'what', 'why', 'how', 'when', 'where', 'who']
+        return any(indicator in content.lower() for indicator in question_indicators)
+    
+    def _has_channel_ctas(self, content: str) -> bool:
+        """Check if content contains channel CTAs (S7 compliance)"""
+        cta_phrases = ['subscribe', 'like', 'follow', 'channel', 'thanks for watching', 'hit the bell']
+        return any(phrase in content.lower() for phrase in cta_phrases)
+    
+    def _has_concrete_sensory_details(self, content: str) -> bool:
+        """Check if content has concrete sensory details (P02 compliance)"""
+        # Look for specific sensory words and concrete descriptions
+        sensory_words = ['smell', 'sound', 'taste', 'feel', 'touch', 'saw', 'heard', 'felt', 'smelled', 'tasted', 
+                        'buzzed', 'shattered', 'hummed', 'vibration', 'ozone', 'metallic', 'cold', 'bit', 
+                        'dripping', 'echoed', 'pulsed', 'heartbeat', 'burned', 'ticked', 'clicked']
+        generic_adjectives = ['creepy', 'mysterious', 'haunting', 'eerie', 'strange', 'weird', 'shadowy', 'dark']
+        
+        # Count sensory words
+        sensory_count = sum(1 for word in sensory_words if word in content.lower())
+        has_generic = any(adj in content.lower() for adj in generic_adjectives)
+        
+        # Require at least 2 sensory words and no generic adjectives
+        return sensory_count >= 2 and not has_generic
+    
+    def _has_transformation_arc(self, content: str) -> bool:
+        """Check if content shows transformation/change (P01 compliance)"""
+        change_indicators = ['changed', 'transformed', 'became', 'realized', 'discovered', 'learned', 'understood', 'shifted', 'evolved']
+        return any(indicator in content.lower() for indicator in change_indicators)
+    
+    def _has_overdramatic_phrasing(self, content: str) -> bool:
+        """Check if content uses overdramatic phrasing (P09/P10 compliance)"""
+        overdramatic_phrases = [
+            'shadowy silhouettes', 'haunting mysteries', 'questions that linger', 'mysterious depths',
+            'dark secrets', 'ancient wisdom', 'profound implications', 'eternal mysteries'
+        ]
+        return any(phrase in content.lower() for phrase in overdramatic_phrases)
+    
+    def _has_specific_curiosity_threads(self, content: str) -> bool:
+        """Check if content has specific curiosity threads (P12 compliance)"""
+        vague_transitions = ['stay tuned', 'more to come', 'that\'s not all', 'if you think that\'s']
+        specific_questions = ['what', 'why', 'how', 'when', 'where', 'who']
+        
+        has_vague = any(phrase in content.lower() for phrase in vague_transitions)
+        has_specific = any(question in content.lower() for question in specific_questions)
+        
+        return has_specific and not has_vague
+    
+    def _has_cliche_conclusion(self, content: str) -> bool:
+        """Check if conclusion uses clichés (BONUS-02/BONUS-04 compliance)"""
+        cliche_phrases = [
+            'stay curious', 'stay brave', 'that\'s all for today', 'thanks for watching',
+            'until next time', 'see you next time', 'keep exploring', 'keep learning'
+        ]
+        return any(phrase in content.lower() for phrase in cliche_phrases)
+    
+    def _has_emotional_reflection(self, content: str) -> bool:
+        """Check if conclusion has emotional reflection or haunting question"""
+        reflection_indicators = ['the question is', 'the real mystery', 'but maybe that\'s', 'what we don\'t know', 'nobody talks about']
+        return any(indicator in content.lower() for indicator in reflection_indicators)
+    
+    def get_improvement_guidance(self, errors: List[str]) -> str:
+        """Generate specific improvement guidance based on validation errors"""
+        guidance_map = {
+            "Hook must start with action verb (S1)": """
+- Replace weak starters like "Imagine this..." with action: "Sarah's phone buzzed..."
+- Use specific verbs: buzzed, shattered, discovered, crashed, exploded
+- Start mid-action or mid-crisis, not with setup""",
+            
+            "Hook must create 2-3 specific open loops with concrete questions (S2)": """
+- Add specific questions: "Why did this happen at 11:47 PM exactly?"
+- Create concrete mysteries: "What was in that encrypted file?"
+- Avoid vague suspense - be specific about what's unknown""",
+            
+            "Section must include concrete sensory details (P02)": """
+- Add specific sensory details: "the smell of ozone," "metallic hum," "cold air bit"
+- Replace generic adjectives: "creepy" → "smelled of mildew and metal"
+- Use concrete, filmable details that create immersion""",
+            
+            "Main content must show transformation/change (P01)": """
+- Show change: Before → Conflict → After
+- Include emotional progression, not just setup + mystery
+- Add realizations, discoveries, or character development""",
+            
+            "Content must use natural, spoken English (P09/P10)": """
+- Write like talking to a friend: "So here's what happened..."
+- Avoid overdramatic phrasing: "shadowy silhouettes" → "dark shapes"
+- Use simple, conversational language""",
+            
+            "Section must plant specific curiosity threads (P12)": """
+- Add specific questions: "But why did the system fail exactly then?"
+- Create concrete mysteries to be resolved later
+- Avoid vague transitions like "stay tuned" or "more to come""",
+            
+            "Conclusion must avoid clichés like 'stay curious' (BONUS-02/BONUS-04)": """
+- End with emotional reflection: "The question is: what else don't we know?"
+- Create original insights tied to the transformation arc
+- Use haunting unresolved questions instead of generic endings"""
+        }
+        
+        guidance_parts = []
+        for error in errors:
+            for key, guidance in guidance_map.items():
+                if key in error:
+                    guidance_parts.append(guidance)
+                    break
+        
+        return "\n\n".join(guidance_parts) if guidance_parts else "Apply general storytelling principles from the manual."
