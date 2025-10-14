@@ -139,8 +139,11 @@ def script_generator_config(request):
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 @permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
 def generate_script_outline(request):
+    logger.info(f"[OUTLINE_GENERATION] Starting outline generation for user: {request.user.id}")
+    
     serializer = GenerateOutlineRequestSerializer(data=request.data)
     if not serializer.is_valid():
+        logger.warning(f"[OUTLINE_GENERATION] Validation failed for user {request.user.id}: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     validated_data = serializer.validated_data
@@ -152,22 +155,30 @@ def generate_script_outline(request):
     min_length = validated_data.get("min_length", 100)
     max_length = validated_data.get("max_length", 1000)
     title = validated_data.get("title", "")
+    
+    logger.info(f"[OUTLINE_GENERATION] Parameters - User: {request.user.id}, Description length: {len(description)}, "
+                f"Tone IDs: {tone_ids}, Template style: {template_style_id}, Length: {min_length}-{max_length}, "
+                f"Has image: {bool(image)}, Has image URL: {bool(image_url)}, Has title: {bool(title)}")
 
     if image or image_url:
+        logger.info(f"[OUTLINE_GENERATION] Starting image analysis for user {request.user.id}")
         try:
             if image:
                 if hasattr(image, "read") and hasattr(image, "seek"):
+                    logger.debug(f"[OUTLINE_GENERATION] Analyzing uploaded image file for user {request.user.id}")
                     image_title, image_description = (
                         OpenAIScriptService.analyze_image_with_assistant(
                             image_file=image, user=request.user
                         )
                     )
                 else:
+                    logger.error(f"[OUTLINE_GENERATION] Invalid image file provided by user {request.user.id}")
                     return Response(
                         {"error": "Invalid image file."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
             else:
+                logger.debug(f"[OUTLINE_GENERATION] Analyzing image URL for user {request.user.id}: {image_url}")
                 image_title, image_description = (
                     OpenAIScriptService.analyze_image_with_assistant(
                         image_url=image_url, user=request.user
@@ -176,9 +187,11 @@ def generate_script_outline(request):
 
             title = image_title
             description = image_description
+            logger.info(f"[OUTLINE_GENERATION] Image analysis completed for user {request.user.id} - "
+                       f"Generated title: '{title[:50]}...', Description length: {len(description)}")
 
         except Exception as e:
-            logger.error(f"Image analysis failed: {str(e)}")
+            logger.error(f"[OUTLINE_GENERATION] Image analysis failed for user {request.user.id}: {str(e)}", exc_info=True)
             return Response(
                 {"error": "Failed to analyze the provided image."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -186,13 +199,16 @@ def generate_script_outline(request):
 
     try:
         # Handle optional tones - if no tones provided, use default "Informative" tone
+        logger.debug(f"[OUTLINE_GENERATION] Processing tones for user {request.user.id}")
         if tone_ids:
             tones = Tone.objects.filter(id__in=tone_ids)
             if len(tones) != len(tone_ids):
+                logger.error(f"[OUTLINE_GENERATION] Invalid tone IDs provided by user {request.user.id}: {tone_ids}")
                 return Response(
                     {"error": "One or more invalid tone IDs provided"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            logger.info(f"[OUTLINE_GENERATION] Using {len(tones)} tones for user {request.user.id}: {[tone.name for tone in tones]}")
         else:
             # Use default "Informative" tone if no tones provided
             default_tone = Tone.objects.filter(name__iexact="Informative").first()
@@ -200,21 +216,26 @@ def generate_script_outline(request):
                 # If "Informative" doesn't exist, get the first available tone
                 default_tone = Tone.objects.first()
                 if not default_tone:
+                    logger.error(f"[OUTLINE_GENERATION] No tones available in the system for user {request.user.id}")
                     return Response(
                         {"error": "No tones available in the system"},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
             tones = [default_tone]
+            logger.info(f"[OUTLINE_GENERATION] Using default tone '{default_tone.name}' for user {request.user.id}")
 
         template_style = None
         if template_style_id:
+            logger.debug(f"[OUTLINE_GENERATION] Processing template style {template_style_id} for user {request.user.id}")
             template_style = TemplateStyle.objects.get(id=template_style_id)
             # Use template style word ranges when template is selected
             min_length = template_style.min_length
             max_length = template_style.max_length
+            logger.info(f"[OUTLINE_GENERATION] Template style '{template_style.name}' applied - Length range: {min_length}-{max_length}")
 
         # Extract tone names for title generation
         outline_tones = [tone.name for tone in tones]
+        logger.debug(f"[OUTLINE_GENERATION] Final tone names for user {request.user.id}: {outline_tones}")
 
         script_data = {
             "description": description,
@@ -223,54 +244,85 @@ def generate_script_outline(request):
             "min_length": min_length,
             "max_length": max_length,
         }
+        
+        logger.info(f"[OUTLINE_GENERATION] Prepared script data for user {request.user.id}: "
+                   f"Description length: {len(description)}, Tones: {outline_tones}, "
+                   f"Template: {template_style.name if template_style else 'medium'}, "
+                   f"Length range: {min_length}-{max_length}")
 
         # Use assistant for outline generation with knowledge base
+        logger.info(f"[OUTLINE_GENERATION] Starting OpenAI outline generation for user {request.user.id}")
         outline_text, outline_data, metadata = (
             OpenAIScriptService.generate_outline_with_assistant(
                 script_data, user=request.user
             )
         )
+        logger.info(f"[OUTLINE_GENERATION] OpenAI outline generation completed for user {request.user.id} - "
+                   f"Tokens used: {metadata.get('tokens_used', 0)}, Generation time: {metadata.get('generation_time', 0):.2f}s, "
+                   f"Model: {metadata.get('model', 'unknown')}")
 
-        # Extract actual outline data from JSON response
+        # Parse JSON response - OpenAI should always return valid JSON
         import json
         import re
 
+        logger.debug(f"[OUTLINE_GENERATION] Processing outline response for user {request.user.id}")
+        
+        # Check for empty response first
+        if not outline_text or not outline_text.strip():
+            logger.error(f"[OUTLINE_GENERATION] OpenAI returned empty response for user {request.user.id}")
+            raise ValueError("OpenAI returned empty response - this indicates an API error or rate limiting")
+        
         try:
+            # Parse JSON directly - API enforces JSON format
+            logger.debug(f"[OUTLINE_GENERATION] Parsing JSON response length: {len(outline_text)}")
+            
             outline_json_data = json.loads(outline_text)
-            if isinstance(outline_json_data, dict) and "sections" in outline_json_data:
-                # Extract structured data from JSON response
-                actual_outline_data = {
-                    "sections": outline_json_data.get("sections", []),
-                    "section_order": outline_json_data.get("section_order", []),
-                    "outline_text": outline_json_data.get("outline_text", ""),
-                }
-                # Use the structured outline_text from JSON, not the raw JSON
-                actual_outline_text = outline_json_data.get(
-                    "outline_text", outline_text
-                )
+            if not isinstance(outline_json_data, dict) or "sections" not in outline_json_data:
+                raise ValueError("Invalid JSON structure: missing 'sections' field")
+            
+            # Extract structured data from JSON response
+            actual_outline_data = {
+                "sections": outline_json_data.get("sections", []),
+                "section_order": outline_json_data.get("section_order", []),
+            }
+            
+            # Reconstruct outline text from sections to avoid redundancy
+            sections = actual_outline_data.get("sections", [])
+            if not sections:
+                raise ValueError("Invalid JSON structure: missing 'sections' field")
+            
+            # Build outline text from sections
+            outline_parts = []
+            for section in sections:
+                title = section.get("title", "")
+                description = section.get("description", "")
+                if title and description:
+                    outline_parts.append(f"{title} - {description}")
+            
+            actual_outline_text = "\n\n".join(outline_parts)
 
-                # Clean up any document references
-                actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
-                actual_outline_text = re.sub(
-                    r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text
-                )
-                actual_outline_text = re.sub(
-                    r"\n\s*\n\s*\n", "\n\n", actual_outline_text
-                )
-                actual_outline_text = actual_outline_text.strip()
-            else:
-                # Fallback to original data
-                actual_outline_data = outline_data or {}
-                actual_outline_text = outline_text
-        except (json.JSONDecodeError, TypeError):
-            # Fallback to original data
-            actual_outline_data = outline_data or {}
-            actual_outline_text = outline_text
+            # Clean up any document references
+            actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
+            actual_outline_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text)
+            actual_outline_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_outline_text)
+            actual_outline_text = actual_outline_text.strip()
+            
+            logger.info(f"[OUTLINE_GENERATION] Parsed JSON outline for user {request.user.id} - "
+                       f"Sections: {len(actual_outline_data.get('sections', []))}, "
+                       f"Outline text length: {len(actual_outline_text)}")
+                       
+        except (json.JSONDecodeError, TypeError, ValueError) as e:
+            logger.error(f"[OUTLINE_GENERATION] JSON parsing failed for user {request.user.id}: {str(e)}")
+            logger.error(f"[OUTLINE_GENERATION] Raw response length: {len(outline_text)}")
+            logger.error(f"[OUTLINE_GENERATION] Raw response (first 500 chars): {outline_text[:500]}...")
+            raise ValueError(f"OpenAI returned invalid JSON response: {str(e)}")
 
         # Generate title using assistant if not provided
         if title:
             outline_title = title
+            logger.debug(f"[OUTLINE_GENERATION] Using provided title for user {request.user.id}: '{title}'")
         else:
+            logger.info(f"[OUTLINE_GENERATION] Generating title for user {request.user.id}")
             try:
                 # Use the title generation assistant to create an engaging title
                 generated_titles, title_metadata = OpenAIScriptService.generate_titles(
@@ -282,10 +334,13 @@ def generate_script_outline(request):
                     outline_title = generated_titles[0].get(
                         "title", f"Outline: {description[:50]}"
                     )
+                    logger.info(f"[OUTLINE_GENERATION] Generated title for user {request.user.id}: '{outline_title}' "
+                               f"(tokens: {title_metadata.get('tokens_used', 0)})")
                 else:
                     outline_title = f"Outline: {description[:50]}"
+                    logger.warning(f"[OUTLINE_GENERATION] Title generation returned empty results for user {request.user.id}")
             except Exception as e:
-                logger.warning(f"Title generation failed: {str(e)}, using fallback")
+                logger.warning(f"[OUTLINE_GENERATION] Title generation failed for user {request.user.id}: {str(e)}, using fallback")
                 outline_title = f"Outline: {description[:50]}"
         # Save the template parameters in outline_data for later use
         outline_data_with_params = (
@@ -304,6 +359,7 @@ def generate_script_outline(request):
             actual_outline_data.get("section_order", []) if actual_outline_data else []
         )
 
+        logger.info(f"[OUTLINE_GENERATION] Creating ScriptOutline object for user {request.user.id}")
         outline = ScriptOutline.objects.create(
             user=request.user,
             title=outline_title,
@@ -317,8 +373,14 @@ def generate_script_outline(request):
             generation_time=metadata["generation_time"],
         )
         outline.tones.set(tones)
+        
+        logger.info(f"[OUTLINE_GENERATION] Outline created successfully for user {request.user.id} - "
+                   f"Outline ID: {outline.uuid}, Title: '{outline.title}', "
+                   f"Total tokens: {metadata.get('tokens_used', 0)}, "
+                   f"Generation time: {metadata.get('generation_time', 0):.2f}s")
 
         serializer = ScriptOutlineSerializer(outline)
+        logger.info(f"[OUTLINE_GENERATION] Outline generation completed successfully for user {request.user.id}")
         return Response(
             {
                 "outline": serializer.data,
@@ -328,12 +390,13 @@ def generate_script_outline(request):
         )
 
     except TemplateStyle.DoesNotExist:
+        logger.error(f"[OUTLINE_GENERATION] Invalid template style {template_style_id} for user {request.user.id}")
         return Response(
             {"error": "Invalid template style selected"},
             status=status.HTTP_400_BAD_REQUEST,
         )
     except Exception as e:
-        logger.error(f"Outline generation failed: {str(e)}")
+        logger.error(f"[OUTLINE_GENERATION] Outline generation failed for user {request.user.id}: {str(e)}", exc_info=True)
         return Response(
             {"error": "Failed to generate outline."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -644,27 +707,35 @@ def generate_full_script(request, uuid):
     """
     Generate full script from outline
     """
+    logger.info(f"[SCRIPT_GENERATION] Starting script generation for user: {request.user.id}, outline: {uuid}")
     outline = get_object_or_404(ScriptOutline, uuid=uuid, user=request.user)
+    logger.info(f"[SCRIPT_GENERATION] Found outline '{outline.title}' for user {request.user.id}")
 
     try:
         # Get tones from the outline (already stored)
         outline_tones = [tone.name for tone in outline.tones.all()]
         if not outline_tones:
             outline_tones = ["Informative"]
+        logger.info(f"[SCRIPT_GENERATION] Using tones for user {request.user.id}: {outline_tones}")
 
         # Read template style and word ranges from outline_data (stored during generation)
         template_style_name = outline.outline_data.get("template_style", "medium")
         min_length = outline.outline_data.get("min_length", 1000)
         max_length = outline.outline_data.get("max_length", 5000)
+        logger.info(f"[SCRIPT_GENERATION] Template parameters from outline for user {request.user.id}: "
+                   f"style='{template_style_name}', length={min_length}-{max_length}")
 
         # Optional: Allow request data to override (for flexibility)
         if request.data.get("template_style_id"):
+            logger.debug(f"[SCRIPT_GENERATION] Overriding template style for user {request.user.id}: {request.data['template_style_id']}")
             template_style = TemplateStyle.objects.get(
                 id=request.data["template_style_id"]
             )
             min_length = template_style.min_length
             max_length = template_style.max_length
             template_style_name = template_style.name
+            logger.info(f"[SCRIPT_GENERATION] Template style overridden for user {request.user.id}: "
+                       f"'{template_style_name}', length={min_length}-{max_length}")
 
         script_data = {
             "tones": outline_tones,
@@ -672,10 +743,12 @@ def generate_full_script(request, uuid):
             "min_length": min_length,
             "max_length": max_length,
         }
+        logger.info(f"[SCRIPT_GENERATION] Prepared script data for user {request.user.id}: {script_data}")
 
         # Prepare structured outline data for script generation
         import json
 
+        logger.debug(f"[SCRIPT_GENERATION] Preparing outline data for user {request.user.id}")
         if outline.outline_data and outline.outline_data.get("sections"):
             # Use structured outline data with section_order
             structured_outline = {
@@ -684,84 +757,66 @@ def generate_full_script(request, uuid):
                 "outline_text": outline.outline_text,
             }
             outline_for_script = json.dumps(structured_outline)
+            logger.info(f"[SCRIPT_GENERATION] Using structured outline for user {request.user.id} - "
+                       f"Sections: {len(outline.outline_data.get('sections', []))}, "
+                       f"Outline text length: {len(outline.outline_text)}")
         else:
             # Fallback to plain text
             outline_for_script = outline.outline_text
+            logger.info(f"[SCRIPT_GENERATION] Using plain text outline for user {request.user.id} - "
+                       f"Length: {len(outline_for_script)}")
 
-        # Generate full script using assistant with knowledge base
-        script_content, sections, metadata = (
-            OpenAIScriptService.generate_full_script_with_assistant(
+        # Generate full script using new word count strategy
+        logger.info(f"[SCRIPT_GENERATION] Starting section-based script generation for user {request.user.id}")
+        script_response = (
+            OpenAIScriptService.generate_script_with_word_count_strategy(
                 outline_for_script, script_data, user=request.user
             )
         )
+        
+        # Extract components from JSON response
+        script_content = script_response["full_text"]
+        sections = script_response["sections"]
+        metadata = script_response["metadata"]
+        logger.info(f"[SCRIPT_GENERATION] OpenAI script generation completed for user {request.user.id} - "
+                   f"Tokens used: {metadata.get('tokens_used', 0)}, Generation time: {metadata.get('generation_time', 0):.2f}s, "
+                   f"Model: {metadata.get('model', 'unknown')}")
 
-        # Extract actual script text from JSON response
-        import json
+        # Process script response - new word count strategy returns plain text
         import re
 
-        try:
-            script_data = json.loads(script_content)
-            if isinstance(script_data, dict) and "full_text" in script_data:
-                actual_script_text = script_data["full_text"]
+        logger.debug(f"[SCRIPT_GENERATION] Processing script response for user {request.user.id}")
+        
+        # Check for empty response first
+        if not script_content or not script_content.strip():
+            logger.error(f"[SCRIPT_GENERATION] OpenAI returned empty response for user {request.user.id}")
+            raise ValueError("OpenAI returned empty response - this indicates an API error or rate limiting")
+        
+        # The new word count strategy returns plain text content directly
+        actual_script_text = script_content
+        logger.info(f"[SCRIPT_GENERATION] Using plain text script for user {request.user.id} - "
+                   f"Script text length: {len(actual_script_text)}")
 
-                # Validate section order matches outline using section_order array
-                if "sections" in script_data and outline.outline_data:
-                    outline_sections = outline.outline_data.get("sections", [])
-                    section_order = outline.outline_data.get("section_order", [])
-                    script_sections = script_data.get("sections", [])
-
-                    # Check if section order matches outline order
-                    if len(script_sections) == len(outline_sections):
-                        # Use section_order array if available, otherwise use sequential order
-                        if section_order and len(section_order) == len(
-                            outline_sections
-                        ):
-                            # Validate using section_order array
-                            for i, order_index in enumerate(section_order):
-                                if order_index < len(outline_sections) and i < len(
-                                    script_sections
-                                ):
-                                    outline_sec = outline_sections[order_index]
-                                    script_sec = script_sections[i]
-                                    if outline_sec.get("title") != script_sec.get(
-                                        "title"
-                                    ):
-                                        logger.warning(
-                                            f"Section order mismatch at position {i} (section_order[{i}]={order_index}): outline='{outline_sec.get('title')}' vs script='{script_sec.get('title')}'"
-                                        )
-                        else:
-                            # Fallback to sequential validation
-                            for i, (outline_sec, script_sec) in enumerate(
-                                zip(outline_sections, script_sections)
-                            ):
-                                if outline_sec.get("title") != script_sec.get("title"):
-                                    logger.warning(
-                                        f"Section order mismatch at index {i}: outline='{outline_sec.get('title')}' vs script='{script_sec.get('title')}'"
-                                    )
-                    else:
-                        logger.warning(
-                            f"Section count mismatch: outline has {len(outline_sections)}, script has {len(script_sections)}"
-                        )
-            else:
-                actual_script_text = script_content
-        except (json.JSONDecodeError, TypeError):
-            actual_script_text = script_content
+        # Note: Section order validation is handled within the word count strategy method
+        # The sections list is already provided by the strategy method
 
         # Clean up any document references that might have slipped through
         # Remove patterns like ■3:11†YOUTUBE STORYTELLING STRATEGY■
+        logger.debug(f"[SCRIPT_GENERATION] Cleaning script text for user {request.user.id}")
         actual_script_text = re.sub(r"■[^■]*?■", "", actual_script_text)
         actual_script_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_script_text)
         # Clean up any extra whitespace
         actual_script_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_script_text)
         actual_script_text = actual_script_text.strip()
+        logger.info(f"[SCRIPT_GENERATION] Final script text length for user {request.user.id}: {len(actual_script_text)}")
 
         # Create FullScript
+        logger.info(f"[SCRIPT_GENERATION] Creating FullScript object for user {request.user.id}")
+        script_title = request.data.get("title", outline.title)
         full_script = FullScript.objects.create(
             user=request.user,
             outline=outline,
-            title=request.data.get(
-                "title", outline.title
-            ),  # Use the outline title directly
+            title=script_title,  # Use the outline title directly
             content=actual_script_text,
             sections=sections,
             status="generated",
@@ -773,8 +828,16 @@ def generate_full_script(request, uuid):
         # Update outline status
         outline.status = "saved"
         outline.save()
+        logger.info(f"[SCRIPT_GENERATION] Updated outline status to 'saved' for user {request.user.id}")
+
+        logger.info(f"[SCRIPT_GENERATION] Script created successfully for user {request.user.id} - "
+                   f"Script ID: {full_script.uuid}, Title: '{script_title}', "
+                   f"Content length: {len(actual_script_text)}, "
+                   f"Total tokens: {metadata.get('tokens_used', 0)}, "
+                   f"Generation time: {metadata.get('generation_time', 0):.2f}s")
 
         serializer = FullScriptSerializer(full_script)
+        logger.info(f"[SCRIPT_GENERATION] Script generation completed successfully for user {request.user.id}")
         return Response(
             {
                 "script": serializer.data,
@@ -784,7 +847,7 @@ def generate_full_script(request, uuid):
         )
 
     except Exception as e:
-        logger.error(f"Script generation failed: {str(e)}")
+        logger.error(f"[SCRIPT_GENERATION] Script generation failed for user {request.user.id}: {str(e)}", exc_info=True)
         return Response(
             {"error": "Failed to generate script. Please try again."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1245,6 +1308,57 @@ def update_script_status(request, script_uuid):
         return Response(response_serializer.data)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    summary="Test word count strategy",
+    description="Test the new word count completion strategy with different template styles",
+    responses={
+        200: OpenApiResponse(description="Word count strategy test results"),
+    },
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
+def test_word_count_strategy(request):
+    """
+    Test endpoint for the new word count strategy
+    """
+    from scripts.services.word_count_strategy import WordCountStrategy
+    
+    template_style = request.GET.get("template", "medium")
+    
+    try:
+        strategy = WordCountStrategy(template_style)
+        targets = strategy.calculate_section_word_targets()
+        
+        # Test different section counts
+        test_results = {
+            "template_style": template_style,
+            "default_targets": targets,
+            "custom_sections_test": {}
+        }
+        
+        # Test with different section counts
+        for sections in [4, 6, 8]:
+            custom_targets = strategy.calculate_section_word_targets(sections)
+            test_results["custom_sections_test"][sections] = {
+                "total_target": custom_targets["total_target"],
+                "intro_words": custom_targets["intro"],
+                "main_words": custom_targets["main_sections"],
+                "conclusion_words": custom_targets["conclusion"]
+            }
+        
+        return Response({
+            "message": "Word count strategy test completed successfully",
+            "results": test_results
+        })
+        
+    except Exception as e:
+        logger.error(f"Word count strategy test failed: {str(e)}")
+        return Response(
+            {"error": f"Test failed: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 @extend_schema(

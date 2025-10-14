@@ -20,6 +20,8 @@ urlpatterns = [
     ),
     # Title generation endpoints
     path("titles/", include("scripts.titles.urls")),
+    # Test endpoint for word count strategy
+    path("test/word-count-strategy/", views.test_word_count_strategy, name="test-word-count-strategy"),
     # Unified listing API (replaces separate outline and script lists)
     path("generations/", views.GenerationsList.as_view(), name="generations-list"),
     # Individual CRUD (kept for backward compatibility)
