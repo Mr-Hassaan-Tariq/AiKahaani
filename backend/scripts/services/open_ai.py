@@ -9,6 +9,9 @@ from typing import Any, Dict, List, Tuple, Optional
 import openai
 from django.conf import settings
 
+# Import the storytelling manual
+from .prompt import prompt as storytelling_manual
+
 logger = logging.getLogger(__name__)
 
 # Lazy client initialization to avoid import-time errors in tests
@@ -22,6 +25,72 @@ def get_openai_client():
     if _client is None:
         _client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
     return _client
+
+
+def format_storytelling_manual_for_prompt() -> str:
+    """
+    Format the storytelling manual content for inclusion in AI prompts.
+    Returns a condensed but comprehensive version of the manual.
+    """
+    manual_text = []
+    
+    # Add the opening strategies section
+    manual_text.append("=== 7 STRATEGIES FOR BETTER OPENINGS ===")
+    for item in storytelling_manual[:7]:  # First 7 items are opening strategies
+        manual_text.append(f"\n{item['id']}: {item['principle_rule']}")
+        manual_text.append(f"Explanation: {item['explanation']}")
+        if 'framework_formula' in item:
+            manual_text.append("Framework:")
+            for step in item['framework_formula']:
+                manual_text.append(f"• {step}")
+        if 'case_study_example' in item:
+            manual_text.append(f"Example: {item['case_study_example']}")
+    
+    # Add case studies
+    manual_text.append("\n\n=== CASE STUDIES ===")
+    for item in storytelling_manual[7:9]:  # Case studies
+        manual_text.append(f"\n{item['id']}: {item['principle_rule']}")
+        manual_text.append(f"Explanation: {item['explanation']}")
+        if 'framework_formula' in item:
+            manual_text.append("Framework:")
+            for step in item['framework_formula']:
+                manual_text.append(f"• {step}")
+    
+    # Add key principles (condensed)
+    manual_text.append("\n\n=== CORE STORYTELLING PRINCIPLES ===")
+    key_principles = [
+        "P01: Transformation (Beginning–Middle–End): Show transformation by contrasting ending with beginning",
+        "P02: Worldbuilding with Specific, Sensory Detail: Use concrete, sensory details to make scenes felt",
+        "P03: Causality: Link beats with 'therefore,' 'but,' or 'because,' not 'and then'",
+        "P04: Rhythm: Vary sentence and word length to control pace and flow",
+        "P05: Emotion: Make the audience feel what the character felt",
+        "P06: Make the Audience Care Before Big Events: Build attachment before delivering major highs or lows",
+        "P07: Simplify: Remove tangents and confusing details",
+        "P11: Tension, Conflict, and Stakes: Define goal, obstacle, and consequences",
+        "P12: Curiosity: Plant open loops and manage multiple curiosity threads",
+        "P15: Show, Don't Tell: Demonstrate traits through actions and concrete images",
+        "P17: Write with the Visual in Mind: Every line should suggest footage or graphics"
+    ]
+    
+    for principle in key_principles:
+        manual_text.append(f"• {principle}")
+    
+    # Add implementation checklist
+    manual_text.append("\n\n=== IMPLEMENTATION CHECKLIST ===")
+    checklist_items = [
+        "Transformation arc explicit (A→B)",
+        "Causal connectors present between major beats",
+        "At least one clear stakes callback",
+        "Two vivid sensory details per key scene",
+        "Reading level ≈ high school; jargon removed",
+        "Chapter ends with a tease or unresolved thread",
+        "Visual cues/storyboard notes embedded"
+    ]
+    
+    for item in checklist_items:
+        manual_text.append(f"• {item}")
+    
+    return "\n".join(manual_text)
 
 
 def validate_json_schema(data: Dict[str, Any], schema_type: str = "auto") -> bool:
@@ -313,7 +382,7 @@ Make the title clickable and engaging for YouTube, and the description detailed 
         prompt: str, title_count: int = 6, tones: list = None, user=None, save_log: bool = True
     ) -> Tuple[list, Dict[str, Any]]:
         """
-        Generate YouTube titles using the OpenAI Assistant API (with vector store KB).
+        Generate YouTube titles using the OpenAI Chat Completions API.
         Based on TubeGenius Title Wizardry principles.
 
         Args:
@@ -330,45 +399,42 @@ Make the title clickable and engaging for YouTube, and the description detailed 
         try:
             client = get_openai_client()
 
-            # Create thread
-            thread = client.beta.threads.create()
-
             # Build the message content
             system_prompt = OpenAIScriptService._build_title_system_prompt()
             user_prompt = OpenAIScriptService._build_title_user_prompt(
                 prompt, title_count, tones
             )
 
-            # Add message to thread (system + user)
-            client.beta.threads.messages.create(
-                thread_id=thread.id,
-                role="user",
-                content=[
-                    {"type": "text", "text": system_prompt},
-                    {"type": "text", "text": user_prompt},
+            # Use Chat Completions API instead of Assistant API
+            response = client.chat.completions.create(
+                model=settings.OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
                 ],
-            )
-
-            # Run the assistant with explicit file_search requirement
-            # Force file_search to ensure knowledge base is used
-            run = client.beta.threads.runs.create(
-                thread_id=thread.id,
-                assistant_id=settings.OPENAI_ASSISTANT_ID_TITLES,
-                # Note: tool_choice forces the assistant to use file_search
-                # Remove this if you want the assistant to decide when to use it
-                # tool_choice={"type": "file_search"}  # Uncomment to force file search
+                max_tokens=2000,
+                temperature=0.7,
             )
             
-            logger.info(f"[TITLES] Started generation (run: {run.id[:8]}..., count: {title_count})")
+            logger.info(f"[TITLES] Generated {title_count} titles using Chat Completions API")
 
-            # Wait for completion
-            titles_content, tokens_used = (
-                OpenAIScriptService._wait_for_assistant_completion(
-                    client, thread.id, run.id
-                )
-            )
+            # Extract content and token usage with validation
+            if not response.choices or len(response.choices) == 0:
+                raise ValueError("OpenAI API returned no choices in response")
+            
+            choice = response.choices[0]
+            if not hasattr(choice, 'message') or not choice.message:
+                raise ValueError("OpenAI API returned invalid choice structure")
+                
+            titles_content = choice.message.content
+            if not titles_content:
+                raise ValueError("OpenAI API returned empty content - this may indicate rate limiting or API error")
+                
+            tokens_used = response.usage.total_tokens if response.usage else 0
 
             generation_time = time.time() - start_time
+            
+            logger.debug(f"[TITLES] OpenAI API response validated - content length: {len(titles_content)}, tokens: {tokens_used}")
 
             # Parse JSON titles
             titles = OpenAIScriptService._parse_generated_titles(titles_content)
@@ -376,21 +442,20 @@ Make the title clickable and engaging for YouTube, and the description detailed 
             # Calculate word count
             word_count = sum(len(t.get("title", "").split()) for t in titles)
 
-            # Extract file search info
-            file_search_used, file_search_snippets = OpenAIScriptService._extract_file_search_info(
-                client, thread.id, run.id
-            )
+            # Generate unique identifiers for logging
+            thread_id = f"chat_{int(time.time())}"
+            run_id = f"run_{int(time.time())}"
 
             metadata = {
                 "tokens_used": tokens_used,
                 "generation_time": generation_time,
-                "model": "gpt-4-assistant",
-                "assistant_id": settings.OPENAI_ASSISTANT_ID_TITLES,
-                "vector_store_id": settings.OPENAI_VECTOR_STORE_ID_TITLES,
-                "thread_id": thread.id,
-                "run_id": run.id,
+                "model": settings.OPENAI_MODEL,
+                "assistant_id": "chat-completions",
+                "vector_store_id": "none",
+                "thread_id": thread_id,
+                "run_id": run_id,
                 "title_count": len(titles),
-                "file_search_used": file_search_used,
+                "file_search_used": False,
                 "word_count": word_count,
             }
 
@@ -401,28 +466,52 @@ Make the title clickable and engaging for YouTube, and the description detailed 
             if save_log:
                 OpenAIScriptService._save_run_log(
                     user=user,
-                    thread_id=thread.id,
-                    run_id=run.id,
-                    assistant_id=settings.OPENAI_ASSISTANT_ID_TITLES,
+                    thread_id=thread_id,
+                    run_id=run_id,
+                    assistant_id="chat-completions",
                     tokens_used=tokens_used,
                     word_count=word_count,
-                    file_search_used=file_search_used,
-                    file_search_snippets=file_search_snippets,
+                    file_search_used=False,
+                    file_search_snippets=[],
                     run_type="title_generation",
                     generation_time=generation_time,
-                    model="gpt-4-assistant",
+                    model=settings.OPENAI_MODEL,
                 )
 
             return titles, metadata
 
         except Exception as e:
-            logger.error(f"Assistant title generation failed: {str(e)}")
+            logger.error(f"Chat completions title generation failed: {str(e)}")
             raise
+
+    @staticmethod
+    def _strip_markdown_json(text: str) -> str:
+        """
+        Strip markdown code blocks from JSON content
+        Handles ```json, ```, and other markdown formatting
+        """
+        if not text:
+            return text
+            
+        cleaned = text.strip()
+        
+        # Remove markdown code blocks
+        if cleaned.startswith('```json'):
+            cleaned = cleaned[7:]  # Remove ```json
+        elif cleaned.startswith('```'):
+            cleaned = cleaned[3:]   # Remove ```
+            
+        if cleaned.endswith('```'):
+            cleaned = cleaned[:-3]  # Remove trailing ```
+            
+        return cleaned.strip()
 
     @staticmethod
     def _build_title_system_prompt() -> str:
         """Build system prompt for title generation with metadata-enforced JSON output"""
-        return """You are an expert YouTube title writer trained on TubeGenius Title Wizardry principles.
+        storytelling_manual = format_storytelling_manual_for_prompt()
+        
+        return f"""You are an expert YouTube title writer trained on TubeGenius Title Wizardry principles.
 Your job is to generate clickable titles AND return them with metadata in JSON.
 
 KEY PRINCIPLES:
@@ -434,10 +523,15 @@ KEY PRINCIPLES:
 - Accessible mass-audience framing
 - Avoid safe/boring phrasing
 
+=== TUBEGENIUS STORYTELLING MANUAL ===
+{storytelling_manual}
+
+Use the opening strategies and storytelling principles to create titles that promise compelling content. Focus on creating curiosity, setting up transformation arcs, and using emotional triggers that align with the storytelling techniques.
+
 OUTPUT FORMAT:
 Return ONLY valid JSON array, no prose. Each item must include:
 
-{
+{{
   "title": "5 DISTURBING Stories You Were Never Meant To Hear",
   "levers": ["power_word","curiosity","superlative"],
   "emotion_target": "fear",
@@ -446,7 +540,7 @@ Return ONLY valid JSON array, no prose. Each item must include:
   "truncation_safe": true,
   "keyword_hint": "scary stories",
   "notes": "Open loop implied; no payoff revealed"
-}"""
+}}"""
 
     @staticmethod
     def _build_title_user_prompt(
@@ -651,7 +745,7 @@ Follow TubeGenius principles:
         save_log: bool = True,
     ) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
         """
-        Generate outline using OpenAI Assistant API with vector store knowledge base
+        Generate outline using OpenAI Chat Completions API
         
         Args:
             script_data: Dictionary containing script parameters
@@ -666,23 +760,11 @@ Follow TubeGenius principles:
             min_length = script_data.get("min_length", 1000)
             max_length = script_data.get("max_length", 5000)
 
-            # Create thread
-            thread = client.beta.threads.create()
+            # Build message content with enhanced prompts for Chat Completions
+            system_prompt = OpenAIScriptService._build_outline_system_prompt()
+            user_prompt = OpenAIScriptService._build_outline_user_prompt(script_data)
 
-            # Build message content (simplified - let assistant use its configured instructions)
-            message_content = OpenAIScriptService._build_assistant_outline_message(
-                script_data
-            )
-
-            # Add message to thread (vector store is already attached to the assistant)
-            client.beta.threads.messages.create(
-                thread_id=thread.id, role="user", content=message_content
-            )
-
-            # Run the assistant with additional length enforcement instructions
-            # Force file_search to ensure knowledge base is used
-            
-            # Calculate expected duration (assuming ~150 words per minute narration speed)
+            # Calculate expected duration and structure
             min_duration = min_length / 150
             max_duration = max_length / 150
             suggested_sections = max(3, min_length // 500)
@@ -690,7 +772,9 @@ Follow TubeGenius principles:
             words_per_section_min = min_length // suggested_sections
             words_per_section_max = max_length // suggested_sections
             
-            length_instructions = f"""
+            # Enhanced prompt with length enforcement
+            enhanced_prompt = f"""{user_prompt}
+
 🚨 OUTLINE FOR {min_length:,}-{max_length:,} WORD SCRIPT ({min_duration:.1f}-{max_duration:.1f} min video)
 
 STRUCTURE: {suggested_sections}-{max_sections} detailed sections (each supports {words_per_section_min:,}-{words_per_section_max:,}w script)
@@ -706,31 +790,39 @@ CRITICAL: Outline detail = script length
 • Sparse outline → short script (FAILS)
 • Rich outline (500-800w total) → proper script length
 
-VERIFY: Each section has 80-150w description + 5-8 detailed key points
-"""
-            
-            # Set reasonable max completion tokens for outline (typically 500-1000 words)
-            # Outlines are much shorter than scripts
-            max_outline_tokens = 3000  # Enough for detailed outline with JSON structure
-            
-            run = client.beta.threads.runs.create(
-                thread_id=thread.id,
-                assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
-                additional_instructions=length_instructions,
-                # tool_choice={"type": "file_search"},
-                max_completion_tokens=max_outline_tokens
-            )
-            
-            logger.info(f"[OUTLINE] Started generation (run: {run.id[:8]}..., max_tokens: {max_outline_tokens})")
+VERIFY: Each section has 80-150w description + 5-8 detailed key points"""
 
-            # Wait for completion
-            outline_text, tokens_used = (
-                OpenAIScriptService._wait_for_assistant_completion(
-                    client, thread.id, run.id
-                )
+            # Use Chat Completions API instead of Assistant API
+            response = client.chat.completions.create(
+                model=settings.OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": enhanced_prompt},
+                ],
+                max_tokens=3000,  # Enough for detailed outline with JSON structure
+                temperature=0.7,
+                response_format={"type": "json_object"},
             )
+            
+            logger.info(f"[OUTLINE] Generated outline using Chat Completions API")
+
+            # Extract content and token usage with validation
+            if not response.choices or len(response.choices) == 0:
+                raise ValueError("OpenAI API returned no choices in response")
+            
+            choice = response.choices[0]
+            if not hasattr(choice, 'message') or not choice.message:
+                raise ValueError("OpenAI API returned invalid choice structure")
+                
+            outline_text = choice.message.content
+            if not outline_text:
+                raise ValueError("OpenAI API returned empty content - this may indicate rate limiting or API error")
+                
+            tokens_used = response.usage.total_tokens if response.usage else 0
 
             generation_time = time.time() - start_time
+            
+            logger.debug(f"[OUTLINE] OpenAI API response validated - content length: {len(outline_text)}, tokens: {tokens_used}")
 
             # Parse outline structure
             outline_data = OpenAIScriptService._parse_outline_structure(outline_text)
@@ -738,20 +830,19 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points
             # Calculate word count
             word_count = len(outline_text.split())
 
-            # Extract file search info
-            file_search_used, file_search_snippets = OpenAIScriptService._extract_file_search_info(
-                client, thread.id, run.id
-            )
+            # Generate unique identifiers for logging
+            thread_id = f"chat_{int(time.time())}"
+            run_id = f"run_{int(time.time())}"
 
             metadata = {
                 "tokens_used": tokens_used,
                 "generation_time": generation_time,
-                "model": "gpt-4-assistant",
-                "assistant_id": settings.OPENAI_ASSISTANT_ID_OUTLINE,
-                "vector_store_id": settings.OPENAI_VECTOR_STORE_ID_SCRIPT,
-                "thread_id": thread.id,
-                "run_id": run.id,
-                "file_search_used": file_search_used,
+                "model": settings.OPENAI_MODEL,
+                "assistant_id": "chat-completions",
+                "vector_store_id": "none",
+                "thread_id": thread_id,
+                "run_id": run_id,
+                "file_search_used": False,
                 "word_count": word_count,
             }
 
@@ -759,22 +850,22 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points
             if save_log:
                 OpenAIScriptService._save_run_log(
                     user=user,
-                    thread_id=thread.id,
-                    run_id=run.id,
-                    assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
+                    thread_id=thread_id,
+                    run_id=run_id,
+                    assistant_id="chat-completions",
                     tokens_used=tokens_used,
                     word_count=word_count,
-                    file_search_used=file_search_used,
-                    file_search_snippets=file_search_snippets,
+                    file_search_used=False,
+                    file_search_snippets=[],
                     run_type="outline_generation",
                     generation_time=generation_time,
-                    model="gpt-4-assistant",
+                    model=settings.OPENAI_MODEL,
                 )
 
             return outline_text, outline_data, metadata
 
         except Exception as e:
-            logger.error(f"Assistant outline generation failed: {str(e)}")
+            logger.error(f"Chat completions outline generation failed: {str(e)}")
             raise
 
     @staticmethod
@@ -785,7 +876,7 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points
         save_log: bool = True,
     ) -> Tuple[str, List[Dict], Dict[str, Any]]:
         """
-        Generate full script using OpenAI Assistant API with vector store knowledge base
+        Generate full script using OpenAI Chat Completions API
         
         Args:
             outline_text: The outline text to generate script from
@@ -800,21 +891,11 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points
             start_time = time.time()
             client = get_openai_client()
 
-            # Create thread
-            thread = client.beta.threads.create()
+            # Build script generation message with enhanced prompts
+            system_prompt = OpenAIScriptService._build_script_system_prompt()
+            user_prompt = OpenAIScriptService._build_script_user_prompt(outline_text, script_data)
 
-            # Build script generation message (simplified)
-            message_content = OpenAIScriptService._build_assistant_script_message(
-                outline_text, script_data
-            )
-
-            # Add message to thread (vector store is already attached to the assistant)
-            client.beta.threads.messages.create(
-                thread_id=thread.id, role="user", content=message_content
-            )
-
-            # Run the assistant with additional length enforcement instructions
-            # Calculate expected duration (assuming ~150 words per minute narration speed)
+            # Calculate expected duration and targets
             min_duration = min_length / 150
             max_duration = max_length / 150
             target_mid = (min_length + max_length) // 2
@@ -824,7 +905,9 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points
             safety_buffer = int(min_length * 0.1)  # 10% buffer
             safe_target = target_mid + safety_buffer
             
-            length_instructions = f"""
+            # Enhanced prompt with length enforcement
+            enhanced_prompt = f"""{user_prompt}
+
 🚨 MANDATORY: {min_length:,}-{max_length:,} WORDS (Target: {safe_target:,})
 Scripts under {min_length:,} words = AUTOMATIC REJECTION
 
@@ -843,8 +926,7 @@ EXPANSION TECHNIQUES (USE ALL):
 7. Transitions: 2-3 sentence bridges between sections
 8. Background: Provide context before new concepts
 
-VERIFY: full_text field has {min_length:,}+ words before submitting.
-"""
+VERIFY: full_text field has {min_length:,}+ words before submitting."""
             
             # Calculate reasonable max completion tokens based on target length
             # For a 3000 word script: ~4000 tokens for text + 2000 for JSON structure = 6000 total
@@ -852,24 +934,37 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
             estimated_tokens = int((max_length * 1.5) + 2000)  # 1.5 tokens per word + JSON overhead
             max_tokens = min(estimated_tokens, 10000)  # Cap at 10k to prevent excessive usage
             
-            run = client.beta.threads.runs.create(
-                thread_id=thread.id,
-                assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
-                additional_instructions=length_instructions,
-                # tool_choice={"type": "file_search"},
-                max_completion_tokens=max_tokens
+            # Use Chat Completions API instead of Assistant API
+            response = client.chat.completions.create(
+                model=settings.OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": enhanced_prompt},
+                ],
+                max_tokens=max_tokens,
+                temperature=0.7,
+                response_format={"type": "json_object"},
             )
             
-            logger.info(f"[SCRIPT] Started generation (run: {run.id[:8]}..., target: {min_length}-{max_length}w)")
+            logger.info(f"[SCRIPT] Generated script using Chat Completions API (target: {min_length}-{max_length}w)")
 
-            # Wait for completion
-            script_content, tokens_used = (
-                OpenAIScriptService._wait_for_assistant_completion(
-                    client, thread.id, run.id
-                )
-            )
+            # Extract content and token usage with validation
+            if not response.choices or len(response.choices) == 0:
+                raise ValueError("OpenAI API returned no choices in response")
+            
+            choice = response.choices[0]
+            if not hasattr(choice, 'message') or not choice.message:
+                raise ValueError("OpenAI API returned invalid choice structure")
+                
+            script_content = choice.message.content
+            if not script_content:
+                raise ValueError("OpenAI API returned empty content - this may indicate rate limiting or API error")
+                
+            tokens_used = response.usage.total_tokens if response.usage else 0
 
             generation_time = time.time() - start_time
+            
+            logger.debug(f"[SCRIPT] OpenAI API response validated - content length: {len(script_content)}, tokens: {tokens_used}")
 
             # Parse script sections
             sections = OpenAIScriptService._parse_script_sections(script_content)
@@ -877,9 +972,9 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
             # Extract actual script text from JSON for accurate word count
             actual_script_text = script_content  # Default to full content
             try:
-                script_data = json.loads(script_content)
-                if isinstance(script_data, dict) and "full_text" in script_data:
-                    actual_script_text = script_data["full_text"]
+                script_json_data = json.loads(script_content)
+                if isinstance(script_json_data, dict) and "full_text" in script_json_data:
+                    actual_script_text = script_json_data["full_text"]
             except json.JSONDecodeError:
                 # Not JSON, use raw content
                 pass
@@ -890,20 +985,19 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
                 actual_script_text, min_length, max_length, "Script"
             )
 
-            # Extract file search info
-            file_search_used, file_search_snippets = OpenAIScriptService._extract_file_search_info(
-                client, thread.id, run.id
-            )
+            # Generate unique identifiers for logging
+            thread_id = f"chat_{int(time.time())}"
+            run_id = f"run_{int(time.time())}"
 
             metadata = {
                 "tokens_used": tokens_used,
                 "generation_time": generation_time,
-                "model": "gpt-4-assistant",
-                "assistant_id": settings.OPENAI_ASSISTANT_ID_SCRIPT,
-                "vector_store_id": settings.OPENAI_VECTOR_STORE_ID_SCRIPT,
-                "thread_id": thread.id,
-                "run_id": run.id,
-                "file_search_used": file_search_used,
+                "model": settings.OPENAI_MODEL,
+                "assistant_id": "chat-completions",
+                "vector_store_id": "none",
+                "thread_id": thread_id,
+                "run_id": run_id,
+                "file_search_used": False,
                 "word_count": word_count,
                 "length_valid": is_valid,
             }
@@ -918,16 +1012,16 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
             if save_log:
                 OpenAIScriptService._save_run_log(
                     user=user,
-                    thread_id=thread.id,
-                    run_id=run.id,
-                    assistant_id=settings.OPENAI_ASSISTANT_ID_SCRIPT,
+                    thread_id=thread_id,
+                    run_id=run_id,
+                    assistant_id="chat-completions",
                     tokens_used=tokens_used,
                     word_count=word_count,
-                    file_search_used=file_search_used,
-                    file_search_snippets=file_search_snippets,
+                    file_search_used=False,
+                    file_search_snippets=[],
                     run_type="script_generation",
                     generation_time=generation_time,
-                    model="gpt-4-assistant",
+                    model=settings.OPENAI_MODEL,
                 )
             
             return script_content, sections, metadata
@@ -944,7 +1038,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
         save_log: bool = True,
     ) -> Tuple[str, str]:
         """
-        Analyze an image using OpenAI Assistant API with Vision capabilities and vector store knowledge base
+        Analyze an image using OpenAI Chat Completions API with Vision capabilities
         
         Args:
             image_file: Django UploadedFile object (optional)
@@ -956,10 +1050,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
             start_time = time.time()
             client = get_openai_client()
 
-            # Create thread
-            thread = client.beta.threads.create()
-
-            # Build image analysis message
+            # Prepare image for analysis
             if image_file:
                 # Convert uploaded file to base64
                 image_content = image_file.read()
@@ -971,7 +1062,23 @@ VERIFY: full_text field has {min_length:,}+ words before submitting.
             else:
                 raise ValueError("Either image_file or image_url must be provided")
 
-            message_content = """Analyze this image and provide:
+            # Build system and user prompts
+            storytelling_manual = format_storytelling_manual_for_prompt()
+            
+            system_prompt = f"""You are an expert YouTube content creator and image analyst. Your task is to analyze images and create engaging YouTube content concepts.
+
+Key principles:
+- Create catchy, clickable titles under 60 characters
+- Provide detailed descriptions that can be used for script generation
+- Focus on storytelling elements and viewer engagement
+- Consider YouTube best practices for thumbnails and titles
+
+=== TUBEGENIUS STORYTELLING MANUAL ===
+{storytelling_manual}
+
+Use the opening strategies and storytelling principles to analyze images and create compelling content concepts. Focus on transformation arcs, emotional triggers, and storytelling elements that will engage viewers."""
+
+            user_prompt = """Analyze this image and provide:
 1. A catchy, engaging YouTube video title (under 60 characters)
 2. A detailed description of what's happening in the image that could be used for script generation
 
@@ -979,38 +1086,46 @@ Format your response as:
 TITLE: [your title here]
 DESCRIPTION: [your description here]
 
-Use the knowledge base files to apply appropriate storytelling rules and hook techniques for creating an engaging title and description.
+Apply storytelling rules and hook techniques for creating an engaging title and description.
 
 Note: Please provide your response in a clear, structured format (not JSON)."""
 
-            # Add message to thread (vector store is already attached to the assistant)
-            client.beta.threads.messages.create(
-                thread_id=thread.id,
-                role="user",
-                content=[
-                    {"type": "text", "text": message_content},
+            # Use Chat Completions API with Vision
+            response = client.chat.completions.create(
+                model=settings.OPENAI_MODEL,  # GPT-4o has vision capabilities
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user", 
+                        "content": [
+                            {"type": "text", "text": user_prompt},
                     {"type": "image_url", "image_url": {"url": image_url_for_openai}},
+                        ]
+                    },
                 ],
-            )
-
-            # Run the assistant (it already has detailed instructions configured)
-            # Force file_search to ensure knowledge base is used
-            run = client.beta.threads.runs.create(
-                thread_id=thread.id,
-                assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
-                # Note: tool_choice forces the assistant to use file_search
-                # Remove this if you want the assistant to decide when to use it
-                # tool_choice={"type": "file_search"}  # Uncomment to force file search
+                max_tokens=500,
+                temperature=0.7,
             )
             
-            logger.info(f"[ASSISTANT_RUN] Started image analysis run: {run.id}")
+            logger.info(f"[IMAGE_ANALYSIS] Generated analysis using Chat Completions API")
 
-            # Wait for completion
-            content, tokens_used = OpenAIScriptService._wait_for_assistant_completion(
-                client, thread.id, run.id
-            )
+            # Extract content and token usage with validation
+            if not response.choices or len(response.choices) == 0:
+                raise ValueError("OpenAI API returned no choices in response")
+            
+            choice = response.choices[0]
+            if not hasattr(choice, 'message') or not choice.message:
+                raise ValueError("OpenAI API returned invalid choice structure")
+                
+            content = choice.message.content
+            if not content:
+                raise ValueError("OpenAI API returned empty content - this may indicate rate limiting or API error")
+                
+            tokens_used = response.usage.total_tokens if response.usage else 0
             
             generation_time = time.time() - start_time
+            
+            logger.debug(f"[IMAGE_ANALYSIS] OpenAI API response validated - content length: {len(content)}, tokens: {tokens_used}")
 
             # Parse the response to extract title and description
             title = ""
@@ -1032,111 +1147,32 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             # Calculate word count
             word_count = len(content.split())
 
-            # Extract file search info
-            file_search_used, file_search_snippets = OpenAIScriptService._extract_file_search_info(
-                client, thread.id, run.id
-            )
+            # Generate unique identifiers for logging
+            thread_id = f"chat_{int(time.time())}"
+            run_id = f"run_{int(time.time())}"
 
             # Save run log to database
             if save_log:
                 OpenAIScriptService._save_run_log(
                     user=user,
-                    thread_id=thread.id,
-                    run_id=run.id,
-                    assistant_id=settings.OPENAI_ASSISTANT_ID_OUTLINE,
+                    thread_id=thread_id,
+                    run_id=run_id,
+                    assistant_id="chat-completions",
                     tokens_used=tokens_used,
                     word_count=word_count,
-                    file_search_used=file_search_used,
-                    file_search_snippets=file_search_snippets,
+                    file_search_used=False,
+                    file_search_snippets=[],
                     run_type="image_analysis",
                     generation_time=generation_time,
-                    model="gpt-4-assistant",
+                    model=settings.OPENAI_MODEL,
                 )
 
             return title, description
 
         except Exception as e:
-            logger.error(f"Assistant image analysis failed: {str(e)}")
+            logger.error(f"Chat completions image analysis failed: {str(e)}")
             return "Image Analysis", "An image was provided for analysis."
 
-    @staticmethod
-    def _extract_file_search_info(client, thread_id: str, run_id: str) -> Tuple[bool, List[Dict]]:
-        """
-        Extract file search usage and snippets from run steps
-        
-        Returns:
-            Tuple of (file_search_used, file_search_snippets)
-        """
-        try:
-            logger.info(f"[FILE_SEARCH_CHECK] Checking file search usage for run_id: {run_id}")
-            
-            # Get run steps to check for file_search tool usage
-            run_steps = client.beta.threads.runs.steps.list(
-                thread_id=thread_id,
-                run_id=run_id
-            )
-            
-            logger.info(f"[FILE_SEARCH_CHECK] Found {len(run_steps.data)} steps in run")
-            
-            file_search_used = False
-            file_search_snippets = []
-            
-            for idx, step in enumerate(run_steps.data):
-                logger.info(f"[FILE_SEARCH_CHECK] Step {idx + 1}: type={getattr(step, 'type', 'unknown')}, "
-                           f"step_details_type={getattr(step.step_details, 'type', 'unknown') if hasattr(step, 'step_details') else 'no_details'}")
-                
-                # Check if this step used file_search tool
-                if hasattr(step, 'step_details') and hasattr(step.step_details, 'type'):
-                    if step.step_details.type == 'tool_calls':
-                        tool_calls = step.step_details.tool_calls
-                        logger.info(f"[FILE_SEARCH_CHECK] Step {idx + 1} has {len(tool_calls)} tool calls")
-                        
-                        for tool_idx, tool_call in enumerate(tool_calls):
-                            tool_type = getattr(tool_call, 'type', 'unknown')
-                            logger.info(f"[FILE_SEARCH_CHECK] Tool call {tool_idx + 1}: type={tool_type}")
-                            
-                            if tool_type == 'file_search':
-                                file_search_used = True
-                                logger.info(f"[FILE_SEARCH_CHECK] ✓ FILE_SEARCH TOOL DETECTED in step {idx + 1}")
-                                
-                                # Extract snippets if available
-                                if hasattr(tool_call, 'file_search') and hasattr(tool_call.file_search, 'results'):
-                                    results = tool_call.file_search.results
-                                    logger.info(f"[FILE_SEARCH_CHECK] Found {len(results)} file search results")
-                                    
-                                    for res_idx, result in enumerate(results[:3]):  # Limit to 3 samples
-                                        snippet = {
-                                            'file_id': getattr(result, 'file_id', None),
-                                            'file_name': getattr(result, 'file_name', None),
-                                            'score': getattr(result, 'score', None),
-                                        }
-                                        
-                                        logger.info(f"[FILE_SEARCH_CHECK] Result {res_idx + 1}: "
-                                                   f"file_name={snippet.get('file_name', 'N/A')}, "
-                                                   f"score={snippet.get('score', 'N/A')}")
-                                        
-                                        # Add content snippet if available
-                                        if hasattr(result, 'content') and result.content:
-                                            content_items = result.content[:1]  # Take first content item
-                                            for content_item in content_items:
-                                                if hasattr(content_item, 'text'):
-                                                    snippet['text'] = content_item.text[:200]  # Limit to 200 chars
-                                                    logger.info(f"[FILE_SEARCH_CHECK] Content preview: {snippet['text'][:100]}...")
-                                        
-                                        file_search_snippets.append(snippet)
-                                else:
-                                    logger.warning(f"[FILE_SEARCH_CHECK] file_search tool detected but no results available")
-            
-            if file_search_used:
-                logger.info(f"[FILE_SEARCH_CHECK] ✓ FINAL RESULT: File search WAS used, {len(file_search_snippets)} snippets extracted")
-            else:
-                logger.warning(f"[FILE_SEARCH_CHECK] ✗ FINAL RESULT: File search NOT detected in any steps")
-            
-            return file_search_used, file_search_snippets
-            
-        except Exception as e:
-            logger.error(f"[FILE_SEARCH_CHECK] Failed to extract file search info: {str(e)}", exc_info=True)
-            return False, []
     
     @staticmethod
     def _save_run_log(
@@ -1205,96 +1241,54 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
         
         return is_valid, word_count
 
-    @staticmethod
-    def _wait_for_assistant_completion(
-        client, thread_id: str, run_id: str, max_retries: int = 3
-    ) -> Tuple[str, int]:
-        """Wait for assistant run to complete and return content"""
-        logger.info(f"[ASSISTANT_RUN] Waiting for completion: thread={thread_id[:8]}..., run={run_id[:8]}...")
-        
-        retry_count = 0
-        iteration = 0
-        start_time = time.time()
-        
-        while True:
-            try:
-                run = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
-                iteration += 1
-                
-                # Only log status every 10 seconds to reduce log spam
-                if iteration % 10 == 0:
-                    logger.debug(f"[ASSISTANT_RUN] Still waiting... ({iteration}s, status: {run.status})")
-
-                if run.status == "completed":
-                    elapsed = time.time() - start_time
-                    logger.info(f"[ASSISTANT_RUN] ✓ Completed in {elapsed:.1f}s ({iteration} iterations)")
-                    
-                    # Get the latest message
-                    messages = client.beta.threads.messages.list(
-                        thread_id=thread_id, limit=1
-                    )
-
-                    content = messages.data[0].content[0].text.value
-                    tokens_used = run.usage.total_tokens if run.usage else 0
-                    
-                    logger.debug(f"[ASSISTANT_RUN] Response: {len(content)} chars, {tokens_used} tokens")
-
-                    return content, tokens_used
-
-                elif run.status in ["failed", "cancelled", "expired"]:
-                    # Get detailed error information
-                    error_details = "No error details available"
-                    error_code = "unknown"
-                    if hasattr(run, 'last_error') and run.last_error:
-                        error_code = getattr(run.last_error, 'code', 'unknown')
-                        error_message = getattr(run.last_error, 'message', 'unknown')
-                        error_details = f"Code: {error_code}, Message: {error_message}"
-                    
-                    # Handle rate limit errors with retry
-                    if error_code == 'rate_limit_exceeded' and retry_count < max_retries:
-                        retry_count += 1
-                        
-                        # Try to parse wait time from error message
-                        wait_time = 2 ** retry_count  # Default exponential backoff
-                        if 'Please try again in' in error_message:
-                            match = re.search(r'try again in ([\d.]+)s', error_message)
-                            if match:
-                                suggested_wait = float(match.group(1))
-                                wait_time = max(suggested_wait, wait_time)
-                        
-                        logger.warning(f"[RATE_LIMIT] Retry {retry_count}/{max_retries} after {wait_time:.1f}s: {error_message[:100]}")
-                        time.sleep(wait_time)
-                        
-                        # Create a new run with the same parameters
-                        try:
-                            new_run = client.beta.threads.runs.create(
-                                thread_id=thread_id,
-                                assistant_id=run.assistant_id,
-                                instructions=run.instructions,
-                                tool_choice=run.tool_choice,
-                            )
-                            run_id = new_run.id
-                            logger.info(f"[RATE_LIMIT] Retry run created: {run_id[:8]}...")
-                            continue
-                        except Exception as retry_error:
-                            logger.error(f"[RATE_LIMIT] Retry failed: {str(retry_error)}")
-                            raise
-                    
-                    logger.error(f"[ASSISTANT_RUN] ✗ Failed: {run.status} - {error_details}")
-                    
-                    raise Exception(f"Run failed with status: {run.status}. Details: {error_details}")
-
-            except Exception as e:
-                # Handle any API errors during polling
-                elapsed = time.time() - start_time
-                logger.error(f"[ASSISTANT_RUN] API error after {elapsed:.1f}s: {str(e)}")
-                raise Exception(f"Assistant API error: {str(e)}")
-
-            time.sleep(1)  # Wait before checking again
 
     @staticmethod
-    def _build_assistant_outline_message(script_data: Dict[str, Any]) -> str:
-        """Build simplified message for outline generation - let assistant use its configured instructions"""
+    def _build_outline_system_prompt() -> str:
+        """Build system prompt for outline generation using Chat Completions"""
+        storytelling_manual = format_storytelling_manual_for_prompt()
+        
+        return f"""You are an expert YouTube script writer and content strategist. Your task is to create detailed, actionable outlines that serve as blueprints for engaging YouTube videos.
+
+CRITICAL: You MUST respond with valid JSON only. The API is configured to enforce JSON output format.
+
+JSON SCHEMA REQUIREMENTS:
+{{
+  "sections": [
+    {{
+      "title": "Section Title",
+      "description": "Detailed 80-150 word description of what to cover and how to approach it",
+      "key_points": [
+        "Specific actionable point 1",
+        "Specific actionable point 2",
+        "Specific actionable point 3"
+      ],
+      "timing": "Estimated duration (e.g., '2-3 minutes')",
+      "transition": "How to transition to next section",
+      "content": "Specific examples, stories, or techniques to include"
+    }}
+  ],
+  "section_order": [0, 1, 2, 3, 4]
+}}
+
+Key principles:
+- Create outlines that are detailed enough to generate full scripts
+- Focus on viewer engagement and storytelling
+- Structure content for maximum retention
+- Include specific examples, stories, and techniques
+- Ensure each section has clear guidance for script writers
+
+Your outlines should be comprehensive roadmaps that transform into compelling video content.
+
+=== TUBEGENIUS STORYTELLING MANUAL ===
+{storytelling_manual}
+
+Use these proven storytelling principles to create outlines that will generate highly engaging, retention-focused YouTube scripts. Apply the opening strategies, core principles, and implementation checklist to ensure your outlines produce compelling content.
+
+RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, no explanations, no additional text."""
+
+    @staticmethod
+    def _build_outline_user_prompt(script_data: Dict[str, Any]) -> str:
+        """Build user prompt for outline generation"""
         tones = script_data.get("tones", ["informative"])
         template_style = script_data.get("template_style", "medium")
         description = script_data.get("description", "")
@@ -1309,30 +1303,59 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
 
 Topic: {description} | {tone_text} | Style: {template_style} | Target: {min_length:,}-{max_length:,}w script
 
-Use knowledge base storytelling rules for this topic/tone.
-
-REQUIREMENTS (CRITICAL):
+REQUIREMENTS:
 • Each section: 80-150w description + 5-8 detailed key point sentences
 • Include specific examples, stories, techniques to use
 • Add timing + transition guidance
 • Outline depth = script length (sparse = FAILS, detailed = success)
 
-STRUCTURE:
-• NO document references/citations
-• Clean, engaging sections
-• Descriptions explain WHAT to cover + HOW to approach
-• Actionable key points (not vague bullets)
-• Suggest examples, analogies, rhetorical questions
-
-Return JSON: sections array with title, description, key_points, timing, transition, content
+CRITICAL: Return ONLY valid JSON matching the exact schema provided in the system prompt. The API enforces JSON format automatically.
 
 REMEMBER: Rich outline (500-800w) → proper script. Sparse outline → short script (fails)!"""
 
     @staticmethod
-    def _build_assistant_script_message(
-        outline_text: str, script_data: Dict[str, Any]
-    ) -> str:
-        """Build simplified message for script generation - let assistant use its configured instructions"""
+    def _build_script_system_prompt() -> str:
+        """Build system prompt for script generation using Chat Completions"""
+        storytelling_manual = format_storytelling_manual_for_prompt()
+        
+        return f"""You are an expert YouTube script writer with extensive experience creating engaging, retention-focused video content. Your specialty is transforming detailed outlines into compelling, conversational scripts that keep viewers watching.
+
+CRITICAL: You MUST respond with valid JSON only. The API is configured to enforce JSON output format.
+
+JSON SCHEMA REQUIREMENTS:
+{{
+  "full_text": "Complete script content with proper formatting and line breaks",
+  "sections": [
+    {{
+      "title": "Section Title",
+      "content": "Script content for this section",
+      "word_count": 450
+    }}
+  ],
+  "total_word_count": 2500,
+  "estimated_duration": "12-15 minutes"
+}}
+
+Key principles:
+- Write in a conversational, engaging tone suitable for YouTube
+- Create content that maintains viewer attention throughout
+- Use storytelling techniques, examples, and analogies
+- Structure content for maximum retention and engagement
+- Write scripts that feel natural when spoken aloud
+- Focus on value delivery while maintaining entertainment value
+
+Your scripts should be comprehensive, well-structured, and optimized for YouTube's algorithm and viewer behavior.
+
+=== TUBEGENIUS STORYTELLING MANUAL ===
+{storytelling_manual}
+
+Apply these proven storytelling principles throughout your script generation. Use the opening strategies for compelling hooks, implement the core principles for engaging content, and follow the implementation checklist to ensure maximum retention and viewer engagement.
+
+RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, no explanations, no additional text."""
+
+    @staticmethod
+    def _build_script_user_prompt(outline_text: str, script_data: Dict[str, Any]) -> str:
+        """Build user prompt for script generation"""
         tones = script_data.get("tones", ["informative"])
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
@@ -1344,30 +1367,14 @@ REMEMBER: Rich outline (500-800w) → proper script. Sparse outline → short sc
         # Calculate concrete targets
         target_words = (min_length + max_length) // 2
         
-        return f"""Expert YouTube script writer: Generate complete script from outline below.
+        return f"""Generate complete script from outline below.
 
 🎯 MANDATORY: {min_length:,}-{max_length:,} WORDS in full_text field (Target: {target_words:,})
 Under {min_length:,} = REJECTION
 
-PER-SECTION FORMULA:
-- Hook: 400-500w | Each main section: 450-550w | Conclusion: 300-400w
-
-450W SECTION STRUCTURE:
-1. Intro (80-100w) 2. Point 1 w/example (100-120w) 3. Point 2 w/example (100-120w) 
-4. Point 3 w/example (100-120w) 5. Transition (50-80w)
-
-EXPAND WITH:
-• Examples: Concrete stories (50-100w each)
-• Elaboration: what/why/how (3-4 sentences vs 1)
-• Analogies: Familiar comparisons
-• Transitions: 2-3 sentences between sections
-• Engagement: Questions, direct address
-• Context: "Why this matters" for all points
-
 CRITICAL:
-- Follow outline structure EXACTLY, preserve section titles/apostrophes as-is
+- Follow outline structure EXACTLY, preserve section titles as-is
 - {tone_text}
-- Use knowledge base storytelling rules
 - NO document references/citations
 - Write for direct narration
 - Verify full_text ≥{min_length:,}w before submitting
@@ -1378,20 +1385,7 @@ PROVIDED OUTLINE TO FOLLOW:
 STRICT SECTION ORDER REQUIREMENTS:
 1. Use the EXACT section titles from the outline in the SAME order
 2. Do not skip, reorder, or combine sections
-3. CRITICAL: If the outline contains a "section_order" array, use it to determine the exact sequence of sections
-4. The section_order array contains the correct order of sections (e.g., [0, 1, 2, 3, 4])
-5. Each script section must correspond to the outline sections in the order specified by section_order
-6. Maintain the exact chronological flow from the outline using section_order as the guide
+3. If the outline contains a "section_order" array, use it to determine the exact sequence
+4. Each script section must correspond to the outline sections in the correct order
 
-INSTRUCTIONS:
-1. Parse the outline to extract the section_order array if present
-2. Use section_order to determine the correct sequence of sections
-3. Convert each outline section into engaging script content IN THE ORDER specified by section_order
-4. Use the exact section titles from the outline, following the section_order sequence
-5. Transform key points into narrative script format while preserving structure
-6. Use storytelling techniques from the knowledge base to make it engaging
-7. Ensure the script flows naturally from section to section as specified by section_order
-8. Do not add, remove, or reorder sections - follow the section_order array strictly
-9. Each script section should have the same title as its corresponding outline section in the correct order
-
-Return your response in JSON format with full_text and sections array, ensuring sections follow the exact order specified by the section_order array."""
+CRITICAL: Return ONLY valid JSON matching the exact schema provided in the system prompt. The API enforces JSON format automatically."""

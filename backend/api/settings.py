@@ -338,31 +338,10 @@ DJSTRIPE_TEST_MODE = STRIPE_TEST_MODE
 # OPENAI Configuration
 ######################################################################
 OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
-OPENAI_ASSISTANT_ID = environ.get(
-    "OPENAI_ASSISTANT_ID", "asst_0DYOjLGGsWULC54slHkY4Lsx"
-)
-OPENAI_VECTOR_STORE_ID = environ.get(
-    "OPENAI_VECTOR_STORE_ID", "vs_68da779b57b88191a834c9623740a474"
-)
 
-OPENAI_ASSISTANT_ID_TITLES = environ.get(
-    "OPENAI_ASSISTANT_ID_TITLES", "asst_QvUwYW6KdpyrlUlVmpH7Cb3x"
-)
-OPENAI_VECTOR_STORE_ID_TITLES = environ.get(
-    "OPENAI_VECTOR_STORE_ID_TITLES", "vs_68df6206e1688191a938b05c7cd7df7d"
-)
+# OpenAI Chat Completions API Configuration
+# Using GPT-4o model for all generation tasks
+OPENAI_MODEL = environ.get("OPENAI_MODEL", "gpt-4o")
 
-# Separate assistants for outline and script generation
-OPENAI_ASSISTANT_ID_SCRIPT = environ.get(
-    "OPENAI_ASSISTANT_ID_SCRIPT", "asst_0DYOjLGGsWULC54slHkY4Lsx"
-)
-OPENAI_VECTOR_STORE_ID_SCRIPT = environ.get(
-    "OPENAI_VECTOR_STORE_ID_SCRIPT", "vs_68da779b57b88191a834c9623740a474"
-)
-
-OPENAI_ASSISTANT_ID_OUTLINE = environ.get(
-    "OPENAI_ASSISTANT_ID_OUTLINE", "asst_i1cPXoyxM4bDVLxWiEFljlRX"
-)
-OPENAI_VECTOR_STORE_ID_OUTLINE = environ.get(
-    "OPENAI_VECTOR_STORE_ID_OUTLINE", "vs_68e225dff14881918cb744f34eb3bc38"
-)
+# Note: Assistant API and Vector Store configurations removed as we now use Chat Completions API
+# This simplifies the setup and removes dependencies on Assistant API beta features
