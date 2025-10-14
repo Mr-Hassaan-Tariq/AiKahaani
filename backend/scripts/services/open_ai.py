@@ -778,7 +778,7 @@ Follow TubeGenius principles:
             words_per_section_min = word_targets["intro"]
             words_per_section_max = word_targets["main_sections"]
             
-            # Enhanced prompt with word count strategy integration
+            # Enhanced prompt with word count strategy integration and quality requirements
             enhanced_prompt = f"""{user_prompt}
 
 🚨 OUTLINE FOR {min_length:,}-{max_length:,} WORD SCRIPT ({min_duration:.1f}-{max_duration:.1f} min video)
@@ -788,6 +788,29 @@ STRUCTURE: {suggested_sections} sections with specific word count targets:
 • Main Sections: {word_targets['main_sections']} words each ({word_targets['main_sections_count']} sections)
 • Conclusion: {word_targets['conclusion']} words
 • Total Target: {word_targets['total_target']} words
+
+QUALITY REQUIREMENTS FOR EACH SECTION:
+
+HOOK/INTRO SECTION:
+• MUST start with action verb (not "Imagine," "Picture," "Let me")
+• MUST create 2-3 specific open loops with concrete questions
+• MUST include vivid sensory details and fast pacing
+• NO channel trailers, personal updates, or CTAs
+• Examples: "Sarah's phone buzzed at 3 AM..." or "The explosion shattered..."
+
+MAIN CONTENT SECTIONS:
+• MUST show transformation: Before → Conflict → After
+• MINIMUM 3 concrete sensory details per section
+• MUST plant 2-3 specific open loops per section
+• Use natural, spoken English (8th-10th grade level)
+• Include emotional progression, not just setup + mystery
+• Link beats with "therefore," "but," "because"
+
+CONCLUSION SECTION:
+• End with emotional reflection or haunting unresolved question
+• NO clichés like "stay curious," "stay brave," "thanks for watching"
+• Create original insights tied to transformation arc
+• Examples: "The question is: what else don't we know?"
 
 EACH SECTION MUST HAVE:
 • Description: 80-150 words (NOT 1-2 sentences!)
@@ -801,7 +824,7 @@ CRITICAL: Outline detail = script length
 • Sparse outline → short script (FAILS)
 • Rich outline with word targets → precise script length
 
-VERIFY: Each section has 80-150w description + 5-8 detailed key points + word count target"""
+VERIFY: Each section has 80-150w description + 5-8 detailed key points + word count target + quality requirements met"""
 
             # Use Chat Completions API instead of Assistant API
             response = client.chat.completions.create(
@@ -1115,11 +1138,11 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                     storytelling_manual=storytelling_manual_formatted
                 )
                 
-                # Generate section content
+                # Generate section content with quality validation
                 logger.info(f"[WC_STRATEGY] Generating section {i+1}/{num_sections}: '{section.get('title', 'Untitled')}' ({section_word_target} words)")
                 
-                section_content, section_tokens = OpenAIScriptService._generate_single_section(
-                    section_prompt, section_word_target, client
+                section_content, section_tokens = OpenAIScriptService._generate_single_section_with_quality_validation(
+                    section_prompt, section_word_target, section_type, wc_strategy, client
                 )
                 
                 # Validate word count
@@ -1243,6 +1266,73 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
         except Exception as e:
             logger.error(f"[WC_STRATEGY] Generation failed: {str(e)}")
             raise
+
+    @staticmethod
+    def _generate_single_section_with_quality_validation(
+        section_prompt: str, 
+        word_target: int, 
+        section_type, 
+        wc_strategy, 
+        client
+    ) -> Tuple[str, int]:
+        """
+        Generate content for a single section with quality validation and iterative improvement
+        
+        Args:
+            section_prompt: The prompt for generating this section
+            word_target: Target word count for this section
+            section_type: Section type for validation
+            wc_strategy: Word count strategy instance
+            client: OpenAI client instance
+            
+        Returns:
+            Tuple of (content, tokens_used)
+        """
+        max_attempts = 3
+        total_tokens = 0
+        
+        for attempt in range(max_attempts):
+            # Generate content
+            section_content, tokens_used = OpenAIScriptService._generate_single_section(
+                section_prompt, word_target, client
+            )
+            total_tokens += tokens_used
+            
+            # Validate quality
+            is_valid, errors = wc_strategy.validate_section_quality(section_content, section_type)
+            
+            if is_valid:
+                logger.info(f"[WC_STRATEGY] Section passed quality validation on attempt {attempt + 1}")
+                return section_content, total_tokens
+            
+            # If validation fails and we have attempts left, regenerate with feedback
+            if attempt < max_attempts - 1:
+                logger.warning(f"[WC_STRATEGY] Section failed quality validation on attempt {attempt + 1}: {errors}")
+                
+                # Generate improvement guidance
+                improvement_guidance = wc_strategy.get_improvement_guidance(errors)
+                
+                # Create feedback prompt for regeneration
+                feedback_prompt = f"""
+The previous attempt failed quality validation. Please regenerate with these specific improvements:
+
+QUALITY ISSUES FOUND:
+{chr(10).join(f"- {error}" for error in errors)}
+
+SPECIFIC IMPROVEMENTS NEEDED:
+{improvement_guidance}
+
+ORIGINAL PROMPT:
+{section_prompt}
+
+IMPORTANT: Apply the improvements above while maintaining the original requirements and word count target of {word_target} words.
+"""
+                
+                section_prompt = feedback_prompt
+            else:
+                logger.warning(f"[WC_STRATEGY] Section failed quality validation after {max_attempts} attempts. Using best attempt.")
+        
+        return section_content, total_tokens
 
     @staticmethod
     def _generate_single_section(section_prompt: str, word_target: int, client) -> Tuple[str, int]:
