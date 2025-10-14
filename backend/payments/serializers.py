@@ -135,3 +135,11 @@ class TrialStatusSerializer(serializers.Serializer):
         allow_null=True, help_text="Type of the plan (trial, basic, pro)"
     )
     status = serializers.CharField(allow_null=True, help_text="Subscription status")
+
+
+class BillingPortalSessionSerializer(serializers.Serializer):
+    """Serializer for billing portal session response"""
+
+    url = serializers.URLField(
+        help_text="URL to redirect user to Stripe billing portal"
+    )

@@ -1,0 +1,5074 @@
+openapi: 3.0.3
+info:
+  title: TubeGenius API
+  version: 1.0.0
+  x-logo:
+    url: https://tubegenius.vercel.app/logo.png
+  description: API for TubeGenius YouTube script generation platform
+paths:
+  /api/auth/admin/login/:
+    post:
+      operationId: admin_login
+      description:
+        Login for admin users using email and password. Only users with
+        admin role can access.
+      summary: Admin Login
+      tags:
+        - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AdminLoginRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AdminLoginRequest"
+        required: true
+      security:
+        - {}
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLoginResponse"
+          description: Login successful
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Invalid credentials or not admin user
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Too many requests
+  /api/auth/google/:
+    post:
+      operationId: api_auth_google_create
+      description:
+        Authenticates the user using a Google ID token or authorization
+        code.
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleAuthInputRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/GoogleAuthInputRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/GoogleAuthInputRequest"
+        required: true
+      security:
+        - {}
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleAuthInput"
+          description: ""
+  /api/auth/logout/:
+    post:
+      operationId: logout
+      description:
+        Logs out the current user by blacklisting both refresh and access
+        tokens. Requires a valid refresh token in the request body.
+      summary: Logout user
+      tags:
+        - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+              examples:
+                LogoutSuccess:
+                  value:
+                    message: Logged out successfully
+                  summary: Logout Success
+          description: Logout successful
+        "400":
+          description: Invalid refresh token
+  /api/auth/magic-link/:
+    post:
+      operationId: magic_link_login
+      description:
+        Sends a magic link to the provided email address for passwordless
+        authentication. If the user doesn't exist, a new user account will be created
+        automatically. The username is extracted from the email address (part before
+        '@'). The magic link expires in 15 minutes.
+      summary: Send Magic Link for Authentication
+      tags:
+        - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MagicLinkLoginRequest"
+            examples:
+              MagicLinkRequest:
+                value:
+                  email: john.doe@example.com
+                summary: Request magic link for existing or new user
+                description: Send magic link to user's email
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/MagicLinkLoginRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/MagicLinkLoginRequest"
+        required: true
+      security:
+        - {}
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MagicLinkLoginSuccessResponse"
+              examples:
+                MagicLinkSent:
+                  value:
+                    message: Magic link sent to your email
+                  summary: Magic Link Sent
+          description: Magic link sent successfully
+        "400":
+          description: Invalid email format or missing email
+        "500":
+          description: Email service is temporarily unavailable
+  /api/auth/magic-link/verify/:
+    post:
+      operationId: magic_link_verify
+      description:
+        Verifies the magic link token received via email and returns JWT
+        authentication tokens. The token is validated for existence and expiration.
+        Upon successful verification, the token is immediately invalidated (single-use)
+        and JWT tokens are generated for the user.
+      summary: Verify Magic Link Token
+      tags:
+        - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MagicLinkVerifyRequest"
+            examples:
+              MagicLinkVerificationRequest:
+                value:
+                  token: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                summary: Verify magic link token
+                description: Submit the token received via magic link email
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/MagicLinkVerifyRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/MagicLinkVerifyRequest"
+        required: true
+      security:
+        - {}
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MagicLinkVerifySuccessResponse"
+              examples:
+                AuthenticationSuccess:
+                  value:
+                    refresh: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTcwNjg5ODA2MSwidXNlcl9pZCI6MX0.abc123def456
+                    access: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzA2ODExNjYxLCJ1c2VyX2lkIjoxfQ.xyz789uvw456
+                    user:
+                      id: "1"
+                      email: john.doe@example.com
+                      username: john.doe
+                      fullname: John Doe
+                  summary: Authentication Success
+          description: Token verified and JWT tokens generated
+        "400":
+          description: Invalid, expired or malformed token
+  /api/auth/refresh/:
+    post:
+      operationId: refresh_token
+      description: Get new access token using refresh token. Available for all users.
+      summary: Refresh Token
+      tags:
+        - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+        required: true
+      security:
+        - {}
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshTokenResponse"
+          description: Token refreshed successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Invalid refresh token
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Too many requests
+  /api/auth/signup/:
+    post:
+      operationId: api_auth_signup_create
+      description: |-
+        Mixin that applies method-specific throttling to views.
+
+        This mixin automatically adds throttle classes for all HTTP methods
+        (GET, POST, PUT, DELETE) with different rate limits for authenticated
+        and anonymous users based on the settings.py configuration:
+
+        - GET: 3/minute
+        - POST: 20/minute
+        - PUT: 20/minute
+        - DELETE: 10/minute
+
+        Usage:
+            class MyView(MethodSpecificThrottleMixin, generics.ListAPIView):
+                # Your view implementation
+                pass
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserSignupRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/UserSignupRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UserSignupRequest"
+        required: true
+      security:
+        - {}
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSignup"
+          description: ""
+  /api/file/{uuid}/export/:
+    post:
+      operationId: api_file_export_create
+      description:
+        Export a full script to various file formats (.txt, .pdf, .docx).
+        The file will be downloaded with appropriate headers.
+      summary: Export script to file
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - docx
+              - pdf
+              - txt
+          description: "Export format: txt, pdf, or docx"
+          required: true
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportScriptResponseRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/ExportScriptResponseRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ExportScriptResponseRequest"
+        required: true
+      responses:
+        "200":
+          description: File exported successfully
+        "400":
+          description: Invalid format specified
+        "404":
+          description: Script not found or access denied
+        "403":
+          description: Active subscription required
+  /api/v1/admin/niche-pacings/:
+    get:
+      operationId: api_v1_admin_niche_pacings_list
+      description: Retrieve a list of all niche pacings.
+      summary: List Niche Pacings
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
+        - name: offset
+          required: false
+          in: query
+          description: The initial index from which to return the results.
+          schema:
+            type: integer
+        - name: ordering
+          required: false
+          in: query
+          description: Which field to use when ordering the results.
+          schema:
+            type: string
+        - name: search
+          required: false
+          in: query
+          description: A search term.
+          schema:
+            type: string
+      tags:
+        - Admin Niches
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedNichePacingList"
+          description: ""
+    post:
+      operationId: api_v1_admin_niche_pacings_create
+      description: Create a new niche pacing.
+      summary: Create Niche Pacing
+      tags:
+        - Admin Niches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NichePacingRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/NichePacingRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/NichePacingRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NichePacing"
+          description: ""
+  /api/v1/admin/niche-pacings/{id}/:
+    get:
+      operationId: api_v1_admin_niche_pacings_retrieve
+      description: Admin API viewset for managing niche pacings.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche pacing.
+          required: true
+      tags:
+        - api
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NichePacing"
+          description: ""
+    put:
+      operationId: api_v1_admin_niche_pacings_update
+      description: Admin API viewset for managing niche pacings.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche pacing.
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NichePacingRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/NichePacingRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/NichePacingRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NichePacing"
+          description: ""
+    patch:
+      operationId: api_v1_admin_niche_pacings_partial_update
+      description: Admin API viewset for managing niche pacings.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche pacing.
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchedNichePacingRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/PatchedNichePacingRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PatchedNichePacingRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NichePacing"
+          description: ""
+    delete:
+      operationId: api_v1_admin_niche_pacings_destroy
+      description: Admin API viewset for managing niche pacings.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche pacing.
+          required: true
+      tags:
+        - api
+      responses:
+        "204":
+          description: No response body
+  /api/v1/admin/niche-tones/:
+    get:
+      operationId: api_v1_admin_niche_tones_list
+      description: Retrieve a list of all niche tones.
+      summary: List Niche Tones
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
+        - name: offset
+          required: false
+          in: query
+          description: The initial index from which to return the results.
+          schema:
+            type: integer
+        - name: ordering
+          required: false
+          in: query
+          description: Which field to use when ordering the results.
+          schema:
+            type: string
+        - name: search
+          required: false
+          in: query
+          description: A search term.
+          schema:
+            type: string
+      tags:
+        - Admin Niches
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedNicheToneList"
+          description: ""
+    post:
+      operationId: api_v1_admin_niche_tones_create
+      description: Create a new niche tone.
+      summary: Create Niche Tone
+      tags:
+        - Admin Niches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NicheToneRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/NicheToneRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/NicheToneRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NicheTone"
+          description: ""
+  /api/v1/admin/niche-tones/{id}/:
+    get:
+      operationId: api_v1_admin_niche_tones_retrieve
+      description: Admin API viewset for managing niche tones.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche tone.
+          required: true
+      tags:
+        - api
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NicheTone"
+          description: ""
+    put:
+      operationId: api_v1_admin_niche_tones_update
+      description: Admin API viewset for managing niche tones.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche tone.
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NicheToneRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/NicheToneRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/NicheToneRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NicheTone"
+          description: ""
+    patch:
+      operationId: api_v1_admin_niche_tones_partial_update
+      description: Admin API viewset for managing niche tones.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche tone.
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchedNicheToneRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/PatchedNicheToneRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PatchedNicheToneRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NicheTone"
+          description: ""
+    delete:
+      operationId: api_v1_admin_niche_tones_destroy
+      description: Admin API viewset for managing niche tones.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche tone.
+          required: true
+      tags:
+        - api
+      responses:
+        "204":
+          description: No response body
+  /api/v1/admin/niches/:
+    get:
+      operationId: api_v1_admin_niches_list
+      description: |-
+        Retrieve a paginated list of niches with filtering and search capabilities.
+
+        **Query Parameters:**
+        - `limit`: Number of items to return (default: 20, max: 100)
+        - `offset`: Number of items to skip (default: 0)
+        - `search`: Search by title or tagline (custom search filter)
+        - `status`: Filter by status (active/inactive)
+        - `ordering`: Order by field (e.g., 'created', '-created', 'title', '-title')
+
+        **Note:** The `search` parameter uses a custom filter that searches in both title and tagline fields.
+      summary: List Niches
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: "Number of items to return (default: 20, max: 100)"
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          description: "Number of items to skip (default: 0)"
+        - in: query
+          name: ordering
+          schema:
+            type: string
+          description: Ordering field (e.g., 'created', '-created', 'title')
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by title or tagline
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter by status (active/inactive)
+      tags:
+        - Admin Niches
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedNicheList"
+              examples:
+                ListNichesResponse:
+                  value:
+                    count: 123
+                    next: http://api.example.org/accounts/?offset=400&limit=100
+                    previous: http://api.example.org/accounts/?offset=200&limit=100
+                    results:
+                      - count: 25
+                        next: http://api.example.com/api/niches/?limit=20&offset=20
+                        previous: null
+                        results:
+                          - id: 1
+                            admin: 1
+                            title: Tech Reviews
+                            tagline: Latest tech product reviews
+                            thumbnail: null
+                            script_structure:
+                              intro: Hook
+                              body: Review
+                            tone:
+                              - Educational
+                              - Professional
+                            pacing:
+                              - Fast
+                              - Dynamic
+                            top_channels:
+                              - name: MKBHD
+                                link: https://youtube.com/@mkbhd
+                            best_for:
+                              - Technology
+                            status: active
+                            created: "2025-01-15T10:30:00Z"
+                            modified: "2025-01-15T10:30:00Z"
+                          - id: 2
+                            admin: 1
+                            title: Gaming News
+                            tagline: Latest gaming updates
+                            thumbnail: null
+                            script_structure: null
+                            tone:
+                              - Casual
+                              - Exciting
+                            pacing:
+                              - Medium
+                            top_channels: []
+                            best_for:
+                              - Gaming
+                              - Entertainment
+                            status: active
+                            created: "2025-01-14T09:20:00Z"
+                            modified: "2025-01-14T09:20:00Z"
+                  summary: List Niches Response
+                  description: Example response showing paginated niches list
+          description: ""
+    post:
+      operationId: api_v1_admin_niches_create
+      description: |-
+        Create a new niche with detailed content structure.
+
+        **Required Fields:**
+        - `title` (string): The title of the niche
+        - `tagline` (string): A brief tagline for the niche
+
+        **Optional Fields:**
+        - `thumbnail` (file): Image file for the niche thumbnail
+        - `script_structure` (JSON object): Custom script structure configuration
+        - `tone` (list of strings): List of tone names. Non-existent tones will be created automatically
+        - `pacing` (list of strings): List of pacing names. Non-existent pacings will be created automatically
+        - `top_channels` (list of objects): YouTube channels with name and link
+          - Each object must have: `name` (string) and `link` (string)
+        - `best_for` (list of strings): Categories this niche is best suited for
+        - `status` (string): Either 'active' or 'inactive' (default: 'active')
+
+        **Note:** The `admin` field is automatically set to the authenticated user.
+      summary: Create Niche
+      tags:
+        - Admin Niches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NicheRequest"
+            examples:
+              CreateNicheExample:
+                value:
+                  title: Tech Reviews
+                  tagline: Latest tech product reviews and analysis
+                  tone:
+                    - Educational
+                    - Professional
+                    - Engaging
+                  pacing:
+                    - Fast
+                    - Dynamic
+                  top_channels:
+                    - name: MKBHD
+                      link: https://youtube.com/@mkbhd
+                    - name: Linus Tech Tips
+                      link: https://youtube.com/@LinusTechTips
+                  best_for:
+                    - Technology
+                    - Product Reviews
+                    - Gadgets
+                  script_structure:
+                    intro: Hook with latest tech trend
+                    body: Detailed review
+                    conclusion: Recommendation
+                  status: active
+                summary: Create Niche Example
+                description: Example of creating a tech review niche with all fields
+              MinimalCreateExample:
+                value:
+                  title: Gaming News
+                  tagline: Latest gaming industry news and updates
+                summary: Minimal Create Example
+                description: Minimal example with only required fields
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/NicheRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/NicheRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Niche"
+          description: ""
+  /api/v1/admin/niches/{id}/:
+    get:
+      operationId: api_v1_admin_niches_retrieve
+      description: Retrieve detailed information about a specific niche by ID.
+      summary: Get Niche Details
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche.
+          required: true
+      tags:
+        - Admin Niches
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Niche"
+              examples:
+                NicheResponseExample:
+                  value:
+                    data:
+                      id: 1
+                      admin: 1
+                      title: Tech Reviews
+                      tagline: Latest tech product reviews and analysis
+                      thumbnail: null
+                      script_structure:
+                        intro: Hook with latest tech trend
+                        body: Detailed review
+                        conclusion: Recommendation
+                      tone:
+                        - Educational
+                        - Professional
+                        - Engaging
+                      pacing:
+                        - Fast
+                        - Dynamic
+                      top_channels:
+                        - name: MKBHD
+                          link: https://youtube.com/@mkbhd
+                      best_for:
+                        - Technology
+                        - Product Reviews
+                      status: active
+                      created: "2025-01-15T10:30:00Z"
+                      modified: "2025-01-15T10:30:00Z"
+                    message: Niche details retrieved successfully
+                  summary: Niche Response Example
+                  description: Example response showing niche details
+          description: ""
+    put:
+      operationId: api_v1_admin_niches_update
+      description: |-
+        Update niche information. All fields from the create endpoint apply.
+
+        **Important:**
+        - Tones/pacings that don't exist will be created automatically
+        - `top_channels` must follow the format: `[{"name": "...", "link": "..."}]`
+        - All validations from the create endpoint apply
+      summary: Update Niche
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche.
+          required: true
+      tags:
+        - Admin Niches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NicheRequest"
+            examples:
+              UpdateNicheExample:
+                value:
+                  title: Tech Reviews - Updated
+                  tagline: Latest tech product reviews, analysis and comparisons
+                  tone:
+                    - Educational
+                    - Professional
+                    - Engaging
+                    - Informative
+                  status: active
+                summary: Update Niche Example
+                description: Example of updating a niche
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/NicheRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/NicheRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Niche"
+          description: ""
+    patch:
+      operationId: api_v1_admin_niches_partial_update
+      description:
+        Partially update niche information. Only provided fields will be
+        updated.
+      summary: Partial Update Niche
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche.
+          required: true
+      tags:
+        - Admin Niches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchedNicheRequest"
+            examples:
+              PartialUpdateExample:
+                value:
+                  status: inactive
+                summary: Partial Update Example
+                description: Example of partially updating just the status
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/PatchedNicheRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PatchedNicheRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Niche"
+          description: ""
+    delete:
+      operationId: api_v1_admin_niches_destroy
+      description: Delete a niche.
+      summary: Delete Niche
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche.
+          required: true
+      tags:
+        - Admin Niches
+      responses:
+        "204":
+          description: No response body
+  /api/v1/admin/niches/{id}/upload-thumbnail/:
+    post:
+      operationId: api_v1_admin_niches_upload_thumbnail_create
+      description: |-
+        Upload a thumbnail image for a specific niche.
+
+        **Parameters:**
+        - `id`: The ID of the niche to update
+
+        **Request Body:**
+        - `thumbnail`: Image file (JPEG, PNG, GIF, WebP supported)
+
+        **Response:**
+        - Returns the updated niche data with the new thumbnail URL
+      summary: Upload Niche Thumbnail
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this niche.
+          required: true
+      tags:
+        - Admin Niches
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                thumbnail:
+                  type: string
+                  format: binary
+                  description: Image file for the niche thumbnail
+              required:
+                - thumbnail
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Niche"
+              examples:
+                UploadThumbnailResponse:
+                  value:
+                    data:
+                      id: 1
+                      admin: 1
+                      title: Tech Reviews
+                      tagline: Latest tech product reviews
+                      thumbnail: http://127.0.0.1:8000/media/niches/thumbnails/tech_review_thumb.jpg
+                      script_structure:
+                        intro: Hook
+                        body: Review
+                      tone:
+                        - Educational
+                        - Professional
+                      pacing:
+                        - Fast
+                        - Dynamic
+                      top_channels: []
+                      best_for:
+                        - Technology
+                      status: active
+                      created: "2025-01-15T10:30:00Z"
+                      modified: "2025-01-15T10:30:00Z"
+                    message: Thumbnail uploaded successfully
+                  summary: Upload Thumbnail Response
+                  description: Example response after successful thumbnail upload
+          description: ""
+  /api/v1/admin/user-stats/:
+    get:
+      operationId: api_v1_admin_user_stats_retrieve
+      description:
+        Retrieve user statistics for admin dashboard including total users,
+        active users, admins, and recent signups.
+      summary: Get User Statistics
+      tags:
+        - Admin
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStatsResponse"
+              examples:
+                SuccessResponse:
+                  value:
+                    data:
+                      total_users: 150
+                      active_users: 142
+                      inactive_users: 8
+                      verified_users: 140
+                      admin_count: 5
+                      user_count: 145
+                      recent_signups: 12
+                    message: User statistics retrieved successfully
+                  summary: Success Response
+          description: ""
+  /api/v1/admin/users/:
+    get:
+      operationId: api_v1_admin_users_list
+      description: Retrieve a paginated list of users with filtering and search capabilities.
+      summary: List Users
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
+        - name: offset
+          required: false
+          in: query
+          description: The initial index from which to return the results.
+          schema:
+            type: integer
+        - in: query
+          name: ordering
+          schema:
+            type: string
+          description: Ordering field
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Page number
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+          description: Number of items per page
+        - in: query
+          name: role
+          schema:
+            type: string
+          description: Filter by role
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by name, email, or username
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter by status (active/inactive)
+        - in: query
+          name: verified
+          schema:
+            type: boolean
+          description: Filter by email verification status
+      tags:
+        - Admin
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedAdminUserListList"
+          description: ""
+    post:
+      operationId: api_v1_admin_users_create
+      description: |-
+        Admin API viewset for listing and managing users.
+        Provides paginated user listing with search, filtering, and admin actions.
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserList"
+          description: ""
+  /api/v1/admin/users/{id}/:
+    get:
+      operationId: api_v1_admin_users_retrieve
+      description: Retrieve detailed information about a specific user.
+      summary: Get User Details
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this user.
+          required: true
+      tags:
+        - Admin
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDetail"
+          description: ""
+    put:
+      operationId: api_v1_admin_users_update
+      description: Update user information.
+      summary: Update User
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this user.
+          required: true
+      tags:
+        - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserUpdateRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AdminUserUpdateRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AdminUserUpdateRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserUpdate"
+          description: ""
+    patch:
+      operationId: api_v1_admin_users_partial_update
+      description: Partially update user information.
+      summary: Partial Update User
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this user.
+          required: true
+      tags:
+        - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchedAdminUserUpdateRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/PatchedAdminUserUpdateRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PatchedAdminUserUpdateRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserUpdate"
+          description: ""
+    delete:
+      operationId: api_v1_admin_users_destroy
+      description: Soft delete (deactivate) a user.
+      summary: Delete User
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this user.
+          required: true
+      tags:
+        - Admin
+      responses:
+        "204":
+          description: No response body
+  /api/v1/admin/users/{id}/activate/:
+    post:
+      operationId: api_v1_admin_users_activate_create
+      description: Activate a user account.
+      summary: Activate User
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this user.
+          required: true
+      tags:
+        - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserList"
+          description: ""
+  /api/v1/admin/users/{id}/assign_role/:
+    post:
+      operationId: api_v1_admin_users_assign_role_create
+      description: Assign a role to a user.
+      summary: Assign Role
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this user.
+          required: true
+      tags:
+        - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserList"
+          description: ""
+  /api/v1/admin/users/{id}/deactivate/:
+    post:
+      operationId: api_v1_admin_users_deactivate_create
+      description: Deactivate a user account.
+      summary: Deactivate User
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this user.
+          required: true
+      tags:
+        - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserList"
+          description: ""
+  /api/v1/admin/users/{id}/remove_role/:
+    post:
+      operationId: api_v1_admin_users_remove_role_create
+      description: Remove a role from a user.
+      summary: Remove Role
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this user.
+          required: true
+      tags:
+        - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AdminUserListRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserList"
+          description: ""
+  /api/v1/notifications/{id}/read/:
+    post:
+      operationId: api_v1_notifications_read_create
+      description:
+        "\n            Mark a single user notification as read.\n\n   \
+        \         - Requires authentication.\n            - Returns `404` if the notification\
+        \ does not exist or does not belong to the user.\n            "
+      summary: Mark a notification as read
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      tags:
+        - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkNotificationReadResponseRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/MarkNotificationReadResponseRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/MarkNotificationReadResponseRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarkNotificationReadResponse"
+          description: Notification marked as read successfully
+        "404":
+          description: Notification not found or access denied
+  /api/v1/notifications/all-notifications/:
+    get:
+      operationId: api_v1_notifications_all_notifications_list
+      description:
+        "\n            Retrieve paginated notifications for the authenticated\
+        \ user.\n\n            - Requires authentication.\n            - Returns notifications\
+        \ ordered by creation date (newest first).\n            - Optional query parameter\
+        \ 'read' to filter by read/unread status.\n            - Optional query parameter\
+        \ 'type' to filter by notification type.\n            - Supports pagination\
+        \ with 'limit' and 'offset' parameters.\n            "
+      summary: List user notifications
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description:
+            "Number of notifications to return per page (default: 20, max:
+            100)"
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          description:
+            "Number of notifications to skip from the beginning (default:
+            0)"
+        - in: query
+          name: read
+          schema:
+            type: boolean
+          description: Filter notifications by read status (true/false)
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum:
+              - account
+              - community
+              - drafts
+              - feature
+              - script
+              - subscription
+              - tips
+              - title
+          description:
+            "Filter notifications by type. Available types: script, account,
+            feature, tips, community, subscription, drafts, title"
+      tags:
+        - Notifications
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedUserNotificationList"
+          description: ""
+  /api/v1/notifications/read-all/:
+    post:
+      operationId: api_v1_notifications_read_all_create
+      description:
+        "\n            Mark **all unread notifications** for the authenticated\
+        \ user as read.\n\n            - Requires authentication.\n            - Updates\
+        \ every `UserNotification` with `read=False` → `read=True`.\n            "
+      summary: Mark all notifications as read
+      tags:
+        - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkAllNotificationsReadResponseRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/MarkAllNotificationsReadResponseRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/MarkAllNotificationsReadResponseRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: All notifications marked as read.
+          description: ""
+  /api/v1/payments/billing-portal/:
+    post:
+      operationId: api_v1_payments_billing_portal_create
+      description:
+        Create a Stripe Billing Portal session for the authenticated user.
+        This allows users to manage their subscription, update payment methods, view
+        invoices, and cancel their subscription through Stripe's hosted portal.
+      summary: Create Stripe Billing Portal Session
+      tags:
+        - Stripe Billing Portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillingPortalSessionRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/BillingPortalSessionRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/BillingPortalSessionRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                    description: The URL to redirect the user to for the billing portal
+                    example: https://billing.stripe.com/p/session_1234567890
+          description: Billing portal session created successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: No Stripe customer on file for this user.
+                  type:
+                    type: string
+                    description: Stripe error type (only for Stripe errors)
+                    example: InvalidRequestError
+          description: Bad request - No Stripe customer found or Stripe error
+        "401":
+          description: Authentication required
+  /api/v1/payments/checkout/session/:
+    post:
+      operationId: api_v1_payments_checkout_session_create
+      description:
+        Create a subscription Checkout Session for the given Plan ID. Uses
+        the local SubscriptionPlan model to find the associated Stripe Price and create
+        the Session.
+      summary: Create Stripe Checkout Session
+      tags:
+        - Stripe Checkout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plan_id:
+                  type: string
+                  format: uuid
+                  description: The UUID of the subscription plan
+                  example: 7ca467f6-ac3d-4580-996a-a79c8756b2d1
+              required:
+                - plan_id
+      responses:
+        "200":
+          description: Checkout session created
+        "400":
+          description: Invalid request, plan id, or user has active subscription
+  /api/v1/payments/plans/:
+    get:
+      operationId: api_v1_payments_plans_retrieve
+      description:
+        Retrieve all active subscription plans with their features and
+        pricing
+      summary: Get all subscription plans
+      tags:
+        - Subscription Plans
+      security:
+        - {}
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionPlan"
+          description: List of subscription plans
+  /api/v1/payments/subscription/:
+    get:
+      operationId: api_v1_payments_subscription_retrieve
+      description: Retrieve the current user's subscription details
+      summary: Get user subscription
+      tags:
+        - User Subscriptions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+          description: User subscription details
+        "404":
+          description: No subscription found
+  /api/v1/payments/user/trial-status/:
+    get:
+      operationId: api_v1_payments_user_trial_status_retrieve
+      description:
+        Check if the authenticated user has a trial plan subscription and
+        return trial details
+      summary: Get user trial status
+      tags:
+        - Trial Status
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrialStatus"
+          description: Trial status information
+        "404":
+          description: No trial subscription found
+  /api/v1/scripts/:
+    get:
+      operationId: api_v1_scripts_list
+      description: Retrieve a paginated list of all full scripts with filtering options
+      summary: List all full scripts
+      parameters:
+        - in: query
+          name: duration_max
+          schema:
+            type: number
+            format: float
+          description: Maximum estimated duration in minutes
+        - in: query
+          name: duration_min
+          schema:
+            type: number
+            format: float
+          description: Minimum estimated duration in minutes
+        - in: query
+          name: filter_type
+          schema:
+            type: string
+          description: "Filter by type: all, outline_drafts, script_drafts, saved"
+        - in: query
+          name: is_published
+          schema:
+            type: boolean
+          description: Filter by published status
+        - name: limit
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
+        - name: offset
+          required: false
+          in: query
+          description: The initial index from which to return the results.
+          schema:
+            type: integer
+        - in: query
+          name: ordering
+          schema:
+            type: string
+          description:
+            Order by field (created, modified, title, word_count, estimated_duration).
+            Use - for descending (e.g., -created)
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by title or content
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter by status (generating, generated, edited, finalized, published)
+        - in: query
+          name: word_count_max
+          schema:
+            type: integer
+          description: Maximum word count
+        - in: query
+          name: word_count_min
+          schema:
+            type: integer
+          description: Minimum word count
+      tags:
+        - api
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedFullScriptList"
+          description: Full scripts retrieved successfully
+  /api/v1/scripts/{uuid}/:
+    get:
+      operationId: api_v1_scripts_retrieve
+      description: Retrieve a specific full script by its UUID
+      summary: Get full script
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FullScript"
+          description: Full script retrieved successfully
+        "404":
+          description: Full script not found
+    put:
+      operationId: api_v1_scripts_update
+      description: Full CRUD for full scripts
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FullScriptRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/FullScriptRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/FullScriptRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FullScript"
+          description: ""
+    patch:
+      operationId: api_v1_scripts_partial_update
+      description: Update a specific full script by its UUID
+      summary: Update full script
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchedFullScriptRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/PatchedFullScriptRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PatchedFullScriptRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FullScript"
+          description: Full script updated successfully
+        "404":
+          description: Full script not found
+        "400":
+          description: Invalid input data
+    delete:
+      operationId: api_v1_scripts_destroy
+      description: Delete a specific full script by its UUID
+      summary: Delete full script
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        "204":
+          description: Full script deleted successfully
+        "404":
+          description: Full script not found
+  /api/v1/scripts/{uuid}/export/:
+    post:
+      operationId: api_v1_scripts_export_create
+      description:
+        Export a full script to various file formats (.txt, .pdf, .docx).
+        The file will be downloaded with appropriate headers.
+      summary: Export script to file
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - docx
+              - pdf
+              - txt
+          description: "Export format: txt, pdf, or docx"
+          required: true
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportScriptResponseRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/ExportScriptResponseRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ExportScriptResponseRequest"
+        required: true
+      responses:
+        "200":
+          description: File exported successfully
+        "400":
+          description: Invalid format specified
+        "404":
+          description: Script not found or access denied
+        "403":
+          description: Active subscription required
+  /api/v1/scripts/config/:
+    get:
+      operationId: api_v1_scripts_config_retrieve
+      description:
+        Retrieve all configuration data needed for the script generator
+        UI
+      summary: Get script generator configuration
+      tags:
+        - api
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScriptGeneratorConfigResponse"
+          description: Configuration data retrieved successfully
+  /api/v1/scripts/generations/:
+    get:
+      operationId: api_v1_scripts_generations_list
+      description:
+        "\n    Retrieve a unified list of both script outlines and full\
+        \ scripts with comprehensive filtering and sorting options.\n\n    **Filter\
+        \ Combinations:**\n    - Use `type=script` to apply word_count and duration\
+        \ filters only to scripts\n    - Use `type=outline` to get only outlines (word_count/duration\
+        \ filters ignored)\n    - Combine multiple filters for precise results\n\n\
+        \    **Pagination:**\n    - Use `limit` parameter to specify number of items\
+        \ per page (default: 20, max: 100)\n    - Use `offset` parameter to specify\
+        \ starting position (default: 0)\n    - Example: `?limit=10&offset=20` returns\
+        \ items 21-30\n\n    **Examples:**\n    - `?type=script&word_count_min=500&duration_max=10&limit=15`\
+        \ - Scripts with 500+ words, max 10 min, 15 per page\n    - `?filter_type=saved&search=tutorial&limit=5`\
+        \ - Saved items containing 'tutorial', 5 per page\n    - `?status=generated&ordering=-modified&limit=25&offset=50`\
+        \ - Generated items, newest first, page 3 (items 51-75)\n    "
+      summary: List all generations (unified)
+      parameters:
+        - in: query
+          name: duration_max
+          schema:
+            type: number
+            format: float
+          description:
+            "Maximum estimated video duration in minutes (only applies to
+            scripts, outlines are unaffected). Example: 15.0"
+        - in: query
+          name: duration_min
+          schema:
+            type: number
+            format: float
+          description:
+            "Minimum estimated video duration in minutes (only applies to
+            scripts, outlines are unaffected). Example: 3.5"
+        - in: query
+          name: filter_type
+          schema:
+            type: string
+          description: "Filter by type: all, outline_drafts, script_drafts, saved"
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: "Number of items to return per page (default: 20, max: 100)"
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          description: "Number of items to skip from the beginning (default: 0)"
+        - in: query
+          name: ordering
+          schema:
+            type: string
+          description:
+            "Order by field: created, modified, title, word_count, estimated_duration.
+            Use - for descending (e.g., -created)"
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by title or content across both outlines and scripts
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: "Filter by status: draft, generated, saved"
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: "Filter by generation type: outline, script"
+        - in: query
+          name: word_count_max
+          schema:
+            type: integer
+          description:
+            "Maximum word count for scripts (only applies to scripts, outlines
+            are unaffected). Example: 2000"
+        - in: query
+          name: word_count_min
+          schema:
+            type: integer
+          description:
+            "Minimum word count for scripts (only applies to scripts, outlines
+            are unaffected). Example: 500"
+      tags:
+        - api
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedUnifiedGenerationList"
+          description: Generations retrieved successfully with pagination metadata
+        "404":
+          description: No generations found for the given filters
+        "400":
+          description: Invalid filter parameters
+  /api/v1/scripts/outline/:
+    post:
+      operationId: api_v1_scripts_outline_create
+      description: |-
+        Generate a detailed script outline using multiple tones.
+
+        **Three input methods supported:**
+        1. **Text Description (JSON)**: Provide a text description in JSON format
+        2. **Image Upload (Form Data)**: Upload an image file using multipart/form-data
+        3. **Image URL**: Provide an image URL that will be analyzed
+
+        **Usage:**
+        - For text input: Use `Content-Type: application/json` with `description` field
+        - For image file: Use `Content-Type: multipart/form-data` with `image` file
+        - For image URL: Use either JSON or form data with `image_url` field
+        - Either `description`, `image` file, or `image_url` must be provided (only one)
+        - **When providing an image**: No need to provide title or description - they will be automatically generated from the image content using OpenAI Vision
+      summary: Generate script outline
+      tags:
+        - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/GenerateOutlineRequestRequest"
+            examples:
+              ImageUpload(FormData):
+                value:
+                  tones:
+                    - 1
+                    - 3
+                  template_style: 1
+                  min_length: 300
+                  max_length: 1000
+                  image: "[Upload image file here]"
+                summary: Image Upload (Form Data)
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateOutlineRequestRequest"
+            examples:
+              TextDescription(JSON):
+                value:
+                  description: How to learn Python programming from scratch
+                  tones:
+                    - 1
+                  template_style: 2
+                  min_length: 200
+                  max_length: 800
+                  title: Python Learning Guide
+                summary: Text Description (JSON)
+              ImageURL(JSON):
+                value:
+                  tones:
+                    - 1
+                    - 2
+                  template_style: 2
+                  min_length: 200
+                  max_length: 800
+                  image_url: https://example.com/path/to/image.jpg
+                summary: Image URL (JSON)
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateOutlineResponse"
+              examples:
+                TextDescription(JSON):
+                  value:
+                    description: How to learn Python programming from scratch
+                    tones:
+                      - 1
+                    template_style: 2
+                    min_length: 200
+                    max_length: 800
+                    title: Python Learning Guide
+                  summary: Text Description (JSON)
+                ImageURL(JSON):
+                  value:
+                    tones:
+                      - 1
+                      - 2
+                    template_style: 2
+                    min_length: 200
+                    max_length: 800
+                    image_url: https://example.com/path/to/image.jpg
+                  summary: Image URL (JSON)
+          description: Script outline generated successfully
+        "400":
+          description: Invalid input data - either description or image must be provided
+        "403":
+          description: Active subscription required
+        "500":
+          description: Outline generation or image analysis failed
+  /api/v1/scripts/outline/{uuid}/recreate/:
+    post:
+      operationId: api_v1_scripts_outline_recreate_create
+      description:
+        Recreate an existing script outline using the same parameters as
+        the original. This will generate a new outline with the same tones, template
+        style, and length parameters, but with fresh AI-generated content.
+      summary: Recreate script outline
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateOutlineResponse"
+          description: Script outline recreated successfully
+        "404":
+          description: Original outline not found or access denied
+        "403":
+          description: Active subscription required
+        "500":
+          description: Outline recreation failed
+  /api/v1/scripts/outline/{uuid}/script/:
+    post:
+      operationId: api_v1_scripts_outline_script_create
+      description:
+        Generate a complete script from an existing outline. The script
+        will use the tones from the outline, or fallback to the provided tone if the
+        outline has no tones.
+      summary: Generate full script
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateScriptRequestRequest"
+            examples:
+              FullScriptExample:
+                value:
+                  tone: Informative
+                  template_style: medium
+                  min_length: 1500
+                  max_length: 3000
+                  title: Complete Python Tutorial
+                summary: Full Script Example
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/GenerateScriptRequestRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/GenerateScriptRequestRequest"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateScriptResponse"
+              examples:
+                FullScriptExample:
+                  value:
+                    tone: Informative
+                    template_style: medium
+                    min_length: 1500
+                    max_length: 3000
+                    title: Complete Python Tutorial
+                  summary: Full Script Example
+          description: Full script generated successfully
+        "404":
+          description: Script outline not found
+        "500":
+          description: Script generation failed
+  /api/v1/scripts/outlines/:
+    get:
+      operationId: api_v1_scripts_outlines_list
+      description:
+        Retrieve a paginated list of all script outlines with filtering
+        options
+      summary: List all script outlines
+      parameters:
+        - in: query
+          name: filter_type
+          schema:
+            type: string
+          description: "Filter by type: all, outline_drafts, script_drafts, saved"
+        - name: limit
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
+        - name: offset
+          required: false
+          in: query
+          description: The initial index from which to return the results.
+          schema:
+            type: integer
+        - in: query
+          name: ordering
+          schema:
+            type: string
+          description:
+            Order by field (created, modified, title). Use - for descending
+            (e.g., -created)
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by title or content
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter by status (generating, generated, edited, approved, script_generated)
+      tags:
+        - api
+      responses:
+        "200":
+          description: Script outlines retrieved successfully
+  /api/v1/scripts/outlines/{uuid}/:
+    get:
+      operationId: api_v1_scripts_outlines_retrieve
+      description: Retrieve a specific script outline by its UUID
+      summary: Get script outline
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScriptOutline"
+          description: Script outline retrieved successfully
+        "404":
+          description: Script outline not found
+    put:
+      operationId: api_v1_scripts_outlines_update
+      description: Retrieve a specific script outline by its UUID
+      summary: Get script outline
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScriptOutlineRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/ScriptOutlineRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ScriptOutlineRequest"
+        required: true
+      responses:
+        "200":
+          description: Script outline retrieved successfully
+        "404":
+          description: Script outline not found
+    patch:
+      operationId: api_v1_scripts_outlines_partial_update
+      description: Update a specific script outline by its UUID
+      summary: Update script outline
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchedScriptOutlineUpdateRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/PatchedScriptOutlineUpdateRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PatchedScriptOutlineUpdateRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScriptOutline"
+          description: Script outline updated successfully
+        "404":
+          description: Script outline not found
+        "400":
+          description: Invalid input data
+    delete:
+      operationId: api_v1_scripts_outlines_destroy
+      description: Delete a specific script outline by its UUID
+      summary: Delete script outline
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        "200":
+          description: Script outline deleted successfully
+        "404":
+          description: Script outline not found
+  /api/v1/scripts/test/word-count-strategy/:
+    get:
+      operationId: api_v1_scripts_test_word_count_strategy_retrieve
+      description:
+        Test the new word count completion strategy with different template
+        styles
+      summary: Test word count strategy
+      tags:
+        - api
+      responses:
+        "200":
+          description: Word count strategy test results
+  /api/v1/scripts/titles/generate/:
+    post:
+      operationId: api_v1_scripts_titles_generate_create
+      description:
+        Generate engaging YouTube titles based on TubeGenius Title Wizardry
+        principles
+      summary: Generate YouTube titles
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateTitlesRequestRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/GenerateTitlesRequestRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/GenerateTitlesRequestRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateTitlesResponse"
+          description: Titles generated successfully
+        "429":
+          description: Rate limit exceeded
+        "500":
+          description: Title generation failed
+  /api/v1/scripts/titles/optimize/:
+    post:
+      operationId: api_v1_scripts_titles_optimize_create
+      description:
+        Generate optimized YouTube titles from existing script content
+        or user-provided title
+      summary: Generate optimized YouTube titles
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateTitlesOptimizedRequestRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/GenerateTitlesOptimizedRequestRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/GenerateTitlesOptimizedRequestRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateTitlesResponse"
+          description: Optimized titles generated successfully
+        "400":
+          description: Invalid request data
+        "404":
+          description: Script not found or access denied
+        "429":
+          description: Rate limit exceeded
+        "500":
+          description: Title optimization failed
+  /api/v1/scripts/titles/tones/:
+    get:
+      operationId: api_v1_scripts_titles_tones_list
+      description: Get a list of all available tones that can be used for title generation
+      summary: List all available title tones
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
+        - name: offset
+          required: false
+          in: query
+          description: The initial index from which to return the results.
+          schema:
+            type: integer
+      tags:
+        - api
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedTitleToneList"
+          description: List of available title tones
+        "401":
+          description: Authentication required
+  /api/v1/users/details/:
+    get:
+      operationId: user_details_get
+      description: Authenticated endpoint to fetch the signed-in user's profile details.
+      summary: Get current user's details
+      tags:
+        - Users
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+          description: ""
+    put:
+      operationId: user_details_update
+      description:
+        Authenticated endpoint to update the signed-in user's profile fields.
+        Allows updating fullName, username, emailAddress, preferredLanguage.
+      summary: Update current user's details
+      tags:
+        - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserDetailsUpdateRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/UserDetailsUpdateRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UserDetailsUpdateRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              examples:
+                UpdateSuccess:
+                  value:
+                    id: "1"
+                    email: jane.doe@example.com
+                    username: jane.doe
+                    fullname: Jane Doe
+                    preferred_language: en
+                    profile_picture: https://example.com/profile.jpg
+                    is_email_verified: false
+                  summary: Update Success
+          description: User details updated successfully
+        "400":
+          description: Validation error
+  /api/v1/users/notifications:
+    get:
+      operationId: settings_notification_get
+      description: Retrieve the current user's notification settings
+      summary: Get notification settings
+      tags:
+        - Settings
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingsNotification"
+          description: Notification settings retrieved successfully
+    patch:
+      operationId: settings_notification_update
+      description:
+        Authenticated endpoint to update the current user's notification
+        settings. Allows the user to manage in-app notifications, email notifications,
+        web push notifications, and other related preferences.
+      summary: Update notification settings
+      tags:
+        - Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchedSettingsNotificationRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/PatchedSettingsNotificationRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PatchedSettingsNotificationRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingsNotification"
+              examples:
+                UpdateSuccess:
+                  value:
+                    user: 1
+                    in_app_notifications: true
+                    email_notifications: false
+                    web_push_notifications: true
+                    new_script_generated: false
+                    account_or_plan_changes: true
+                    tips_content_inspiration: false
+                    feature_updates: true
+                    community_affiliate_updates: false
+                    created: "2025-08-27T00:00:00Z"
+                    modified: "2025-08-27T00:00:00Z"
+                  summary: Update Success
+          description: Notification settings updated successfully
+        "400":
+          description: Validation error
+  /api/v1/users/privacy:
+    get:
+      operationId: settings_privacy_get
+      description: Retrieve the current user's privacy settings
+      summary: Get privacy settings
+      tags:
+        - Settings
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingsPrivacy"
+          description: Privacy settings retrieved successfully
+    patch:
+      operationId: settings_privacy_update
+      description:
+        Authenticated endpoint to update the current user's privacy settings.
+        Allows the user to manage email preferences, anonymized data usage, and other
+        privacy-related options.
+      summary: Update privacy settings
+      tags:
+        - Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchedSettingsPrivacyRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/PatchedSettingsPrivacyRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PatchedSettingsPrivacyRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingsPrivacy"
+              examples:
+                UpdateSuccess:
+                  value:
+                    user: 1
+                    allow_product_update_emails: true
+                    allow_anonymized_data_usage: false
+                    created: "2025-08-27T00:00:00Z"
+                    modified: "2025-08-27T00:00:00Z"
+                  summary: Update Success
+          description: Privacy settings updated successfully
+        "400":
+          description: Validation error
+  /api/v1/users/profile-picture:
+    patch:
+      operationId: user_profile_picture_update
+      description:
+        Authenticated endpoint to upload or replace the signed-in user's
+        profile picture. Accepts multipart/form-data with field 'profile_picture'.
+      summary: Update current user's profile picture
+      tags:
+        - Users
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PatchedProfilePictureUploadRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/PatchedProfilePictureUploadRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+          description: Profile picture updated successfully
+        "400":
+          description: Validation error
+    delete:
+      operationId: user_profile_picture_delete
+      description:
+        Authenticated endpoint to remove the signed-in user's profile picture.
+        If no picture exists, the operation is a no-op.
+      summary: Delete current user's profile picture
+      tags:
+        - Users
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+          description: Profile picture deleted successfully
+  /api/v1/users/verify-email/{token}:
+    get:
+      operationId: verify_email
+      description:
+        Verifies a user's email address using a one-time token. Marks the
+        user's email as verified upon success.
+      summary: Verify email change
+      parameters:
+        - in: path
+          name: token
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Users
+      security:
+        - {}
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+          description: Email verified successfully
+        "400":
+          description: Invalid or expired verification token
+components:
+  schemas:
+    AdminLoginRequest:
+      type: object
+      description: Serializer for admin login with email and password.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+        - email
+        - password
+    AdminLoginResponse:
+      type: object
+      description: Response serializer for admin login.
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+        message:
+          type: string
+      required:
+        - access_token
+        - message
+        - refresh_token
+        - user
+    AdminUserDetail:
+      type: object
+      description: Detailed serializer for user detail view with all fields.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        username:
+          type: string
+          maxLength: 150
+        fullname:
+          type: string
+          title: Full name
+          maxLength: 255
+        preferred_language:
+          $ref: "#/components/schemas/PreferredLanguageEnum"
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        is_email_verified:
+          type: boolean
+        is_active:
+          type: boolean
+          title: Active
+          description:
+            Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        date_joined:
+          type: string
+          format: date-time
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+        roles:
+          type: array
+          items:
+            type: integer
+        roles_display:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        is_admin:
+          type: boolean
+          readOnly: true
+        has_used_trial:
+          type: boolean
+          description: Tracks if user has already used their trial subscription
+      required:
+        - date_joined
+        - email
+        - id
+        - is_admin
+        - last_login
+        - profile_picture
+        - roles_display
+        - username
+    AdminUserList:
+      type: object
+      description: Simplified serializer for user listing with only essential fields.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        username:
+          type: string
+          maxLength: 150
+        fullname:
+          type: string
+          title: Full name
+          maxLength: 255
+        is_active:
+          type: boolean
+          title: Active
+          description:
+            Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        date_joined:
+          type: string
+          format: date-time
+        roles_display:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        is_admin:
+          type: boolean
+          readOnly: true
+        is_email_verified:
+          type: boolean
+      required:
+        - date_joined
+        - email
+        - id
+        - is_admin
+        - roles_display
+        - username
+    AdminUserListRequest:
+      type: object
+      description: Simplified serializer for user listing with only essential fields.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          title: Email address
+          maxLength: 254
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
+        fullname:
+          type: string
+          title: Full name
+          maxLength: 255
+        is_active:
+          type: boolean
+          title: Active
+          description:
+            Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        date_joined:
+          type: string
+          format: date-time
+        is_email_verified:
+          type: boolean
+      required:
+        - date_joined
+        - email
+        - username
+    AdminUserUpdate:
+      type: object
+      description: Serializer for updating user details by admin.
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        username:
+          type: string
+          maxLength: 150
+        fullname:
+          type: string
+          title: Full name
+          maxLength: 255
+        preferred_language:
+          $ref: "#/components/schemas/PreferredLanguageEnum"
+        is_active:
+          type: boolean
+          title: Active
+          description:
+            Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        is_email_verified:
+          type: boolean
+      required:
+        - email
+        - username
+    AdminUserUpdateRequest:
+      type: object
+      description: Serializer for updating user details by admin.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          title: Email address
+          maxLength: 254
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
+        fullname:
+          type: string
+          title: Full name
+          maxLength: 255
+        preferred_language:
+          $ref: "#/components/schemas/PreferredLanguageEnum"
+        is_active:
+          type: boolean
+          title: Active
+          description:
+            Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        is_email_verified:
+          type: boolean
+      required:
+        - email
+        - username
+    AggregateUsageEnum:
+      enum:
+        - last_during_period
+        - last_ever
+        - max
+        - sum
+      type: string
+      description: |-
+        * `last_during_period` - Last during period
+        * `last_ever` - Last ever
+        * `max` - Max
+        * `sum` - Sum
+    BillingCycleEnum:
+      enum:
+        - weekly
+        - monthly
+        - yearly
+      type: string
+      description: |-
+        * `weekly` - Weekly
+        * `monthly` - Monthly
+        * `yearly` - Yearly
+    BillingPortalSessionRequest:
+      type: object
+      description: Serializer for billing portal session response
+      properties:
+        url:
+          type: string
+          format: uri
+          minLength: 1
+          description: URL to redirect user to Stripe billing portal
+      required:
+        - url
+    BillingSchemeEnum:
+      enum:
+        - per_unit
+        - tiered
+      type: string
+      description: |-
+        * `per_unit` - Per-unit
+        * `tiered` - Tiered
+    BlankEnum:
+      enum:
+        - ""
+    CollectionMethodEnum:
+      enum:
+        - charge_automatically
+        - send_invoice
+      type: string
+      description: |-
+        * `charge_automatically` - Charge automatically
+        * `send_invoice` - Send invoice
+    ExportScriptResponseRequest:
+      type: object
+      description: Serializer for script export response
+      properties:
+        message:
+          type: string
+          minLength: 1
+        download_url:
+          type: string
+          format: uri
+          minLength: 1
+        filename:
+          type: string
+          minLength: 1
+      required:
+        - message
+    FullScript:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 300
+        content:
+          type: string
+          description: Full script content
+        sections:
+          description: Script sections for card-based display
+        word_count:
+          type: integer
+          readOnly: true
+        estimated_duration:
+          type: number
+          format: double
+          readOnly: true
+          description: Estimated duration in minutes
+        status:
+          $ref: "#/components/schemas/StatusAb1Enum"
+        version:
+          type: integer
+          readOnly: true
+        is_published:
+          type: boolean
+        tokens_used:
+          type: integer
+          readOnly: true
+        generation_time:
+          type: number
+          format: double
+          readOnly: true
+        outline_title:
+          type: string
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - content
+        - created
+        - estimated_duration
+        - generation_time
+        - modified
+        - outline_title
+        - sections
+        - title
+        - tokens_used
+        - uuid
+        - version
+        - word_count
+    FullScriptRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+        content:
+          type: string
+          minLength: 1
+          description: Full script content
+        sections:
+          description: Script sections for card-based display
+        status:
+          $ref: "#/components/schemas/StatusAb1Enum"
+        is_published:
+          type: boolean
+      required:
+        - content
+        - sections
+        - title
+    GenerateOutlineRequestRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          maxLength: 2000
+        tones:
+          type: array
+          items:
+            type: integer
+          description: List of tone IDs to use for outline generation (optional)
+        template_style:
+          type: integer
+          nullable: true
+        min_length:
+          type: integer
+          maximum: 5000
+          minimum: 50
+          default: 100
+        max_length:
+          type: integer
+          maximum: 10000
+          minimum: 100
+          default: 1000
+        title:
+          type: string
+          maxLength: 300
+        image:
+          type: string
+          format: binary
+          nullable: true
+          description: Image file to analyze for generating title/description
+        image_url:
+          type: string
+          format: uri
+          description: Image URL to analyze for generating title/description
+    GenerateOutlineResponse:
+      type: object
+      properties:
+        outline:
+          $ref: "#/components/schemas/ScriptOutline"
+        message:
+          type: string
+      required:
+        - message
+        - outline
+    GenerateScriptRequestRequest:
+      type: object
+      properties:
+        tone:
+          type: string
+          minLength: 1
+          default: Informative
+        template_style:
+          type: string
+          minLength: 1
+          default: medium
+        min_length:
+          type: integer
+          maximum: 10000
+          minimum: 500
+          default: 1000
+        max_length:
+          type: integer
+          maximum: 20000
+          minimum: 1000
+          default: 5000
+        title:
+          type: string
+          maxLength: 300
+    GenerateScriptResponse:
+      type: object
+      properties:
+        script:
+          $ref: "#/components/schemas/FullScript"
+        message:
+          type: string
+      required:
+        - message
+        - script
+    GenerateTitlesOptimizedRequestRequest:
+      type: object
+      description: |-
+        Serializer for optimized title generation request
+        Inherits from GenerateTitlesRequestSerializer and adds script/user_title fields
+      properties:
+        prompt:
+          type: string
+          minLength: 10
+          description:
+            Additional context or instructions for optimization (10-2000
+            characters)
+          maxLength: 2000
+        title_count:
+          type: integer
+          maximum: 15
+          minimum: 1
+          default: 5
+          description:
+            "Number of optimized title variations to generate (1-15, default:
+            5)"
+        tones:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+          description:
+            "List of tones/styles for title generation (max 3). Examples:
+            ['Controversial', 'Shocking', 'Persuasive']"
+          maxItems: 3
+        script:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID of the script to optimize titles for (optional)
+        user_title:
+          type: string
+          description: User provided title to optimize (required if script not provided)
+          maxLength: 500
+      required:
+        - prompt
+    GenerateTitlesRequestRequest:
+      type: object
+      description: Serializer for title generation request
+      properties:
+        prompt:
+          type: string
+          minLength: 30
+          description:
+            Description or context for the video title generation (30-2000
+            characters)
+          maxLength: 2000
+        title_count:
+          type: integer
+          maximum: 30
+          minimum: 1
+          default: 10
+          description: "Number of title variations to generate (1-30, default: 10)"
+        tones:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+          description:
+            "List of tones/styles for title generation (max 3). Examples:
+            ['Controversial', 'Shocking', 'Persuasive']"
+          maxItems: 3
+      required:
+        - prompt
+    GenerateTitlesResponse:
+      type: object
+      description: Serializer for title generation response
+      properties:
+        titles:
+          type: array
+          items:
+            type: string
+          description: List of generated YouTube titles
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: Generation metadata including token usage and timing
+        message:
+          type: string
+          description: Success message
+      required:
+        - message
+        - metadata
+        - titles
+    GoogleAuthInput:
+      type: object
+      properties:
+        id_token:
+          type: string
+      required:
+        - id_token
+    GoogleAuthInputRequest:
+      type: object
+      properties:
+        id_token:
+          type: string
+          minLength: 1
+      required:
+        - id_token
+    IntervalEnum:
+      enum:
+        - day
+        - month
+        - week
+        - year
+      type: string
+      description: |-
+        * `day` - Day
+        * `month` - Month
+        * `week` - Week
+        * `year` - Year
+    LogoutRequest:
+      type: object
+      description: Serializer for logout endpoint. Requires refresh token to blacklist.
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+        - refresh
+    MagicLinkLoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+        - email
+    MagicLinkLoginSuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+    MagicLinkVerifyRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+      required:
+        - token
+    MagicLinkVerifySuccessResponse:
+      type: object
+      properties:
+        refresh:
+          type: string
+        access:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserBasic"
+      required:
+        - access
+        - refresh
+        - user
+    MarkAllNotificationsReadResponseRequest:
+      type: object
+      description: Serializer for mark all notifications read response
+      properties:
+        detail:
+          type: string
+          minLength: 1
+        marked_count:
+          type: integer
+      required:
+        - detail
+        - marked_count
+    MarkNotificationReadResponse:
+      type: object
+      description: Serializer for mark notification read response
+      properties:
+        detail:
+          type: string
+      required:
+        - detail
+    MarkNotificationReadResponseRequest:
+      type: object
+      description: Serializer for mark notification read response
+      properties:
+        detail:
+          type: string
+          minLength: 1
+      required:
+        - detail
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+    Niche:
+      type: object
+      description: Serializer for Niche model with tone/pacing creation and deduplication.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        admin:
+          type: integer
+          nullable: true
+        title:
+          type: string
+          maxLength: 200
+        tagline:
+          type: string
+          maxLength: 280
+        thumbnail:
+          type: string
+          format: uri
+          nullable: true
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        script_structure:
+          nullable: true
+        tone: {}
+        pacing: {}
+        top_channels: {}
+        best_for: {}
+        status:
+          $ref: "#/components/schemas/NicheStatusEnum"
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created
+        - id
+        - modified
+        - tagline
+        - thumbnail_url
+        - title
+    NichePacing:
+      type: object
+      description: Serializer for NichePacing model.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created
+        - id
+        - modified
+        - name
+    NichePacingRequest:
+      type: object
+      description: Serializer for NichePacing model.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+        - name
+    NicheRequest:
+      type: object
+      description: Serializer for Niche model with tone/pacing creation and deduplication.
+      properties:
+        admin:
+          type: integer
+          nullable: true
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        tagline:
+          type: string
+          minLength: 1
+          maxLength: 280
+        thumbnail:
+          type: string
+          format: binary
+          nullable: true
+        script_structure:
+          nullable: true
+        tone: {}
+        pacing: {}
+        top_channels: {}
+        best_for: {}
+        status:
+          $ref: "#/components/schemas/NicheStatusEnum"
+      required:
+        - tagline
+        - title
+    NicheStatusEnum:
+      enum:
+        - active
+        - inactive
+      type: string
+      description: |-
+        * `active` - Active
+        * `inactive` - Inactive
+    NicheTone:
+      type: object
+      description: Serializer for NicheTone model.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created
+        - id
+        - modified
+        - name
+    NicheToneRequest:
+      type: object
+      description: Serializer for NicheTone model.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+        - name
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        metadata: {}
+      required:
+        - created_at
+        - id
+        - message
+        - title
+    NullEnum:
+      enum:
+        - null
+    PaginatedAdminUserListList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserList"
+    PaginatedFullScriptList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/FullScript"
+    PaginatedNicheList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Niche"
+    PaginatedNichePacingList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/NichePacing"
+    PaginatedNicheToneList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/NicheTone"
+    PaginatedTitleToneList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/TitleTone"
+    PaginatedUnifiedGenerationList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/UnifiedGeneration"
+    PaginatedUserNotificationList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserNotification"
+    PatchedAdminUserUpdateRequest:
+      type: object
+      description: Serializer for updating user details by admin.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          title: Email address
+          maxLength: 254
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
+        fullname:
+          type: string
+          title: Full name
+          maxLength: 255
+        preferred_language:
+          $ref: "#/components/schemas/PreferredLanguageEnum"
+        is_active:
+          type: boolean
+          title: Active
+          description:
+            Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        is_email_verified:
+          type: boolean
+    PatchedFullScriptRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+        content:
+          type: string
+          minLength: 1
+          description: Full script content
+        sections:
+          description: Script sections for card-based display
+        status:
+          $ref: "#/components/schemas/StatusAb1Enum"
+        is_published:
+          type: boolean
+    PatchedNichePacingRequest:
+      type: object
+      description: Serializer for NichePacing model.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+    PatchedNicheRequest:
+      type: object
+      description: Serializer for Niche model with tone/pacing creation and deduplication.
+      properties:
+        admin:
+          type: integer
+          nullable: true
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        tagline:
+          type: string
+          minLength: 1
+          maxLength: 280
+        thumbnail:
+          type: string
+          format: binary
+          nullable: true
+        script_structure:
+          nullable: true
+        tone: {}
+        pacing: {}
+        top_channels: {}
+        best_for: {}
+        status:
+          $ref: "#/components/schemas/NicheStatusEnum"
+    PatchedNicheToneRequest:
+      type: object
+      description: Serializer for NicheTone model.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+    PatchedProfilePictureUploadRequest:
+      type: object
+      properties:
+        profile_picture:
+          type: string
+          format: binary
+    PatchedScriptOutlineUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 300
+        outline_text:
+          type: string
+          minLength: 1
+          description: Editable outline text
+        outline_data:
+          description: Structured outline data from OpenAI
+        section_order:
+          description:
+            Array of section indices representing user's custom ordering
+            of outline sections
+    PatchedSettingsNotificationRequest:
+      type: object
+      properties:
+        in_app_notifications:
+          type: boolean
+        email_notifications:
+          type: boolean
+        web_push_notifications:
+          type: boolean
+        new_script_generated:
+          type: boolean
+        account_or_plan_changes:
+          type: boolean
+        tips_content_inspiration:
+          type: boolean
+        feature_updates:
+          type: boolean
+        community_affiliate_updates:
+          type: boolean
+    PatchedSettingsPrivacyRequest:
+      type: object
+      properties:
+        allow_product_update_emails:
+          type: boolean
+        allow_anonymized_data_usage:
+          type: boolean
+    Plan:
+      type: object
+      properties:
+        djstripe_id:
+          type: integer
+          readOnly: true
+          title: ID
+        product:
+          $ref: "#/components/schemas/Product"
+        djstripe_created:
+          type: string
+          format: date-time
+          readOnly: true
+        djstripe_updated:
+          type: string
+          format: date-time
+          readOnly: true
+        id:
+          type: string
+          maxLength: 255
+        livemode:
+          type: boolean
+          nullable: true
+          description:
+            Null here indicates that the livemode status is unknown or
+            was previously unrecorded. Otherwise, this field indicates whether this
+            record comes from Stripe test mode or live mode operation.
+        created:
+          type: string
+          format: date-time
+          nullable: true
+          description: The datetime this object was created in stripe.
+        metadata:
+          nullable: true
+          description:
+            A set of key/value pairs that you can attach to an object.
+            It can be useful for storing additional information about an object in
+            a structured format.
+        description:
+          type: string
+          nullable: true
+          description: A description of this object.
+        active:
+          type: boolean
+          description: Whether the plan can be used for new purchases.
+        aggregate_usage:
+          description: |-
+            Specifies a usage aggregation strategy for plans of usage_type=metered. Allowed values are `sum` for summing up all usage during a period, `last_during_period` for picking the last usage record reported within a period, `last_ever` for picking the last usage record ever (across period bounds) or max which picks the usage record with the maximum reported usage during a period. Defaults to `sum`.
+
+            * `last_during_period` - Last during period
+            * `last_ever` - Last ever
+            * `max` - Max
+            * `sum` - Sum
+          oneOf:
+            - $ref: "#/components/schemas/AggregateUsageEnum"
+            - $ref: "#/components/schemas/BlankEnum"
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,2})?$
+          nullable: true
+          description: Amount (as decimal) to be charged on the interval specified.
+        amount_decimal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,12})?$
+          nullable: true
+          description:
+            The unit amount in cents to be charged, represented as a decimal
+            string with at most 12 decimal places.
+        billing_scheme:
+          description: |-
+            Describes how to compute the price per period. Either `per_unit` or `tiered`. `per_unit` indicates that the fixed amount (specified in amount) will be charged per unit in quantity (for plans with `usage_type=licensed`), or per unit of total usage (for plans with `usage_type=metered`). `tiered` indicates that the unit pricing will be computed using a tiering strategy as defined using the tiers and tiers_mode attributes.
+
+            * `per_unit` - Per-unit
+            * `tiered` - Tiered
+          oneOf:
+            - $ref: "#/components/schemas/BillingSchemeEnum"
+            - $ref: "#/components/schemas/BlankEnum"
+        currency:
+          type: string
+          description: Three-letter ISO currency code
+          maxLength: 3
+        interval:
+          allOf:
+            - $ref: "#/components/schemas/IntervalEnum"
+          description: |-
+            The frequency with which a subscription should be billed.
+
+            * `day` - Day
+            * `month` - Month
+            * `week` - Week
+            * `year` - Year
+        interval_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description:
+            The number of intervals (specified in the interval property)
+            between each subscription billing.
+        nickname:
+          type: string
+          description: A brief description of the plan, hidden from customers.
+          maxLength: 5000
+        tiers:
+          nullable: true
+          description:
+            Each element represents a pricing tier. This parameter requires
+            `billing_scheme` to be set to `tiered`.
+        tiers_mode:
+          nullable: true
+          description: |-
+            Defines if the tiering price should be `graduated` or `volume` based. In `volume`-based tiering, the maximum quantity within a period determines the per unit price, in `graduated` tiering pricing can successively change as the quantity grows.
+
+            * `graduated` - Graduated
+            * `volume` - Volume-based
+          oneOf:
+            - $ref: "#/components/schemas/TiersModeEnum"
+            - $ref: "#/components/schemas/BlankEnum"
+            - $ref: "#/components/schemas/NullEnum"
+        transform_usage:
+          nullable: true
+          description:
+            Apply a transformation to the reported usage or set quantity
+            before computing the billed price. Cannot be combined with `tiers`.
+        trial_period_days:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description:
+            Number of trial period days granted when subscribing a customer
+            to this plan. Null if the plan has no trial period.
+        usage_type:
+          allOf:
+            - $ref: "#/components/schemas/UsageTypeEnum"
+          description: |-
+            Configures how the quantity per period should be determined, can be either `metered` or `licensed`. `licensed` will automatically bill the `quantity` set for a plan when adding it to a subscription, `metered` will aggregate the total usage based on usage records. Defaults to `licensed`.
+
+            * `licensed` - Licensed
+            * `metered` - Metered
+        djstripe_owner_account:
+          type: string
+          nullable: true
+          description: The Stripe Account this object belongs to.
+      required:
+        - active
+        - currency
+        - djstripe_created
+        - djstripe_id
+        - djstripe_updated
+        - id
+        - interval
+        - product
+    PlanTypeEnum:
+      enum:
+        - trial
+        - basic
+        - pro
+      type: string
+      description: |-
+        * `trial` - Trial Plan
+        * `basic` - Basic Plan
+        * `pro` - Pro Plan
+    PreferredLanguageEnum:
+      enum:
+        - en
+        - es
+        - fr
+        - de
+        - it
+        - pt
+        - ru
+        - ja
+        - zh
+        - ar
+      type: string
+      description: |-
+        * `en` - English
+        * `es` - Spanish
+        * `fr` - French
+        * `de` - German
+        * `it` - Italian
+        * `pt` - Portuguese
+        * `ru` - Russian
+        * `ja` - Japanese
+        * `zh` - Chinese
+        * `ar` - Arabic
+    Product:
+      type: object
+      properties:
+        djstripe_id:
+          type: integer
+          readOnly: true
+          title: ID
+        djstripe_created:
+          type: string
+          format: date-time
+          readOnly: true
+        djstripe_updated:
+          type: string
+          format: date-time
+          readOnly: true
+        id:
+          type: string
+          maxLength: 255
+        livemode:
+          type: boolean
+          nullable: true
+          description:
+            Null here indicates that the livemode status is unknown or
+            was previously unrecorded. Otherwise, this field indicates whether this
+            record comes from Stripe test mode or live mode operation.
+        created:
+          type: string
+          format: date-time
+          nullable: true
+          description: The datetime this object was created in stripe.
+        metadata:
+          nullable: true
+          description:
+            A set of key/value pairs that you can attach to an object.
+            It can be useful for storing additional information about an object in
+            a structured format.
+        description:
+          type: string
+          nullable: true
+          description: A description of this object.
+        name:
+          type: string
+          description:
+            The product's name, meant to be displayable to the customer.
+            Applicable to both `service` and `good` types.
+          maxLength: 5000
+        type:
+          allOf:
+            - $ref: "#/components/schemas/TypeEnum"
+          description: |-
+            The type of the product. The product is either of type `good`, which is eligible for use with Orders and SKUs, or `service`, which is eligible for use with Subscriptions and Plans.
+
+            * `good` - Good
+            * `service` - Service
+        active:
+          type: boolean
+          nullable: true
+          description:
+            Whether the product is currently available for purchase. Only
+            applicable to products of `type=good`.
+        attributes:
+          nullable: true
+          description:
+            A list of up to 5 attributes that each SKU can provide values
+            for (e.g., `["color", "size"]`). Only applicable to products of `type=good`.
+        caption:
+          type: string
+          description:
+            A short one-line description of the product, meant to be displayableto
+            the customer. Only applicable to products of `type=good`.
+          maxLength: 5000
+        deactivate_on:
+          nullable: true
+          description:
+            An array of connect application identifiers that cannot purchase
+            this product. Only applicable to products of `type=good`.
+        images:
+          nullable: true
+          description:
+            A list of up to 8 URLs of images for this product, meant to
+            be displayable to the customer. Only applicable to products of `type=good`.
+        package_dimensions:
+          nullable: true
+          description:
+            The dimensions of this product for shipping purposes. A SKU
+            associated with this product can override this value by having its own
+            `package_dimensions`. Only applicable to products of `type=good`.
+        shippable:
+          type: boolean
+          nullable: true
+          description:
+            Whether this product is a shipped good. Only applicable to
+            products of `type=good`.
+        url:
+          type: string
+          nullable: true
+          description:
+            A URL of a publicly-accessible webpage for this product. Only
+            applicable to products of `type=good`.
+          maxLength: 799
+        statement_descriptor:
+          type: string
+          description:
+            Extra information about a product which will appear on your
+            customer's credit card statement. In the case that multiple products are
+            billed at once, the first statement descriptor will be used. Only available
+            on products of type=`service`.
+          maxLength: 22
+        unit_label:
+          type: string
+          maxLength: 12
+        djstripe_owner_account:
+          type: string
+          nullable: true
+          description: The Stripe Account this object belongs to.
+        default_price:
+          type: string
+          nullable: true
+          description: The default price this product is associated with.
+      required:
+        - djstripe_created
+        - djstripe_id
+        - djstripe_updated
+        - id
+        - name
+        - type
+    ProrationBehaviorEnum:
+      enum:
+        - always_invoice
+        - create_prorations
+        - none
+      type: string
+      description: |-
+        * `always_invoice` - Always invoice
+        * `create_prorations` - Create prorations
+        * `none` - None
+    RefreshTokenRequest:
+      type: object
+      description: Serializer for refresh token request.
+      properties:
+        refresh_token:
+          type: string
+          minLength: 1
+      required:
+        - refresh_token
+    RefreshTokenResponse:
+      type: object
+      description: Response serializer for refresh token.
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        message:
+          type: string
+      required:
+        - access_token
+        - message
+        - refresh_token
+    ScriptGeneratorConfigResponse:
+      type: object
+      properties:
+        tones:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tone"
+        template_styles:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemplateStyle"
+        outline_length_range:
+          type: object
+          additionalProperties: {}
+        script_length_range:
+          type: object
+          additionalProperties: {}
+      required:
+        - outline_length_range
+        - script_length_range
+        - template_styles
+        - tones
+    ScriptOutline:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 300
+        outline_text:
+          type: string
+          description: Editable outline text
+        outline_data:
+          description: Structured outline data from OpenAI
+        section_order:
+          description:
+            Array of section indices representing user's custom ordering
+            of outline sections
+        tones:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tone"
+          readOnly: true
+        status:
+          $ref: "#/components/schemas/StatusAb1Enum"
+        version:
+          type: integer
+          readOnly: true
+        tokens_used:
+          type: integer
+          readOnly: true
+        generation_time:
+          type: number
+          format: double
+          readOnly: true
+          description: Time in seconds
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created
+        - generation_time
+        - modified
+        - outline_text
+        - tokens_used
+        - tones
+        - uuid
+        - version
+    ScriptOutlineRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 300
+        outline_text:
+          type: string
+          minLength: 1
+          description: Editable outline text
+        outline_data:
+          description: Structured outline data from OpenAI
+        section_order:
+          description:
+            Array of section indices representing user's custom ordering
+            of outline sections
+        status:
+          $ref: "#/components/schemas/StatusAb1Enum"
+      required:
+        - outline_text
+    SettingsNotification:
+      type: object
+      properties:
+        in_app_notifications:
+          type: boolean
+        email_notifications:
+          type: boolean
+        web_push_notifications:
+          type: boolean
+        new_script_generated:
+          type: boolean
+        account_or_plan_changes:
+          type: boolean
+        tips_content_inspiration:
+          type: boolean
+        feature_updates:
+          type: boolean
+        community_affiliate_updates:
+          type: boolean
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created
+        - modified
+    SettingsPrivacy:
+      type: object
+      properties:
+        allow_product_update_emails:
+          type: boolean
+        allow_anonymized_data_usage:
+          type: boolean
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created
+        - modified
+    StatusAb1Enum:
+      enum:
+        - draft
+        - generated
+        - saved
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `generated` - Generated
+        * `saved` - Saved
+    Subscription:
+      type: object
+      properties:
+        djstripe_id:
+          type: integer
+          readOnly: true
+          title: ID
+        plan:
+          $ref: "#/components/schemas/Plan"
+        djstripe_created:
+          type: string
+          format: date-time
+          readOnly: true
+        djstripe_updated:
+          type: string
+          format: date-time
+          readOnly: true
+        id:
+          type: string
+          maxLength: 255
+        livemode:
+          type: boolean
+          nullable: true
+          description:
+            Null here indicates that the livemode status is unknown or
+            was previously unrecorded. Otherwise, this field indicates whether this
+            record comes from Stripe test mode or live mode operation.
+        created:
+          type: string
+          format: date-time
+          nullable: true
+          description: The datetime this object was created in stripe.
+        metadata:
+          nullable: true
+          description:
+            A set of key/value pairs that you can attach to an object.
+            It can be useful for storing additional information about an object in
+            a structured format.
+        description:
+          type: string
+          nullable: true
+          description: A description of this object.
+        application_fee_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+          description:
+            A positive decimal that represents the fee percentage of the
+            subscription invoice amount that will be transferred to the application
+            owner's Stripe account each billing period.
+        billing_cycle_anchor:
+          type: string
+          format: date-time
+          nullable: true
+          description:
+            Determines the date of the first full invoice, and, for plans
+            with `month` or `year` intervals, the day of the month for subsequent
+            invoices.
+        billing_thresholds:
+          nullable: true
+          description:
+            Define thresholds at which an invoice will be sent, and the
+            subscription advanced to a new billing period.
+        cancel_at:
+          type: string
+          format: date-time
+          nullable: true
+          description:
+            A date in the future at which the subscription will automatically
+            get canceled.
+        cancel_at_period_end:
+          type: boolean
+          description:
+            If the subscription has been canceled with the ``at_period_end``
+            flag set to true, ``cancel_at_period_end`` on the subscription will be
+            true. You can use this attribute to determine whether a subscription that
+            has a status of active is scheduled to be canceled at the end of the current
+            period.
+        canceled_at:
+          type: string
+          format: date-time
+          nullable: true
+          description:
+            If the subscription has been canceled, the date of that cancellation.
+            If the subscription was canceled with ``cancel_at_period_end``, canceled_at
+            will still reflect the date of the initial cancellation request, not the
+            end of the subscription period when the subscription is automatically
+            moved to a canceled state.
+        collection_method:
+          allOf:
+            - $ref: "#/components/schemas/CollectionMethodEnum"
+          description: |-
+            Either `charge_automatically`, or `send_invoice`. When charging automatically, Stripe will attempt to pay this subscription at the end of the cycle using the default source attached to the customer. When sending an invoice, Stripe will email your customer an invoice with payment instructions.
+
+            * `charge_automatically` - Charge automatically
+            * `send_invoice` - Send invoice
+        current_period_end:
+          type: string
+          format: date-time
+          description:
+            End of the current period for which the subscription has been
+            invoiced. At the end of this period, a new invoice will be created.
+        current_period_start:
+          type: string
+          format: date-time
+          description:
+            Start of the current period for which the subscription has
+            been invoiced.
+        days_until_due:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description:
+            Number of days a customer has to pay invoices generated by
+            this subscription. This value will be `null` for subscriptions where `billing=charge_automatically`.
+        discount:
+          nullable: true
+          description:
+            Describes the current discount applied to this subscription,
+            if there is one. When billing, a discount applied to a subscription overrides
+            a discount applied on a customer-wide basis.
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+          description:
+            If the subscription has ended (either because it was canceled
+            or because the customer was switched to a subscription to a new plan),
+            the date the subscription ended.
+        next_pending_invoice_item_invoice:
+          type: string
+          format: date-time
+          nullable: true
+          description:
+            Specifies the approximate timestamp on which any pending invoice
+            items will be billed according to the schedule provided at pending_invoice_item_interval.
+        pause_collection:
+          nullable: true
+          description:
+            If specified, payment collection for this subscription will
+            be paused.
+        pending_invoice_item_interval:
+          nullable: true
+          description:
+            Specifies an interval for how often to bill for any pending
+            invoice items. It is analogous to calling Create an invoice for the given
+            subscription at the specified interval.
+        pending_update:
+          nullable: true
+          description:
+            If specified, pending updates that will be applied to the subscription
+            once the latest_invoice has been paid.
+        proration_behavior:
+          description: |-
+            Determines how to handle prorations when the billing cycle changes (e.g., when switching plans, resetting billing_cycle_anchor=now, or starting a trial), or if an item’s quantity changes
+
+            * `always_invoice` - Always invoice
+            * `create_prorations` - Create prorations
+            * `none` - None
+          oneOf:
+            - $ref: "#/components/schemas/ProrationBehaviorEnum"
+            - $ref: "#/components/schemas/BlankEnum"
+        proration_date:
+          type: string
+          format: date-time
+          nullable: true
+          description:
+            If set, the proration will be calculated as though the subscription
+            was updated at the given time. This can be used to apply exactly the same
+            proration that was previewed with upcoming invoice endpoint. It can also
+            be used to implement custom proration logic, such as prorating by day
+            instead of by second, by providing the time that you wish to use for proration
+            calculations
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description:
+            The quantity applied to this subscription. This value will
+            be `null` for multi-plan subscriptions
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+          description:
+            Date when the subscription was first created. The date might
+            differ from the created date due to backdating.
+        status:
+          allOf:
+            - $ref: "#/components/schemas/SubscriptionStatusEnum"
+          description: |-
+            The status of this subscription.
+
+            * `active` - Active
+            * `canceled` - Canceled
+            * `incomplete` - Incomplete
+            * `incomplete_expired` - Incomplete Expired
+            * `past_due` - Past due
+            * `trialing` - Trialing
+            * `unpaid` - Unpaid
+        trial_end:
+          type: string
+          format: date-time
+          nullable: true
+          description: If the subscription has a trial, the end of that trial.
+        trial_start:
+          type: string
+          format: date-time
+          nullable: true
+          description: If the subscription has a trial, the beginning of that trial.
+        djstripe_owner_account:
+          type: string
+          nullable: true
+          description: The Stripe Account this object belongs to.
+        customer:
+          type: string
+          description: The customer associated with this subscription.
+        default_payment_method:
+          type: string
+          nullable: true
+          description:
+            The default payment method for the subscription. It must belong
+            to the customer associated with the subscription. If not set, invoices
+            will use the default payment method in the customer's invoice settings.
+        default_source:
+          type: string
+          nullable: true
+          description:
+            The default payment source for the subscription. It must belong
+            to the customer associated with the subscription and be in a chargeable
+            state. If not set, defaults to the customer's default source.
+        latest_invoice:
+          type: string
+          nullable: true
+          description: The most recent invoice this subscription has generated.
+        pending_setup_intent:
+          type: string
+          nullable: true
+          description:
+            We can use this SetupIntent to collect user authentication
+            when creating a subscription without immediate payment or updating a subscription's
+            payment method, allowing you to optimize for off-session payments.
+        schedule:
+          type: integer
+          title: ID
+          nullable: true
+          description: The schedule associated with this subscription.
+        default_tax_rates:
+          type: array
+          items:
+            type: integer
+            title: ID
+          description:
+            The tax rates that will apply to any subscription item that
+            does not have tax_rates set. Invoices created will have their default_tax_rates
+            populated from the subscription.
+      required:
+        - collection_method
+        - current_period_end
+        - current_period_start
+        - customer
+        - djstripe_created
+        - djstripe_id
+        - djstripe_updated
+        - id
+        - plan
+        - status
+    SubscriptionPlan:
+      type: object
+      description: Serializer for subscription plans
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        plan_type:
+          $ref: "#/components/schemas/PlanTypeEnum"
+        billing_cycle:
+          $ref: "#/components/schemas/BillingCycleEnum"
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        display_price:
+          type: string
+          readOnly: true
+        yearly_price:
+          type: number
+          format: double
+          readOnly: true
+        monthly_price:
+          type: number
+          format: double
+          readOnly: true
+        features:
+          description: Plan features as JSON
+        is_active:
+          type: boolean
+        trial_days:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Number of trial days
+        description:
+          type: string
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - billing_cycle
+        - created
+        - display_price
+        - id
+        - modified
+        - monthly_price
+        - name
+        - plan_type
+        - yearly_price
+    SubscriptionStatusEnum:
+      enum:
+        - active
+        - canceled
+        - incomplete
+        - incomplete_expired
+        - past_due
+        - trialing
+        - unpaid
+      type: string
+      description: |-
+        * `active` - Active
+        * `canceled` - Canceled
+        * `incomplete` - Incomplete
+        * `incomplete_expired` - Incomplete Expired
+        * `past_due` - Past due
+        * `trialing` - Trialing
+        * `unpaid` - Unpaid
+    TemplateStyle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        min_length:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Minimum expected length in characters or words
+        max_length:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Maximum expected length in characters or words
+        duration:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Expected duration in seconds
+        description:
+          type: string
+          description: Description of this template style
+        word_range:
+          type: string
+          readOnly: true
+      required:
+        - duration
+        - id
+        - max_length
+        - min_length
+        - name
+        - word_range
+    TiersModeEnum:
+      enum:
+        - graduated
+        - volume
+      type: string
+      description: |-
+        * `graduated` - Graduated
+        * `volume` - Volume-based
+    TitleTone:
+      type: object
+      description: Serializer for TitleTone model to list available tones
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created
+        - id
+        - modified
+        - name
+    Tone:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+      required:
+        - id
+        - name
+    ToneRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+        - name
+    TrialStatus:
+      type: object
+      description: Serializer for trial status endpoint
+      properties:
+        is_trial:
+          type: boolean
+          description: Whether user has an active trial subscription
+        trial_days_remaining:
+          type: integer
+          description: Number of trial days remaining
+        trial_expiration_date:
+          type: string
+          nullable: true
+          description: Trial expiration date in ISO format
+        trial_start_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Trial start date
+        plan_name:
+          type: string
+          nullable: true
+          description: Name of the trial plan
+        plan_type:
+          type: string
+          nullable: true
+          description: Type of the plan (trial, basic, pro)
+        status:
+          type: string
+          nullable: true
+          description: Subscription status
+      required:
+        - is_trial
+        - plan_name
+        - plan_type
+        - status
+        - trial_days_remaining
+        - trial_expiration_date
+        - trial_start_date
+    TypeEnum:
+      enum:
+        - good
+        - service
+      type: string
+      description: |-
+        * `good` - Good
+        * `service` - Service
+    UnifiedGeneration:
+      type: object
+      description: Unified serializer for listing both outlines and scripts
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        title:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        status_display:
+          type: string
+        word_count:
+          type: integer
+          nullable: true
+        estimated_duration:
+          type: number
+          format: double
+          nullable: true
+        created:
+          type: string
+          format: date-time
+        modified:
+          type: string
+          format: date-time
+        is_published:
+          type: boolean
+          nullable: true
+        version:
+          type: integer
+      required:
+        - created
+        - estimated_duration
+        - is_published
+        - modified
+        - status
+        - status_display
+        - title
+        - type
+        - uuid
+        - version
+        - word_count
+    UsageTypeEnum:
+      enum:
+        - licensed
+        - metered
+      type: string
+      description: |-
+        * `licensed` - Licensed
+        * `metered` - Metered
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        username:
+          type: string
+          maxLength: 150
+        fullname:
+          type: string
+          title: Full name
+          maxLength: 255
+        preferred_language:
+          $ref: "#/components/schemas/PreferredLanguageEnum"
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        is_email_verified:
+          type: boolean
+      required:
+        - email
+        - id
+        - profile_picture
+        - username
+    UserBasic:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        fullname:
+          type: string
+      required:
+        - email
+        - fullname
+        - id
+        - username
+    UserDetailsUpdateRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          maxLength: 255
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
+        emailAddress:
+          type: string
+          format: email
+          minLength: 1
+        preferredLanguage:
+          $ref: "#/components/schemas/PreferredLanguageEnum"
+    UserNotification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          nullable: true
+          readOnly: true
+        global_notification:
+          allOf:
+            - $ref: "#/components/schemas/Notification"
+          readOnly: true
+        message:
+          type: string
+          nullable: true
+          readOnly: true
+        read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        metadata: {}
+      required:
+        - created_at
+        - global_notification
+        - id
+        - message
+        - title
+    UserSignup:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        username:
+          type: string
+          maxLength: 150
+        fullname:
+          type: string
+          title: Full name
+          maxLength: 255
+      required:
+        - email
+        - username
+    UserSignupRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          title: Email address
+          maxLength: 254
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
+        fullname:
+          type: string
+          title: Full name
+          maxLength: 255
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+        - email
+        - password
+        - password_confirm
+        - username
+    UserStatsResponse:
+      type: object
+      description: Serializer for user statistics response
+      properties:
+        total_users:
+          type: integer
+        active_users:
+          type: integer
+        inactive_users:
+          type: integer
+        verified_users:
+          type: integer
+        admin_count:
+          type: integer
+        user_count:
+          type: integer
+        trial_users:
+          type: integer
+        subscribed_users:
+          type: integer
+      required:
+        - active_users
+        - admin_count
+        - inactive_users
+        - subscribed_users
+        - total_users
+        - trial_users
+        - user_count
+        - verified_users

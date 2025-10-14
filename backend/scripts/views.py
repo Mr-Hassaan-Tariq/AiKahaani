@@ -29,6 +29,7 @@ from .filters import FullScriptFilter, ScriptOutlineFilter, generation_filters
 from .models import FullScript, ScriptOutline, TemplateStyle, Tone
 from .pagination import GenerationsLimitOffsetPagination
 from .serializers import (
+    ExportScriptResponseSerializer,
     FullScriptSerializer,
     GenerateOutlineRequestSerializer,
     GenerateOutlineResponseSerializer,
@@ -527,6 +528,7 @@ def generate_script_outline(request):
 @extend_schema(
     summary="Recreate script outline",
     description="Recreate an existing script outline using the same parameters as the original. This will generate a new outline with the same tones, template style, and length parameters, but with fresh AI-generated content.",
+    request=None,  # No request body needed
     responses={
         201: OpenApiResponse(
             response=GenerateOutlineResponseSerializer,
@@ -780,6 +782,8 @@ class ScriptOutlineDetailView(
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return ScriptOutline.objects.none()
         return ScriptOutline.objects.filter(user=self.request.user).prefetch_related(
             "tones"
         )
@@ -1109,6 +1113,8 @@ class FullScriptDetailView(
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return FullScript.objects.none()
         return FullScript.objects.filter(user=self.request.user).select_related(
             "outline"
         )
@@ -1205,6 +1211,8 @@ class ScriptOutlineListView(MethodSpecificThrottleMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return ScriptOutline.objects.none()
         return (
             ScriptOutline.objects.filter(
                 user=self.request.user, full_scripts__isnull=True
@@ -1308,6 +1316,8 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return FullScript.objects.none()
         return (
             FullScript.objects.filter(user=self.request.user)
             .select_related("outline")
@@ -1637,6 +1647,7 @@ class ExportScriptView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    serializer_class = ExportScriptResponseSerializer
 
     def post(self, request, *args, **kwargs):
         # return Response({"message": "Export request received"}, status=status.HTTP_200_OK)

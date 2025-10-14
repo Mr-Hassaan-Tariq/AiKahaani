@@ -1,5 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from .choices import LanguageChoices
@@ -56,6 +57,7 @@ class UserSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id",)
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_profile_picture(self, obj):
         if not getattr(obj, "profile_picture", None):
             return None

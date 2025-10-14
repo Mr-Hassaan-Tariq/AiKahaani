@@ -19,6 +19,7 @@ from admins.serializers import (
     NichePacingSerializer,
     NicheSerializer,
     NicheToneSerializer,
+    UserStatsResponseSerializer,
 )
 from notifications.choices import NotificationType
 from notifications.helpers import NotificationHelper
@@ -143,6 +144,8 @@ class AdminUserListViewSet(ModelViewSet):
         Return filtered queryset based on admin permissions.
         Exclude the current admin user from the list.
         """
+        if getattr(self, "swagger_fake_view", False):
+            return User.objects.none()
         qs = User.objects.all().exclude(id=self.request.user.id)
 
         # Additional filtering based on query parameters
@@ -353,6 +356,7 @@ class UserStatsView(APIView):
     """
 
     permission_classes = [IsAuthenticated, IsAdminPermission]
+    serializer_class = UserStatsResponseSerializer
 
     def get(self, request):
         total_users = User.objects.count()

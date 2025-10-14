@@ -1,8 +1,22 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from users.models import User
 
 from .models import Niche, NichePacing, NicheTone
+
+
+class UserStatsResponseSerializer(serializers.Serializer):
+    """Serializer for user statistics response"""
+
+    total_users = serializers.IntegerField()
+    active_users = serializers.IntegerField()
+    inactive_users = serializers.IntegerField()
+    verified_users = serializers.IntegerField()
+    admin_count = serializers.IntegerField()
+    user_count = serializers.IntegerField()
+    trial_users = serializers.IntegerField()
+    subscribed_users = serializers.IntegerField()
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -36,6 +50,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "date_joined", "last_login")
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_profile_picture(self, obj):
         """Get profile picture URL."""
         if not getattr(obj, "profile_picture", None):
@@ -47,10 +62,12 @@ class AdminUserSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         return request.build_absolute_uri(url) if request else url
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_roles_display(self, obj):
         """Get human-readable role names."""
         return [role.name for role in obj.roles.all()]
 
+    @extend_schema_field(serializers.BooleanField())
     def get_is_admin(self, obj):
         """Check if user is admin."""
         return obj.is_admin()
@@ -186,6 +203,7 @@ class NicheSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created", "modified", "thumbnail_url"]
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_thumbnail_url(self, obj):
         """Get the full URL for the thumbnail image."""
         if obj.thumbnail:

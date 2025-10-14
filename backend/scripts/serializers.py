@@ -1,7 +1,16 @@
 # serializers.py
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from .models import FullScript, ScriptOutline, TemplateStyle, Tone
+
+
+class ExportScriptResponseSerializer(serializers.Serializer):
+    """Serializer for script export response"""
+
+    message = serializers.CharField()
+    download_url = serializers.URLField(required=False)
+    filename = serializers.CharField(required=False)
 
 
 class ToneSerializer(serializers.ModelSerializer):
@@ -25,6 +34,7 @@ class TemplateStyleSerializer(serializers.ModelSerializer):
             "word_range",
         ]
 
+    @extend_schema_field(serializers.CharField())
     def get_word_range(self, obj):
         return f"~{obj.min_length}-{obj.max_length} words"
 

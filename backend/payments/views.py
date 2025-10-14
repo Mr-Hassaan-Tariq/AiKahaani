@@ -13,6 +13,7 @@ from api.mixins import MethodSpecificThrottleMixin
 
 from .models import SubscriptionPlan
 from .serializers import (
+    BillingPortalSessionSerializer,
     SubscriptionPlanSerializer,
     SubscriptionSerializer,
     TrialStatusSerializer,
@@ -33,6 +34,7 @@ class SubscriptionPlansView(MethodSpecificThrottleMixin, APIView):
     """View to fetch all available subscription plans"""
 
     permission_classes = [AllowAny]
+    serializer_class = SubscriptionPlanSerializer
     authentication_classes = []
 
     @extend_schema(
@@ -67,6 +69,7 @@ class UserSubscriptionView(MethodSpecificThrottleMixin, APIView):
     """View to manage user subscriptions"""
 
     permission_classes = [IsAuthenticated]
+    serializer_class = SubscriptionSerializer
 
     @extend_schema(
         summary="Get user subscription",
@@ -99,6 +102,7 @@ class CreateCheckoutSessionView(MethodSpecificThrottleMixin, APIView):
     """Create a Stripe Checkout Session using dj-stripe."""
 
     permission_classes = [IsAuthenticated]
+    serializer_class = BillingPortalSessionSerializer  # Reuse for checkout session URL
 
     @extend_schema(
         summary="Create Stripe Checkout Session",
@@ -204,6 +208,7 @@ class CreateCheckoutSessionView(MethodSpecificThrottleMixin, APIView):
 
 class CreateBillingPortalSessionView(MethodSpecificThrottleMixin, APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = BillingPortalSessionSerializer
 
     @extend_schema(
         summary="Create Stripe Billing Portal Session",
@@ -265,6 +270,7 @@ class TrialStatusView(MethodSpecificThrottleMixin, APIView):
     """View to check user's trial subscription status"""
 
     permission_classes = [IsAuthenticated]
+    serializer_class = TrialStatusSerializer
 
     @extend_schema(
         summary="Get user trial status",

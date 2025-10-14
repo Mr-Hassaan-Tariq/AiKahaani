@@ -1,5 +1,10 @@
 from django.db import models
-from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    OpenApiTypes,
+    extend_schema,
+)
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -7,7 +12,11 @@ from rest_framework.views import APIView
 from api.mixins import MethodSpecificThrottleMixin
 from notifications.choices import NotificationType
 from notifications.models import UserNotification
-from notifications.serializers import UserNotificationSerializer
+from notifications.serializers import (
+    MarkAllNotificationsReadResponseSerializer,
+    MarkNotificationReadResponseSerializer,
+    UserNotificationSerializer,
+)
 from scripts.pagination import GenerationsLimitOffsetPagination
 
 
@@ -64,6 +73,8 @@ class UserNotificationListView(MethodSpecificThrottleMixin, generics.ListAPIView
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return UserNotification.objects.none()
         user = self.request.user
         queryset = UserNotification.objects.filter(user=user).order_by("-created_at")
 
@@ -88,6 +99,7 @@ class UserNotificationListView(MethodSpecificThrottleMixin, generics.ListAPIView
 
 class MarkNotificationReadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = MarkNotificationReadResponseSerializer
 
     @extend_schema(
         tags=["Notifications"],
@@ -99,17 +111,12 @@ class MarkNotificationReadView(APIView):
             - Returns `404` if the notification does not exist or does not belong to the user.
             """,
         responses={
-            200: OpenApiParameter(
-                name="detail",
-                description="Confirmation message",
-                required=True,
-                type=str,
+            200: OpenApiResponse(
+                description="Notification marked as read successfully",
+                response=MarkNotificationReadResponseSerializer,
             ),
-            404: OpenApiParameter(
-                name="detail",
-                description="Error message if notification not found",
-                required=True,
-                type=str,
+            404: OpenApiResponse(
+                description="Notification not found or access denied",
             ),
         },
     )
@@ -125,6 +132,7 @@ class MarkNotificationReadView(APIView):
 
 class MarkAllNotificationsReadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = MarkAllNotificationsReadResponseSerializer
 
     @extend_schema(
         tags=["Notifications"],

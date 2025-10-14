@@ -335,6 +335,31 @@ DJSTRIPE_LIVE_MODE = STRIPE_LIVE_MODE
 DJSTRIPE_TEST_MODE = STRIPE_TEST_MODE
 
 ######################################################################
+# DRF Spectacular Configuration
+######################################################################
+SPECTACULAR_SETTINGS = {
+    "TITLE": "TubeGenius API",
+    "DESCRIPTION": "API for TubeGenius YouTube script generation platform",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "ENUM_NAME_OVERRIDES": {
+        "StatusAb1Enum": "NotificationStatusEnum",  # Fix enum naming collision
+    },
+    "EXTENSIONS_INFO": {
+        "x-logo": {
+            "url": "https://tubegenius.vercel.app/logo.png",
+        }
+    },
+    "AUTHENTICATION_WHITELIST": [
+        "users.authentication.JWTAuthenticationWithAccessTokenBlacklist",
+    ],
+    "EXTENSIONS": [
+        "users.spectacular_extensions.JWTAuthenticationWithAccessTokenBlacklistExtension",
+    ],
+}
+
+######################################################################
 # OPENAI Configuration
 ######################################################################
 OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
