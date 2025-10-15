@@ -382,15 +382,15 @@ def generate_script_outline(request):
             )
             raise ValueError(f"OpenAI returned invalid JSON response: {str(e)}")
 
-        # Generate title using assistant if not provided
-        if title:
-            outline_title = title
+        # Generate title using assistant if not provided or if provided title is empty/whitespace
+        if title and title.strip():
+            outline_title = title.strip()
             logger.debug(
-                f"[OUTLINE_GENERATION] Using provided title for user {request.user.id}: '{title}'"
+                f"[OUTLINE_GENERATION] Using provided title for user {request.user.id}: '{outline_title}'"
             )
         else:
             logger.info(
-                f"[OUTLINE_GENERATION] Generating title for user {request.user.id}"
+                f"[OUTLINE_GENERATION] Generating title for user {request.user.id} (provided title: '{title}')"
             )
             try:
                 # Use the title generation assistant to create an engaging title
@@ -666,7 +666,7 @@ def recreate_script_outline(request, uuid):
             actual_outline_text = outline_text
 
         # Create new outline with "Recreated" prefix, but generate a fresh title
-        if original_outline.title:
+        if original_outline.title and original_outline.title.strip():
             # Generate a new title based on the original outline's content
             try:
                 # Use the title generation assistant to create an engaging title
