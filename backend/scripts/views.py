@@ -1,6 +1,7 @@
 # views.py
 import logging
 import os
+import time
 from datetime import datetime
 
 from django.conf import settings
@@ -950,13 +951,56 @@ def generate_full_script(request, uuid):
                 f"Length: {len(outline_for_script)}"
             )
 
-        # Generate full script using new word count strategy
-        logger.info(
-            f"[SCRIPT_GENERATION] Starting section-based script generation for user {request.user.id}"
-        )
-        script_response = OpenAIScriptService.generate_script_with_word_count_strategy(
-            outline_for_script, script_data, user=request.user
-        )
+        # Special handling for Flexible Outline template - return outline as script
+        if template_style_name.lower() == "flexible_outline":
+            logger.info(
+                f"[SCRIPT_GENERATION] Flexible outline template detected for user {request.user.id} - "
+                f"returning outline as script content"
+            )
+            
+            # For Flexible templates, the outline IS the script
+            script_content = outline.outline_text
+            
+            # Create minimal sections structure for Flexible template
+            sections = [{
+                "title": "Outline",
+                "content": script_content,
+                "start_time": "00:00",
+                "end_time": "00:01",
+                "word_count": len(script_content.split()),
+                "section_type": "outline"
+            }]
+            
+            # Create metadata for Flexible template
+            metadata = {
+                "tokens_used": 0,
+                "generation_time": 0.0,
+                "model": "flexible_outline",
+                "assistant_id": "flexible-outline",
+                "vector_store_id": "none",
+                "thread_id": f"flexible_{int(time.time())}",
+                "run_id": f"flexible_run_{int(time.time())}",
+                "file_search_used": False,
+                "word_count": len(script_content.split()),
+                "length_valid": True,
+                "strategy_used": "flexible_outline",
+                "sections_generated": 1,
+                "template_style": template_style_name
+            }
+            
+            script_response = {
+                "full_text": script_content,
+                "sections": sections,
+                "metadata": metadata
+            }
+        else:
+            # Generate full script using new word count strategy for other templates
+            logger.info(
+                f"[SCRIPT_GENERATION] Starting section-based script generation for user {request.user.id}"
+            )
+            script_response = OpenAIScriptService.generate_script_with_word_count_strategy(
+                outline_for_script, script_data, user=request.user
+            )
 
         # Extract components from JSON response
         script_content = script_response["full_text"]
