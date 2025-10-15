@@ -1111,14 +1111,6 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                 # Not JSON, use raw content
                 pass
             
-            # Check validator compliance for scripts
-            compliance_check = OpenAIScriptService._check_script_validator_compliance(
-                actual_script_text, sections, script_json_data if 'script_json_data' in locals() else {}
-            )
-            
-            # Add compliance check to metadata
-            metadata["validator_compliance"] = compliance_check
-            
             # Calculate word count
             word_count = len(actual_script_text.split())
             is_valid, actual_word_count = OpenAIScriptService._validate_word_count(
@@ -1129,6 +1121,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
             thread_id = f"chat_{int(time.time())}"
             run_id = f"run_{int(time.time())}"
 
+            # Initialize metadata first
             metadata = {
                 "tokens_used": tokens_used,
                 "generation_time": generation_time,
@@ -1141,6 +1134,14 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                 "word_count": word_count,
                 "length_valid": is_valid,
             }
+            
+            # Check validator compliance for scripts
+            compliance_check = OpenAIScriptService._check_script_validator_compliance(
+                actual_script_text, sections, script_json_data if 'script_json_data' in locals() else {}
+            )
+            
+            # Add compliance check to metadata
+            metadata["validator_compliance"] = compliance_check
 
             # Log result (success or warning about word count)
             if is_valid:
