@@ -427,6 +427,7 @@ def generate_script_outline(request):
                 "template_style_id": template_style.id if template_style else None,
                 "min_length": min_length,
                 "max_length": max_length,
+                "validator_compliance": actual_outline_data.get("validator_compliance", {}) if actual_outline_data else {}
             }
         )
 
