@@ -146,7 +146,7 @@ def generate_script_outline(request):
     logger.info(
         f"[OUTLINE_GENERATION] Starting outline generation for user: {request.user.id}"
     )
-
+    
     serializer = GenerateOutlineRequestSerializer(data=request.data)
     if not serializer.is_valid():
         logger.warning(
@@ -163,10 +163,10 @@ def generate_script_outline(request):
     min_length = validated_data.get("min_length", 100)
     max_length = validated_data.get("max_length", 1000)
     title = validated_data.get("title", "")
-
+    
     logger.info(
         f"[OUTLINE_GENERATION] Parameters - User: {request.user.id}, Description length: {len(description)}, "
-        f"Tone IDs: {tone_ids}, Template style: {template_style_id}, Length: {min_length}-{max_length}, "
+                f"Tone IDs: {tone_ids}, Template style: {template_style_id}, Length: {min_length}-{max_length}, "
         f"Has image: {bool(image)}, Has image URL: {bool(image_url)}, Has title: {bool(title)}"
     )
 
@@ -280,14 +280,15 @@ def generate_script_outline(request):
             "description": description,
             "tones": outline_tones,
             "template_style": template_style.name if template_style else "medium",
+            "template_style_id": template_style.id if template_style else None,
             "min_length": min_length,
             "max_length": max_length,
         }
-
+        
         logger.info(
             f"[OUTLINE_GENERATION] Prepared script data for user {request.user.id}: "
-            f"Description length: {len(description)}, Tones: {outline_tones}, "
-            f"Template: {template_style.name if template_style else 'medium'}, "
+                   f"Description length: {len(description)}, Tones: {outline_tones}, "
+                   f"Template: {template_style.name if template_style else 'medium'}, "
             f"Length range: {min_length}-{max_length}"
         )
 
@@ -302,7 +303,7 @@ def generate_script_outline(request):
         )
         logger.info(
             f"[OUTLINE_GENERATION] OpenAI outline generation completed for user {request.user.id} - "
-            f"Tokens used: {metadata.get('tokens_used', 0)}, Generation time: {metadata.get('generation_time', 0):.2f}s, "
+                   f"Tokens used: {metadata.get('tokens_used', 0)}, Generation time: {metadata.get('generation_time', 0):.2f}s, "
             f"Model: {metadata.get('model', 'unknown')}"
         )
 
@@ -313,7 +314,7 @@ def generate_script_outline(request):
         logger.debug(
             f"[OUTLINE_GENERATION] Processing outline response for user {request.user.id}"
         )
-
+        
         # Check for empty response first
         if not outline_text or not outline_text.strip():
             logger.error(
@@ -322,31 +323,31 @@ def generate_script_outline(request):
             raise ValueError(
                 "OpenAI returned empty response - this indicates an API error or rate limiting"
             )
-
+        
         try:
             # Parse JSON directly - API enforces JSON format
             logger.debug(
                 f"[OUTLINE_GENERATION] Parsing JSON response length: {len(outline_text)}"
             )
-
+            
             outline_json_data = json.loads(outline_text)
             if (
                 not isinstance(outline_json_data, dict)
                 or "sections" not in outline_json_data
             ):
                 raise ValueError("Invalid JSON structure: missing 'sections' field")
-
+            
             # Extract structured data from JSON response
             actual_outline_data = {
                 "sections": outline_json_data.get("sections", []),
                 "section_order": outline_json_data.get("section_order", []),
             }
-
+            
             # Reconstruct outline text from sections to avoid redundancy
             sections = actual_outline_data.get("sections", [])
             if not sections:
                 raise ValueError("Invalid JSON structure: missing 'sections' field")
-
+            
             # Build outline text from sections
             outline_parts = []
             for section in sections:
@@ -354,7 +355,7 @@ def generate_script_outline(request):
                 description = section.get("description", "")
                 if title and description:
                     outline_parts.append(f"{title} - {description}")
-
+            
             actual_outline_text = "\n\n".join(outline_parts)
 
             # Clean up any document references
@@ -362,13 +363,13 @@ def generate_script_outline(request):
             actual_outline_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text)
             actual_outline_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_outline_text)
             actual_outline_text = actual_outline_text.strip()
-
+            
             logger.info(
                 f"[OUTLINE_GENERATION] Parsed JSON outline for user {request.user.id} - "
-                f"Sections: {len(actual_outline_data.get('sections', []))}, "
+                       f"Sections: {len(actual_outline_data.get('sections', []))}, "
                 f"Outline text length: {len(actual_outline_text)}"
             )
-
+                       
         except (json.JSONDecodeError, TypeError, ValueError) as e:
             logger.error(
                 f"[OUTLINE_GENERATION] JSON parsing failed for user {request.user.id}: {str(e)}"
@@ -450,11 +451,11 @@ def generate_script_outline(request):
             generation_time=metadata["generation_time"],
         )
         outline.tones.set(tones)
-
+        
         logger.info(
             f"[OUTLINE_GENERATION] Outline created successfully for user {request.user.id} - "
-            f"Outline ID: {outline.uuid}, Title: '{outline.title}', "
-            f"Total tokens: {metadata.get('tokens_used', 0)}, "
+                   f"Outline ID: {outline.uuid}, Title: '{outline.title}', "
+                   f"Total tokens: {metadata.get('tokens_used', 0)}, "
             f"Generation time: {metadata.get('generation_time', 0):.2f}s"
         )
 
@@ -942,7 +943,7 @@ def generate_full_script(request, uuid):
             outline_for_script = json.dumps(structured_outline)
             logger.info(
                 f"[SCRIPT_GENERATION] Using structured outline for user {request.user.id} - "
-                f"Sections: {len(outline.outline_data.get('sections', []))}, "
+                       f"Sections: {len(outline.outline_data.get('sections', []))}, "
                 f"Outline text length: {len(outline.outline_text)}"
             )
         else:
@@ -1080,9 +1081,9 @@ def generate_full_script(request, uuid):
 
         logger.info(
             f"[SCRIPT_GENERATION] Script created successfully for user {request.user.id} - "
-            f"Script ID: {full_script.uuid}, Title: '{script_title}', "
-            f"Content length: {len(actual_script_text)}, "
-            f"Total tokens: {metadata.get('tokens_used', 0)}, "
+                   f"Script ID: {full_script.uuid}, Title: '{script_title}', "
+                   f"Content length: {len(actual_script_text)}, "
+                   f"Total tokens: {metadata.get('tokens_used', 0)}, "
             f"Generation time: {metadata.get('generation_time', 0):.2f}s"
         )
 
