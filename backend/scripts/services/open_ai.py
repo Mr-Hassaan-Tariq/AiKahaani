@@ -1844,7 +1844,7 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, 
         tones = script_data.get("tones", ["informative"])
         template_style = script_data.get("template_style", "medium")
         description = script_data.get("description", "")
-        min_length = script_data.get("min_length", 100)
+        min_length = script_data.get("min_length", 0)
         max_length = script_data.get("max_length", 1000)
 
         tone_text = (
