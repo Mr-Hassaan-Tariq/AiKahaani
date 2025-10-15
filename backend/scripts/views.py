@@ -382,15 +382,15 @@ def generate_script_outline(request):
             )
             raise ValueError(f"OpenAI returned invalid JSON response: {str(e)}")
 
-        # Generate title using assistant if not provided
-        if title:
-            outline_title = title
+        # Generate title using assistant if not provided or if provided title is empty/whitespace
+        if title and title.strip():
+            outline_title = title.strip()
             logger.debug(
-                f"[OUTLINE_GENERATION] Using provided title for user {request.user.id}: '{title}'"
+                f"[OUTLINE_GENERATION] Using provided title for user {request.user.id}: '{outline_title}'"
             )
         else:
             logger.info(
-                f"[OUTLINE_GENERATION] Generating title for user {request.user.id}"
+                f"[OUTLINE_GENERATION] Generating title for user {request.user.id} (provided title: '{title}')"
             )
             try:
                 # Use the title generation assistant to create an engaging title
@@ -427,6 +427,7 @@ def generate_script_outline(request):
                 "template_style_id": template_style.id if template_style else None,
                 "min_length": min_length,
                 "max_length": max_length,
+                "validator_compliance": actual_outline_data.get("validator_compliance", {}) if actual_outline_data else {}
             }
         )
 
@@ -666,7 +667,7 @@ def recreate_script_outline(request, uuid):
             actual_outline_text = outline_text
 
         # Create new outline with "Recreated" prefix, but generate a fresh title
-        if original_outline.title:
+        if original_outline.title and original_outline.title.strip():
             # Generate a new title based on the original outline's content
             try:
                 # Use the title generation assistant to create an engaging title
@@ -1009,11 +1010,26 @@ def generate_full_script(request, uuid):
         script_content = script_response["full_text"]
         sections = script_response["sections"]
         metadata = script_response["metadata"]
+        
+        # Check script validator compliance
+        validator_compliance = OpenAIScriptService._check_script_validator_compliance(
+            script_content, sections, script_response
+        )
+        
         logger.info(
             f"[SCRIPT_GENERATION] OpenAI script generation completed for user {request.user.id} - "
             f"Tokens used: {metadata.get('tokens_used', 0)}, Generation time: {metadata.get('generation_time', 0):.2f}s, "
-            f"Model: {metadata.get('model', 'unknown')}"
+            f"Model: {metadata.get('model', 'unknown')}, Validator compliance: {validator_compliance.get('overall_compliance', 'UNKNOWN')}"
         )
+        
+        # Log validator violations if any
+        if validator_compliance.get('overall_compliance') == 'FAIL':
+            violations = validator_compliance.get('violations', [])
+            framework_gaps = validator_compliance.get('framework_gaps', [])
+            logger.warning(
+                f"[SCRIPT_GENERATION] Script validator violations for user {request.user.id}: "
+                f"Violations: {violations}, Framework gaps: {framework_gaps}"
+            )
 
         # Process script response - new word count strategy returns plain text
         import re
@@ -1055,6 +1071,11 @@ def generate_full_script(request, uuid):
             f"[SCRIPT_GENERATION] Final script text length for user {request.user.id}: {len(actual_script_text)}"
         )
 
+        # Add validator compliance to sections data
+        sections_with_validator = sections.copy() if sections else []
+        for section in sections_with_validator:
+            section["validator_compliance"] = validator_compliance
+        
         # Create FullScript
         logger.info(
             f"[SCRIPT_GENERATION] Creating FullScript object for user {request.user.id}"
@@ -1065,7 +1086,7 @@ def generate_full_script(request, uuid):
             outline=outline,
             title=script_title,  # Use the outline title directly
             content=actual_script_text,
-            sections=sections,
+            sections=sections_with_validator,
             status="generated",
             openai_model=metadata["model"],
             tokens_used=metadata["tokens_used"],
@@ -1761,8 +1782,8 @@ class ExportScriptView(APIView):
                 result = _export_pdf(script, safe_title, timestamp)
             elif export_format == "docx":
                 result = _export_docx(script, safe_title, timestamp)
-            result = request.build_absolute_uri(result["file_url"])
-            return Response({"file_url": result}, status=status.HTTP_200_OK)
+            absolute_url = request.build_absolute_uri(result["file_url"])
+            return Response({"file_url": absolute_url}, status=status.HTTP_200_OK)
 
         except Exception as e:
             logger.error(f"Script export failed: {str(e)}")

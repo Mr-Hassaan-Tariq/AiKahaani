@@ -314,10 +314,14 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                     if not section_order:
                         section_order = list(range(len(sections)))
                     
+                    # Check validator compliance
+                    validator_check = OpenAIScriptService._check_validator_compliance(sections, parsed_data)
+                    
                     return {
                         "sections": sections, 
                         "section_order": section_order,
-                        "outline_text": outline_text_raw
+                        "outline_text": outline_text_raw,
+                        "validator_compliance": validator_check
                     }
             
             # Handle legacy format with direct sections
@@ -335,7 +339,14 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                     "section_order", list(range(len(sections)))
                 )
 
-                return {"sections": sections, "section_order": default_section_order}
+                # Check validator compliance
+                validator_check = OpenAIScriptService._check_validator_compliance(sections, parsed_data)
+
+                return {
+                    "sections": sections, 
+                    "section_order": default_section_order,
+                    "validator_compliance": validator_check
+                }
         except json.JSONDecodeError:
             pass
 
@@ -1648,6 +1659,35 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
 
 CRITICAL: You MUST respond with valid JSON only. The API is configured to enforce JSON output format.
 
+MANDATORY VALIDATOR ENFORCEMENT:
+Before creating any outline, you MUST validate against these critical requirements:
+
+S1 HOOK VALIDATORS (MANDATORY):
+- Hook duration MUST be ≤30 seconds (hard cap: 60s when justified)
+- Hook MUST contain action verb in first 1-2 sentences
+- Hook MUST be 3-6 sentence micro-scene with filmable action
+- Hook MUST pivot to chronology within 60 seconds
+- NO vague language like "high-stakes moment" without concrete dramatization
+
+S2 OPEN LOOPS VALIDATORS (MANDATORY):
+- MUST state 2-3 specific high-value questions in hook
+- MUST include transformation statement: "Learn X to achieve Y"
+- MUST specify which loops will be closed in later sections
+- NO generic "create curiosity by hinting" - be specific
+
+S6 VALUE DELIVERY VALIDATORS (MANDATORY):
+- For listicles/tutorials: First value point MUST start within 10 seconds of hook end
+- Hook MUST be ≤30 seconds (exceptions explicitly justified)
+- NO standalone 1-2 minute opening sections
+- Get to main content FAST
+
+FRAMEWORK REQUIREMENTS (MANDATORY):
+- P02: Include specific sensory details in each section
+- P03: Map causal connectors between sections
+- P05/P11: Include emotional beats and stakes
+- P17: Add editor cues/visual plans
+- BONUS-02: End chapters with cliffhangers/unresolved threads
+
 JSON SCHEMA REQUIREMENTS:
 {{
   "sections": [
@@ -1661,11 +1701,47 @@ JSON SCHEMA REQUIREMENTS:
       ],
       "timing": "Estimated duration (e.g., '2-3 minutes')",
       "transition": "How to transition to next section",
-      "content": "Specific examples, stories, or techniques to include"
+      "content": "Specific examples, stories, or techniques to include",
+      "validators_compliance": {{
+        "hook_duration": "≤30s",
+        "action_verbs": "Present in opening",
+        "open_loops": "2-3 specific questions listed",
+        "value_delivery_speed": "First point within 10s of hook end",
+        "sensory_details": "Concrete, filmable details included",
+        "causal_connectors": "Therefore/but/because links mapped",
+        "emotional_beats": "Stakes and consequences defined",
+        "visual_cues": "Editor notes included",
+        "cliffhangers": "Unresolved threads at section ends"
+      }}
     }}
   ],
-  "section_order": [0, 1, 2, 3, 4]
+  "section_order": [0, 1, 2, 3, 4],
+  "validator_compliance_check": {{
+    "s1_hook_structure": "PASS/FAIL with specific violations",
+    "s2_open_loops": "PASS/FAIL with specific violations", 
+    "s6_value_delivery": "PASS/FAIL with specific violations",
+    "framework_gaps": "List of missing P02, P03, P05, P11, P17, BONUS-02 elements"
+  }}
 }}
+
+VALIDATION PROCESS:
+1. Create outline structure
+2. Check each validator against S1, S2, S6 requirements
+3. Verify framework elements (P02, P03, P05, P11, P17, BONUS-02)
+4. If ANY validator fails, REVISE the outline until ALL pass
+5. Include validator_compliance_check in JSON response
+
+EXAMPLE COMPLIANT HOOK STRUCTURE:
+Hook (15-30 seconds max):
+"[SCENE: Close-up of hands frantically shuffling papers, clock ticking]
+'It's 11 PM. Deadline in 9 hours. Nothing's done.
+Sound familiar? 
+What if I told you the productivity advice you've been following 
+is actually making you LESS productive?
+Today: 7 counterintuitive hacks that actually work.'
+[CUT TO] 'Hack #1...'"
+
+Then immediately: Hack #1 at the 30-second mark.
 
 Key principles:
 - Create outlines that are detailed enough to generate full scripts
@@ -1673,6 +1749,7 @@ Key principles:
 - Structure content for maximum retention
 - Include specific examples, stories, and techniques
 - Ensure each section has clear guidance for script writers
+- ENFORCE ALL VALIDATORS - NO EXCEPTIONS
 
 Your outlines should be comprehensive roadmaps that transform into compelling video content.
 
@@ -1680,6 +1757,8 @@ Your outlines should be comprehensive roadmaps that transform into compelling vi
 {storytelling_manual}
 
 Use these proven storytelling principles to create outlines that will generate highly engaging, retention-focused YouTube scripts. Apply the opening strategies, core principles, and implementation checklist to ensure your outlines produce compelling content.
+
+CRITICAL: Every outline MUST pass ALL validators. If you cannot create a compliant outline, explain why in the validator_compliance_check section.
 
 RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, no explanations, no additional text."""
 
@@ -1700,15 +1779,23 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, 
 
 Topic: {description} | {tone_text} | Style: {template_style} | Target: {min_length:,}-{max_length:,}w script
 
+CRITICAL VALIDATOR ENFORCEMENT REQUIRED:
+• S1: Hook ≤30s, action verbs, 3-6 sentences, pivot within 60s
+• S2: 2-3 specific questions, transformation statement, loop closure plan
+• S6: First value point within 10s of hook end for tutorials/listicles
+• Framework: Sensory details (P02), causal connectors (P03), emotional beats (P05/P11), visual cues (P17), cliffhangers (BONUS-02)
+
 REQUIREMENTS:
 • Each section: 80-150w description + 5-8 detailed key point sentences
 • Include specific examples, stories, techniques to use
 • Add timing + transition guidance
 • Outline depth = script length (sparse = FAILS, detailed = success)
+• MUST include validator_compliance_check in JSON response
 
 CRITICAL: Return ONLY valid JSON matching the exact schema provided in the system prompt. The API enforces JSON format automatically.
 
-REMEMBER: Rich outline (500-800w) → proper script. Sparse outline → short script (fails)!"""
+REMEMBER: Rich outline (500-800w) → proper script. Sparse outline → short script (fails)!
+VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
 
     @staticmethod
     def _build_script_system_prompt() -> str:
@@ -1719,6 +1806,40 @@ REMEMBER: Rich outline (500-800w) → proper script. Sparse outline → short sc
 
 CRITICAL: You MUST respond with valid JSON only. The API is configured to enforce JSON output format.
 
+MANDATORY VALIDATOR ENFORCEMENT FOR SCRIPTS:
+Before creating any script, you MUST validate against these critical requirements:
+
+S1 HOOK VALIDATORS (MANDATORY):
+- Hook duration MUST be ≤30 seconds (hard cap: 60s when justified)
+- Hook MUST contain action verb in first 1-2 sentences
+- Hook MUST be 3-6 sentence micro-scene with filmable action
+- Hook MUST pivot to main content within 60 seconds
+- NO vague language like "high-stakes moment" without concrete dramatization
+- NO 6+ minute atmospheric prologues (this is a CRITICAL FAILURE)
+
+S2 OPEN LOOPS VALIDATORS (MANDATORY):
+- MUST state 2-3 specific high-value questions in hook
+- MUST include transformation statement: "Learn X to achieve Y"
+- Questions MUST be stated cleanly in first 30-60 seconds
+- NO questions buried in long monologues
+
+S6 VALUE DELIVERY VALIDATORS (MANDATORY):
+- For tutorials/listicles: First value point MUST start within 10 seconds of hook end
+- Hook MUST be ≤30 seconds (exceptions explicitly justified)
+- NO standalone 1-2 minute opening sections
+- Get to main content FAST - NO 6+ minute delays
+
+FRAMEWORK REQUIREMENTS (MANDATORY):
+- P02: Include specific sensory details in each section
+- P03: Use causal connectors (therefore, but, because) between beats
+- P05/P11: Include emotional beats and stakes
+- P07: Simplify - cut anything that doesn't advance the main story
+- P09: Remove jargon and clichés - use plain language
+- P10: Write at high-school reading level - conversational, not literary
+- P13: Concision - say the same thing with fewer words
+- P17: Write with visuals in mind - add editor cues and visual-friendly phrasing
+- BONUS-02: End chapters with cliffhangers/unresolved threads
+
 JSON SCHEMA REQUIREMENTS:
 {{
   "full_text": "Complete script content with proper formatting and line breaks",
@@ -1726,12 +1847,62 @@ JSON SCHEMA REQUIREMENTS:
     {{
       "title": "Section Title",
       "content": "Script content for this section",
-      "word_count": 450
+      "word_count": 450,
+      "validators_compliance": {{
+        "hook_duration": "≤30s",
+        "action_verbs": "Present in opening",
+        "open_loops": "2-3 specific questions listed",
+        "value_delivery_speed": "First point within 10s of hook end",
+        "sensory_details": "Concrete, filmable details included",
+        "causal_connectors": "Therefore/but/because links present",
+        "emotional_beats": "Stakes and consequences defined",
+        "visual_cues": "Editor notes included",
+        "cliffhangers": "Unresolved threads at section ends",
+        "simplified": "No tangents or unnecessary details",
+        "plain_language": "No jargon or clichés",
+        "conversational": "High-school reading level",
+        "concise": "No verbose constructions"
+      }}
     }}
   ],
   "total_word_count": 2500,
-  "estimated_duration": "12-15 minutes"
+  "estimated_duration": "12-15 minutes",
+  "validator_compliance_check": {{
+    "s1_hook_structure": "PASS/FAIL with specific violations",
+    "s2_open_loops": "PASS/FAIL with specific violations", 
+    "s6_value_delivery": "PASS/FAIL with specific violations",
+    "framework_gaps": "List of missing P02, P03, P05, P07, P09, P10, P13, P17, BONUS-02 elements"
+  }}
 }}
+
+VALIDATION PROCESS FOR SCRIPTS:
+1. Create script structure following outline
+2. Check each validator against S1, S2, S6 requirements
+3. Verify framework elements (P02, P03, P05, P07, P09, P10, P13, P17, BONUS-02)
+4. If ANY validator fails, REVISE the script until ALL pass
+5. Include validator_compliance_check in JSON response
+
+EXAMPLE COMPLIANT SCRIPT HOOK STRUCTURE:
+Hook (15-30 seconds max):
+"[SCENE: Clock showing 3:00 AM. Laptop screen glowing.]
+'3 AM. Interview invite. 9 hours away.
+GO concurrency? Python data wrangling? 
+Alex is spiraling.
+
+But here's what the pros know: 
+7 tricks that turn panic into performance.
+
+Trick #1: Concurrency isn't scary...'"
+
+Then immediately: Dive into Trick #1 with concrete examples, no 6-minute preamble.
+
+CRITICAL FAILURES TO AVOID:
+- 6+ minute atmospheric prologues (COMPLETE FAILURE)
+- Literary prose instead of conversational tone
+- Buried questions in long monologues
+- Missing action verbs in opening
+- Vague language without concrete dramatization
+- Missing editor cues and visual elements
 
 Key principles:
 - Write in a conversational, engaging tone suitable for YouTube
@@ -1740,6 +1911,7 @@ Key principles:
 - Structure content for maximum retention and engagement
 - Write scripts that feel natural when spoken aloud
 - Focus on value delivery while maintaining entertainment value
+- ENFORCE ALL VALIDATORS - NO EXCEPTIONS
 
 Your scripts should be comprehensive, well-structured, and optimized for YouTube's algorithm and viewer behavior.
 
@@ -1747,6 +1919,8 @@ Your scripts should be comprehensive, well-structured, and optimized for YouTube
 {storytelling_manual}
 
 Apply these proven storytelling principles throughout your script generation. Use the opening strategies for compelling hooks, implement the core principles for engaging content, and follow the implementation checklist to ensure maximum retention and viewer engagement.
+
+CRITICAL: Every script MUST pass ALL validators. If you cannot create a compliant script, explain why in the validator_compliance_check section.
 
 RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, no explanations, no additional text."""
 
@@ -1769,12 +1943,28 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, 
 🎯 MANDATORY: {min_length:,}-{max_length:,} WORDS in full_text field (Target: {target_words:,})
 Under {min_length:,} = REJECTION
 
+CRITICAL VALIDATOR ENFORCEMENT REQUIRED FOR SCRIPTS:
+• S1: Hook ≤30s, action verbs, 3-6 sentences, pivot within 60s, NO 6+ minute prologues
+• S2: 2-3 specific questions, transformation statement, questions in first 30-60s
+• S6: First value point within 10s of hook end for tutorials/listicles
+• Framework: Sensory details (P02), causal connectors (P03), emotional beats (P05/P11), 
+  simplified (P07), plain language (P09), conversational (P10), concise (P13), 
+  visual cues (P17), cliffhangers (BONUS-02)
+
+CRITICAL FAILURES TO AVOID:
+• 6+ minute atmospheric prologues (COMPLETE FAILURE)
+• Literary prose instead of conversational tone
+• Buried questions in long monologues
+• Missing action verbs in opening
+• Vague language without concrete dramatization
+
 CRITICAL:
 - Follow outline structure EXACTLY, preserve section titles as-is
 - {tone_text}
 - NO document references/citations
 - Write for direct narration
 - Verify full_text ≥{min_length:,}w before submitting
+- MUST include validator_compliance_check in JSON response
 
 PROVIDED OUTLINE TO FOLLOW:
 {outline_text}
@@ -1785,4 +1975,307 @@ STRICT SECTION ORDER REQUIREMENTS:
 3. If the outline contains a "section_order" array, use it to determine the exact sequence
 4. Each script section must correspond to the outline sections in the correct order
 
-CRITICAL: Return ONLY valid JSON matching the exact schema provided in the system prompt. The API enforces JSON format automatically."""
+CRITICAL: Return ONLY valid JSON matching the exact schema provided in the system prompt. The API enforces JSON format automatically.
+VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
+
+    @staticmethod
+    def _check_validator_compliance(sections: List[Dict], parsed_data: Dict) -> Dict[str, Any]:
+        """
+        Check outline compliance against S1, S2, S6 validators and framework requirements
+        
+        Args:
+            sections: List of outline sections
+            parsed_data: Full parsed JSON response
+            
+        Returns:
+            Dictionary with compliance check results
+        """
+        compliance_check = {
+            "s1_hook_structure": "PASS",
+            "s2_open_loops": "PASS", 
+            "s6_value_delivery": "PASS",
+            "framework_gaps": [],
+            "overall_compliance": "PASS",
+            "violations": []
+        }
+        
+        if not sections:
+            compliance_check["overall_compliance"] = "FAIL"
+            compliance_check["violations"].append("No sections provided")
+            return compliance_check
+        
+        # Check S1 Hook Structure Validators
+        first_section = sections[0]
+        hook_content = first_section.get("description", "") + " " + first_section.get("content", "")
+        
+        # S1.1: Hook duration check (look for timing indicators)
+        timing = first_section.get("timing", "")
+        if "minute" in timing.lower() and any(char.isdigit() for char in timing):
+            # Extract duration numbers
+            import re
+            duration_match = re.search(r'(\d+)', timing)
+            if duration_match:
+                duration = int(duration_match.group(1))
+                if duration > 1:  # More than 1 minute
+                    compliance_check["s1_hook_structure"] = "FAIL"
+                    compliance_check["violations"].append(f"S1 violation: Hook duration {duration} minutes exceeds 60s limit")
+        
+        # S1.2: Action verbs in first 1-2 sentences
+        hook_sentences = hook_content.split('.')[:2]
+        action_verbs = ['start', 'begin', 'open', 'create', 'build', 'develop', 'launch', 'introduce', 'present', 'show', 'reveal', 'demonstrate']
+        has_action_verb = any(verb in sentence.lower() for sentence in hook_sentences for verb in action_verbs)
+        if not has_action_verb:
+            compliance_check["s1_hook_structure"] = "FAIL"
+            compliance_check["violations"].append("S1 violation: No action verbs in first 1-2 sentences")
+        
+        # S1.3: Vague language check
+        vague_terms = ['high-stakes moment', 'dramatic', 'exciting', 'interesting', 'compelling']
+        has_vague_language = any(term in hook_content.lower() for term in vague_terms)
+        if has_vague_language:
+            compliance_check["s1_hook_structure"] = "FAIL"
+            compliance_check["violations"].append("S1 violation: Contains vague language without concrete dramatization")
+        
+        # Check S2 Open Loops Validators
+        # S2.1: Specific questions check
+        question_indicators = ['?', 'how', 'what', 'why', 'when', 'where']
+        has_questions = any(indicator in hook_content.lower() for indicator in question_indicators)
+        if not has_questions:
+            compliance_check["s2_open_loops"] = "FAIL"
+            compliance_check["violations"].append("S2 violation: No specific questions in hook")
+        
+        # S2.2: Transformation statement check
+        transformation_indicators = ['learn', 'achieve', 'transform', 'change', 'improve', 'master']
+        has_transformation = any(indicator in hook_content.lower() for indicator in transformation_indicators)
+        if not has_transformation:
+            compliance_check["s2_open_loops"] = "FAIL"
+            compliance_check["violations"].append("S2 violation: No transformation statement (Learn X to achieve Y)")
+        
+        # Check S6 Value Delivery Validators
+        # S6.1: First value point timing (for tutorials/listicles)
+        if len(sections) > 1:
+            second_section = sections[1]
+            second_timing = second_section.get("timing", "")
+            if "second" in second_timing.lower() or "10" in second_timing:
+                # Check if it's within 10 seconds
+                second_match = re.search(r'(\d+)', second_timing)
+                if second_match:
+                    second_duration = int(second_match.group(1))
+                    if second_duration > 10:
+                        compliance_check["s6_value_delivery"] = "FAIL"
+                        compliance_check["violations"].append(f"S6 violation: First value point starts at {second_duration}s, exceeds 10s limit")
+        
+        # Check Framework Requirements
+        framework_gaps = []
+        
+        # P02: Sensory details check
+        sensory_words = ['see', 'hear', 'feel', 'smell', 'taste', 'touch', 'visual', 'sound', 'texture']
+        has_sensory_details = any(word in str(sections).lower() for word in sensory_words)
+        if not has_sensory_details:
+            framework_gaps.append("P02: Missing sensory details")
+        
+        # P03: Causal connectors check
+        causal_connectors = ['therefore', 'because', 'but', 'however', 'thus', 'as a result']
+        has_causal_connectors = any(connector in str(sections).lower() for connector in causal_connectors)
+        if not has_causal_connectors:
+            framework_gaps.append("P03: Missing causal connectors")
+        
+        # P05/P11: Emotional beats and stakes check
+        emotional_words = ['stakes', 'consequences', 'risk', 'danger', 'reward', 'goal', 'obstacle']
+        has_emotional_beats = any(word in str(sections).lower() for word in emotional_words)
+        if not has_emotional_beats:
+            framework_gaps.append("P05/P11: Missing emotional beats and stakes")
+        
+        # P17: Visual cues check
+        visual_words = ['show', 'visual', 'graphic', 'image', 'scene', 'cut to', 'camera']
+        has_visual_cues = any(word in str(sections).lower() for word in visual_words)
+        if not has_visual_cues:
+            framework_gaps.append("P17: Missing visual cues/editor notes")
+        
+        # BONUS-02: Cliffhangers check
+        cliffhanger_words = ['but', 'however', 'unresolved', 'tease', 'coming up', 'next']
+        has_cliffhangers = any(word in str(sections).lower() for word in cliffhanger_words)
+        if not has_cliffhangers:
+            framework_gaps.append("BONUS-02: Missing cliffhangers/unresolved threads")
+        
+        compliance_check["framework_gaps"] = framework_gaps
+        
+        # Overall compliance check
+        if (compliance_check["s1_hook_structure"] == "FAIL" or 
+            compliance_check["s2_open_loops"] == "FAIL" or 
+            compliance_check["s6_value_delivery"] == "FAIL" or 
+            len(framework_gaps) > 2):  # Allow up to 2 framework gaps
+            compliance_check["overall_compliance"] = "FAIL"
+        
+        return compliance_check
+
+    @staticmethod
+    def _check_script_validator_compliance(full_text: str, sections: List[Dict], parsed_data: Dict) -> Dict[str, Any]:
+        """
+        Check script compliance against S1, S2, S6 validators and framework requirements
+        
+        Args:
+            full_text: Complete script content
+            sections: List of script sections
+            parsed_data: Full parsed JSON response
+            
+        Returns:
+            Dictionary with compliance check results
+        """
+        compliance_check = {
+            "s1_hook_structure": "PASS",
+            "s2_open_loops": "PASS", 
+            "s6_value_delivery": "PASS",
+            "framework_gaps": [],
+            "overall_compliance": "PASS",
+            "violations": []
+        }
+        
+        if not full_text or not sections:
+            compliance_check["overall_compliance"] = "FAIL"
+            compliance_check["violations"].append("No script content provided")
+            return compliance_check
+        
+        # Extract hook content (first section or first 500 words)
+        hook_content = ""
+        if sections:
+            first_section = sections[0]
+            hook_content = first_section.get("content", "")
+        
+        # If no section content, use first 500 words of full_text
+        if not hook_content:
+            hook_content = full_text[:500]
+        
+        # Check S1 Hook Structure Validators
+        # S1.1: Hook duration check - look for timing indicators or estimate from word count
+        # Estimate: ~150 words per minute for spoken content
+        hook_word_count = len(hook_content.split())
+        estimated_hook_duration = hook_word_count / 150  # minutes
+        
+        if estimated_hook_duration > 1:  # More than 1 minute
+            compliance_check["s1_hook_structure"] = "FAIL"
+            compliance_check["violations"].append(f"S1 violation: Estimated hook duration {estimated_hook_duration:.1f} minutes exceeds 60s limit")
+        
+        # S1.2: Action verbs in first 1-2 sentences
+        hook_sentences = hook_content.split('.')[:2]
+        action_verbs = ['start', 'begin', 'open', 'create', 'build', 'develop', 'launch', 'introduce', 'present', 'show', 'reveal', 'demonstrate', 'dive', 'jump', 'cut']
+        has_action_verb = any(verb in sentence.lower() for sentence in hook_sentences for verb in action_verbs)
+        if not has_action_verb:
+            compliance_check["s1_hook_structure"] = "FAIL"
+            compliance_check["violations"].append("S1 violation: No action verbs in first 1-2 sentences")
+        
+        # S1.3: Vague language check
+        vague_terms = ['high-stakes moment', 'dramatic', 'exciting', 'interesting', 'compelling', 'atmospheric', 'eerie', 'muted hum', 'still air']
+        has_vague_language = any(term in hook_content.lower() for term in vague_terms)
+        if has_vague_language:
+            compliance_check["s1_hook_structure"] = "FAIL"
+            compliance_check["violations"].append("S1 violation: Contains vague language without concrete dramatization")
+        
+        # S1.4: Check for 6+ minute prologues (critical failure)
+        if estimated_hook_duration > 6:
+            compliance_check["s1_hook_structure"] = "FAIL"
+            compliance_check["violations"].append(f"S1 CRITICAL FAILURE: {estimated_hook_duration:.1f} minute prologue - this is a complete failure")
+        
+        # Check S2 Open Loops Validators
+        # S2.1: Specific questions check
+        question_indicators = ['?', 'how', 'what', 'why', 'when', 'where']
+        has_questions = any(indicator in hook_content.lower() for indicator in question_indicators)
+        if not has_questions:
+            compliance_check["s2_open_loops"] = "FAIL"
+            compliance_check["violations"].append("S2 violation: No specific questions in hook")
+        
+        # S2.2: Transformation statement check
+        transformation_indicators = ['learn', 'achieve', 'transform', 'change', 'improve', 'master', 'tricks', 'tips', 'secrets']
+        has_transformation = any(indicator in hook_content.lower() for indicator in transformation_indicators)
+        if not has_transformation:
+            compliance_check["s2_open_loops"] = "FAIL"
+            compliance_check["violations"].append("S2 violation: No transformation statement (Learn X to achieve Y)")
+        
+        # S2.3: Questions buried in monologue check
+        if len(hook_content.split()) > 200:  # Very long hook
+            compliance_check["s2_open_loops"] = "FAIL"
+            compliance_check["violations"].append("S2 violation: Questions buried in long monologue")
+        
+        # Check S6 Value Delivery Validators
+        # S6.1: First value point timing (for tutorials/listicles)
+        if len(sections) > 1:
+            second_section = sections[1]
+            second_content = second_section.get("content", "")
+            # Look for value indicators in second section
+            value_indicators = ['trick', 'tip', 'hack', 'secret', 'method', 'technique', 'step', 'way']
+            has_value_indicators = any(indicator in second_content.lower() for indicator in value_indicators)
+            
+            if has_value_indicators:
+                # Estimate timing for second section
+                second_word_count = len(second_content.split())
+                second_duration = second_word_count / 150  # minutes
+                if second_duration > 0.17:  # More than 10 seconds
+                    compliance_check["s6_value_delivery"] = "FAIL"
+                    compliance_check["violations"].append(f"S6 violation: First value point starts at {second_duration*60:.0f}s, exceeds 10s limit")
+        
+        # Check Framework Requirements
+        framework_gaps = []
+        
+        # P02: Sensory details check
+        sensory_words = ['see', 'hear', 'feel', 'smell', 'taste', 'touch', 'visual', 'sound', 'texture', 'scene', 'show']
+        has_sensory_details = any(word in full_text.lower() for word in sensory_words)
+        if not has_sensory_details:
+            framework_gaps.append("P02: Missing sensory details")
+        
+        # P03: Causal connectors check
+        causal_connectors = ['therefore', 'because', 'but', 'however', 'thus', 'as a result', 'so', 'then']
+        has_causal_connectors = any(connector in full_text.lower() for connector in causal_connectors)
+        if not has_causal_connectors:
+            framework_gaps.append("P03: Missing causal connectors")
+        
+        # P05/P11: Emotional beats and stakes check
+        emotional_words = ['stakes', 'consequences', 'risk', 'danger', 'reward', 'goal', 'obstacle', 'pressure', 'challenge']
+        has_emotional_beats = any(word in full_text.lower() for word in emotional_words)
+        if not has_emotional_beats:
+            framework_gaps.append("P05/P11: Missing emotional beats and stakes")
+        
+        # P07: Simplify check - look for unnecessary tangents
+        tangent_indicators = ['meanwhile', 'incidentally', 'by the way', 'speaking of which', 'on a side note']
+        has_tangents = any(indicator in full_text.lower() for indicator in tangent_indicators)
+        if has_tangents:
+            framework_gaps.append("P07: Contains unnecessary tangents")
+        
+        # P09: Jargon/clichés check
+        cliche_indicators = ['storm of thoughts', 'silent war', 'beacon in the darkness', 'journey to mastery', 'relentless pursuit', 'whirling inside']
+        has_cliches = any(indicator in full_text.lower() for indicator in cliche_indicators)
+        if has_cliches:
+            framework_gaps.append("P09: Contains clichés and jargon")
+        
+        # P10: Reading level check - look for overly complex sentences
+        complex_indicators = ['notwithstanding', 'furthermore', 'moreover', 'consequently', 'subsequently']
+        has_complex_language = any(indicator in full_text.lower() for indicator in complex_indicators)
+        if has_complex_language:
+            framework_gaps.append("P10: Contains overly complex language")
+        
+        # P13: Concision check - look for verbose constructions
+        verbose_indicators = ['in order to', 'due to the fact that', 'it is important to note that', 'at this point in time']
+        has_verbose_constructions = any(indicator in full_text.lower() for indicator in verbose_indicators)
+        if has_verbose_constructions:
+            framework_gaps.append("P13: Contains verbose constructions")
+        
+        # P17: Visual cues check
+        visual_words = ['show', 'visual', 'graphic', 'image', 'scene', 'cut to', 'camera', '[show', '[cut', '[visual']
+        has_visual_cues = any(word in full_text.lower() for word in visual_words)
+        if not has_visual_cues:
+            framework_gaps.append("P17: Missing visual cues/editor notes")
+        
+        # BONUS-02: Cliffhangers check
+        cliffhanger_words = ['but', 'however', 'unresolved', 'tease', 'coming up', 'next', 'stay tuned']
+        has_cliffhangers = any(word in full_text.lower() for word in cliffhanger_words)
+        if not has_cliffhangers:
+            framework_gaps.append("BONUS-02: Missing cliffhangers/unresolved threads")
+        
+        compliance_check["framework_gaps"] = framework_gaps
+        
+        # Overall compliance check
+        if (compliance_check["s1_hook_structure"] == "FAIL" or 
+            compliance_check["s2_open_loops"] == "FAIL" or 
+            compliance_check["s6_value_delivery"] == "FAIL" or 
+            len(framework_gaps) > 3):  # Allow up to 3 framework gaps
+            compliance_check["overall_compliance"] = "FAIL"
+        
+        return compliance_check

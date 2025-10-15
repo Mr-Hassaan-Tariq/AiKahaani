@@ -249,11 +249,20 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
         
         guidance_map = {
                 SectionType.HOOK_INTRO: """
-CRITICAL HOOK REQUIREMENTS (S1-S7 ENFORCEMENT):
+CRITICAL HOOK REQUIREMENTS (S1-S7 VALIDATOR ENFORCEMENT):
 - S1: MUST start with ACTION VERB in first sentence (not "Imagine" or "Picture this")
-- S2: MUST create 2-3 SPECIFIC open loops with concrete questions
-- S4: MUST subvert expectations while staying on-topic
-- S5: MUST include specific sensory details and fast pacing
+- S1: Hook duration MUST be ≤30 seconds (hard cap: 60s when justified)
+- S1: MUST be 3-6 sentence micro-scene with filmable action
+- S1: MUST pivot to main content within 60 seconds
+- S1: NO vague language like "high-stakes moment" without concrete dramatization
+- S1: NO 6+ minute atmospheric prologues (this is a CRITICAL FAILURE)
+- S2: MUST state 2-3 specific high-value questions in hook
+- S2: MUST include transformation statement: "Learn X to achieve Y"
+- S2: Questions MUST be stated cleanly in first 30-60 seconds
+- S2: NO questions buried in long monologues
+- S6: For tutorials/listicles: First value point MUST start within 10 seconds of hook end
+- S6: Hook MUST be ≤30 seconds (exceptions explicitly justified)
+- S6: NO standalone 1-2 minute opening sections
 - S7: ABSOLUTELY NO channel trailers, personal updates, or CTAs
 
 HOOK SUCCESS EXAMPLES (COPY THESE PATTERNS):
@@ -270,6 +279,9 @@ HOOK FAILURE EXAMPLES TO AVOID:
 ❌ "Let me tell you about..." (boring intro)
 ❌ "In today's video..." (channel trailer style)
 ❌ "Welcome to my channel..." (CTA violation)
+❌ 6+ minute atmospheric prologues (COMPLETE FAILURE)
+❌ Questions buried in long monologues
+❌ Missing transformation statements
 
 SENSORY DETAILS EXAMPLES:
 ✅ "The smell of ozone filled the air as the machine hummed with a metallic vibration"
@@ -282,6 +294,10 @@ HOOK VALIDATION CHECKLIST:
 □ Includes vivid sensory details
 □ Subverts expectations while staying on-topic
 □ No CTAs or channel references
+□ Duration ≤30 seconds (not 6+ minutes)
+□ Transformation statement present
+□ Questions stated cleanly in first 30-60 seconds
+□ First value point within 10 seconds for tutorials/listicles
 """,
                 SectionType.MAIN_CONTENT: """
 MAIN CONTENT STRATEGIES (P01-P17 ENFORCEMENT):
@@ -384,13 +400,17 @@ TRANSITION EXAMPLES:
         
         if section_type == SectionType.HOOK_INTRO:
             return f"""
-HOOK/INTRO SPECIFIC:
+HOOK/INTRO SPECIFIC (VALIDATOR ENFORCED):
 - Start with a dramatic, high-stakes moment
 - Create 2-3 open-loop questions to be answered later
 - Include vivid, filmable details
 - Keep pace fast with varied sentence lengths
 - Anchor viewers within first 2 lines
-- Duration should be 20-60 seconds (≈{word_target//3} words)
+- Duration MUST be ≤30 seconds (≈{word_target//3} words)
+- CRITICAL: NO 6+ minute prologues (this is a complete failure)
+- For tutorials/listicles: First value point within 10 seconds of hook end
+- MUST include transformation statement: "Learn X to achieve Y"
+- Questions MUST be stated cleanly in first 30-60 seconds
 """
         elif section_type == SectionType.MAIN_CONTENT:
             return f"""
@@ -549,15 +569,56 @@ TRANSITION SPECIFIC:
     
     def validate_section_quality(self, section_content: str, section_type: SectionType) -> Tuple[bool, List[str]]:
         """
-        Validate section content against storytelling requirements - more lenient approach
+        Validate section content against storytelling requirements and validator enforcement
         Returns (is_valid, error_messages)
         """
         errors = []
         
         if section_type == SectionType.HOOK_INTRO:
-            # Only check critical validations for hooks
+            # S1 Hook Structure Validators
             if self._has_channel_ctas(section_content):
                 errors.append("Hook must NOT include channel trailers or CTAs (S7)")
+            
+            # S1.1: Hook duration check - estimate from word count
+            word_count = len(section_content.split())
+            estimated_duration = word_count / 150  # ~150 words per minute for spoken content
+            
+            if estimated_duration > 1:  # More than 1 minute
+                errors.append(f"S1 violation: Estimated hook duration {estimated_duration:.1f} minutes exceeds 60s limit")
+            
+            # S1.4: Check for 6+ minute prologues (critical failure)
+            if estimated_duration > 6:
+                errors.append(f"S1 CRITICAL FAILURE: {estimated_duration:.1f} minute prologue - this is a complete failure")
+            
+            # S1.2: Action verbs in first 1-2 sentences
+            hook_sentences = section_content.split('.')[:2]
+            action_verbs = ['start', 'begin', 'open', 'create', 'build', 'develop', 'launch', 'introduce', 'present', 'show', 'reveal', 'demonstrate', 'dive', 'jump', 'cut']
+            has_action_verb = any(verb in sentence.lower() for sentence in hook_sentences for verb in action_verbs)
+            if not has_action_verb:
+                errors.append("S1 violation: No action verbs in first 1-2 sentences")
+            
+            # S1.3: Vague language check
+            vague_terms = ['high-stakes moment', 'dramatic', 'exciting', 'interesting', 'compelling', 'atmospheric', 'eerie', 'muted hum', 'still air']
+            has_vague_language = any(term in section_content.lower() for term in vague_terms)
+            if has_vague_language:
+                errors.append("S1 violation: Contains vague language without concrete dramatization")
+            
+            # S2 Open Loops Validators
+            # S2.1: Specific questions check
+            question_indicators = ['?', 'how', 'what', 'why', 'when', 'where']
+            has_questions = any(indicator in section_content.lower() for indicator in question_indicators)
+            if not has_questions:
+                errors.append("S2 violation: No specific questions in hook")
+            
+            # S2.2: Transformation statement check
+            transformation_indicators = ['learn', 'achieve', 'transform', 'change', 'improve', 'master', 'tricks', 'tips', 'secrets']
+            has_transformation = any(indicator in section_content.lower() for indicator in transformation_indicators)
+            if not has_transformation:
+                errors.append("S2 violation: No transformation statement (Learn X to achieve Y)")
+            
+            # S2.3: Questions buried in monologue check
+            if len(section_content.split()) > 200:  # Very long hook
+                errors.append("S2 violation: Questions buried in long monologue")
         
         # Check for P09/P10 compliance - natural voice (critical)
         if self._has_overdramatic_phrasing(section_content):
@@ -655,6 +716,43 @@ TRANSITION SPECIFIC:
             'until next time', 'see you next time', 'keep exploring', 'keep learning'
         ]
         return any(phrase in content.lower() for phrase in cliche_phrases)
+    
+    def check_s6_value_delivery_timing(self, sections: List[Dict]) -> Tuple[bool, List[str]]:
+        """
+        Check S6 value delivery timing for tutorials/listicles
+        Returns (is_compliant, error_messages)
+        """
+        errors = []
+        
+        if len(sections) < 2:
+            return True, errors  # Not enough sections to check
+        
+        # Check if this appears to be a tutorial/listicle
+        first_section = sections[0]
+        second_section = sections[1]
+        
+        # Look for tutorial/listicle indicators
+        tutorial_indicators = ['trick', 'tip', 'hack', 'secret', 'method', 'technique', 'step', 'way', 'how to', 'guide']
+        has_tutorial_indicators = any(indicator in str(sections).lower() for indicator in tutorial_indicators)
+        
+        if has_tutorial_indicators:
+            # Check timing for first value point
+            first_content = first_section.get("content", "")
+            second_content = second_section.get("content", "")
+            
+            # Estimate timing
+            first_word_count = len(first_content.split())
+            second_word_count = len(second_content.split())
+            
+            first_duration = first_word_count / 150  # minutes
+            second_duration = second_word_count / 150  # minutes
+            
+            # First value point should start within 10 seconds of hook end
+            total_hook_duration = first_duration + second_duration
+            if total_hook_duration > 0.17:  # More than 10 seconds
+                errors.append(f"S6 violation: First value point starts at {total_hook_duration*60:.0f}s, exceeds 10s limit")
+        
+        return len(errors) == 0, errors
     
     def _has_emotional_reflection(self, content: str) -> bool:
         """Check if conclusion has emotional reflection or haunting question"""
