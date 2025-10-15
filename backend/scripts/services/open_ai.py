@@ -19,6 +19,47 @@ logger = logging.getLogger(__name__)
 # Lazy client initialization to avoid import-time errors in tests
 _client = None
 
+# Compliant hook examples for prompts
+EXAMPLE_COMPLIANT_HOOKS = """
+HOOK SUCCESS EXAMPLES (≤30 SECONDS, ~75 WORDS MAX):
+
+✅ Example 1 (Tutorial/Listicle):
+[SCENE: Clock strikes 3 AM. Laptop screen glows.]
+Sarah's phone buzzed with the interview invite. 9 hours away.
+Zero prep done.
+But here's what top coders know: 7 tricks that flip panic into performance.
+Trick #1: Concurrency isn't scary...
+
+✅ Example 2 (Narrative/Documentary):
+The explosion shattered the Phoenix desert silence at exactly 8:47 PM.
+10,000 witnesses. Mile-wide V-formation. Silent craft.
+Military says: flares.
+Pilots say: impossible.
+Tonight: What really happened on March 13, 1997?
+
+✅ Example 3 (Explainer/Listicle):
+Mark discovered the file at 2:17 AM. Encrypted. 47 GB. Shouldn't exist.
+Three months later: everything changed.
+Today: 5 security mistakes that expose your entire system.
+Mistake #1: The authentication trap...
+
+HOOK FAILURE EXAMPLES TO AVOID:
+
+❌ "Imagine this: you're sitting at your desk..." (weak starter)
+❌ "Picture this scene: a dark forest..." (vague, no action)
+❌ "Let me tell you about the time..." (channel trailer style)
+❌ "In today's video, we're going to talk about..." (boring intro)
+❌ "Welcome back to the channel..." (CTA violation)
+❌ 6-minute atmospheric prologue about generic characters (CRITICAL FAILURE)
+❌ "It's 11 PM. Deadline in 9 hours. Sound familiar? What if I told you..." (weak opening)
+
+CRITICAL RULES:
+- First sentence MUST start with action verb or concrete noun + action
+- NO "Imagine," "Picture," "Let me," "Let's," "Welcome," "Today we"
+- Duration ≤30 seconds (~75 words at 2.5 words/second)
+- Create 2-3 specific questions, not rhetorical fluff
+"""
+
 
 
 def get_openai_client():
@@ -315,7 +356,9 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                         section_order = list(range(len(sections)))
                     
                     # Check validator compliance
-                    validator_check = OpenAIScriptService._check_validator_compliance(sections, parsed_data)
+                    validator_check = OpenAIScriptService._check_validator_compliance(
+                        sections, parsed_data, template_style=script_data.get("template_style", "medium")
+                    )
                     
                     return {
                         "sections": sections, 
@@ -340,7 +383,9 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                 )
 
                 # Check validator compliance
-                validator_check = OpenAIScriptService._check_validator_compliance(sections, parsed_data)
+                validator_check = OpenAIScriptService._check_validator_compliance(
+                    sections, parsed_data, template_style="medium"
+                )
 
                 return {
                     "sections": sections, 
@@ -890,6 +935,29 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
             # Parse outline structure
             outline_data = OpenAIScriptService._parse_outline_structure(outline_text)
             
+            # Check validator compliance
+            compliance_check = OpenAIScriptService._check_validator_compliance(
+                outline_data["sections"],
+                outline_data,
+                template_style=script_data.get("template_style", "medium")
+            )
+            
+            # ADD THIS: Block if compliance fails (optional - can make this configurable)
+            if compliance_check["overall_compliance"] == "FAIL":
+                violation_summary = "\n".join(f"  - {v}" for v in compliance_check["violations"])
+                logger.error(
+                    f"[OUTLINE] Validator compliance failed:\n{violation_summary}"
+                )
+                
+                # Option 1: Raise exception to fail generation
+                # raise ValueError(f"Outline validation failed: {violation_summary}")
+                
+                # Option 2: Log warning and continue (current behavior)
+                logger.warning("[OUTLINE] Continuing despite validation failures (non-blocking mode)")
+            
+            # Add compliance check to metadata
+            metadata["validator_compliance"] = compliance_check
+            
             # Calculate word count
             word_count = len(outline_text.split())
 
@@ -1041,6 +1109,14 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
             except json.JSONDecodeError:
                 # Not JSON, use raw content
                 pass
+            
+            # Check validator compliance for scripts
+            compliance_check = OpenAIScriptService._check_script_validator_compliance(
+                actual_script_text, sections, script_json_data if 'script_json_data' in locals() else {}
+            )
+            
+            # Add compliance check to metadata
+            metadata["validator_compliance"] = compliance_check
             
             # Calculate word count
             word_count = len(actual_script_text.split())
@@ -1331,13 +1407,19 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
             )
             total_tokens += tokens_used
             
-            # Use different validation strictness based on attempt
+            # Adjust validation strictness by attempt
             if attempt == 0:
-                # First attempt: normal validation
-                is_valid, errors = wc_strategy.validate_section_quality(section_content, section_type)
+                validation_level = "strict"  # First attempt: full validation
+            elif attempt == 1:
+                validation_level = "normal"  # Retry: critical only
             else:
-                # Second attempt: only critical validation
-                is_valid, errors = wc_strategy.validate_critical_quality_only(section_content, section_type)
+                validation_level = "minimal"  # Final: blockers only
+            
+            is_valid, errors = wc_strategy.validate_section_quality(
+                section_content, 
+                section_type,
+                validation_level=validation_level
+            )
             
             if is_valid:
                 logger.info(f"[WC_STRATEGY] Section passed quality validation on attempt {attempt + 1}")
@@ -1731,17 +1813,9 @@ VALIDATION PROCESS:
 4. If ANY validator fails, REVISE the outline until ALL pass
 5. Include validator_compliance_check in JSON response
 
-EXAMPLE COMPLIANT HOOK STRUCTURE:
-Hook (15-30 seconds max):
-"[SCENE: Close-up of hands frantically shuffling papers, clock ticking]
-'It's 11 PM. Deadline in 9 hours. Nothing's done.
-Sound familiar? 
-What if I told you the productivity advice you've been following 
-is actually making you LESS productive?
-Today: 7 counterintuitive hacks that actually work.'
-[CUT TO] 'Hack #1...'"
+{EXAMPLE_COMPLIANT_HOOKS}
 
-Then immediately: Hack #1 at the 30-second mark.
+Then immediately: First value point at the 30-second mark.
 
 Key principles:
 - Create outlines that are detailed enough to generate full scripts
@@ -1882,19 +1956,9 @@ VALIDATION PROCESS FOR SCRIPTS:
 4. If ANY validator fails, REVISE the script until ALL pass
 5. Include validator_compliance_check in JSON response
 
-EXAMPLE COMPLIANT SCRIPT HOOK STRUCTURE:
-Hook (15-30 seconds max):
-"[SCENE: Clock showing 3:00 AM. Laptop screen glowing.]
-'3 AM. Interview invite. 9 hours away.
-GO concurrency? Python data wrangling? 
-Alex is spiraling.
+{EXAMPLE_COMPLIANT_HOOKS}
 
-But here's what the pros know: 
-7 tricks that turn panic into performance.
-
-Trick #1: Concurrency isn't scary...'"
-
-Then immediately: Dive into Trick #1 with concrete examples, no 6-minute preamble.
+Then immediately: Dive into first value point with concrete examples, no 6-minute preamble.
 
 CRITICAL FAILURES TO AVOID:
 - 6+ minute atmospheric prologues (COMPLETE FAILURE)
@@ -1938,6 +2002,40 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, 
         # Calculate concrete targets
         target_words = (min_length + max_length) // 2
         
+        # Detect if this is a tutorial/listicle
+        tutorial_keywords = ['trick', 'tip', 'hack', 'step', 'way', 'method', 'technique', 'secret']
+        is_tutorial = any(keyword in outline_text.lower() for keyword in tutorial_keywords)
+        
+        if is_tutorial:
+            s6_enforcement = """
+🚨 S6 TUTORIAL/LISTICLE STRUCTURAL ENFORCEMENT:
+
+MANDATORY SECTION ORDER:
+1. Hook (≤30s, ~75 words): Action opening + 2-3 questions + transformation promise
+2. First Value Point (starts at 0:30): IMMEDIATELY begin Trick/Tip #1 content
+3. Remaining points in sequence
+4. Conclusion
+
+EXAMPLE STRUCTURE:
+\"\"\"
+Hook (0:00-0:30):
+Mark's system crashed at 2 AM. Production down. Boss calling in 6 hours.
+What do senior engineers do differently in crisis mode?
+Today: 7 debugging tactics that cut recovery time by 80%.
+
+Trick #1: The Binary Search Method (0:30-3:00)
+When your system fails, most developers start guessing. Senior engineers...
+[IMMEDIATE value delivery - NO standalone intro section]
+\"\"\"
+
+CRITICAL: NO standalone 1-2 minute intro section after hook. Hook → Value immediately.
+"""
+        else:
+            s6_enforcement = """
+S6 NARRATIVE ENFORCEMENT:
+Use ≤60s prologue, then pivot to Chapter 1/chronological beginning.
+"""
+        
         return f"""Generate complete script from outline below.
 
 🎯 MANDATORY: {min_length:,}-{max_length:,} WORDS in full_text field (Target: {target_words:,})
@@ -1966,6 +2064,8 @@ CRITICAL:
 - Verify full_text ≥{min_length:,}w before submitting
 - MUST include validator_compliance_check in JSON response
 
+{s6_enforcement}
+
 PROVIDED OUTLINE TO FOLLOW:
 {outline_text}
 
@@ -1979,17 +2079,22 @@ CRITICAL: Return ONLY valid JSON matching the exact schema provided in the syste
 VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
 
     @staticmethod
-    def _check_validator_compliance(sections: List[Dict], parsed_data: Dict) -> Dict[str, Any]:
+    def _check_validator_compliance(sections: List[Dict], parsed_data: Dict, template_style: str = "medium") -> Dict[str, Any]:
         """
         Check outline compliance against S1, S2, S6 validators and framework requirements
         
         Args:
             sections: List of outline sections
             parsed_data: Full parsed JSON response
+            template_style: Template style to determine validation strictness
             
         Returns:
             Dictionary with compliance check results
         """
+        # Early return for Flexible Outline template
+        if template_style.lower() == "flexible_outline":
+            return OpenAIScriptService._check_flexible_outline_compliance(sections, parsed_data)
+        
         compliance_check = {
             "s1_hook_structure": "PASS",
             "s2_open_loops": "PASS", 
@@ -2109,6 +2214,34 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         return compliance_check
 
     @staticmethod
+    def _check_flexible_outline_compliance(sections: List[Dict], parsed_data: Dict) -> Dict[str, Any]:
+        """Relaxed validation for Flexible Outline template (100-300 words)"""
+        compliance_check = {
+            "s1_hook_structure": "N/A",  # Outlines don't need full hook validation
+            "s2_open_loops": "N/A",
+            "s6_value_delivery": "N/A",
+            "framework_gaps": [],
+            "overall_compliance": "PASS",
+            "violations": [],
+            "template_type": "flexible_outline"
+        }
+        
+        # Only check basic structure
+        if not sections or len(sections) < 3:
+            compliance_check["overall_compliance"] = "FAIL"
+            compliance_check["violations"].append("Flexible outline must have at least 3 sections")
+        
+        # Check total word count (100-300 range)
+        total_words = sum(len(s.get("description", "").split()) for s in sections)
+        if total_words < 100 or total_words > 300:
+            compliance_check["overall_compliance"] = "FAIL"
+            compliance_check["violations"].append(
+                f"Flexible outline word count {total_words} outside range 100-300"
+            )
+        
+        return compliance_check
+
+    @staticmethod
     def _check_script_validator_compliance(full_text: str, sections: List[Dict], parsed_data: Dict) -> Dict[str, Any]:
         """
         Check script compliance against S1, S2, S6 validators and framework requirements
@@ -2151,9 +2284,18 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         hook_word_count = len(hook_content.split())
         estimated_hook_duration = hook_word_count / 150  # minutes
         
-        if estimated_hook_duration > 1:  # More than 1 minute
+        # Add two-tier validation
+        if estimated_hook_duration > 0.5:  # 30 seconds
             compliance_check["s1_hook_structure"] = "FAIL"
-            compliance_check["violations"].append(f"S1 violation: Estimated hook duration {estimated_hook_duration:.1f} minutes exceeds 60s limit")
+            compliance_check["violations"].append(
+                f"S1 violation: Hook duration {estimated_hook_duration*60:.0f}s exceeds 30s target (60s hard cap)"
+            )
+            
+        if estimated_hook_duration > 1.0:  # 60 seconds - CRITICAL FAILURE
+            compliance_check["s1_hook_structure"] = "FAIL"
+            compliance_check["violations"].append(
+                f"S1 CRITICAL FAILURE: Hook duration {estimated_hook_duration*60:.0f}s exceeds 60s hard cap"
+            )
         
         # S1.2: Action verbs in first 1-2 sentences
         hook_sentences = hook_content.split('.')[:2]

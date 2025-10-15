@@ -99,8 +99,19 @@ class WordCountStrategy:
         conclusion_sections = 1
         main_sections = max(1, num_sections - intro_sections - conclusion_sections)
         
-        # Distribute words with emphasis on main content
+        # CRITICAL: Hook section must be ≤30 seconds (~75 words at 2.5 WPS)
+        MAX_HOOK_WORDS = 75  # 30 seconds at 2.5 words/second
+        HARD_CAP_HOOK_WORDS = 150  # 60 seconds absolute maximum
+        
+        # Cap intro_words to enforce hook duration
         intro_words = int(base_words_per_section * 0.8)  # 20% less for intro
+        if intro_words > MAX_HOOK_WORDS:
+            logger.warning(
+                f"[WC_STRATEGY] Hook word target {intro_words} exceeds 30s guideline "
+                f"({MAX_HOOK_WORDS}w). Capping at {MAX_HOOK_WORDS}w."
+            )
+            intro_words = MAX_HOOK_WORDS
+        
         conclusion_words = int(base_words_per_section * 0.7)  # 30% less for conclusion
         main_section_words = int((target_words - intro_words - conclusion_words) / main_sections)
         
@@ -124,7 +135,9 @@ class WordCountStrategy:
             "main_sections_count": main_sections,
             "conclusion_sections": conclusion_sections,
             "min_words": min_words,
-            "max_words": max_words
+            "max_words": max_words,
+            "max_hook_words": MAX_HOOK_WORDS,  # Add for reference
+            "hard_cap_hook_words": HARD_CAP_HOOK_WORDS,  # Add for reference
         }
     
     def get_strategies_for_section_type(self, section_index: int, total_sections: int) -> List[str]:
@@ -567,69 +580,112 @@ TRANSITION SPECIFIC:
         
         return formatted_sections
     
-    def validate_section_quality(self, section_content: str, section_type: SectionType) -> Tuple[bool, List[str]]:
+    def validate_section_quality(self, section_content: str, section_type: SectionType, validation_level: str = "normal") -> Tuple[bool, List[str]]:
         """
         Validate section content against storytelling requirements and validator enforcement
         Returns (is_valid, error_messages)
+        
+        Args:
+            validation_level: 
+                - "strict": All checks (first attempt)
+                - "normal": Critical checks only (retry attempts)
+                - "minimal": Blockers only (final attempt)
         """
         errors = []
         
+        # ALWAYS check critical blockers regardless of level
         if section_type == SectionType.HOOK_INTRO:
-            # S1 Hook Structure Validators
+            # S7: No CTAs (BLOCKER)
             if self._has_channel_ctas(section_content):
-                errors.append("Hook must NOT include channel trailers or CTAs (S7)")
+                errors.append("S7: Hook contains CTAs/subscribe requests (BLOCKER)")
             
-            # S1.1: Hook duration check - estimate from word count
+            # S1: Hook duration hard cap (BLOCKER)
             word_count = len(section_content.split())
-            estimated_duration = word_count / 150  # ~150 words per minute for spoken content
+            estimated_duration = word_count / 150  # minutes
             
-            if estimated_duration > 1:  # More than 1 minute
-                errors.append(f"S1 violation: Estimated hook duration {estimated_duration:.1f} minutes exceeds 60s limit")
-            
-            # S1.4: Check for 6+ minute prologues (critical failure)
-            if estimated_duration > 6:
-                errors.append(f"S1 CRITICAL FAILURE: {estimated_duration:.1f} minute prologue - this is a complete failure")
-            
-            # S1.2: Action verbs in first 1-2 sentences
-            hook_sentences = section_content.split('.')[:2]
-            action_verbs = ['start', 'begin', 'open', 'create', 'build', 'develop', 'launch', 'introduce', 'present', 'show', 'reveal', 'demonstrate', 'dive', 'jump', 'cut']
-            has_action_verb = any(verb in sentence.lower() for sentence in hook_sentences for verb in action_verbs)
-            if not has_action_verb:
-                errors.append("S1 violation: No action verbs in first 1-2 sentences")
-            
-            # S1.3: Vague language check
-            vague_terms = ['high-stakes moment', 'dramatic', 'exciting', 'interesting', 'compelling', 'atmospheric', 'eerie', 'muted hum', 'still air']
-            has_vague_language = any(term in section_content.lower() for term in vague_terms)
-            if has_vague_language:
-                errors.append("S1 violation: Contains vague language without concrete dramatization")
-            
-            # S2 Open Loops Validators
-            # S2.1: Specific questions check
-            question_indicators = ['?', 'how', 'what', 'why', 'when', 'where']
-            has_questions = any(indicator in section_content.lower() for indicator in question_indicators)
-            if not has_questions:
-                errors.append("S2 violation: No specific questions in hook")
-            
-            # S2.2: Transformation statement check
-            transformation_indicators = ['learn', 'achieve', 'transform', 'change', 'improve', 'master', 'tricks', 'tips', 'secrets']
-            has_transformation = any(indicator in section_content.lower() for indicator in transformation_indicators)
-            if not has_transformation:
-                errors.append("S2 violation: No transformation statement (Learn X to achieve Y)")
-            
-            # S2.3: Questions buried in monologue check
-            if len(section_content.split()) > 200:  # Very long hook
-                errors.append("S2 violation: Questions buried in long monologue")
+            if estimated_duration > 1.0:  # 60 seconds
+                errors.append(
+                    f"S1 BLOCKER: Hook {word_count}w (~{estimated_duration*60:.0f}s) "
+                    f"exceeds 60s hard cap"
+                )
         
-        # Check for P09/P10 compliance - natural voice (critical)
-        if self._has_overdramatic_phrasing(section_content):
-            errors.append("Content must use natural, spoken English (P09/P10) - avoid overdramatic phrasing")
+        # Strict validation: all checks
+        if validation_level == "strict":
+            if section_type == SectionType.HOOK_INTRO:
+                # S1.1: Hook duration check - estimate from word count
+                word_count = len(section_content.split())
+                estimated_duration = word_count / 150  # ~150 words per minute for spoken content
+                
+                # Add two-tier validation
+                if estimated_duration > 0.5:  # 30 seconds
+                    errors.append(
+                        f"S1 violation: Hook duration {estimated_duration*60:.0f}s exceeds 30s target (60s hard cap)"
+                    )
+                    
+                if estimated_duration > 1.0:  # 60 seconds - CRITICAL FAILURE
+                    errors.append(
+                        f"S1 CRITICAL FAILURE: Hook duration {estimated_duration*60:.0f}s exceeds 60s hard cap"
+                    )
+                
+                # S1.4: Check for 6+ minute prologues (critical failure)
+                if estimated_duration > 6:
+                    errors.append(f"S1 CRITICAL FAILURE: {estimated_duration:.1f} minute prologue - this is a complete failure")
+                
+                # S1.2: Action verbs in first sentence (strengthened validation)
+                if not self._has_action_verb_opening(section_content):
+                    errors.append(
+                        "S1 violation: Hook does not start with action verb "
+                        "(forbidden starters: imagine, picture, let me, let's)"
+                    )
+                
+                # S1.3: Vague language check
+                vague_terms = ['high-stakes moment', 'dramatic', 'exciting', 'interesting', 'compelling', 'atmospheric', 'eerie', 'muted hum', 'still air']
+                has_vague_language = any(term in section_content.lower() for term in vague_terms)
+                if has_vague_language:
+                    errors.append("S1 violation: Contains vague language without concrete dramatization")
+                
+                # S2 Open Loops Validators
+                # S2.1: Specific questions check
+                question_indicators = ['?', 'how', 'what', 'why', 'when', 'where']
+                has_questions = any(indicator in section_content.lower() for indicator in question_indicators)
+                if not has_questions:
+                    errors.append("S2 violation: No specific questions in hook")
+                
+                # S2.2: Transformation statement check
+                transformation_indicators = ['learn', 'achieve', 'transform', 'change', 'improve', 'master', 'tricks', 'tips', 'secrets']
+                has_transformation = any(indicator in section_content.lower() for indicator in transformation_indicators)
+                if not has_transformation:
+                    errors.append("S2 violation: No transformation statement (Learn X to achieve Y)")
+                
+                # S2.3: Questions buried in monologue check
+                if len(section_content.split()) > 200:  # Very long hook
+                    errors.append("S2 violation: Questions buried in long monologue")
+            
+            # Check for P09/P10 compliance - natural voice (critical)
+            if self._has_overdramatic_phrasing(section_content):
+                errors.append("Content must use natural, spoken English (P09/P10) - avoid overdramatic phrasing")
+            
+            # Check for BONUS-02/BONUS-04 compliance - strong conclusions (critical)
+            if section_type == SectionType.CONCLUSION:
+                if self._has_cliche_conclusion(section_content):
+                    errors.append("Conclusion must avoid clichés like 'stay curious' (BONUS-02/BONUS-04)")
         
-        # Check for BONUS-02/BONUS-04 compliance - strong conclusions (critical)
-        if section_type == SectionType.CONCLUSION:
-            if self._has_cliche_conclusion(section_content):
-                errors.append("Conclusion must avoid clichés like 'stay curious' (BONUS-02/BONUS-04)")
+        # Normal validation: critical issues only
+        elif validation_level == "normal":
+            if section_type == SectionType.HOOK_INTRO:
+                if not self._has_action_verb_opening(section_content):
+                    errors.append("S1: No action verb opening")
+                
+                if not self._has_specific_open_loops(section_content):
+                    errors.append("S2: No specific open loops")
+            
+            # Check only the most critical P-rules
+            if self._has_cliche_conclusion(section_content) and section_type == SectionType.CONCLUSION:
+                errors.append("BONUS-02: Cliché conclusion")
         
-        # Only return errors for critical issues that significantly impact quality
+        # Minimal validation: only blockers (already checked above)
+        # No additional checks needed
+        
         return len(errors) == 0, errors
     
     def validate_critical_quality_only(self, section_content: str, section_type: SectionType) -> Tuple[bool, List[str]]:
@@ -648,11 +704,28 @@ TRANSITION SPECIFIC:
         
         return len(errors) == 0, errors
     
-    def _has_action_verb_start(self, content: str) -> bool:
-        """Check if content starts with action verb (S1 compliance)"""
-        first_sentence = content.split('.')[0].strip()
-        weak_starters = ['imagine', 'picture', 'let me', 'in today', 'welcome', 'hi', 'hello']
-        return not any(first_sentence.lower().startswith(starter) for starter in weak_starters)
+    def _has_action_verb_opening(self, content: str) -> bool:
+        """Check if content starts with strong action verb (S1 compliance)"""
+        first_sentence = content.split('.')[0].strip().lower()
+        
+        # Forbidden weak starters - must NOT begin with these
+        weak_starters = [
+            'imagine', 'picture', 'let me', "let's", 'in today', 
+            'welcome', 'hi', 'hello', 'today we', 'so here'
+        ]
+        
+        if any(first_sentence.startswith(weak) for weak in weak_starters):
+            return False
+        
+        # Strong action verbs that should appear in first 5 words
+        strong_verbs = [
+            'buzzed', 'shattered', 'crashed', 'exploded', 'discovered',
+            'stopped', 'grabbed', 'fell', 'rang', 'struck', 'broke',
+            'hit', 'slammed', 'burst', 'erupted', 'collapsed'
+        ]
+        
+        first_five_words = ' '.join(first_sentence.split()[:5])
+        return any(verb in first_five_words for verb in strong_verbs)
     
     def _has_specific_open_loops(self, content: str) -> bool:
         """Check if content creates specific open loops (S2 compliance)"""
