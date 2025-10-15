@@ -1782,8 +1782,10 @@ class ExportScriptView(APIView):
                 result = _export_pdf(script, safe_title, timestamp)
             elif export_format == "docx":
                 result = _export_docx(script, safe_title, timestamp)
-            result = request.build_absolute_uri(result["file_url"])
-            return Response({"file_url": result}, status=status.HTTP_200_OK)
+            
+            # Build absolute URL for the file
+            absolute_url = request.build_absolute_uri(result["file_url"])
+            return Response({"file_url": absolute_url}, status=status.HTTP_200_OK)
 
         except Exception as e:
             logger.error(f"Script export failed: {str(e)}")
