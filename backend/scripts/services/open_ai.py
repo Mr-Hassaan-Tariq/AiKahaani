@@ -1844,7 +1844,7 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, 
         tones = script_data.get("tones", ["informative"])
         template_style = script_data.get("template_style", "medium")
         description = script_data.get("description", "")
-        min_length = script_data.get("min_length", 100)
+        min_length = script_data.get("min_length", 0)
         max_length = script_data.get("max_length", 1000)
 
         tone_text = (
@@ -2119,7 +2119,6 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         timing = first_section.get("timing", "")
         if "minute" in timing.lower() and any(char.isdigit() for char in timing):
             # Extract duration numbers
-            import re
             duration_match = re.search(r'(\d+)', timing)
             if duration_match:
                 duration = int(duration_match.group(1))

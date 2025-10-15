@@ -159,7 +159,7 @@ class GenerateOutlineRequestSerializer(serializers.Serializer):
         help_text="List of tone IDs to use for outline generation (optional)",
     )
     template_style = serializers.IntegerField(required=False, allow_null=True)
-    min_length = serializers.IntegerField(default=100, min_value=50, max_value=5000)
+    min_length = serializers.IntegerField(default=0, min_value=0)
     max_length = serializers.IntegerField(default=1000, min_value=100, max_value=10000)
     title = serializers.CharField(max_length=300, required=False, allow_blank=True)
     image = serializers.ImageField(
@@ -201,6 +201,7 @@ class GenerateOutlineRequestSerializer(serializers.Serializer):
 class GenerateOutlineResponseSerializer(serializers.Serializer):
     outline = ScriptOutlineSerializer()
     message = serializers.CharField()
+    is_script_allowed = serializers.BooleanField(help_text="Whether full script generation is allowed for this outline")
 
 
 class GenerateScriptRequestSerializer(serializers.Serializer):

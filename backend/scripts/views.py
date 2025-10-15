@@ -160,7 +160,7 @@ def generate_script_outline(request):
     image_url = validated_data.get("image_url", "")
     tone_ids = validated_data.get("tones", [])
     template_style_id = validated_data.get("template_style")
-    min_length = validated_data.get("min_length", 100)
+    min_length = validated_data.get("min_length", 0)
     max_length = validated_data.get("max_length", 1000)
     title = validated_data.get("title", "")
     
@@ -481,10 +481,17 @@ def generate_script_outline(request):
         logger.info(
             f"[OUTLINE_GENERATION] Outline generation completed successfully for user {request.user.id}"
         )
+        
+        # Determine if script generation is allowed based on template style
+        is_script_allowed = True
+        if template_style and template_style.id == 4:  # Flexible Outline template
+            is_script_allowed = False
+            
         return Response(
             {
                 "outline": serializer.data,
                 "message": "Script outline generated successfully!",
+                "is_script_allowed": is_script_allowed,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -587,12 +594,12 @@ def recreate_script_outline(request, uuid):
             template_style = original_outline.script.template_style
 
         # Use default length parameters (we could store these in outline_data if needed)
-        min_length = 100
+        min_length = 0
         max_length = 1000
 
         # Try to extract length parameters from outline_data if available
         if original_outline.outline_data:
-            min_length = original_outline.outline_data.get("min_length", 100)
+            min_length = original_outline.outline_data.get("min_length", 0)
             max_length = original_outline.outline_data.get("max_length", 1000)
 
         # If template style is available, use its word ranges
@@ -729,11 +736,18 @@ def recreate_script_outline(request, uuid):
             )
 
         serializer = ScriptOutlineSerializer(new_outline)
+        
+        # Determine if script generation is allowed based on template style
+        is_script_allowed = True
+        if template_style and template_style.id == 4:  # Flexible Outline template
+            is_script_allowed = False
+            
         return Response(
             {
                 "outline": serializer.data,
                 "message": f"Script outline recreated successfully from original outline {original_outline.uuid}!",
                 "original_outline_uuid": str(original_outline.uuid),
+                "is_script_allowed": is_script_allowed,
             },
             status=status.HTTP_201_CREATED,
         )
