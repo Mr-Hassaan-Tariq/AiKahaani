@@ -2119,7 +2119,6 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         timing = first_section.get("timing", "")
         if "minute" in timing.lower() and any(char.isdigit() for char in timing):
             # Extract duration numbers
-            import re
             duration_match = re.search(r'(\d+)', timing)
             if duration_match:
                 duration = int(duration_match.group(1))

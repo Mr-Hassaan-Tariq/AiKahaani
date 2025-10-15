@@ -201,6 +201,7 @@ class GenerateOutlineRequestSerializer(serializers.Serializer):
 class GenerateOutlineResponseSerializer(serializers.Serializer):
     outline = ScriptOutlineSerializer()
     message = serializers.CharField()
+    is_script_allowed = serializers.BooleanField(help_text="Whether full script generation is allowed for this outline")
 
 
 class GenerateScriptRequestSerializer(serializers.Serializer):
