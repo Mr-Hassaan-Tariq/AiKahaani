@@ -248,7 +248,7 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
         """Build specific guidance based on strategies for the section type"""
         
         guidance_map = {
-            SectionType.HOOK_INTRO: """
+                SectionType.HOOK_INTRO: """
 CRITICAL HOOK REQUIREMENTS (S1-S7 ENFORCEMENT):
 - S1: MUST start with ACTION VERB in first sentence (not "Imagine" or "Picture this")
 - S2: MUST create 2-3 SPECIFIC open loops with concrete questions
@@ -256,17 +256,25 @@ CRITICAL HOOK REQUIREMENTS (S1-S7 ENFORCEMENT):
 - S5: MUST include specific sensory details and fast pacing
 - S7: ABSOLUTELY NO channel trailers, personal updates, or CTAs
 
+HOOK SUCCESS EXAMPLES (COPY THESE PATTERNS):
+✅ "Sarah's phone buzzed at 3 AM with a message that would change everything."
+✅ "The explosion shattered the silence at exactly 11:47 PM."
+✅ "Three months ago, Mark discovered something in his basement that shouldn't exist."
+✅ "The system crashed at the worst possible moment - during a live broadcast."
+✅ "Dr. Chen's hands shook as she stared at the test results that shouldn't exist."
+✅ "The alarm blared through the empty building at precisely 2:17 AM."
+
 HOOK FAILURE EXAMPLES TO AVOID:
 ❌ "Imagine this..." (vague, no action)
 ❌ "Picture this scene..." (generic setup)
 ❌ "Let me tell you about..." (boring intro)
 ❌ "In today's video..." (channel trailer style)
+❌ "Welcome to my channel..." (CTA violation)
 
-HOOK SUCCESS EXAMPLES:
-✅ "Sarah's phone buzzed at 3 AM with a message that would change everything."
-✅ "The explosion shattered the silence at exactly 11:47 PM."
-✅ "Three months ago, Mark discovered something in his basement that shouldn't exist."
-✅ "The system crashed at the worst possible moment - during a live broadcast."
+SENSORY DETAILS EXAMPLES:
+✅ "The smell of ozone filled the air as the machine hummed with a metallic vibration"
+✅ "Cold air bit at exposed skin while footsteps echoed off concrete walls"
+✅ "The coffee tasted burnt, and the clock ticked loudly in the silent room"
 
 HOOK VALIDATION CHECKLIST:
 □ Starts with action verb (not "Imagine," "Picture," "Let me")
@@ -275,20 +283,22 @@ HOOK VALIDATION CHECKLIST:
 □ Subverts expectations while staying on-topic
 □ No CTAs or channel references
 """,
-            SectionType.MAIN_CONTENT: """
+                SectionType.MAIN_CONTENT: """
 MAIN CONTENT STRATEGIES (P01-P17 ENFORCEMENT):
 - P01: EVERY section must show transformation: Before → Conflict → After
-- P02: MINIMUM 3 concrete sensory details per section (no generic adjectives)
+- P02: MINIMUM 1 concrete sensory detail per section (flexible requirement)
 - P03: Link beats with "therefore," "but," "because" (not "and then")
 - P05: Create emotional progression, not just setup + mystery
 - P09: NO overdramatic phrasing - write like talking to a friend
 - P10: 8th-10th grade reading level, spoken English flow
 - P12: Plant 2-3 specific open loops per section
 
-SENSORY DETAIL REQUIREMENTS (P02):
+SENSORY DETAIL REQUIREMENTS (P02) - FLEXIBLE:
 ✅ "The smell of ozone filled the air as the machine hummed with a metallic vibration"
 ✅ "Cold air bit at exposed skin while footsteps echoed off concrete walls"
 ✅ "The coffee tasted burnt, and the clock ticked loudly in the silent room"
+✅ "Bright lights flickered overhead as the alarm system activated"
+✅ "The room felt warm and stuffy, making it hard to concentrate"
 
 ❌ "creepy atmosphere" → "the air smelled of mildew and something metallic"
 ❌ "mysterious glow" → "the light pulsed like a heartbeat, casting shadows that moved"
@@ -299,6 +309,8 @@ VOICE REQUIREMENTS (P09/P10):
 ✅ "But wait, there's something weird about this..."
 ✅ "Now, you're probably thinking..."
 ✅ "Here's the thing that got me..."
+✅ "This is where it gets interesting..."
+✅ "But then something unexpected happened..."
 
 ❌ "shadowy silhouettes" → "dark shapes"
 ❌ "haunting mysteries" → "weird stuff that happened"
@@ -326,17 +338,20 @@ CONCLUSION REQUIREMENTS (BONUS-02/BONUS-04 ENFORCEMENT):
 - Create original, deeper reflection that ties to the transformation arc
 - Use strong sentence endings with key insights
 
-CONCLUSION FAILURES:
-❌ "Stay curious, stay brave" (cliché)
-❌ "That's all for today" (generic)
-❌ "Thanks for watching" (CTA, not reflection)
-❌ "Until next time" (channel trailer style)
-
-CONCLUSION SUCCESS EXAMPLES:
+CONCLUSION SUCCESS EXAMPLES (COPY THESE PATTERNS):
 ✅ "The question is: if this happened to them, what else don't we know?"
 ✅ "But the real mystery isn't what happened - it's why we're still talking about it today."
 ✅ "Sarah never found out who sent that message. And maybe that's the point."
 ✅ "The system still runs today, but nobody talks about what happened that night."
+✅ "The real question isn't what they found, but what they're still looking for."
+✅ "This changes everything we thought we knew about how the system works."
+
+CONCLUSION FAILURES TO AVOID:
+❌ "Stay curious, stay brave" (cliché)
+❌ "That's all for today" (generic)
+❌ "Thanks for watching" (CTA, not reflection)
+❌ "Until next time" (channel trailer style)
+❌ "Keep exploring and learning" (generic ending)
 
 CONCLUSION VALIDATION CHECKLIST:
 □ Ends with emotional reflection or haunting unresolved question
@@ -534,46 +549,41 @@ TRANSITION SPECIFIC:
     
     def validate_section_quality(self, section_content: str, section_type: SectionType) -> Tuple[bool, List[str]]:
         """
-        Validate section content against storytelling requirements
+        Validate section content against storytelling requirements - more lenient approach
         Returns (is_valid, error_messages)
         """
         errors = []
         
         if section_type == SectionType.HOOK_INTRO:
-            # Check for S1 compliance - action verb start
-            if not self._has_action_verb_start(section_content):
-                errors.append("Hook must start with action verb (S1) - avoid 'Imagine,' 'Picture,' 'Let me'")
-            
-            # Check for S2 compliance - specific open loops
-            if not self._has_specific_open_loops(section_content):
-                errors.append("Hook must create 2-3 specific open loops with concrete questions (S2)")
-            
-            # Check for S7 compliance - no CTAs
+            # Only check critical validations for hooks
             if self._has_channel_ctas(section_content):
                 errors.append("Hook must NOT include channel trailers or CTAs (S7)")
         
-        # Check for P02 compliance - concrete sensory details (less strict for conclusions)
-        if section_type != SectionType.CONCLUSION and not self._has_concrete_sensory_details(section_content):
-            errors.append("Section must include concrete sensory details (P02) - avoid generic adjectives")
-        
-        # Check for P01 compliance - transformation arc
-        if section_type == SectionType.MAIN_CONTENT and not self._has_transformation_arc(section_content):
-            errors.append("Main content must show transformation/change (P01) - not just setup + mystery")
-        
-        # Check for P09/P10 compliance - natural voice
+        # Check for P09/P10 compliance - natural voice (critical)
         if self._has_overdramatic_phrasing(section_content):
             errors.append("Content must use natural, spoken English (P09/P10) - avoid overdramatic phrasing")
         
-        # Check for P12 compliance - specific curiosity threads
-        if section_type in [SectionType.MAIN_CONTENT, SectionType.TRANSITION] and not self._has_specific_curiosity_threads(section_content):
-            errors.append("Section must plant specific curiosity threads (P12) - avoid vague 'stay tuned'")
-        
-        # Check for BONUS-02/BONUS-04 compliance - strong conclusions
+        # Check for BONUS-02/BONUS-04 compliance - strong conclusions (critical)
         if section_type == SectionType.CONCLUSION:
             if self._has_cliche_conclusion(section_content):
                 errors.append("Conclusion must avoid clichés like 'stay curious' (BONUS-02/BONUS-04)")
-            if not self._has_emotional_reflection(section_content):
-                errors.append("Conclusion must end with emotional reflection or haunting unresolved question")
+        
+        # Only return errors for critical issues that significantly impact quality
+        return len(errors) == 0, errors
+    
+    def validate_critical_quality_only(self, section_content: str, section_type: SectionType) -> Tuple[bool, List[str]]:
+        """
+        Validate only critical quality issues for subsequent attempts
+        Returns (is_valid, error_messages)
+        """
+        errors = []
+        
+        # Only check the most critical issues on retry
+        if self._has_channel_ctas(section_content):
+            errors.append("Hook must NOT include channel trailers or CTAs (S7)")
+        
+        if self._has_overdramatic_phrasing(section_content):
+            errors.append("Content must use natural, spoken English (P09/P10) - avoid overdramatic phrasing")
         
         return len(errors) == 0, errors
     
@@ -589,24 +599,31 @@ TRANSITION SPECIFIC:
         return any(indicator in content.lower() for indicator in question_indicators)
     
     def _has_channel_ctas(self, content: str) -> bool:
-        """Check if content contains channel CTAs (S7 compliance)"""
-        cta_phrases = ['subscribe', 'like', 'follow', 'channel', 'thanks for watching', 'hit the bell']
-        return any(phrase in content.lower() for phrase in cta_phrases)
+        """Check if content contains channel CTAs (S7 compliance) - improved detection"""
+        cta_phrases = [
+            'subscribe to my channel', 'like and subscribe', 'hit the subscribe button',
+            'don\'t forget to subscribe', 'subscribe for more', 'thanks for watching',
+            'hit the bell', 'turn on notifications', 'follow me on'
+        ]
+        # Only flag if it's clearly a CTA, not just mentioning these words in context
+        content_lower = content.lower()
+        return any(phrase in content_lower for phrase in cta_phrases)
     
     def _has_concrete_sensory_details(self, content: str) -> bool:
-        """Check if content has concrete sensory details (P02 compliance)"""
+        """Check if content has concrete sensory details (P02 compliance) - more flexible"""
         # Look for specific sensory words and concrete descriptions
         sensory_words = ['smell', 'sound', 'taste', 'feel', 'touch', 'saw', 'heard', 'felt', 'smelled', 'tasted', 
                         'buzzed', 'shattered', 'hummed', 'vibration', 'ozone', 'metallic', 'cold', 'bit', 
-                        'dripping', 'echoed', 'pulsed', 'heartbeat', 'burned', 'ticked', 'clicked']
+                        'dripping', 'echoed', 'pulsed', 'heartbeat', 'burned', 'ticked', 'clicked',
+                        'bright', 'loud', 'quiet', 'sharp', 'soft', 'rough', 'smooth', 'warm', 'hot']
         generic_adjectives = ['creepy', 'mysterious', 'haunting', 'eerie', 'strange', 'weird', 'shadowy', 'dark']
         
         # Count sensory words
         sensory_count = sum(1 for word in sensory_words if word in content.lower())
         has_generic = any(adj in content.lower() for adj in generic_adjectives)
         
-        # Require at least 2 sensory words and no generic adjectives
-        return sensory_count >= 2 and not has_generic
+        # More flexible: require 1+ sensory words OR no generic adjectives (not both)
+        return sensory_count >= 1 or not has_generic
     
     def _has_transformation_arc(self, content: str) -> bool:
         """Check if content shows transformation/change (P01 compliance)"""

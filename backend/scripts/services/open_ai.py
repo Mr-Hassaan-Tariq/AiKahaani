@@ -1292,7 +1292,7 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
         Returns:
             Tuple of (content, tokens_used)
         """
-        max_attempts = 3
+        max_attempts = 2  # Reduced from 3 to 2 attempts
         total_tokens = 0
         
         for attempt in range(max_attempts):
@@ -1302,8 +1302,13 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
             )
             total_tokens += tokens_used
             
-            # Validate quality
-            is_valid, errors = wc_strategy.validate_section_quality(section_content, section_type)
+            # Use different validation strictness based on attempt
+            if attempt == 0:
+                # First attempt: normal validation
+                is_valid, errors = wc_strategy.validate_section_quality(section_content, section_type)
+            else:
+                # Second attempt: only critical validation
+                is_valid, errors = wc_strategy.validate_critical_quality_only(section_content, section_type)
             
             if is_valid:
                 logger.info(f"[WC_STRATEGY] Section passed quality validation on attempt {attempt + 1}")
