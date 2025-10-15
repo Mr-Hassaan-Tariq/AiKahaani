@@ -423,6 +423,7 @@ def generate_script_outline(request):
         outline_data_with_params.update(
             {
                 "template_style": template_style.name if template_style else "medium",
+                "template_style_id": template_style.id if template_style else None,
                 "min_length": min_length,
                 "max_length": max_length,
             }
@@ -891,6 +892,7 @@ def generate_full_script(request, uuid):
 
         # Read template style and word ranges from outline_data (stored during generation)
         template_style_name = outline.outline_data.get("template_style", "medium")
+        template_style_id = outline.outline_data.get("template_style_id")
         min_length = outline.outline_data.get("min_length", 1000)
         max_length = outline.outline_data.get("max_length", 5000)
         logger.info(
@@ -951,8 +953,8 @@ def generate_full_script(request, uuid):
                 f"Length: {len(outline_for_script)}"
             )
 
-        # Special handling for Flexible Outline template - return outline as script
-        if template_style_name.lower() == "flexible_outline":
+        # Special handling for Flexible Outline template (ID: 4) - return outline as script
+        if template_style_id == 4:
             logger.info(
                 f"[SCRIPT_GENERATION] Flexible outline template detected for user {request.user.id} - "
                 f"returning outline as script content"
