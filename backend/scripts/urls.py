@@ -35,4 +35,8 @@ urlpatterns = [
     path(
         "<uuid:uuid>/", views.FullScriptDetailView.as_view(), name="full-script-detail"
     ),
+    # Export endpoint
+    path(
+        "<uuid:uuid>/export/", views.ExportScriptView.as_view(), name="export-script"
+    ),
 ]
