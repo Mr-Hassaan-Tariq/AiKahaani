@@ -1010,11 +1010,26 @@ def generate_full_script(request, uuid):
         script_content = script_response["full_text"]
         sections = script_response["sections"]
         metadata = script_response["metadata"]
+        
+        # Check script validator compliance
+        validator_compliance = OpenAIScriptService._check_script_validator_compliance(
+            script_content, sections, script_response
+        )
+        
         logger.info(
             f"[SCRIPT_GENERATION] OpenAI script generation completed for user {request.user.id} - "
             f"Tokens used: {metadata.get('tokens_used', 0)}, Generation time: {metadata.get('generation_time', 0):.2f}s, "
-            f"Model: {metadata.get('model', 'unknown')}"
+            f"Model: {metadata.get('model', 'unknown')}, Validator compliance: {validator_compliance.get('overall_compliance', 'UNKNOWN')}"
         )
+        
+        # Log validator violations if any
+        if validator_compliance.get('overall_compliance') == 'FAIL':
+            violations = validator_compliance.get('violations', [])
+            framework_gaps = validator_compliance.get('framework_gaps', [])
+            logger.warning(
+                f"[SCRIPT_GENERATION] Script validator violations for user {request.user.id}: "
+                f"Violations: {violations}, Framework gaps: {framework_gaps}"
+            )
 
         # Process script response - new word count strategy returns plain text
         import re
@@ -1056,6 +1071,11 @@ def generate_full_script(request, uuid):
             f"[SCRIPT_GENERATION] Final script text length for user {request.user.id}: {len(actual_script_text)}"
         )
 
+        # Add validator compliance to sections data
+        sections_with_validator = sections.copy() if sections else []
+        for section in sections_with_validator:
+            section["validator_compliance"] = validator_compliance
+        
         # Create FullScript
         logger.info(
             f"[SCRIPT_GENERATION] Creating FullScript object for user {request.user.id}"
@@ -1066,7 +1086,7 @@ def generate_full_script(request, uuid):
             outline=outline,
             title=script_title,  # Use the outline title directly
             content=actual_script_text,
-            sections=sections,
+            sections=sections_with_validator,
             status="generated",
             openai_model=metadata["model"],
             tokens_used=metadata["tokens_used"],
