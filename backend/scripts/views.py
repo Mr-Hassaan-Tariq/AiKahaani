@@ -677,9 +677,11 @@ def recreate_script_outline(request, uuid):
         if original_outline.title and original_outline.title.strip():
             # Generate a new title based on the original outline's content
             try:
+                # Get description from outline_data or use title as fallback
+                description_for_title = description if description else original_outline.title
                 # Use the title generation assistant to create an engaging title
                 generated_titles, title_metadata = OpenAIScriptService.generate_titles(
-                    prompt=original_outline.description,  # Use the original description
+                    prompt=description_for_title,  # Use the description or title
                     title_count=1,  # We only need one title
                     tones=tones,  # Use the same tones as the new outline
                 )
@@ -1090,15 +1092,42 @@ def generate_full_script(request, uuid):
         for section in sections_with_validator:
             section["validator_compliance"] = validator_compliance
         
+        # Generate title for the script using title generation service
+        logger.info(
+            f"[SCRIPT_GENERATION] Generating title for script for user {request.user.id}"
+        )
+        try:
+            # Use the title generation assistant to create an engaging title for the script
+            generated_titles, title_metadata = OpenAIScriptService.generate_titles(
+                prompt=actual_script_text[:500],  # Use first 500 chars of script as prompt
+                title_count=1,  # We only need one title
+                tones=outline_tones,  # Use the same tones as the outline
+            )
+            if generated_titles and len(generated_titles) > 0:
+                script_title = generated_titles[0].get("title", outline.title)
+                logger.info(
+                    f"[SCRIPT_GENERATION] Generated script title for user {request.user.id}: '{script_title}' "
+                    f"(tokens: {title_metadata.get('tokens_used', 0)})"
+                )
+            else:
+                script_title = outline.title
+                logger.warning(
+                    f"[SCRIPT_GENERATION] Title generation returned empty results for user {request.user.id}, using outline title"
+                )
+        except Exception as e:
+            script_title = outline.title
+            logger.warning(
+                f"[SCRIPT_GENERATION] Title generation failed for user {request.user.id}: {str(e)}, using outline title"
+            )
+
         # Create FullScript
         logger.info(
             f"[SCRIPT_GENERATION] Creating FullScript object for user {request.user.id}"
         )
-        script_title = request.data.get("title", outline.title)
         full_script = FullScript.objects.create(
             user=request.user,
             outline=outline,
-            title=script_title,  # Use the outline title directly
+            title=script_title,
             content=actual_script_text,
             sections=sections_with_validator,
             status="generated",
