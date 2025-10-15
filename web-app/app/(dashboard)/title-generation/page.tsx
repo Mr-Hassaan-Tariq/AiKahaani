@@ -173,7 +173,7 @@ export default function Page() {
   };
 
   return (
-    <Card className="mx-auto w-full max-w-[864px] px-4">
+    <Card className="mx-auto w-full max-w-[864px]">
       <Col className="items-center">
         <Text className="text-center text-xl font-semibold text-white lg:text-[32px]">
           Title Generator

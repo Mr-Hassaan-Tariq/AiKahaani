@@ -26,7 +26,7 @@ export default function Pagination({
     const pages: number[] = [];
     const maxButtons = 3;
     let start = Math.max(1, currentPage - 1);
-    let end = Math.min(totalPages, start + maxButtons - 1);
+    const end = Math.min(totalPages, start + maxButtons - 1);
 
     if (end - start < maxButtons - 1) {
       start = Math.max(1, end - maxButtons + 1);

@@ -72,46 +72,44 @@ export default function NotificationsPage() {
   const hasNotifications = notifications.length > 0;
 
   return (
-    <div className="px-10">
-      <NotificationTabs>
-        {query && components[query] ? (
-          components[query]
-        ) : loading ? (
-          <p className="text-gray-400">Loading notifications...</p>
-        ) : hasNotifications ? (
-          <>
-            {notifications.map((item) => (
-              <NotificationItem
-                key={item.id}
-                id={item.id}
-                title={item.title}
-                description={item.message}
-                time={formatTimeAgo(item.created_at)}
-                isNew={!item.read}
-                icon={BellIcon}
-                onRead={(id: number) =>
-                  setNotifications((prev) =>
-                    prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-                  )
-                }
-              />
-            ))}
-
-            <Pagination
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              currentPage={currentPage}
-              onPageChange={handlePageChange}
+    <NotificationTabs>
+      {query && components[query] ? (
+        components[query]
+      ) : loading ? (
+        <p className="text-gray-400">Loading notifications...</p>
+      ) : hasNotifications ? (
+        <>
+          {notifications.map((item) => (
+            <NotificationItem
+              key={item.id}
+              id={item.id}
+              title={item.title}
+              description={item.message}
+              time={formatTimeAgo(item.created_at)}
+              isNew={!item.read}
+              icon={BellIcon}
+              onRead={(id: number) =>
+                setNotifications((prev) =>
+                  prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+                )
+              }
             />
-          </>
-        ) : (
-          <EmptyState
-            icon={BellIcon}
-            title="You’re all caught up!"
-            description="There are no new notifications at the moment. Check back later or explore the latest features in the meantime."
+          ))}
+
+          <Pagination
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            currentPage={currentPage}
+            onPageChange={handlePageChange}
           />
-        )}
-      </NotificationTabs>
-    </div>
+        </>
+      ) : (
+        <EmptyState
+          icon={BellIcon}
+          title="You’re all caught up!"
+          description="There are no new notifications at the moment. Check back later or explore the latest features in the meantime."
+        />
+      )}
+    </NotificationTabs>
   );
 }
