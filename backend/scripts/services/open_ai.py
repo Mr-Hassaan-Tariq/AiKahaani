@@ -766,20 +766,38 @@ Follow TubeGenius principles:
             system_prompt = OpenAIScriptService._build_outline_system_prompt()
             user_prompt = OpenAIScriptService._build_outline_user_prompt(script_data)
 
-            # Calculate expected duration and structure using word count strategy
-            wc_strategy = WordCountStrategy(script_data.get("template_style", "medium"))
+            # Check if this is a Flexible Outline template (ID 4)
+            template_style_id = script_data.get("template_style_id")
+            template_style_name = script_data.get("template_style", "medium")
             
-            # Use strategy to calculate section targets
-            suggested_sections = wc_strategy.config["suggested_sections"]
-            word_targets = wc_strategy.calculate_section_word_targets(suggested_sections)
+            # For Flexible Outline template, use simple outline generation
+            if template_style_id == 4 or template_style_name.lower() == "flexible_outline":
+                # Simple outline generation for Flexible templates
+                enhanced_prompt = f"""{user_prompt}
+
+OUTLINE REQUIREMENTS FOR FLEXIBLE TEMPLATE:
+- Create a high-level structure with 3-4 main sections
+- Each section should have a brief description (50-100 words)
+- Focus on key points and structure, not detailed content
+- Target: 100-300 words total for the entire outline
+- Format as JSON with sections array
+
+This is a flexible outline template - keep it concise and structural."""
+            else:
+                # Calculate expected duration and structure using word count strategy for full scripts
+                wc_strategy = WordCountStrategy(script_data.get("template_style", "medium"))
+                
+                # Use strategy to calculate section targets
+                suggested_sections = wc_strategy.config["suggested_sections"]
+                word_targets = wc_strategy.calculate_section_word_targets(suggested_sections)
+                
+                min_duration = min_length / 150
+                max_duration = max_length / 150
+                words_per_section_min = word_targets["intro"]
+                words_per_section_max = word_targets["main_sections"]
             
-            min_duration = min_length / 150
-            max_duration = max_length / 150
-            words_per_section_min = word_targets["intro"]
-            words_per_section_max = word_targets["main_sections"]
-            
-            # Enhanced prompt with word count strategy integration and quality requirements
-            enhanced_prompt = f"""{user_prompt}
+                # Enhanced prompt with word count strategy integration and quality requirements
+                enhanced_prompt = f"""{user_prompt}
 
 🚨 OUTLINE FOR {min_length:,}-{max_length:,} WORD SCRIPT ({min_duration:.1f}-{max_duration:.1f} min video)
 
@@ -815,7 +833,7 @@ CONCLUSION SECTION:
 EACH SECTION MUST HAVE:
 • Description: 80-150 words (NOT 1-2 sentences!)
 • Key points: 5-8 detailed sentences of specific guidance
-• Target word count: {word_targets['intro'] if 'intro' in locals() else words_per_section_min} words
+• Target word count: {words_per_section_min} words
 • Timing estimate
 • Transition to next section
 • Specific examples/stories/angles to include
