@@ -935,6 +935,26 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
             # Parse outline structure
             outline_data = OpenAIScriptService._parse_outline_structure(outline_text)
             
+            # Calculate word count
+            word_count = len(outline_text.split())
+
+            # Generate unique identifiers for logging
+            thread_id = f"chat_{int(time.time())}"
+            run_id = f"run_{int(time.time())}"
+
+            # Initialize metadata first
+            metadata = {
+                "tokens_used": tokens_used,
+                "generation_time": generation_time,
+                "model": settings.OPENAI_MODEL,
+                "assistant_id": "chat-completions",
+                "vector_store_id": "none",
+                "thread_id": thread_id,
+                "run_id": run_id,
+                "file_search_used": False,
+                "word_count": word_count,
+            }
+            
             # Check validator compliance
             compliance_check = OpenAIScriptService._check_validator_compliance(
                 outline_data["sections"],
@@ -957,25 +977,6 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
             
             # Add compliance check to metadata
             metadata["validator_compliance"] = compliance_check
-            
-            # Calculate word count
-            word_count = len(outline_text.split())
-
-            # Generate unique identifiers for logging
-            thread_id = f"chat_{int(time.time())}"
-            run_id = f"run_{int(time.time())}"
-
-            metadata = {
-                "tokens_used": tokens_used,
-                "generation_time": generation_time,
-                "model": settings.OPENAI_MODEL,
-                "assistant_id": "chat-completions",
-                "vector_store_id": "none",
-                "thread_id": thread_id,
-                "run_id": run_id,
-                "file_search_used": False,
-                "word_count": word_count,
-            }
 
             # Save run log to database
             if save_log:
