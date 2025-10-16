@@ -80,7 +80,27 @@ export default function Page() {
   useEffect(() => {
     reset();
   }, [activeTab]);
+
   const onSubmit = async (data: any) => {
+    const hasShocking = data.tones.includes('Shocking');
+    const hasMysterious = data.tones.includes('Mysterious');
+    const hasNeutral = data.tones.includes('Neutral');
+
+    if ((hasShocking && hasMysterious) || (hasShocking && hasNeutral)) {
+      let message = '';
+
+      if (hasShocking && hasMysterious) {
+        message =
+          'Selecting both "Shocking" and "Mysterious" together may confuse your audience. Please choose one.';
+      } else if (hasShocking && hasNeutral) {
+        message =
+          'Selecting both "Shocking" and "Neutral" tones creates an inconsistent mood. Please choose one.';
+      }
+
+      toast.error('Confusing Tone Selection', message);
+      return;
+    }
+
     setLastPayload({ ...data });
     setIsGenerating(true);
 
@@ -118,7 +138,18 @@ export default function Page() {
     } catch (err: any) {
       console.error('Error generating titles:', err);
       setIsGenerating(false);
-      toast.error('Error', err.detail?.toString() || 'Something went wrong');
+
+      if (err && typeof err === 'object') {
+        if (err.prompt && Array.isArray(err.prompt)) {
+          toast.error('Validation Error', err.prompt[0]);
+          return;
+        } else if (err.detail) {
+          toast.error('Error', err.detail.toString());
+          return;
+        }
+      }
+
+      toast.error('Error', 'Something went wrong while processing your request.');
     }
   };
 

@@ -67,7 +67,7 @@ export default async function MyScriptsContent({ searchParams }: MyScriptsConten
   };
 
   return (
-    <>
+    <div className="flex flex-col">
       <MyScriptsTabWrapper searchValue={search}>{renderContent()}</MyScriptsTabWrapper>
       <PaginationClient
         currentPage={currentPage}
@@ -75,6 +75,6 @@ export default async function MyScriptsContent({ searchParams }: MyScriptsConten
         pageSize={pageSize}
         searchParams={searchParams}
       />
-    </>
+    </div>
   );
 }

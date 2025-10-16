@@ -13,7 +13,7 @@ interface MyScriptsPageProps {
 
 export default function MyScriptsPage({ searchParams }: MyScriptsPageProps) {
   return (
-    <div className="space-y-6">
+    <div className="flex min-h-screen flex-col space-y-6">
       <ComponentNav
         title="My Scripts"
         buttonText="Generate New Script"
@@ -22,7 +22,13 @@ export default function MyScriptsPage({ searchParams }: MyScriptsPageProps) {
         _onButtonClick="/new-script"
       />
 
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense
+        fallback={
+          <div className="flex max-h-[40vh] flex-1 items-center justify-center">
+            <p className="text-gray-500">Loading scripts...</p>
+          </div>
+        }
+      >
         <MyScriptsContent searchParams={searchParams} />
       </Suspense>
     </div>
