@@ -496,12 +496,7 @@ Make the title clickable and engaging for YouTube, and the description detailed 
             # Use Chat Completions API instead of Assistant API
             # GPT-5 and newer models use max_completion_tokens instead of max_tokens
             model_name = settings.OPENAI_MODEL.lower()
-            
-            # Debug logging
-            print("=" * 80)
-            print(f"[TITLES] Using model: {settings.OPENAI_MODEL} (from settings)")
-            print(f"[TITLES] Model name lowercased: {model_name}")
-            
+
             api_params = {
                 "model": settings.OPENAI_MODEL,
                 "messages": [
@@ -509,57 +504,47 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                     {"role": "user", "content": user_prompt},
                 ],
             }
-            
+
             # GPT-5 and o1 models have different parameter requirements
             if "gpt-5" in model_name or "o1" in model_name:
                 # GPT-5 uses max_completion_tokens and doesn't support custom temperature
                 # GPT-5 needs MUCH more tokens - consumes 3-4x more than GPT-4o
-                api_params["max_completion_tokens"] = 16000  # Increased to handle large prompt + response
+                api_params["max_completion_tokens"] = (
+                    16000  # Increased to handle large prompt + response
+                )
                 # Don't set temperature - GPT-5 only accepts default (1)
                 # Note: GPT-5 might not support JSON mode - we'll handle response parsing flexibly
-                print(f"[TITLES] Using max_completion_tokens=16000 for {model_name} (no temperature, no JSON mode)")
+                print(
+                    f"[TITLES] Using max_completion_tokens=16000 for {model_name} (no temperature, no JSON mode)"
+                )
             else:
                 # Older models use max_tokens and support temperature
                 api_params["max_tokens"] = 2000
                 api_params["temperature"] = 0.7
-                print(f"[TITLES] Using max_tokens and temperature=0.7 for {model_name}")
-            
-            print(f"[TITLES] API params model: {api_params['model']}")
-            print(f"[TITLES] Sending request to OpenAI...")
-            
+
             try:
                 response = client.chat.completions.create(**api_params)
             except Exception as e:
                 print(f"[TITLES] ERROR during API call: {str(e)}")
                 raise
-            
+
             # Log what OpenAI actually used
-            print(f"[TITLES] OpenAI Response - Model used: {response.model}")
-            print(f"[TITLES] OpenAI Response - ID: {response.id}")
-            print(f"[TITLES] Response object: {response}")
-            print("=" * 80)
-            logger.info(f"[TITLES] Generated {title_count} titles using Chat Completions API")
+            logger.info(
+                f"[TITLES] Generated {title_count} titles using Chat Completions API"
+            )
 
             # Extract content and token usage with validation
             if not response.choices or len(response.choices) == 0:
-                print(f"[TITLES] ERROR: No choices in response. Full response: {response}")
                 raise ValueError("OpenAI API returned no choices in response")
 
             choice = response.choices[0]
-            print(f"[TITLES] Choice object: {choice}")
-            print(f"[TITLES] Choice finish_reason: {choice.finish_reason}")
-            
+
             if not hasattr(choice, "message") or not choice.message:
-                print(f"[TITLES] ERROR: Invalid choice structure. Choice: {choice}")
                 raise ValueError("OpenAI API returned invalid choice structure")
 
             titles_content = choice.message.content
-            print(f"[TITLES] Content length: {len(titles_content) if titles_content else 0}")
-            print(f"[TITLES] Content preview: {titles_content[:200] if titles_content else 'EMPTY'}")
-            
+
             if not titles_content:
-                print(f"[TITLES] ERROR: Empty content!")
-                print(f"[TITLES] Full response dump: {response.model_dump_json()}")
                 raise ValueError(
                     f"OpenAI API returned empty content. Model: {response.model}, Finish reason: {choice.finish_reason}"
                 )
@@ -708,7 +693,7 @@ OUTPUT: Return ONLY a JSON array of objects with this schema:
 
 ❌ FORBIDDEN (AUTO-REJECT):
 - "How to..." - BANNED
-- "Top 10..." - BANNED  
+- "Top 10..." - BANNED
 - "A Guide to..." - BANNED
 - "Everything you need..." - BANNED
 - "In 2025..." - BANNED
@@ -818,38 +803,46 @@ Return ONLY valid JSON array. Every title MUST pass all checks above and feel FR
             data = json.loads(cleaned)
             parsed = []
             rejected = []
-            
+
             for t in data:
                 title_text = t.get("title", "")
                 length = len(title_text)
                 word_count = len(title_text.split())
-                
+
                 # Calculate and add metadata
                 t["length_chars"] = length
                 t["word_count"] = word_count
-                
+
                 # Strict validation: 55 chars max, 5-7 words
                 if length > 55:
                     t["truncation_safe"] = False
                     rejected.append(f"'{title_text}' ({length} chars - TOO LONG)")
-                    logger.warning(f"Rejected title (too long): '{title_text}' - {length} chars")
+                    logger.warning(
+                        f"Rejected title (too long): '{title_text}' - {length} chars"
+                    )
                     continue  # Skip titles over 55 characters
-                
+
                 if word_count < 5 or word_count > 7:
                     rejected.append(f"'{title_text}' ({word_count} words - need 5-7)")
-                    logger.warning(f"Rejected title (wrong word count): '{title_text}' - {word_count} words")
+                    logger.warning(
+                        f"Rejected title (wrong word count): '{title_text}' - {word_count} words"
+                    )
                     continue  # Skip titles with wrong word count
-                
+
                 # Title passes validation
                 t["truncation_safe"] = True
                 parsed.append(t)
-            
+
             if rejected:
-                logger.info(f"Rejected {len(rejected)} titles for length violations: {rejected}")
-            
-            logger.info(f"Accepted {len(parsed)} titles that meet 55 char / 5-7 word requirements")
+                logger.info(
+                    f"Rejected {len(rejected)} titles for length violations: {rejected}"
+                )
+
+            logger.info(
+                f"Accepted {len(parsed)} titles that meet 55 char / 5-7 word requirements"
+            )
             return parsed
-            
+
         except Exception as e:
             logger.error(
                 f"Failed to parse GPT titles as JSON: {str(e)}\nContent was:\n{titles_content}"
@@ -1113,7 +1106,7 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
             # Use Chat Completions API instead of Assistant API
             print("=" * 80)
             print(f"[OUTLINE] Sending request with model: {settings.OPENAI_MODEL}")
-            
+
             # Build API parameters based on model
             model_name = settings.OPENAI_MODEL.lower()
             api_params = {
@@ -1124,17 +1117,23 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
                 ],
                 "response_format": {"type": "json_object"},
             }
-            
+
             # GPT-5 and o1 models have different parameter requirements
             if "gpt-5" in model_name or "o1" in model_name:
-                api_params["max_completion_tokens"] = 20000  # Increased - GPT-5 needs more
+                api_params["max_completion_tokens"] = (
+                    20000  # Increased - GPT-5 needs more
+                )
                 # Don't set temperature for GPT-5
-                print(f"[OUTLINE] Using max_completion_tokens=20000 for {model_name} (no temperature)")
+                print(
+                    f"[OUTLINE] Using max_completion_tokens=20000 for {model_name} (no temperature)"
+                )
             else:
                 api_params["max_tokens"] = 3000
                 api_params["temperature"] = 0.7
-                print(f"[OUTLINE] Using max_tokens and temperature=0.7 for {model_name}")
-            
+                print(
+                    f"[OUTLINE] Using max_tokens and temperature=0.7 for {model_name}"
+                )
+
             response = client.chat.completions.create(**api_params)
 
             print(f"[OUTLINE] OpenAI Response - Model used: {response.model}")
@@ -1318,7 +1317,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                 ],
                 "response_format": {"type": "json_object"},
             }
-            
+
             # GPT-5 and o1 models have different parameter requirements
             if "gpt-5" in model_name or "o1" in model_name:
                 # GPT-5 needs more tokens - multiply by 2
@@ -1326,7 +1325,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
             else:
                 api_params["max_tokens"] = max_tokens
                 api_params["temperature"] = 0.7
-            
+
             response = client.chat.completions.create(**api_params)
 
             logger.info(
@@ -1779,7 +1778,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
             ],
             "response_format": {"type": "json_object"},
         }
-        
+
         # GPT-5 and o1 models have different parameter requirements
         if "gpt-5" in model_name or "o1" in model_name:
             # GPT-5 needs more tokens - multiply by 2
@@ -1787,7 +1786,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
         else:
             api_params["max_tokens"] = max_tokens
             api_params["temperature"] = 0.7
-        
+
         response = client.chat.completions.create(**api_params)
 
         content = response.choices[0].message.content
@@ -1916,14 +1915,16 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
                     },
                 ],
             }
-            
+
             # GPT-5 and o1 models have different parameter requirements
             if "gpt-5" in model_name or "o1" in model_name:
-                api_params["max_completion_tokens"] = 2000  # Increased for image analysis
+                api_params["max_completion_tokens"] = (
+                    2000  # Increased for image analysis
+                )
             else:
                 api_params["max_tokens"] = 500
                 api_params["temperature"] = 0.7
-            
+
             response = client.chat.completions.create(**api_params)
 
             logger.info(
