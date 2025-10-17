@@ -370,5 +370,14 @@ OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
 # Using GPT-4o model for all generation tasks
 OPENAI_MODEL = environ.get("OPENAI_MODEL", "gpt-4o")
 
+# Debug: Log the model being used at startup
+import logging
+logger = logging.getLogger(__name__)
+logger.info(f"[SETTINGS] OpenAI Model configured: {OPENAI_MODEL}")
+print(f"[SETTINGS STARTUP] ========================================")
+print(f"[SETTINGS STARTUP] OPENAI_MODEL = {OPENAI_MODEL}")
+print(f"[SETTINGS STARTUP] Environment OPENAI_MODEL = {environ.get('OPENAI_MODEL', 'NOT SET')}")
+print(f"[SETTINGS STARTUP] ========================================")
+
 # Note: Assistant API and Vector Store configurations removed as we now use Chat Completions API
 # This simplifies the setup and removes dependencies on Assistant API beta features

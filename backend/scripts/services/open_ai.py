@@ -67,6 +67,8 @@ def get_openai_client():
     global _client
     if _client is None:
         _client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+        print(f"[OPENAI_CLIENT] Initialized with model: {settings.OPENAI_MODEL}")
+        logger.info(f"[OPENAI_CLIENT] Initialized with model: {settings.OPENAI_MODEL}")
     return _client
 
 
@@ -492,32 +494,74 @@ Make the title clickable and engaging for YouTube, and the description detailed 
             )
 
             # Use Chat Completions API instead of Assistant API
-            response = client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
-                messages=[
+            # GPT-5 and newer models use max_completion_tokens instead of max_tokens
+            model_name = settings.OPENAI_MODEL.lower()
+            
+            # Debug logging
+            print("=" * 80)
+            print(f"[TITLES] Using model: {settings.OPENAI_MODEL} (from settings)")
+            print(f"[TITLES] Model name lowercased: {model_name}")
+            
+            api_params = {
+                "model": settings.OPENAI_MODEL,
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
-                max_tokens=2000,
-                temperature=0.7,
-            )
-
-            logger.info(
-                f"[TITLES] Generated {title_count} titles using Chat Completions API"
-            )
+            }
+            
+            # GPT-5 and o1 models have different parameter requirements
+            if "gpt-5" in model_name or "o1" in model_name:
+                # GPT-5 uses max_completion_tokens and doesn't support custom temperature
+                # GPT-5 needs MUCH more tokens - consumes 3-4x more than GPT-4o
+                api_params["max_completion_tokens"] = 16000  # Increased to handle large prompt + response
+                # Don't set temperature - GPT-5 only accepts default (1)
+                # Note: GPT-5 might not support JSON mode - we'll handle response parsing flexibly
+                print(f"[TITLES] Using max_completion_tokens=16000 for {model_name} (no temperature, no JSON mode)")
+            else:
+                # Older models use max_tokens and support temperature
+                api_params["max_tokens"] = 2000
+                api_params["temperature"] = 0.7
+                print(f"[TITLES] Using max_tokens and temperature=0.7 for {model_name}")
+            
+            print(f"[TITLES] API params model: {api_params['model']}")
+            print(f"[TITLES] Sending request to OpenAI...")
+            
+            try:
+                response = client.chat.completions.create(**api_params)
+            except Exception as e:
+                print(f"[TITLES] ERROR during API call: {str(e)}")
+                raise
+            
+            # Log what OpenAI actually used
+            print(f"[TITLES] OpenAI Response - Model used: {response.model}")
+            print(f"[TITLES] OpenAI Response - ID: {response.id}")
+            print(f"[TITLES] Response object: {response}")
+            print("=" * 80)
+            logger.info(f"[TITLES] Generated {title_count} titles using Chat Completions API")
 
             # Extract content and token usage with validation
             if not response.choices or len(response.choices) == 0:
+                print(f"[TITLES] ERROR: No choices in response. Full response: {response}")
                 raise ValueError("OpenAI API returned no choices in response")
 
             choice = response.choices[0]
+            print(f"[TITLES] Choice object: {choice}")
+            print(f"[TITLES] Choice finish_reason: {choice.finish_reason}")
+            
             if not hasattr(choice, "message") or not choice.message:
+                print(f"[TITLES] ERROR: Invalid choice structure. Choice: {choice}")
                 raise ValueError("OpenAI API returned invalid choice structure")
 
             titles_content = choice.message.content
+            print(f"[TITLES] Content length: {len(titles_content) if titles_content else 0}")
+            print(f"[TITLES] Content preview: {titles_content[:200] if titles_content else 'EMPTY'}")
+            
             if not titles_content:
+                print(f"[TITLES] ERROR: Empty content!")
+                print(f"[TITLES] Full response dump: {response.model_dump_json()}")
                 raise ValueError(
-                    "OpenAI API returned empty content - this may indicate rate limiting or API error"
+                    f"OpenAI API returned empty content. Model: {response.model}, Finish reason: {choice.finish_reason}"
                 )
 
             tokens_used = response.usage.total_tokens if response.usage else 0
@@ -601,83 +645,165 @@ Make the title clickable and engaging for YouTube, and the description detailed 
     @staticmethod
     def _build_title_system_prompt() -> str:
         storytelling_manual = format_storytelling_manual_for_prompt()
-        return f"""You are a world-class YouTube title punch-up editor.
+        return f"""You are a world-class YouTube title creator specializing in high-CTR, viral titles.
 
 OUTPUT: Return ONLY a JSON array of objects with this schema:
 {{
   "title": "string",
-  "angle": "short description of the twist/approach",
-  "tension_pair": ["cost/risk", "promised payoff"],   // e.g., ["I almost got fired", "but this 1 fix saved me"]
-  "levers": ["curiosity","contrast","emotion","specificity","novelty"],
-  "emotion_target": "fear|awe|greed|surprise|hope|schadenfreude|resentment",
+  "angle": "what makes it click-worthy",
+  "tension_pair": ["problem/hook", "solution/payoff"],
+  "levers": ["curiosity","shock","emotion","urgency","mystery"],
+  "emotion_target": "fear|shock|curiosity|desire|anger|surprise",
   "power_words": ["..."],
-  "length_chars": 42,
+  "length_chars": 52,
+  "word_count": 6,
   "truncation_safe": true,
-  "keyword_hint": "light SEO hint if natural (optional)",
-  "speakable_score": 0.0,  // 0–1: how punchy when read aloud
-  "notes": "micro-rationale: what makes this clickable"
+  "notes": "why this works"
 }}
 
-HARD RULES (ENFORCED):
-- ≤54 chars preferred (58 max). Must set truncation_safe.
-- **Talk to ONE person** (“you”, not “you guys”). Avoid 1st-person unless the twist demands it.
-- **Front-load the tension**: make the risk/cost obvious before the payoff.
-- **No bland SEO verbs**: BAN: “How to…”, “A guide to…”, “Top 10…”, “In 2025…”, “Everything you need to know”, “The ultimate guide”.
-- **No topic restatement**: The title must create a *new* angle or open loop. Don’t just label the subject.
-- Prefer **specificity** (numbers, time, stakes, unusual nouns) over abstraction.
-- Prefer **contrast** (“X vs Y”, “I did A, got B”, “You think X, actually Y”).
-- Avoid clickbait that lies; keep the promise honest.
+🚨 CRITICAL LENGTH REQUIREMENTS (NON-NEGOTIABLE):
+- **MAXIMUM 55 characters** (absolute hard limit - reject anything longer)
+- **5-7 words ONLY** (ideal: 6 words)
+- This is what fits on mobile screens - longer titles get cut off and FAIL
+- Count characters BEFORE submitting. If over 55 chars, REWRITE SHORTER.
 
-CURIOUSITY PATTERNS (pick one per title):
-- “You expect X → It’s actually Y”
-- “The cost if you ignore this” (risk-first)
-- “A taboo/forbidden insight”
-- “Before/After with a twist”
-- “A missing step no one mentions”
+🎨 CREATIVE DIVERSITY RULES (AVOID REPETITION):
+**Synonym Rotation** - Don't repeat the same words across titles. Rotate these:
+  • Numbers: 3, 5, 7, 10 → also try: Few, Several, Simple, Quick
+  • Productivity → output, focus, work, energy, performance, results, efficiency
+  • Habits → routines, patterns, systems, rituals, practices, methods
+  • Secrets → truths, facts, tricks, moves, tactics, insights, lessons
+  • Productivity/Habits/Skills → swap freely, keep it fresh
 
-SPEAKABILITY:
-- Aim for punchy mouth-feel (no tongue twisters).
-- Readable in one breath.
+**Structure Variation** - Don't use same pattern twice in a batch:
+  • Mix question marks, periods, dashes
+  • Vary sentence structure (statements, questions, commands)
+  • Alternate between "you" and implied subject
+  • Some with numbers, some without
+
+**Emotional Tone Mixing** - Vary confidence level across batch:
+  • Bold/Confident: "Never Trust [X] Again" "This Changes Everything"
+  • Relatable/Softer: "Why I Finally Quit [X]" "The One Thing That Worked"
+  • Urgent/Warning: "Stop [X] Before It's Late" "Your [X] Is Broken"
+  • Curious/Mystery: "What Nobody Tells You About [X]"
+
+🔥 INTRIGUING TITLE FORMULA:
+1. **Start with a HOOK** (shock, number, power word, or mystery)
+2. **Create CURIOSITY GAP** (make them NEED to click to find out)
+3. **Use POWER WORDS**: Shocking, Secret, Never, Exposed, Hidden, Truth, Mistake, Banned, Forbidden, Weird, Strange, Broken, Failed
+4. **Add SPECIFICITY**: Numbers, time frames, exact details
+5. **Contrast/Conflict**: Before vs After, X vs Y, Truth vs Lie
+
+✅ WINNING PATTERNS (rotate, don't repeat):
+- "This [shocking thing] Changed Everything"
+- "Why [unexpected fact]?"
+- "The [number] [thing] Nobody Tells You"
+- "[Number] Secrets [authority figure] Hides"
+- "I [did something extreme] for [time]"
+- "Stop [common action] (Do This Instead)"
+- "[Thing] Is Lying to You. Here's Why"
+- "What Happens When You [unexpected action]"
+- "Your [X] Isn't Working. Here's Why"
+- "The [X] Mistake Everyone Makes"
+
+❌ FORBIDDEN (AUTO-REJECT):
+- "How to..." - BANNED
+- "Top 10..." - BANNED  
+- "A Guide to..." - BANNED
+- "Everything you need..." - BANNED
+- "In 2025..." - BANNED
+- "The Ultimate..." - BANNED
+- "Welcome back..." - BANNED
+- Repeated words/structures within same batch
+- Any title over 55 characters - REJECTED
+- Vague titles without specifics - REJECTED
+
+🎯 MAKE IT INTRIGUING:
+- Front-load the mystery/shock in first 3 words
+- Use unexpected angles (not obvious takes)
+- Hint at forbidden/secret knowledge
+- Create "I MUST know this" urgency
+- Make viewer question what they think they know
+- Vary emotional register (bold → soft → urgent → curious)
 
 {storytelling_manual}
-Generate HUMAN, high-contrast titles that feel like a friend whispering a secret, not a blog post headline.
+
+REMEMBER: 55 characters max, 5-7 words, INTRIGUING, curiosity-driven, DIVERSE. Count before submitting!
 """
 
     @staticmethod
     def _build_title_user_prompt(
         prompt: str, title_count: int, tones: list = None
     ) -> str:
-        base = f"""Concept: "{prompt}"
+        base = f"""Video Concept: "{prompt}"
 
-    Generate {title_count} titles.
+Generate {title_count} YouTube titles that will get HIGH CLICK-THROUGH RATES.
 
-    BATCH COVERAGE (include at least one of each):
-    - Curiosity/open loop (risk-first)
-    - Contrast/assumption flip (“You think X… actually Y”)
-    - Outcome/benefit (specific number/time)
-    - Contrarian/taboo (“never do”, “you’ve been lied to”)
-    - Fame/anchor (only if truly relevant; otherwise skip)
-    - Niche long-tail that still sounds human (NOT “how to…”)
+🚨 MANDATORY REQUIREMENTS:
+✓ Each title MUST be 55 characters or less (count them!)
+✓ Each title MUST be 5-7 words (no more, no less)
+✓ Each title MUST be intriguing (create curiosity gap)
+✓ Each title MUST have a hook in the first 3 words
+✓ NO banned phrases (How to, Guide, Top X, etc.)
+✓ NO repeated words/structures within this batch (keep it fresh!)
 
-    NEGATIVE CONSTRAINTS:
-    - BAN “How to…”, “Guide”, “Top X”, “In 2025”, “Everything you need”, “The ultimate…”.
-    - No “Today we…”, “Welcome back…”, channel trailer language.
-    - Do not restate the topic; create tension + specificity.
+🎨 DIVERSITY REQUIREMENTS (critical for this batch):
+✓ Use different ANGLES across titles:
+  - Mix: Contrarian, How-Change, Single-Solution, Proof-Based, Cost-First, Mystery, Warning
+✓ Vary EMOTIONAL TONE:
+  - 2-3 titles: Bold/Confident ("Never Trust X Again")
+  - 2-3 titles: Relatable/Softer ("Why I Finally Quit X")
+  - 2-3 titles: Urgent/Warning ("Stop X Before It's Late")
+✓ Rotate VOCABULARY (don't repeat):
+  - Use synonyms: output/focus/performance/results instead of repeating "productivity"
+  - Vary structures: questions, statements, commands
+  - Mix with/without numbers (not all "5 [X]")
+✓ Different PATTERNS per title (don't template):
+  - Title 1: Question format
+  - Title 2: Statement with dash
+  - Title 3: Command/Warning
+  - Title 4: Mystery reveal
+  - Continue rotating...
 
-    STYLE:
-    - Talk to one person: “you”.
-    - Lead with **stakes** or **weirdly specific detail**.
-    - Prefer concrete nouns and numbers over abstractions.
+🎯 ANGLE ROTATION - Use one per title, don't repeat:
+1. **Contrarian**: "Everyone Says [X]. They're Wrong"
+2. **Single Change**: "I Changed [One Thing]. Everything Shifted"
+3. **Proof-Based**: "The [X] That Actually Worked for Me"
+4. **Cost-First**: "Ignoring [X] Cost Me [Consequence]"
+5. **Mystery/Secret**: "What [Authority] Won't Tell You About [X]"
+6. **Warning**: "Your [X] Is Broken. Here's Why"
+7. **Transformation**: "[Specific Action] Changed Everything"
+8. **Forbidden Knowledge**: "The [X] Truth They Don't Share"
 
-    Return ONLY valid JSON as specified by the system.
-    """
+🔥 MAKE EACH TITLE:
+- Start with a power word or number (vary which)
+- Create "I MUST watch this" urgency
+- Hint at forbidden/hidden knowledge
+- Use specific details (numbers, time, exact facts)
+- Make viewer question their assumptions
+- Front-load the intrigue (don't bury the hook)
+- **Feel human, not templated**
+
+⚠️ VALIDATION CHECKLIST (for each title):
+□ Character count ≤ 55? (count spaces and punctuation)
+□ Word count 5-7?
+□ First 3 words create curiosity?
+□ No banned phrases?
+□ Specific (not vague)?
+□ Different angle from other titles in this batch?
+□ Different emotional tone from neighbors?
+□ No repeated vocabulary across batch?
+□ Would YOU click it?
+
+Return ONLY valid JSON array. Every title MUST pass all checks above and feel FRESH.
+"""
         if tones:
-            base += f"\nPreferred tones to sprinkle across options: {', '.join(tones)}"
+            base += f"\n\n🎨 Tones to incorporate: {', '.join(tones)}"
         return base
 
     @staticmethod
     def _parse_generated_titles(titles_content: str) -> list:
-        """Parse JSON array of generated titles from GPT"""
+        """Parse JSON array of generated titles from GPT and validate length requirements"""
         try:
             # Remove markdown code fences if present
             cleaned = re.sub(
@@ -691,14 +817,39 @@ Generate HUMAN, high-contrast titles that feel like a friend whispering a secret
 
             data = json.loads(cleaned)
             parsed = []
+            rejected = []
+            
             for t in data:
-                length = len(t.get("title", ""))
+                title_text = t.get("title", "")
+                length = len(title_text)
+                word_count = len(title_text.split())
+                
+                # Calculate and add metadata
                 t["length_chars"] = length
-                t["truncation_safe"] = length <= 54
-                if length > 58:
+                t["word_count"] = word_count
+                
+                # Strict validation: 55 chars max, 5-7 words
+                if length > 55:
                     t["truncation_safe"] = False
+                    rejected.append(f"'{title_text}' ({length} chars - TOO LONG)")
+                    logger.warning(f"Rejected title (too long): '{title_text}' - {length} chars")
+                    continue  # Skip titles over 55 characters
+                
+                if word_count < 5 or word_count > 7:
+                    rejected.append(f"'{title_text}' ({word_count} words - need 5-7)")
+                    logger.warning(f"Rejected title (wrong word count): '{title_text}' - {word_count} words")
+                    continue  # Skip titles with wrong word count
+                
+                # Title passes validation
+                t["truncation_safe"] = True
                 parsed.append(t)
+            
+            if rejected:
+                logger.info(f"Rejected {len(rejected)} titles for length violations: {rejected}")
+            
+            logger.info(f"Accepted {len(parsed)} titles that meet 55 char / 5-7 word requirements")
             return parsed
+            
         except Exception as e:
             logger.error(
                 f"Failed to parse GPT titles as JSON: {str(e)}\nContent was:\n{titles_content}"
@@ -960,17 +1111,35 @@ CRITICAL: Outline detail = script length
 VERIFY: Each section has 80-150w description + 5-8 detailed key points + word count target + quality requirements met"""
 
             # Use Chat Completions API instead of Assistant API
-            response = client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
-                messages=[
+            print("=" * 80)
+            print(f"[OUTLINE] Sending request with model: {settings.OPENAI_MODEL}")
+            
+            # Build API parameters based on model
+            model_name = settings.OPENAI_MODEL.lower()
+            api_params = {
+                "model": settings.OPENAI_MODEL,
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": enhanced_prompt},
                 ],
-                max_tokens=3000,  # Enough for detailed outline with JSON structure
-                temperature=0.7,
-                response_format={"type": "json_object"},
-            )
+                "response_format": {"type": "json_object"},
+            }
+            
+            # GPT-5 and o1 models have different parameter requirements
+            if "gpt-5" in model_name or "o1" in model_name:
+                api_params["max_completion_tokens"] = 20000  # Increased - GPT-5 needs more
+                # Don't set temperature for GPT-5
+                print(f"[OUTLINE] Using max_completion_tokens=20000 for {model_name} (no temperature)")
+            else:
+                api_params["max_tokens"] = 3000
+                api_params["temperature"] = 0.7
+                print(f"[OUTLINE] Using max_tokens and temperature=0.7 for {model_name}")
+            
+            response = client.chat.completions.create(**api_params)
 
+            print(f"[OUTLINE] OpenAI Response - Model used: {response.model}")
+            print(f"[OUTLINE] OpenAI Response - ID: {response.id}")
+            print("=" * 80)
             logger.info("[OUTLINE] Generated outline using Chat Completions API")
 
             # Extract content and token usage with validation
@@ -1140,16 +1309,25 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
             )  # Cap at 10k to prevent excessive usage
 
             # Use Chat Completions API instead of Assistant API
-            response = client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
-                messages=[
+            model_name = settings.OPENAI_MODEL.lower()
+            api_params = {
+                "model": settings.OPENAI_MODEL,
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": enhanced_prompt},
                 ],
-                max_tokens=max_tokens,
-                temperature=0.7,
-                response_format={"type": "json_object"},
-            )
+                "response_format": {"type": "json_object"},
+            }
+            
+            # GPT-5 and o1 models have different parameter requirements
+            if "gpt-5" in model_name or "o1" in model_name:
+                # GPT-5 needs more tokens - multiply by 2
+                api_params["max_completion_tokens"] = max_tokens * 2
+            else:
+                api_params["max_tokens"] = max_tokens
+                api_params["temperature"] = 0.7
+            
+            response = client.chat.completions.create(**api_params)
 
             logger.info(
                 f"[SCRIPT] Generated script using Chat Completions API (target: {min_length}-{max_length}w)"
@@ -1589,19 +1767,28 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
         estimated_tokens = int(word_target * 1.5) + 500  # 1.5 tokens per word + buffer
         max_tokens = min(estimated_tokens, 4000)  # Cap at 4k tokens
 
-        response = client.chat.completions.create(
-            model=settings.OPENAI_MODEL,
-            messages=[
+        model_name = settings.OPENAI_MODEL.lower()
+        api_params = {
+            "model": settings.OPENAI_MODEL,
+            "messages": [
                 {
                     "role": "system",
                     "content": f"You are an expert YouTube script writer. CRITICAL: You must generate exactly {word_target} words (±5% tolerance). Word count is MANDATORY and non-negotiable. Count your words before responding. Failure to meet word count will result in regeneration.",
                 },
                 {"role": "user", "content": section_prompt},
             ],
-            max_tokens=max_tokens,
-            temperature=0.7,
-            response_format={"type": "json_object"},
-        )
+            "response_format": {"type": "json_object"},
+        }
+        
+        # GPT-5 and o1 models have different parameter requirements
+        if "gpt-5" in model_name or "o1" in model_name:
+            # GPT-5 needs more tokens - multiply by 2
+            api_params["max_completion_tokens"] = max_tokens * 2
+        else:
+            api_params["max_tokens"] = max_tokens
+            api_params["temperature"] = 0.7
+        
+        response = client.chat.completions.create(**api_params)
 
         content = response.choices[0].message.content
         tokens_used = response.usage.total_tokens if response.usage else 0
@@ -1712,9 +1899,10 @@ Apply storytelling rules and hook techniques for creating an engaging title and 
 Note: Please provide your response in a clear, structured format (not JSON)."""
 
             # Use Chat Completions API with Vision
-            response = client.chat.completions.create(
-                model=settings.OPENAI_MODEL,  # GPT-4o has vision capabilities
-                messages=[
+            model_name = settings.OPENAI_MODEL.lower()
+            api_params = {
+                "model": settings.OPENAI_MODEL,  # GPT-4o and GPT-5 have vision capabilities
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {
                         "role": "user",
@@ -1727,9 +1915,16 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
                         ],
                     },
                 ],
-                max_tokens=500,
-                temperature=0.7,
-            )
+            }
+            
+            # GPT-5 and o1 models have different parameter requirements
+            if "gpt-5" in model_name or "o1" in model_name:
+                api_params["max_completion_tokens"] = 2000  # Increased for image analysis
+            else:
+                api_params["max_tokens"] = 500
+                api_params["temperature"] = 0.7
+            
+            response = client.chat.completions.create(**api_params)
 
             logger.info(
                 "[IMAGE_ANALYSIS] Generated analysis using Chat Completions API"
