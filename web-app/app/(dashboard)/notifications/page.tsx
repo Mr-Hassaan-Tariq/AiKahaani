@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import BellIcon from '@assets/svg/bell-notification.svg';
 
 import EmptyState from '../_components/EmptyState';
+import MagicPan from '../../../public/images/magicpen.svg';
 import NotificationItem from './_components/NotificationItem';
 import NotificationTabs from './_components/NotificationTabs';
 import Pagination from './_components/Pagination';
@@ -73,43 +74,61 @@ export default function NotificationsPage() {
 
   return (
     <NotificationTabs>
-      {query && components[query] ? (
-        components[query]
-      ) : loading ? (
-        <p className="text-gray-400">Loading notifications...</p>
-      ) : hasNotifications ? (
-        <>
-          {notifications.map((item) => (
-            <NotificationItem
-              key={item.id}
-              id={item.id}
-              title={item.title}
-              description={item.message}
-              time={formatTimeAgo(item.created_at)}
-              isNew={!item.read}
-              icon={BellIcon}
-              onRead={(id: number) =>
-                setNotifications((prev) =>
-                  prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-                )
-              }
-            />
-          ))}
+      <div className="flex min-h-[42vh] flex-col">
+        {query && components[query] ? (
+          components[query]
+        ) : loading ? (
+          <div className="flex flex-1 items-center justify-center">
+            <p className="text-lg text-gray-400">Loading notifications...</p>
+          </div>
+        ) : hasNotifications ? (
+          <>
+            <div className="flex-1">
+              {notifications.map((item) => {
+                const scriptLink = item.metadata?.script?.link;
+                const outlineLink = item.metadata?.outline?.link;
+                const link = scriptLink || outlineLink;
+                // const label = item.metadata?.script?.label || item.metadata?.outline?.label;
+                const icon = link ? MagicPan : BellIcon;
 
-          <Pagination
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            currentPage={currentPage}
-            onPageChange={handlePageChange}
-          />
-        </>
-      ) : (
-        <EmptyState
-          icon={BellIcon}
-          title="You’re all caught up!"
-          description="There are no new notifications at the moment. Check back later or explore the latest features in the meantime."
-        />
-      )}
+                return (
+                  <NotificationItem
+                    key={item.id}
+                    id={item.id}
+                    title={item.title}
+                    description={item.message}
+                    time={formatTimeAgo(item.created_at)}
+                    isNew={!item.read}
+                    icon={icon}
+                    onRead={(id: number) =>
+                      setNotifications((prev) =>
+                        prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+                      )
+                    }
+                    actionText={'Use this style'}
+                    actionLink={link}
+                  />
+                );
+              })}
+            </div>
+
+            <Pagination
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+            />
+          </>
+        ) : (
+          <div className="flex flex-1 items-center justify-center">
+            <EmptyState
+              icon={BellIcon}
+              title="You’re all caught up!"
+              description="There are no new notifications at the moment. Check back later or explore the latest features in the meantime."
+            />
+          </div>
+        )}
+      </div>
     </NotificationTabs>
   );
 }

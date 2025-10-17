@@ -7,6 +7,7 @@ import BellIcon from '@assets/svg/bell-notification.svg';
 import NotificationIcon from '@assets/svg/notification.svg';
 import { X } from 'lucide-react';
 
+import MagicPan from '../../../public/images/magicpen.svg';
 import { formatTimeAgo } from 'lib/utils';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
 import Col from 'components/ui/Col';
@@ -51,6 +52,15 @@ export function Dropdown() {
     if (open) fetchNotifications();
   }, [open]);
 
+  // 🔹 Handle redirect based on metadata
+  const handleNotificationClick = (metadata: Record<string, any>) => {
+    const metaValue = metadata?.script || metadata?.outline;
+    if (metaValue?.link) {
+      router.push(metaValue.link);
+      setOpen(false);
+    }
+  };
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -73,30 +83,39 @@ export function Dropdown() {
         {loading ? (
           <p className="text-sm text-gray-400">Loading...</p>
         ) : notifications.length > 0 ? (
-          notifications.map((item, index) => (
-            <div key={item.id} className="mb-3">
-              {/* Time */}
-              {(index === 0 ||
-                formatTimeAgo(notifications[index - 1].created_at) !==
-                  formatTimeAgo(item.created_at)) && (
-                <p className="mb-2 text-sm text-[#AAACA6]">{formatTimeAgo(item.created_at)}</p>
-              )}
+          notifications.map((item, index) => {
+            const hasMetadata = Object.keys(item.metadata || {}).length > 0;
+            const icon = hasMetadata ? MagicPan : BellIcon;
 
-              {/* Item */}
-              <div className="flex items-start gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black">
-                  <Image src={BellIcon} alt={item.title} width={16} height={16} />
+            return (
+              <div
+                key={item.id}
+                className="mb-3 cursor-pointer rounded-lg p-2 transition-all hover:bg-[#3d3d3d]"
+                onClick={() => handleNotificationClick(item.metadata)}
+              >
+                {/* Time Grouping */}
+                {(index === 0 ||
+                  formatTimeAgo(notifications[index - 1].created_at) !==
+                    formatTimeAgo(item.created_at)) && (
+                  <p className="mb-2 text-sm text-[#AAACA6]">{formatTimeAgo(item.created_at)}</p>
+                )}
+
+                {/* Item */}
+                <div className="flex items-start gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black">
+                    <Image src={icon} alt={item.title} width={16} height={16} />
+                  </div>
+                  <Col className="gap-1">
+                    <p className="text-sm font-medium">{item.title}</p>
+                    <p className="text-xs text-[#AAACA6]">
+                      {item.message.slice(0, 50)}
+                      {item.message.length > 50 && '...'}
+                    </p>
+                  </Col>
                 </div>
-                <Col className="gap-1">
-                  <p className="text-sm font-medium">{item.title}</p>
-                  <p className="text-xs text-[#AAACA6]">
-                    {item.message.slice(0, 50)}
-                    {item.message.length > 50 && '...'}
-                  </p>
-                </Col>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <p className="text-sm text-gray-400">No notifications yet</p>
         )}

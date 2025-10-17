@@ -48,7 +48,7 @@ export default function NotificationItem({
           onClick={handleMarkAsRead}
           className="mb-3 cursor-pointer items-start justify-between rounded-xl border border-[var(--Stroke-Surface,#BAFF381F)] bg-[var(--Bg-Surface,#161616)] p-5 text-white hover:bg-[#1C1C1C]"
         >
-          <Col className="items-start gap-3">
+          <Col className="flex-1 items-start gap-3">
             <Row className="items-center gap-2">
               <Image src={icon} alt="icon" width={20} height={20} />
               <h3 className="font-medium">{title}</h3>
@@ -56,7 +56,7 @@ export default function NotificationItem({
             <p className="text-sm text-[#AAACA6]">{description}</p>
           </Col>
 
-          <Col className="justify-end">
+          <Col className="items-end gap-2">
             <Row className="items-center justify-end gap-2">
               {isNew && (
                 <>
@@ -71,7 +71,7 @@ export default function NotificationItem({
             {actionText && actionLink && (
               <a
                 href={actionLink}
-                className="flex items-center gap-2 text-sm font-semibold hover:underline"
+                className="flex w-full items-center justify-end gap-2 text-right text-sm font-semibold hover:underline"
               >
                 {actionText} <Image src={RightSvg} height={20} width={20} alt="RightSvg" />
               </a>
@@ -86,7 +86,7 @@ export default function NotificationItem({
           onClick={handleMarkAsRead}
           className="mb-3 cursor-pointer items-start justify-between rounded-xl border border-[var(--Stroke-Surface,#BAFF381F)] bg-[var(--Bg-Surface,#161616)] p-3 text-white hover:bg-[#1C1C1C]"
         >
-          <Row className="items-center justify-end gap-2">
+          <Row className="w-full items-center justify-end gap-2">
             {isNew && (
               <>
                 <span className="h-2 w-2 rounded-full bg-[linear-gradient(90deg,#2BFF13_0%,#20BF0E_100%)]"></span>
@@ -97,7 +97,7 @@ export default function NotificationItem({
             <p className="text-sm font-medium text-[#AAACA6]">{time}</p>
           </Row>
 
-          <Col className="items-start gap-2">
+          <Col className="w-full items-start gap-2">
             <Row className="items-center gap-2">
               <Image src={icon} alt="icon" width={20} height={20} />
               <h3 className="font-medium">{title}</h3>
@@ -106,12 +106,14 @@ export default function NotificationItem({
           </Col>
 
           {actionText && actionLink && (
-            <a
-              href={actionLink}
-              className="text-md flex items-center gap-2 font-semibold hover:underline"
-            >
-              {actionText} <Image src={RightSvg} height={20} width={20} alt="RightSvg" />
-            </a>
+            <div className="flex w-full justify-end">
+              <a
+                href={actionLink}
+                className="flex items-center gap-2 text-right text-sm font-semibold hover:underline"
+              >
+                {actionText} <Image src={RightSvg} height={20} width={20} alt="RightSvg" />
+              </a>
+            </div>
           )}
         </Col>
       </div>
