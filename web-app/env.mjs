@@ -16,6 +16,7 @@ export const env = createEnv({
     NEXT_PUBLIC_API_URL: z.string().url('Must include valid URL to Tubegenius API'),
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: z.string('Must include valid Google Client ID'),
     NEXT_PUBLIC_STRIPE_PORTAL_LINK: z.string('Must include valid Stripe Portal Link'),
+    NEXT_PUBLIC_WEBSITE_URL: z.url('Must include valid URL to Tubegenius web-app'),
   },
   /*
    * Due to how Next.js bundles environment variables on Edge and Client,
@@ -27,5 +28,6 @@ export const env = createEnv({
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
     NEXT_PUBLIC_STRIPE_PORTAL_LINK: process.env.NEXT_PUBLIC_STRIPE_PORTAL_LINK,
+    NEXT_PUBLIC_WEBSITE_URL: process.env.NEXT_PUBLIC_WEBSITE_URL,
   },
 });
