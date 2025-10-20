@@ -389,13 +389,15 @@ def generate_script_outline(request):
                 
                 # Try to extract sections using regex if JSON is malformed
                 import re
+                
+                # First try to extract complete sections
                 sections_match = re.search(r'"sections":\s*\[(.*?)\]', outline_text, re.DOTALL)
                 if sections_match:
                     logger.info("[OUTLINE_GENERATION] Found sections using regex extraction")
-                    # Extract sections content and try to parse
                     sections_content = sections_match.group(1)
-                    # Try to extract individual section objects
-                    section_pattern = r'\{"title":\s*"([^"]*)",\s*"description":\s*"([^"]*)"'
+                    
+                    # Try to extract individual section objects with more flexible pattern
+                    section_pattern = r'\{\s*"title":\s*"([^"]*)",\s*"description":\s*"([^"]*)"'
                     section_matches = re.findall(section_pattern, sections_content)
                     
                     if section_matches:
@@ -424,9 +426,68 @@ def generate_script_outline(request):
                         actual_outline_text = "\n\n".join(outline_parts)
                         logger.info(f"[OUTLINE_GENERATION] Successfully extracted {len(sections)} sections using regex")
                     else:
-                        raise ValueError("Could not extract sections using regex")
+                        # Try to extract from truncated JSON
+                        logger.info("[OUTLINE_GENERATION] Trying to extract from truncated JSON")
+                        # Look for any complete section objects in the response
+                        complete_sections = re.findall(r'\{\s*"title":\s*"([^"]*)",\s*"description":\s*"([^"]*)"', outline_text)
+                        if complete_sections:
+                            sections = []
+                            for i, (title, desc) in enumerate(complete_sections):
+                                sections.append({
+                                    "title": title,
+                                    "description": desc,
+                                    "key_points": [],
+                                    "word_target": 100
+                                })
+                            
+                            actual_outline_data = {
+                                "sections": sections,
+                                "section_order": list(range(len(sections))),
+                            }
+                            
+                            # Build outline text from sections
+                            outline_parts = []
+                            for section in sections:
+                                title = section.get("title", "")
+                                description = section.get("description", "")
+                                if title and description:
+                                    outline_parts.append(f"{title} - {description}")
+                            
+                            actual_outline_text = "\n\n".join(outline_parts)
+                            logger.info(f"[OUTLINE_GENERATION] Successfully extracted {len(sections)} complete sections from truncated JSON")
+                        else:
+                            raise ValueError("Could not extract any complete sections")
                 else:
-                    raise ValueError("No sections found in response")
+                    # Try to extract individual section objects directly from the response
+                    logger.info("[OUTLINE_GENERATION] Trying to extract sections directly from response")
+                    section_objects = re.findall(r'\{\s*"title":\s*"([^"]*)",\s*"description":\s*"([^"]*)"', outline_text)
+                    if section_objects:
+                        sections = []
+                        for i, (title, desc) in enumerate(section_objects):
+                            sections.append({
+                                "title": title,
+                                "description": desc,
+                                "key_points": [],
+                                "word_target": 100
+                            })
+                        
+                        actual_outline_data = {
+                            "sections": sections,
+                            "section_order": list(range(len(sections))),
+                        }
+                        
+                        # Build outline text from sections
+                        outline_parts = []
+                        for section in sections:
+                            title = section.get("title", "")
+                            description = section.get("description", "")
+                            if title and description:
+                                outline_parts.append(f"{title} - {description}")
+                        
+                        actual_outline_text = "\n\n".join(outline_parts)
+                        logger.info(f"[OUTLINE_GENERATION] Successfully extracted {len(sections)} sections directly from response")
+                    else:
+                        raise ValueError("No sections found in response")
                 
                 # Check if the response looks like it was truncated mid-string
                 if '"' in outline_text and outline_text.count('"') % 2 == 1:
