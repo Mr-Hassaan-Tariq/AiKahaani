@@ -1,80 +1,115 @@
+'use client';
+
+import React from 'react';
+
 import PaginationClient from '../../../../components/common/PaginationClient';
-import { getScriptGenerations, ScriptFilters } from '../actions';
 import MyScriptsList from './MyScriptsList';
 import MyScriptsTabWrapper from './MyScriptsTabWrapper';
 import OutlinesPage from './OutlinesPage';
 import ScriptsPage from './ScriptsPage';
 
-interface MyScriptsContentProps {
-  searchParams?: {
-    query?: string;
-    search?: string;
-    ordering?: string;
-    word_count_min?: string;
-    word_count_max?: string;
-    duration_min?: string;
-    duration_max?: string;
-    page?: string;
-    limit?: string;
-  };
+type TabKey = 'all' | 'outlines' | 'scripts';
+
+interface Props {
+  activeTab: TabKey;
+  setActiveTab: (t: TabKey) => void;
+
+  searchValue: string;
+  setSearchValue: (v: string) => void;
+
+  ordering?: 'created' | 'modified' | undefined;
+  setOrdering?: (v: 'created' | 'modified' | undefined) => void;
+
+  wordCountMin?: number | undefined;
+  setWordCountMin?: (v?: number) => void;
+  wordCountMax?: number | undefined;
+  setWordCountMax?: (v?: number) => void;
+
+  durationMin?: number | undefined;
+  setDurationMin?: (v?: number) => void;
+  durationMax?: number | undefined;
+  setDurationMax?: (v?: number) => void;
+
+  currentPage: number;
+  setCurrentPage: (p: number) => void;
+  pageSize: number;
+  setPageSize: (s: number) => void;
+
+  scripts?: any[] | undefined;
+  totalCount: number;
+  loading: boolean;
+  error: any;
+
+  onApplyFilters: (filters: {
+    ordering?: 'created' | 'modified' | undefined;
+    wordCountMin?: number | undefined;
+    wordCountMax?: number | undefined;
+    durationMin?: number | undefined;
+    durationMax?: number | undefined;
+  }) => void;
+
+  onClearFilters: () => void;
 }
 
-export default async function MyScriptsContent({ searchParams }: MyScriptsContentProps) {
-  const query = searchParams?.query;
-  const search = searchParams?.search;
+export default function MyScriptsContent(props: Props) {
+  const {
+    activeTab,
+    setActiveTab,
+    searchValue,
+    setSearchValue,
+    scripts,
+    totalCount,
+    error,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    onApplyFilters,
+    onClearFilters,
+  } = props;
 
-  const currentPage = searchParams?.page ? parseInt(searchParams.page) : 1;
-  const pageSize = searchParams?.limit ? parseInt(searchParams.limit) : 12;
-
-  // Build filters object from search params
-  const filters: ScriptFilters = {
-    search,
-    type: query === 'outlines' ? 'outline' : query === 'scripts' ? 'script' : undefined,
-    ordering: searchParams?.ordering as 'created' | 'modified' | undefined,
-    word_count_min: searchParams?.word_count_min
-      ? parseInt(searchParams.word_count_min)
-      : undefined,
-    word_count_max: searchParams?.word_count_max
-      ? parseInt(searchParams.word_count_max)
-      : undefined,
-    duration_min: searchParams?.duration_min ? parseInt(searchParams.duration_min) : undefined,
-    duration_max: searchParams?.duration_max ? parseInt(searchParams.duration_max) : undefined,
-    limit: pageSize,
-    offset: (currentPage - 1) * pageSize,
-  };
-
-  // Fetch initial data server-side
-  const { data: initialScripts, error, isError } = await getScriptGenerations(filters);
-
-  // Render content based on query
-  const renderContent = () => {
-    if (query === 'outlines') {
-      return <OutlinesPage initialScripts={initialScripts?.results} />;
+  const renderBody = () => {
+    if (activeTab === 'outlines') {
+      return <OutlinesPage initialScripts={scripts} />;
     }
 
-    if (query === 'scripts') {
-      return <ScriptsPage initialScripts={initialScripts?.results} />;
+    if (activeTab === 'scripts') {
+      return <ScriptsPage initialScripts={scripts} />;
     }
 
+    // default 'all'
     return (
       <MyScriptsList
-        initialScripts={initialScripts?.results}
+        initialScripts={scripts}
         error={error}
-        isError={isError}
-        searchQuery={search}
+        isError={!!error}
+        searchQuery={searchValue}
       />
     );
   };
 
   return (
     <div className="flex flex-col">
-      <MyScriptsTabWrapper searchValue={search}>{renderContent()}</MyScriptsTabWrapper>
-      <PaginationClient
-        currentPage={currentPage}
-        totalCount={initialScripts?.count || 0}
-        pageSize={pageSize}
-        searchParams={searchParams}
-      />
+      <MyScriptsTabWrapper
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        searchValue={searchValue}
+        setSearchValue={setSearchValue}
+        onApplyFilters={onApplyFilters}
+        onClearFilters={onClearFilters}
+      >
+        {renderBody()}
+      </MyScriptsTabWrapper>
+
+      <div className="mt-4">
+        <PaginationClient
+          currentPage={currentPage}
+          totalCount={totalCount}
+          pageSize={pageSize}
+          onPageChange={(p: number) => setCurrentPage(p)}
+          onPageSizeChange={(s: number) => setPageSize(s)}
+        />
+      </div>
     </div>
   );
 }

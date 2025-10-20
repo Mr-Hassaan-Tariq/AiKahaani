@@ -196,6 +196,16 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
   const handleSaveChanges = () => {
     if (!outline) return;
 
+    const invalidCard = cards.find((card) => !card.title?.trim() || !card.description?.trim());
+
+    if (invalidCard) {
+      toast.error(
+        'Missing Fields',
+        'Every section must have a title and description before saving.',
+      );
+      return;
+    }
+
     const updatedOutline = convertCardsToOutline(cards, outline);
 
     updateOutline(updatedOutline, {
@@ -328,7 +338,7 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
                 hasChanges ? 'hover:bg-white/90' : 'cursor-not-allowed opacity-50'
               }`}
             >
-              {directFileIcon} Save Changes {hasChanges && '*'}
+              {directFileIcon} Save Changes {hasChanges && ''}
             </Button>
           </Row>
         ) : (

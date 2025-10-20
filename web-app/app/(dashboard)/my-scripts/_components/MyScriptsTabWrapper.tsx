@@ -1,82 +1,80 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useCallback, useRef } from 'react';
 
 import { convertFiltersToAPI, FiltersState } from '../_utils/filterUtils';
 import ScriptsTab from './ScriptsTab';
 
-interface MyScriptsTabWrapperProps {
+type TabKey = 'all' | 'outlines' | 'scripts';
+
+interface Props {
   children: React.ReactNode;
-  searchValue?: string;
+  activeTab: TabKey;
+  setActiveTab: (t: TabKey) => void;
+
+  searchValue: string;
+  setSearchValue: (v: string) => void;
+
+  onApplyFilters?: (filters: {
+    ordering?: 'created' | 'modified' | undefined;
+    wordCountMin?: number | undefined;
+    wordCountMax?: number | undefined;
+    durationMin?: number | undefined;
+    durationMax?: number | undefined;
+  }) => void;
+
+  onClearFilters?: () => void;
 }
 
-export default function MyScriptsTabWrapper({ children, searchValue }: MyScriptsTabWrapperProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+export default function MyScriptsTabWrapper({
+  children,
+  activeTab,
+  setActiveTab,
+  searchValue,
+  setSearchValue,
+  onApplyFilters,
+  onClearFilters,
+}: Props) {
+  const searchTimeoutRef = useRef<number | undefined>(undefined);
 
+  // Debounced search: we still debounce inside the wrapper so parent state isn't spammed
   const handleSearch = useCallback(
-    (query: string) => {
-      // Clear existing timeout
+    (value: string) => {
       if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
+        window.clearTimeout(searchTimeoutRef.current);
       }
 
-      // Set new timeout for debounced search
-      searchTimeoutRef.current = setTimeout(() => {
-        const params = new URLSearchParams(searchParams.toString());
-
-        if (query.trim()) {
-          params.set('search', query.trim());
-        } else {
-          params.delete('search');
-        }
-
-        // Update URL with search parameter
-        const newUrl = params.toString() ? `?${params.toString()}` : '';
-        router.push(`/my-scripts${newUrl}`);
-      }, 500);
+      // using window.setTimeout so the returned id is number in browsers
+      searchTimeoutRef.current = window.setTimeout(() => {
+        setSearchValue(value);
+      }, 300);
     },
-    [router, searchParams],
+    [setSearchValue],
   );
 
   const handleApplyFilters = useCallback(
     (filters: FiltersState) => {
-      const params = new URLSearchParams(searchParams.toString());
-
-      // Convert filters to API parameters
+      // Convert UI filters to simple object and bubble up
       const apiFilters = convertFiltersToAPI(filters);
 
-      // Clear existing filter parameters
-      params.delete('ordering');
-      params.delete('word_count_min');
-      params.delete('word_count_max');
-      params.delete('duration_min');
-      params.delete('duration_max');
-
-      // Add new filter parameters
-      if (apiFilters.ordering) params.set('ordering', apiFilters.ordering);
-      if (apiFilters.word_count_min !== undefined)
-        params.set('word_count_min', apiFilters.word_count_min.toString());
-      if (apiFilters.word_count_max !== undefined)
-        params.set('word_count_max', apiFilters.word_count_max.toString());
-      if (apiFilters.duration_min !== undefined)
-        params.set('duration_min', apiFilters.duration_min.toString());
-      if (apiFilters.duration_max !== undefined)
-        params.set('duration_max', apiFilters.duration_max.toString());
-
-      // Update URL with filter parameters
-      const newUrl = params.toString() ? `?${params.toString()}` : '';
-      router.push(`/my-scripts${newUrl}`);
+      onApplyFilters?.({
+        ordering: apiFilters.ordering,
+        wordCountMin: apiFilters.word_count_min,
+        wordCountMax: apiFilters.word_count_max,
+        durationMin: apiFilters.duration_min,
+        durationMax: apiFilters.duration_max,
+      });
     },
-    [router, searchParams],
+    [onApplyFilters],
   );
 
   return (
     <ScriptsTab
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
       onSearch={handleSearch}
       onApplyFilters={handleApplyFilters}
+      onClearFilters={onClearFilters}
       searchValue={searchValue}
     >
       {children}

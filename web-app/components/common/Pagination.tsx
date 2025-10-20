@@ -29,7 +29,9 @@ const Pagination: React.FC<PaginationProps> = ({
       pages.push(
         <button
           key={i}
-          className={`min-w-10 rounded-full p-2 ${currentPage === i ? 'bg-gray-200 text-black' : 'bg-gray-800 text-white'}`}
+          className={`min-w-10 rounded-full p-2 ${
+            currentPage === i ? 'bg-gray-200 text-black' : 'bg-gray-800 text-white'
+          }`}
           onClick={() => handlePageChange(i)}
           disabled={currentPage === i}
         >

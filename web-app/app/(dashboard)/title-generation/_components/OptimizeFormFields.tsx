@@ -1,10 +1,29 @@
+import { useEffect } from 'react';
+
 import ScriptSelector from './ScriptSelector';
 import Col from 'components/ui/Col';
 import FormInput from 'components/ui/FormInput';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
-export default function OptimizeFormFields({ watch, scripts, register }: any) {
+export default function OptimizeFormFields({
+  watch,
+  scripts,
+  register,
+  resetField,
+  setValue,
+}: any) {
+  const duration = watch('duration');
+
+  useEffect(() => {
+    if (duration === 'saved') {
+      resetField('manualTitle');
+      setValue('scriptOption', '');
+    } else if (duration === 'manual') {
+      resetField('scriptOption');
+      setValue('manualTitle', '');
+    }
+  }, [duration]);
   return (
     <Col className="mt-6 w-full justify-start gap-4">
       <Text className="text-md mb-2 text-left text-white">Script length & duration</Text>

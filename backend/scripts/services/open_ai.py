@@ -22,43 +22,34 @@ _client = None
 
 # Compliant hook examples for prompts
 EXAMPLE_COMPLIANT_HOOKS = """
-HOOK SUCCESS EXAMPLES (≤30 SECONDS, ~75 WORDS MAX):
+✅ MANDATORY HOOK PATTERNS (COPY THESE):
 
-✅ Example 1 (Tutorial/Listicle):
-[SCENE: Clock strikes 3 AM. Laptop screen glows.]
-Sarah's phone buzzed with the interview invite. 9 hours away.
-Zero prep done.
-But here's what top coders know: 7 tricks that flip panic into performance.
-Trick #1: Concurrency isn't scary...
+Tutorial/Listicle Hook:
+"Mark's system crashed at 2:17 AM. Zero backups. Launch in 6 hours.
+Three questions: How do you recover? What tools actually work? Why do 90% fail?
+Today: 7 emergency recovery tactics that saved my career—twice."
 
-✅ Example 2 (Narrative/Documentary):
-The explosion shattered the Phoenix desert silence at exactly 8:47 PM.
-10,000 witnesses. Mile-wide V-formation. Silent craft.
-Military says: flares.
-Pilots say: impossible.
-Tonight: What really happened on March 13, 1997?
+Narrative Hook:
+"The explosion shattered windows three blocks away.
+Sarah had warned them. Nobody listened.
+What she discovered in that abandoned server room changed everything we know about system failures."
 
-✅ Example 3 (Explainer/Listicle):
-Mark discovered the file at 2:17 AM. Encrypted. 47 GB. Shouldn't exist.
-Three months later: everything changed.
-Today: 5 security mistakes that expose your entire system.
-Mistake #1: The authentication trap...
+Explainer Hook:
+"Tesla's autopilot made a decision that killed someone. The code responsible? 47 lines.
+But here's what's terrifying: Every autonomous system uses similar logic.
+Today: The hidden flaw in AI decision-making that affects us all."
 
-HOOK FAILURE EXAMPLES TO AVOID:
+❌ INSTANT REJECTION PATTERNS:
+"Imagine sitting at your desk when suddenly..." → REJECTED (weak starter)
+"In this video, we'll explore..." → REJECTED (channel trailer)
+"Have you ever wondered why..." → REJECTED (generic question)
+[6-minute atmospheric description] → CRITICAL FAILURE
+"Let me paint you a picture..." → REJECTED (no action)
+"Welcome back to the channel..." → REJECTED (CTA violation)
+"Today we're going to talk about..." → REJECTED (boring intro)
 
-❌ "Imagine this: you're sitting at your desk..." (weak starter)
-❌ "Picture this scene: a dark forest..." (vague, no action)
-❌ "Let me tell you about the time..." (channel trailer style)
-❌ "In today's video, we're going to talk about..." (boring intro)
-❌ "Welcome back to the channel..." (CTA violation)
-❌ 6-minute atmospheric prologue about generic characters (CRITICAL FAILURE)
-❌ "It's 11 PM. Deadline in 9 hours. Sound familiar? What if I told you..." (weak opening)
-
-CRITICAL RULES:
-- First sentence MUST start with action verb or concrete noun + action
-- NO "Imagine," "Picture," "Let me," "Let's," "Welcome," "Today we"
-- Duration ≤30 seconds (~75 words at 2.5 words/second)
-- Create 2-3 specific questions, not rhetorical fluff
+VALIDATION: First word must be a NOUN or NAME + ACTION VERB within first 5 words.
+HOOK LENGTH: Maximum 30 seconds (~75 words at 2.5 words/second)
 """
 
 
@@ -78,7 +69,7 @@ def format_storytelling_manual_for_prompt() -> str:
     Returns a condensed but comprehensive version of the manual.
     """
     manual_text = []
-
+    
     # Add the opening strategies section
     manual_text.append("=== 7 STRATEGIES FOR BETTER OPENINGS ===")
     for item in storytelling_manual[:7]:  # First 7 items are opening strategies
@@ -90,7 +81,7 @@ def format_storytelling_manual_for_prompt() -> str:
                 manual_text.append(f"• {step}")
         if "case_study_example" in item:
             manual_text.append(f"Example: {item['case_study_example']}")
-
+    
     # Add case studies
     manual_text.append("\n\n=== CASE STUDIES ===")
     for item in storytelling_manual[7:9]:  # Case studies
@@ -100,7 +91,7 @@ def format_storytelling_manual_for_prompt() -> str:
             manual_text.append("Framework:")
             for step in item["framework_formula"]:
                 manual_text.append(f"• {step}")
-
+    
     # Add key principles (condensed)
     manual_text.append("\n\n=== CORE STORYTELLING PRINCIPLES ===")
     key_principles = [
@@ -116,10 +107,10 @@ def format_storytelling_manual_for_prompt() -> str:
         "P15: Show, Don't Tell: Demonstrate traits through actions and concrete images",
         "P17: Write with the Visual in Mind: Every line should suggest footage or graphics",
     ]
-
+    
     for principle in key_principles:
         manual_text.append(f"• {principle}")
-
+    
     # Add implementation checklist
     manual_text.append("\n\n=== IMPLEMENTATION CHECKLIST ===")
     checklist_items = [
@@ -131,10 +122,10 @@ def format_storytelling_manual_for_prompt() -> str:
         "Chapter ends with a tease or unresolved thread",
         "Visual cues/storyboard notes embedded",
     ]
-
+    
     for item in checklist_items:
         manual_text.append(f"• {item}")
-
+    
     return "\n".join(manual_text)
 
 
@@ -142,18 +133,18 @@ def validate_json_schema(data: Dict[str, Any], schema_type: str = "auto") -> boo
     """
     Validate JSON data against the expected schema structure.
     Supports separate outline and script schemas.
-
+    
     Args:
         data: Dictionary to validate
         schema_type: Type of schema ("outline", "script", or "auto")
-
+    
     Returns:
         bool: True if valid, False otherwise
     """
     try:
         if not isinstance(data, dict):
             return False
-
+        
         # Handle separate schemas for outline and script
         if schema_type == "outline":
             return _validate_outline_schema(data)
@@ -171,16 +162,16 @@ def validate_json_schema(data: Dict[str, Any], schema_type: str = "auto") -> boo
                 return _validate_script_schema(data)
             else:
                 return False
-
+        
         # Legacy combined format (for backward compatibility)
         if "outline" in data and "script" in data:
             outline = data["outline"]
             script = data["script"]
-
+            
             # Basic validation of outline structure
             if not isinstance(outline, dict) or not isinstance(script, dict):
                 return False
-
+            
             # Check for required keys in outline
             required_outline_keys = [
                 "sections",
@@ -191,21 +182,21 @@ def validate_json_schema(data: Dict[str, Any], schema_type: str = "auto") -> boo
             for key in required_outline_keys:
                 if key not in outline:
                     return False
-
+            
             # Check for required keys in script
             required_script_keys = ["full_text", "sections", "metadata"]
             for key in required_script_keys:
                 if key not in script:
                     return False
-
+            
             return True
-
+        
         # Check for legacy structure
         elif "sections" in data:
             return True
-
+        
         return False
-
+        
     except Exception as e:
         logger.error(f"Schema validation failed: {str(e)}")
         return False
@@ -217,7 +208,7 @@ def _validate_outline_schema(data: Dict[str, Any]) -> bool:
     for key in required_keys:
         if key not in data:
             return False
-
+    
     # Validate metadata structure
     metadata = data.get("metadata", {})
     required_metadata = [
@@ -231,7 +222,7 @@ def _validate_outline_schema(data: Dict[str, Any]) -> bool:
     for key in required_metadata:
         if key not in metadata:
             return False
-
+    
     return True
 
 
@@ -241,7 +232,7 @@ def _validate_script_schema(data: Dict[str, Any]) -> bool:
     for key in required_keys:
         if key not in data:
             return False
-
+    
     # Validate metadata structure
     metadata = data.get("metadata", {})
     required_metadata = [
@@ -255,7 +246,7 @@ def _validate_script_schema(data: Dict[str, Any]) -> bool:
     for key in required_metadata:
         if key not in metadata:
             return False
-
+    
     return True
 
 
@@ -356,7 +347,7 @@ Make the title clickable and engaging for YouTube, and the description detailed 
         # First, try to parse as JSON (from assistant with new schema)
         try:
             parsed_data = json.loads(outline_text)
-
+            
             # Validate against schema
             if validate_json_schema(parsed_data, "outline"):
                 # Handle new schema structure with outline and script
@@ -365,7 +356,7 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                     sections = outline_data.get("sections", [])
                     section_order = outline_data.get("section_order", [])
                     outline_text_raw = outline_data.get("outline_text", outline_text)
-
+                    
                     # Ensure all sections have required fields according to new schema
                     for section in sections:
                         section.setdefault("title", "")
@@ -374,25 +365,25 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                         section.setdefault("timing", "")
                         section.setdefault("transition", "")
                         section.setdefault("content", section.get("description", ""))
-
+                    
                     # Create default section order if not provided
                     if not section_order:
                         section_order = list(range(len(sections)))
-
+                    
                     # Check validator compliance
                     validator_check = OpenAIScriptService._check_validator_compliance(
                         sections,
                         parsed_data,
                         template_style=script_data.get("template_style", "medium"),
                     )
-
+                    
                     return {
-                        "sections": sections,
+                        "sections": sections, 
                         "section_order": section_order,
                         "outline_text": outline_text_raw,
                         "validator_compliance": validator_check,
                     }
-
+            
             # Handle legacy format with direct sections
             elif "sections" in parsed_data:
                 sections = parsed_data["sections"]
@@ -414,7 +405,7 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                 )
 
                 return {
-                    "sections": sections,
+                    "sections": sections, 
                     "section_order": default_section_order,
                     "validator_compliance": validator_check,
                 }
@@ -536,30 +527,30 @@ Make the title clickable and engaging for YouTube, and the description detailed 
             # Extract content and token usage with validation
             if not response.choices or len(response.choices) == 0:
                 raise ValueError("OpenAI API returned no choices in response")
-
+            
             choice = response.choices[0]
 
             if not hasattr(choice, "message") or not choice.message:
                 raise ValueError("OpenAI API returned invalid choice structure")
-
+                
             titles_content = choice.message.content
 
             if not titles_content:
                 raise ValueError(
                     f"OpenAI API returned empty content. Model: {response.model}, Finish reason: {choice.finish_reason}"
                 )
-
+                
             tokens_used = response.usage.total_tokens if response.usage else 0
 
             generation_time = time.time() - start_time
-
+            
             logger.debug(
                 f"[TITLES] OpenAI API response validated - content length: {len(titles_content)}, tokens: {tokens_used}"
             )
 
             # Parse JSON titles
             titles = OpenAIScriptService._parse_generated_titles(titles_content)
-
+            
             # Calculate word count
             word_count = sum(len(t.get("title", "").split()) for t in titles)
 
@@ -613,18 +604,18 @@ Make the title clickable and engaging for YouTube, and the description detailed 
         """
         if not text:
             return text
-
+            
         cleaned = text.strip()
-
+        
         # Remove markdown code blocks
         if cleaned.startswith("```json"):
             cleaned = cleaned[7:]  # Remove ```json
         elif cleaned.startswith("```"):
             cleaned = cleaned[3:]  # Remove ```
-
+            
         if cleaned.endswith("```"):
             cleaned = cleaned[:-3]  # Remove trailing ```
-
+            
         return cleaned.strip()
 
     @staticmethod
@@ -941,31 +932,31 @@ Follow TubeGenius principles:
     def _parse_script_sections(script_content: str) -> list:
         """Parse script content into sections with timestamps for card-based display"""
         import json
-
+        
         # First, try to parse as JSON (from assistant with new schema)
         try:
             parsed_data = json.loads(script_content)
-
+            
             # Validate against schema
             if validate_json_schema(parsed_data, "outline"):
                 # Handle new schema structure with outline and script
                 if "script" in parsed_data:
                     script_data = parsed_data["script"]
                     sections = script_data.get("sections", [])
-
+                    
                     # Ensure all sections have required fields according to new schema
                     for section in sections:
                         section.setdefault("title", "")
                         section.setdefault("content", "")
                         section.setdefault("start_time", "0:00")
                         section.setdefault("end_time", "0:00")
-
+                    
                     return sections
-
+            
             # Handle legacy format with direct sections
             elif "sections" in parsed_data:
                 return parsed_data["sections"]
-
+                
         except json.JSONDecodeError:
             pass
 
@@ -1021,19 +1012,28 @@ Follow TubeGenius principles:
         script_data: Dict[str, Any],
         user=None,
         save_log: bool = True,
+        use_context_awareness: bool = False,
     ) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
         """
         Generate outline using OpenAI Chat Completions API
-
+        
         Args:
             script_data: Dictionary containing script parameters
             user: User object for logging (optional)
             save_log: Whether to save run log to database (default: True)
+            use_context_awareness: Whether to use hybrid context-aware approach (default: False)
         """
+        # Use hybrid context-aware approach if requested
+        if use_context_awareness:
+            return OpenAIScriptService.generate_outline_with_context_awareness(
+                script_data, user, save_log
+            )
+        
+        # Original stateless approach
         try:
             start_time = time.time()
             client = get_openai_client()
-
+            
             # Extract length requirements from script_data
             min_length = script_data.get("min_length", 1000)
             max_length = script_data.get("max_length", 5000)
@@ -1045,7 +1045,7 @@ Follow TubeGenius principles:
             # Check if this is a Flexible Outline template (ID 4)
             template_style_id = script_data.get("template_style_id")
             template_style_name = script_data.get("template_style", "medium")
-
+            
             # For Flexible Outline template, use simple outline generation
             if (
                 template_style_id == 4
@@ -1067,18 +1067,18 @@ This is a flexible outline template - keep it concise and structural."""
                 wc_strategy = WordCountStrategy(
                     script_data.get("template_style", "medium")
                 )
-
+                
                 # Use strategy to calculate section targets
                 suggested_sections = wc_strategy.config["suggested_sections"]
                 word_targets = wc_strategy.calculate_section_word_targets(
                     suggested_sections
                 )
-
+                
                 min_duration = min_length / 150
                 max_duration = max_length / 150
                 words_per_section_min = word_targets["intro"]
                 words_per_section_max = word_targets["main_sections"]
-
+            
                 # Enhanced prompt with word count strategy integration and quality requirements
                 enhanced_prompt = f"""{user_prompt}
 
@@ -1168,28 +1168,28 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
             # Extract content and token usage with validation
             if not response.choices or len(response.choices) == 0:
                 raise ValueError("OpenAI API returned no choices in response")
-
+            
             choice = response.choices[0]
             if not hasattr(choice, "message") or not choice.message:
                 raise ValueError("OpenAI API returned invalid choice structure")
-
+                
             outline_text = choice.message.content
             if not outline_text:
                 raise ValueError(
                     "OpenAI API returned empty content - this may indicate rate limiting or API error"
                 )
-
+                
             tokens_used = response.usage.total_tokens if response.usage else 0
 
             generation_time = time.time() - start_time
-
+            
             logger.debug(
                 f"[OUTLINE] OpenAI API response validated - content length: {len(outline_text)}, tokens: {tokens_used}"
             )
 
             # Parse outline structure
             outline_data = OpenAIScriptService._parse_outline_structure(outline_text)
-
+            
             # Calculate word count
             word_count = len(outline_text.split())
 
@@ -1209,31 +1209,67 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
                 "file_search_used": False,
                 "word_count": word_count,
             }
-
+            
             # Check validator compliance
             compliance_check = OpenAIScriptService._check_validator_compliance(
                 outline_data["sections"],
                 outline_data,
                 template_style=script_data.get("template_style", "medium"),
             )
-
-            # ADD THIS: Block if compliance fails (optional - can make this configurable)
+            
+            # ENFORCEMENT STRATEGY: Retry with enhanced prompts if validation fails
             if compliance_check["overall_compliance"] == "FAIL":
                 violation_summary = "\n".join(
                     f"  - {v}" for v in compliance_check["violations"]
                 )
-                logger.error(
-                    f"[OUTLINE] Validator compliance failed:\n{violation_summary}"
-                )
-
-                # Option 1: Raise exception to fail generation
-                # raise ValueError(f"Outline validation failed: {violation_summary}")
-
-                # Option 2: Log warning and continue (current behavior)
                 logger.warning(
-                    "[OUTLINE] Continuing despite validation failures (non-blocking mode)"
+                    f"[OUTLINE] Validator compliance issues detected:\n{violation_summary}"
                 )
-
+                
+                # Calculate compliance score for better error reporting
+                score_info = OpenAIScriptService._calculate_compliance_score(compliance_check["violations"])
+                
+                logger.warning(f"[OUTLINE] Compliance score: {score_info['score']}/100, Grade: {score_info['grade']}")
+                
+                # For critical violations, retry with enhanced prompt
+                if score_info["blocking"]:
+                    logger.info(f"[OUTLINE] Retrying with enhanced enforcement prompt")
+                    
+                    # Build enhanced prompt with specific violation feedback
+                    enhanced_prompt = OpenAIScriptService._build_enhanced_outline_prompt(
+                        script_data, violation_summary, score_info
+                    )
+                    
+                    # Retry generation with enhanced prompt
+                    try:
+                        response = client.chat.completions.create(
+                            model=settings.OPENAI_MODEL,
+                            messages=[
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": enhanced_prompt}
+                            ],
+                            max_tokens=max_tokens,
+                            temperature=temperature,
+                        )
+                        
+                        # Parse the retry response
+                        outline_data = OpenAIScriptService._parse_outline_response(response)
+                        
+                        # Re-validate the retry
+                        compliance_check = OpenAIScriptService._check_validator_compliance(
+                            outline_data["sections"],
+                            outline_data,
+                            template_style=script_data.get("template_style", "medium"),
+                        )
+                        
+                        logger.info(f"[OUTLINE] Retry compliance: {compliance_check['overall_compliance']}")
+                        
+                    except Exception as e:
+                        logger.error(f"[OUTLINE] Retry failed: {str(e)}")
+                        # Continue with original response
+                
+                logger.info(f"[OUTLINE] Continuing with current response")
+            
             # Add compliance check to metadata
             metadata["validator_compliance"] = compliance_check
 
@@ -1260,15 +1296,233 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
             raise
 
     @staticmethod
+    def generate_outline_with_context_awareness(
+        script_data: Dict[str, Any],
+        user=None,
+        save_log: bool = True,
+    ) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
+        """
+        Generate outline using hybrid approach: basic outline first, then enhance with context awareness
+        
+        Args:
+            script_data: Dictionary containing script parameters
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
+        
+        Returns:
+            Tuple of (outline_text, outline_data, metadata)
+        """
+        try:
+            logger.info("[HYBRID_OUTLINE] Starting hybrid outline generation with context awareness")
+            
+            # Step 1: Generate basic outline structure (current approach)
+            logger.info("[HYBRID_OUTLINE] Step 1: Generating basic outline structure")
+            outline_text, outline_data, metadata = OpenAIScriptService.generate_outline_with_assistant(
+                script_data, user, save_log=False  # Don't save log for basic generation
+            )
+            
+            # Step 2: Enhance each section with context awareness
+            logger.info("[HYBRID_OUTLINE] Step 2: Enhancing sections with context awareness")
+            enhanced_sections = []
+            
+            for i, section in enumerate(outline_data.get("sections", [])):
+                logger.info(f"[HYBRID_OUTLINE] Enhancing section {i+1}: '{section.get('title', 'Untitled')}'")
+                
+                # Create context from previous sections
+                context = OpenAIScriptService._create_section_context(enhanced_sections[:i])
+                
+                # Enhance this section with context
+                enhanced_section = OpenAIScriptService._enhance_section_with_context(
+                    section, context, i, len(outline_data.get("sections", [])), script_data
+                )
+                enhanced_sections.append(enhanced_section)
+            
+            # Update outline data with enhanced sections
+            outline_data["sections"] = enhanced_sections
+            
+            # Update metadata
+            metadata["generation_method"] = "hybrid_context_aware"
+            metadata["sections_enhanced"] = len(enhanced_sections)
+            
+            # Save run log to database
+            if save_log:
+                OpenAIScriptService._save_run_log(
+                    user=user,
+                    thread_id=f"hybrid_outline_{int(time.time())}",
+                    run_id=f"hybrid_{int(time.time())}",
+                    assistant_id="hybrid-context-aware",
+                    tokens_used=metadata.get("tokens_used", 0),
+                    word_count=metadata.get("word_count", 0),
+                    file_search_used=False,
+                    file_search_snippets=[],
+                    run_type="hybrid_outline_generation",
+                    generation_time=metadata.get("generation_time", 0),
+                    model=settings.OPENAI_MODEL,
+                )
+            
+            logger.info("[HYBRID_OUTLINE] Hybrid outline generation completed successfully")
+            return outline_text, outline_data, metadata
+            
+        except Exception as e:
+            logger.error(f"[HYBRID_OUTLINE] Hybrid outline generation failed: {str(e)}")
+            raise
+
+    @staticmethod
+    def _create_section_context(previous_sections: List[Dict]) -> str:
+        """
+        Create compressed context summary from previous sections
+        
+        Args:
+            previous_sections: List of previously enhanced sections
+            
+        Returns:
+            Compressed context string
+        """
+        if not previous_sections:
+            return ""
+        
+        context_parts = []
+        
+        for i, section in enumerate(previous_sections[-3:]):  # Last 3 sections only
+            title = section.get("title", f"Section {i+1}")
+            description = section.get("description", "")[:100]  # First 100 chars
+            key_points = section.get("key_points", [])[:3]  # First 3 key points
+            
+            section_summary = f"Section {i+1} ({title}): {description}"
+            if key_points:
+                section_summary += f" Key points: {', '.join(key_points[:3])}"
+            
+            context_parts.append(section_summary)
+        
+        return " | ".join(context_parts)
+
+    @staticmethod
+    def _enhance_section_with_context(
+        section: Dict[str, Any], 
+        context: str, 
+        section_index: int, 
+        total_sections: int,
+        script_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Enhance a single section with context awareness
+        
+        Args:
+            section: The section to enhance
+            context: Context from previous sections
+            section_index: Index of current section
+            total_sections: Total number of sections
+            script_data: Original script data
+            
+        Returns:
+            Enhanced section dictionary
+        """
+        try:
+            client = get_openai_client()
+            
+            # Build enhancement prompt
+            enhancement_prompt = f"""You are an expert YouTube script writer enhancing an outline section with context awareness.
+
+CURRENT SECTION TO ENHANCE:
+Title: {section.get('title', 'Untitled')}
+Description: {section.get('description', '')}
+Key Points: {section.get('key_points', [])}
+
+PREVIOUS SECTIONS CONTEXT:
+{context if context else "This is the first section - no previous context."}
+
+SECTION POSITION: {section_index + 1} of {total_sections}
+
+ENHANCEMENT REQUIREMENTS:
+1. Improve transitions from previous sections (if not first section)
+2. Ensure logical progression and flow
+3. Avoid repetition of themes or phrases from previous sections
+4. Enhance descriptions with more specific, actionable details
+5. Strengthen key points with concrete examples
+6. Improve timing estimates and transitions
+7. Maintain consistency with overall script tone and style
+
+RESPOND WITH VALID JSON ONLY:
+{{
+    "title": "Enhanced title",
+    "description": "Enhanced description (80-150 words)",
+    "key_points": ["Enhanced key point 1", "Enhanced key point 2", ...],
+    "timing": "Enhanced timing estimate",
+    "transition": "Enhanced transition to next section",
+    "content": "Enhanced content summary"
+}}
+
+Focus on making this section flow naturally from previous sections while maintaining its unique value."""
+
+            # Generate enhancement
+            model_name = settings.OPENAI_MODEL.lower()
+            api_params = {
+                "model": settings.OPENAI_MODEL,
+                "messages": [
+                    {"role": "system", "content": "You are an expert YouTube script writer. Respond with valid JSON only."},
+                    {"role": "user", "content": enhancement_prompt}
+                ],
+                "response_format": {"type": "json_object"},
+            }
+            
+            if "gpt-5" in model_name or "o1" in model_name:
+                api_params["max_completion_tokens"] = 2000
+            else:
+                api_params["max_tokens"] = 1500
+                api_params["temperature"] = 0.7
+            
+            response = client.chat.completions.create(**api_params)
+            enhanced_content = response.choices[0].message.content
+            
+            # Parse enhanced content
+            import json
+            enhanced_section = json.loads(enhanced_content)
+            
+            # Merge with original section, keeping original fields that weren't enhanced
+            merged_section = {
+                **section,  # Keep original fields
+                **enhanced_section  # Override with enhanced fields
+            }
+            
+            logger.info(f"[HYBRID_OUTLINE] Enhanced section {section_index + 1} successfully")
+            return merged_section
+            
+        except Exception as e:
+            logger.warning(f"[HYBRID_OUTLINE] Enhancement failed for section {section_index + 1}: {str(e)}")
+            # Return original section if enhancement fails
+            return section
+
+    @staticmethod
+    def generate_outline_with_context_awareness_by_default(
+        script_data: Dict[str, Any],
+        user=None,
+        save_log: bool = True,
+    ) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
+        """
+        Convenience method that uses context-aware outline generation by default
+        
+        Args:
+            script_data: Dictionary containing script parameters
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
+        
+        Returns:
+            Tuple of (outline_text, outline_data, metadata)
+        """
+        return OpenAIScriptService.generate_outline_with_assistant(
+            script_data, user, save_log, use_context_awareness=True
+        )
+
+    @staticmethod
     def generate_full_script_with_assistant(
-        outline_text: str,
+        outline_text: str, 
         script_data: Dict[str, Any],
         user=None,
         save_log: bool = True,
     ) -> Tuple[str, List[Dict], Dict[str, Any]]:
         """
         Generate full script using OpenAI Chat Completions API
-
+        
         Args:
             outline_text: The outline text to generate script from
             script_data: Dictionary containing script parameters
@@ -1277,7 +1531,7 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
         """
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
-
+        
         try:
             start_time = time.time()
             client = get_openai_client()
@@ -1293,11 +1547,11 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
             max_duration = max_length / 150
             target_mid = (min_length + max_length) // 2
             target_duration = target_mid / 150
-
+            
             # Add safety buffer to target - aim higher than minimum to account for AI variability
             safety_buffer = int(min_length * 0.1)  # 10% buffer
             safe_target = target_mid + safety_buffer
-
+            
             # Enhanced prompt with length enforcement
             enhanced_prompt = f"""{user_prompt}
 
@@ -1320,7 +1574,7 @@ EXPANSION TECHNIQUES (USE ALL):
 8. Background: Provide context before new concepts
 
 VERIFY: full_text field has {min_length:,}+ words before submitting."""
-
+            
             # Calculate reasonable max completion tokens based on target length
             # For a 3000 word script: ~4000 tokens for text + 2000 for JSON structure = 6000 total
             # Add 50% buffer for safety
@@ -1330,7 +1584,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
             max_tokens = min(
                 estimated_tokens, 10000
             )  # Cap at 10k to prevent excessive usage
-
+            
             # Use Chat Completions API instead of Assistant API
             model_name = settings.OPENAI_MODEL.lower()
             api_params = {
@@ -1359,28 +1613,28 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
             # Extract content and token usage with validation
             if not response.choices or len(response.choices) == 0:
                 raise ValueError("OpenAI API returned no choices in response")
-
+            
             choice = response.choices[0]
             if not hasattr(choice, "message") or not choice.message:
                 raise ValueError("OpenAI API returned invalid choice structure")
-
+                
             script_content = choice.message.content
             if not script_content:
                 raise ValueError(
                     "OpenAI API returned empty content - this may indicate rate limiting or API error"
                 )
-
+                
             tokens_used = response.usage.total_tokens if response.usage else 0
 
             generation_time = time.time() - start_time
-
+            
             logger.debug(
                 f"[SCRIPT] OpenAI API response validated - content length: {len(script_content)}, tokens: {tokens_used}"
             )
 
             # Parse script sections
             sections = OpenAIScriptService._parse_script_sections(script_content)
-
+            
             # Extract actual script text from JSON for accurate word count
             actual_script_text = script_content  # Default to full content
             try:
@@ -1393,7 +1647,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
             except json.JSONDecodeError:
                 # Not JSON, use raw content
                 pass
-
+            
             # Calculate word count
             word_count = len(actual_script_text.split())
             is_valid, actual_word_count = OpenAIScriptService._validate_word_count(
@@ -1417,14 +1671,14 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                 "word_count": word_count,
                 "length_valid": is_valid,
             }
-
+            
             # Check validator compliance for scripts
             compliance_check = OpenAIScriptService._check_script_validator_compliance(
                 actual_script_text,
                 sections,
                 script_json_data if "script_json_data" in locals() else {},
             )
-
+            
             # Add compliance check to metadata
             metadata["validator_compliance"] = compliance_check
 
@@ -1437,7 +1691,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                 logger.warning(
                     f"[SCRIPT] ⚠️ Word count mismatch: {word_count}w (target: {min_length}-{max_length}w)"
                 )
-
+            
             # Save run log to database
             if save_log:
                 OpenAIScriptService._save_run_log(
@@ -1453,7 +1707,7 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                     generation_time=generation_time,
                     model=settings.OPENAI_MODEL,
                 )
-
+            
             return script_content, sections, metadata
 
         except Exception as e:
@@ -1469,13 +1723,13 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
     ) -> Tuple[str, List[Dict], Dict[str, Any]]:
         """
         Generate full script using section-based word count strategy
-
+        
         This method implements the new word count completion strategy that:
         1. Calculates word targets for each section
         2. Generates each section individually with specific storytelling strategies
         3. Validates and expands content to meet word count requirements
         4. Combines sections into a cohesive script
-
+        
         Args:
             outline_text: The outline text to generate script from
             script_data: Dictionary containing script parameters
@@ -1485,14 +1739,14 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
         template_style = script_data.get("template_style", "medium")
-
+        
         try:
             start_time = time.time()
             client = get_openai_client()
-
+            
             # Initialize word count strategy
             wc_strategy = WordCountStrategy(template_style)
-
+            
             # Parse outline to get sections
             import json
 
@@ -1508,23 +1762,56 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                         "key_points": [],
                     }
                 ]
-
+            
             # Calculate word targets for each section
             num_sections = len(sections)
             word_targets = wc_strategy.calculate_section_word_targets(num_sections)
-
+            
             logger.info(
                 f"[WC_STRATEGY] Starting section-based generation: {num_sections} sections, target: {word_targets['total_target']} words"
             )
-
-            # Generate each section individually
+            
+            # Generate script using single conversation thread for natural context flow
             generated_sections = []
             total_tokens_used = 0
             total_words_generated = 0
 
+            # Initialize conversation thread for continuous context
+            conversation_messages = []
+            
+            # Add system message with storytelling manual
+            storytelling_manual_formatted = format_storytelling_manual_for_prompt()
+            system_message = f"""You are an expert YouTube script writer creating engaging, human-like content section by section.
+
+STORYTELLING MANUAL:
+{storytelling_manual_formatted}
+
+WRITING REQUIREMENTS:
+- Write conversationally (use contractions, rhetorical questions)
+- Vary sentence length dramatically (3-25 words)
+- Include emotional beats and personal touches
+- Start some sentences with conjunctions ("But", "And", "So")
+- Use fragments for emphasis ("Silence. Then chaos.")
+
+FORBIDDEN PATTERNS:
+- "So here's what happened..." or "Let me tell you about..."
+- "In this video, we will..." or "Today we're going to..."
+- "First, let's start with..." or "Moving on to..."
+- Repetitive sentence structures
+
+HOOK REQUIREMENTS (first section only):
+- Start with ACTION VERB in first sentence
+- Create immediate tension or curiosity
+- Ask compelling questions or make bold statements
+- Include specific, concrete details
+
+Build naturally on previous sections, maintaining narrative flow."""
+
+            conversation_messages.append({"role": "system", "content": system_message})
+            
             for i, section in enumerate(sections):
                 section_type = wc_strategy._determine_section_type(i, num_sections)
-
+                
                 # Determine word target for this section
                 if section_type.value == "hook_intro":
                     section_word_target = word_targets["intro"]
@@ -1532,9 +1819,8 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                     section_word_target = word_targets["conclusion"]
                 else:
                     section_word_target = word_targets["main_sections"]
-
-                # Build section-specific prompt
-                storytelling_manual_formatted = format_storytelling_manual_for_prompt()
+                
+                # Build section-specific prompt for conversation
                 section_prompt = wc_strategy.build_section_specific_prompt(
                     section_data=section,
                     section_index=i,
@@ -1543,13 +1829,14 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                     storytelling_manual=storytelling_manual_formatted,
                 )
 
-                # Generate section content with quality validation
+                # Generate section content using conversation thread
                 logger.info(
-                    f"[WC_STRATEGY] Generating section {i+1}/{num_sections}: '{section.get('title', 'Untitled')}' ({section_word_target} words)"
+                    f"[WC_STRATEGY] Generating section {i+1}/{num_sections}: '{section.get('title', 'Untitled')}' ({section_word_target} words) using conversation thread"
                 )
 
                 section_content, section_tokens = (
-                    OpenAIScriptService._generate_single_section_with_quality_validation(
+                    OpenAIScriptService._generate_section_with_conversation(
+                        conversation_messages,
                         section_prompt,
                         section_word_target,
                         section_type,
@@ -1557,25 +1844,24 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
                         client,
                     )
                 )
-
+                
                 # Validate word count
                 is_valid, actual_words, message = wc_strategy.validate_word_count(
                     section_content, section_word_target
                 )
-
+                
                 logger.info(f"[WC_STRATEGY] Section {i+1}: {message}")
-
-                # Expand if needed (more aggressive - trigger at 95% instead of 90%)
-                if not is_valid and actual_words < section_word_target * 0.95:
+                
+                # Expand if needed (more aggressive - trigger at 90% instead of 95%)
+                if not is_valid and actual_words < section_word_target * 0.90:
                     logger.info(
-                        f"[WC_STRATEGY] Expanding section {i+1} to meet word target"
+                        f"[WC_STRATEGY] Expanding section {i+1} to meet word target using conversation thread"
                     )
                     expansion_strategies = wc_strategy.get_expansion_strategies(
                         section_type
                     )
 
-                    expansion_prompt = f"""
-Expand the following content to EXACTLY {section_word_target} words using these strategies:
+                    expansion_prompt = f"""Please expand the previous section to EXACTLY {section_word_target} words using these strategies:
 {', '.join(expansion_strategies)}
 
 Current content ({actual_words} words):
@@ -1585,11 +1871,12 @@ CRITICAL: You must reach {section_word_target} words minimum. Add more detail, e
 
 Requirements:
 - Target: {section_word_target} words minimum (currently {actual_words})
-- Maintain the same tone and style
+- Maintain the same tone and style from our conversation
 - Add examples, details, and elaboration
 - Keep the core message intact
 - DO NOT fall short of the word count
 - Use storytelling strategies to add depth and engagement
+- Maintain narrative flow with previous sections
 
 RESPONSE FORMAT: Return JSON object with this exact structure:
 {{
@@ -1598,63 +1885,69 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
     "expansion_applied": true
 }}
 """
-
+                    
+                    # Use conversation thread for expansion
                     section_content, expansion_tokens = (
-                        OpenAIScriptService._generate_single_section(
-                            expansion_prompt, section_word_target, client
+                        OpenAIScriptService._generate_section_with_conversation(
+                            conversation_messages,
+                            expansion_prompt,
+                            section_word_target,
+                            section_type,
+                            wc_strategy,
+                            client,
                         )
                     )
                     section_tokens += expansion_tokens
-
+                    
                     # Validate again
                     is_valid, actual_words, message = wc_strategy.validate_word_count(
                         section_content, section_word_target
                     )
                     logger.info(f"[WC_STRATEGY] After expansion: {message}")
-
+                
                 # Store generated section
                 generated_sections.append(
                     {
-                        "title": section.get("title", f"Section {i+1}"),
-                        "content": section_content,
-                        "word_count": actual_words,
-                        "target_words": section_word_target,
-                        "section_type": section_type.value,
+                    "title": section.get("title", f"Section {i+1}"),
+                    "content": section_content,
+                    "word_count": actual_words,
+                    "target_words": section_word_target,
+                    "section_type": section_type.value,
                         "is_valid": is_valid,
                     }
                 )
-
+                
                 total_tokens_used += section_tokens
                 total_words_generated += actual_words
-
+            
             # Calculate timing for sections
             generated_sections = wc_strategy.calculate_timing_for_sections(
                 generated_sections
             )
-
+            
             # Combine sections into full script
             full_script_text = OpenAIScriptService._combine_sections(generated_sections)
-
+            
             # Final validation (stricter tolerance for better word count compliance)
             final_is_valid, final_word_count, final_message = (
                 wc_strategy.validate_word_count(
-                    full_script_text, word_targets["total_target"], tolerance=0.05
+                full_script_text, word_targets["total_target"], tolerance=0.05
                 )
             )
-
+            
             logger.info(f"[WC_STRATEGY] Final result: {final_message}")
-
+            
             # Format sections for JSON schema response
             formatted_sections = wc_strategy.format_sections_for_json_schema(
                 generated_sections
             )
-
+            
             generation_time = time.time() - start_time
-
+            
             # Generate metadata
             thread_id = f"wc_strategy_{int(time.time())}"
             run_id = f"wc_run_{int(time.time())}"
-
+            
             metadata = {
                 "tokens_used": total_tokens_used,
                 "generation_time": generation_time,
@@ -1670,7 +1963,7 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
                 "sections_generated": len(generated_sections),
                 "template_style": template_style,
             }
-
+            
             # Save run log
             if save_log:
                 OpenAIScriptService._save_run_log(
@@ -1686,45 +1979,46 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
                     generation_time=generation_time,
                     model=settings.OPENAI_MODEL,
                 )
-
+            
             # Return in the proper JSON schema format
             return {
                 "full_text": full_script_text,
                 "sections": formatted_sections,
                 "metadata": metadata,
             }
-
+            
         except Exception as e:
             logger.error(f"[WC_STRATEGY] Generation failed: {str(e)}")
             raise
 
     @staticmethod
     def _generate_single_section_with_quality_validation(
-        section_prompt: str, word_target: int, section_type, wc_strategy, client
+        section_prompt: str, word_target: int, section_type, wc_strategy, client, previous_sections: List[Dict] = None
     ) -> Tuple[str, int]:
         """
         Generate content for a single section with quality validation and iterative improvement
-
+        
         Args:
             section_prompt: The prompt for generating this section
             word_target: Target word count for this section
             section_type: Section type for validation
             wc_strategy: Word count strategy instance
             client: OpenAI client instance
-
+            previous_sections: List of previously generated sections for context
+            
         Returns:
             Tuple of (content, tokens_used)
         """
         max_attempts = 2  # Reduced from 3 to 2 attempts
         total_tokens = 0
-
+        
         for attempt in range(max_attempts):
-            # Generate content
+            # Generate content with context awareness
             section_content, tokens_used = OpenAIScriptService._generate_single_section(
-                section_prompt, word_target, client
+                section_prompt, word_target, client, previous_sections=previous_sections
             )
             total_tokens += tokens_used
-
+            
             # Adjust validation strictness by attempt
             if attempt == 0:
                 validation_level = "strict"  # First attempt: full validation
@@ -1732,26 +2026,26 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
                 validation_level = "normal"  # Retry: critical only
             else:
                 validation_level = "minimal"  # Final: blockers only
-
+            
             is_valid, errors = wc_strategy.validate_section_quality(
                 section_content, section_type, validation_level=validation_level
             )
-
+            
             if is_valid:
                 logger.info(
                     f"[WC_STRATEGY] Section passed quality validation on attempt {attempt + 1}"
                 )
                 return section_content, total_tokens
-
+            
             # If validation fails and we have attempts left, regenerate with feedback
             if attempt < max_attempts - 1:
                 logger.warning(
                     f"[WC_STRATEGY] Section failed quality validation on attempt {attempt + 1}: {errors}"
                 )
-
+                
                 # Generate improvement guidance
                 improvement_guidance = wc_strategy.get_improvement_guidance(errors)
-
+                
                 # Create feedback prompt for regeneration
                 feedback_prompt = f"""
 The previous attempt failed quality validation. Please regenerate with these specific improvements:
@@ -1767,21 +2061,188 @@ ORIGINAL PROMPT:
 
 IMPORTANT: Apply the improvements above while maintaining the original requirements and word count target of {word_target} words.
 """
-
+                
                 section_prompt = feedback_prompt
             else:
                 logger.warning(
                     f"[WC_STRATEGY] Section failed quality validation after {max_attempts} attempts. Using best attempt."
                 )
+        
+        return section_content, total_tokens
+
+    @staticmethod
+    def _generate_section_with_conversation(
+        conversation_messages: List[Dict],
+        section_prompt: str,
+        word_target: int,
+        section_type,
+        wc_strategy,
+        client,
+    ) -> Tuple[str, int]:
+        """
+        Generate content for a single section using conversation thread for natural context flow
+
+        Args:
+            conversation_messages: List of conversation messages for context
+            section_prompt: The prompt for generating this section
+            word_target: Target word count for this section
+            section_type: Section type for validation
+            wc_strategy: Word count strategy instance
+            client: OpenAI client instance
+        
+        Returns:
+            Tuple of (content, tokens_used)
+        """
+        max_attempts = 2
+        total_tokens = 0
+
+        for attempt in range(max_attempts):
+            # Add user message to conversation
+            current_messages = conversation_messages.copy()
+            current_messages.append({"role": "user", "content": section_prompt})
+
+            # Calculate reasonable max tokens for the target word count (reduced to prevent rate limiting)
+            estimated_tokens = int(word_target * 1.2) + 300  # Reduced from 1.5 to 1.2, buffer from 500 to 300
+            max_tokens = min(estimated_tokens, 2000)  # Reduced cap from 4000 to 2000
+
+            model_name = settings.OPENAI_MODEL.lower()
+            api_params = {
+                "model": settings.OPENAI_MODEL,
+                "messages": current_messages,
+                "response_format": {"type": "json_object"},
+                "temperature": 0.7,  # Add temperature for more creative responses
+            }
+
+            # GPT-5 and o1 models have different parameter requirements
+            if "gpt-5" in model_name or "o1" in model_name:
+                # GPT-5 needs more tokens - multiply by 2
+                api_params["max_completion_tokens"] = max_tokens * 2
+            else:
+                api_params["max_tokens"] = max_tokens
+
+            try:
+                # Add small delay to help with rate limiting
+                import time
+                time.sleep(0.5)  # 500ms delay between requests
+                
+                response = client.chat.completions.create(**api_params)
+                
+                if not response.choices or len(response.choices) == 0:
+                    raise ValueError("OpenAI API returned no choices in response")
+                
+                choice = response.choices[0]
+                if not hasattr(choice, 'message') or not choice.message:
+                    raise ValueError("OpenAI API returned invalid choice structure")
+                    
+                section_content_raw = choice.message.content
+                if not section_content_raw:
+                    logger.error(f"[CONVERSATION] OpenAI API returned empty content for section {i+1}")
+                    logger.error(f"[CONVERSATION] API Response: {response}")
+                    logger.error(f"[CONVERSATION] Model: {settings.OPENAI_MODEL}")
+                    logger.error(f"[CONVERSATION] Max tokens: {max_tokens}")
+                    raise ValueError("OpenAI API returned empty content")
+
+                tokens_used = response.usage.total_tokens if response.usage else 0
+                total_tokens += tokens_used
+
+                # Parse JSON response
+                import json
+                try:
+                    section_data = json.loads(section_content_raw)
+                    section_content = section_data.get("content", "")
+                    
+                    if not section_content:
+                        raise ValueError("No content found in JSON response")
+                        
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to parse JSON response: {str(e)}")
+                    section_content = section_content_raw
+
+                # Add assistant response to conversation for context (but limit context size)
+                conversation_messages.append({"role": "user", "content": section_prompt})
+                conversation_messages.append({"role": "assistant", "content": section_content})
+
+                # Limit conversation context to prevent token overflow
+                # Keep only system message + last 3 exchanges (6 messages total)
+                if len(conversation_messages) > 7:  # system + 6 messages = 7 total
+                    # Keep system message + last 6 messages
+                    conversation_messages = [conversation_messages[0]] + conversation_messages[-6:]
+                    logger.info(f"[CONVERSATION] Trimmed conversation context to prevent token overflow")
+
+                # Validate word count and quality
+                actual_words = len(section_content.split())
+                is_valid, _, message = wc_strategy.validate_word_count(section_content, word_target)
+                
+                # Additional quality validation
+                quality_valid, quality_errors = OpenAIScriptService._validate_section_quality(
+                    section_content, section_type, attempt, max_attempts
+                )
+                
+                logger.info(f"[CONVERSATION] Section word count: {actual_words} words (target: {word_target})")
+                logger.info(f"[CONVERSATION] Section quality: {'✅ PASS' if quality_valid else '❌ FAIL'}")
+                
+                if is_valid and quality_valid:
+                    logger.info(f"[CONVERSATION] Section generated successfully: {message}")
+                    return section_content, total_tokens
+                else:
+                    # Build comprehensive error message
+                    error_parts = []
+                    if not is_valid:
+                        error_parts.append(f"Word count: {message}")
+                    if not quality_valid:
+                        error_parts.append(f"Quality: {', '.join(quality_errors)}")
+                    
+                    error_summary = " | ".join(error_parts)
+                    logger.warning(f"[CONVERSATION] Section validation failed: ⚠️ {error_summary}")
+                    
+                    if attempt < max_attempts - 1:
+                        # Add correction request to conversation
+                        correction_prompt = OpenAIScriptService._build_correction_prompt(
+                            quality_errors, section_content, word_target, not is_valid, actual_words
+                        )
+                        conversation_messages.append({"role": "user", "content": correction_prompt})
+                        continue
+                    else:
+                        # Final attempt failed, return what we have
+                        logger.error(f"[CONVERSATION] Final attempt failed: ⚠️ {error_summary}")
+                        return section_content, total_tokens
+
+            except Exception as e:
+                logger.error(f"[CONVERSATION] Section generation failed: {str(e)}")
+                if attempt < max_attempts - 1:
+                    continue
+                else:
+                    # Fallback to old method if conversation fails
+                    logger.warning(f"[CONVERSATION] Falling back to traditional section generation")
+                    try:
+                        section_content, section_tokens = (
+                            OpenAIScriptService._generate_single_section_with_quality_validation(
+                                section_prompt,
+                                word_target,
+                                section_type,
+                                wc_strategy,
+                                client,
+                            )
+                        )
+                        return section_content, section_tokens
+                    except Exception as fallback_error:
+                        logger.error(f"[CONVERSATION] Fallback also failed: {str(fallback_error)}")
+                        raise
 
         return section_content, total_tokens
 
     @staticmethod
     def _generate_single_section(
-        section_prompt: str, word_target: int, client
+        section_prompt: str, word_target: int, client, previous_sections: List[Dict] = None
     ) -> Tuple[str, int]:
         """
-        Generate content for a single section with word count enforcement
+        Generate content for a single section with word count enforcement and context awareness
+
+        Args:
+            section_prompt: The prompt for generating this section
+            word_target: Target word count for this section
+            client: OpenAI client instance
+            previous_sections: List of previously generated sections for context
 
         Returns:
             Tuple of (content, tokens_used)
@@ -1790,13 +2251,39 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
         estimated_tokens = int(word_target * 1.5) + 500  # 1.5 tokens per word + buffer
         max_tokens = min(estimated_tokens, 4000)  # Cap at 4k tokens
 
+        # Build context-aware system prompt
+        system_content = f"""You are an expert YouTube script writer. CRITICAL: You must generate exactly {word_target} words (±5% tolerance). Word count is MANDATORY and non-negotiable. Count your words before responding. Failure to meet word count will result in regeneration.
+
+CONTEXT AWARENESS: You are writing a section of a larger script. Use the previous sections as context to:
+- Maintain narrative flow and emotional continuity
+- Build on previous content naturally
+- Avoid repetition of phrases or structures
+- Create smooth transitions
+- Develop the story arc progressively
+- Maintain consistent tone while adding variety
+
+HUMAN-LIKE WRITING: Write with:
+- Natural rhythm and pacing variations
+- Emotional depth and human imperfections
+- Conversational tone that feels spoken
+- Dynamic sentence lengths
+- Personal touches and authentic voice
+- Avoid AI-like repetitive patterns"""
+
+        # Add previous sections context if available
+        if previous_sections and len(previous_sections) > 0:
+            context_summary = "\n\nPREVIOUS SECTIONS CONTEXT:\n"
+            for i, prev_section in enumerate(previous_sections[-3:]):  # Last 3 sections for context
+                context_summary += f"Section {i+1}: {prev_section.get('content', '')[:200]}...\n"
+            system_content += context_summary
+
         model_name = settings.OPENAI_MODEL.lower()
         api_params = {
             "model": settings.OPENAI_MODEL,
             "messages": [
                 {
                     "role": "system",
-                    "content": f"You are an expert YouTube script writer. CRITICAL: You must generate exactly {word_target} words (±5% tolerance). Word count is MANDATORY and non-negotiable. Count your words before responding. Failure to meet word count will result in regeneration.",
+                    "content": system_content,
                 },
                 {"role": "user", "content": section_prompt},
             ],
@@ -1812,10 +2299,10 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
             api_params["temperature"] = 0.7
 
         response = client.chat.completions.create(**api_params)
-
+        
         content = response.choices[0].message.content
         tokens_used = response.usage.total_tokens if response.usage else 0
-
+        
         # Parse JSON response to extract content
         try:
             import json
@@ -1838,39 +2325,39 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
     def _combine_sections(sections: List[Dict]) -> str:
         """
         Combine individual sections into a cohesive full script
-
+        
         Args:
             sections: List of generated sections with content
-
+            
         Returns:
             Combined script text
         """
         combined_parts = []
-
+        
         for section in sections:
             title = section["title"]
             content = section["content"]
-
+            
             # Add section header
             combined_parts.append(f"=== {title.upper()} ===")
             combined_parts.append("")
-
+            
             # Add section content
             combined_parts.append(content)
             combined_parts.append("")
-
+        
         return "\n".join(combined_parts)
 
     @staticmethod
     def analyze_image_with_assistant(
-        image_file=None,
+        image_file=None, 
         image_url=None,
         user=None,
         save_log: bool = True,
     ) -> Tuple[str, str]:
         """
         Analyze an image using OpenAI Chat Completions API with Vision capabilities
-
+        
         Args:
             image_file: Django UploadedFile object (optional)
             image_url: URL of the image to analyze (optional)
@@ -1895,7 +2382,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
 
             # Build system and user prompts
             storytelling_manual = format_storytelling_manual_for_prompt()
-
+            
             system_prompt = f"""You are an expert YouTube content creator and image analyst. Your task is to analyze images and create engaging YouTube content concepts.
 
 Key principles:
@@ -1928,7 +2415,7 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {
-                        "role": "user",
+                        "role": "user", 
                         "content": [
                             {"type": "text", "text": user_prompt},
                             {
@@ -1958,21 +2445,21 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             # Extract content and token usage with validation
             if not response.choices or len(response.choices) == 0:
                 raise ValueError("OpenAI API returned no choices in response")
-
+            
             choice = response.choices[0]
             if not hasattr(choice, "message") or not choice.message:
                 raise ValueError("OpenAI API returned invalid choice structure")
-
+                
             content = choice.message.content
             if not content:
                 raise ValueError(
                     "OpenAI API returned empty content - this may indicate rate limiting or API error"
                 )
-
+                
             tokens_used = response.usage.total_tokens if response.usage else 0
-
+            
             generation_time = time.time() - start_time
-
+            
             logger.debug(
                 f"[IMAGE_ANALYSIS] OpenAI API response validated - content length: {len(content)}, tokens: {tokens_used}"
             )
@@ -1993,7 +2480,7 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             if not title and not description:
                 description = content.strip()
                 title = "Image Analysis"
-
+            
             # Calculate word count
             word_count = len(content.split())
 
@@ -2022,7 +2509,7 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
         except Exception as e:
             logger.error(f"Chat completions image analysis failed: {str(e)}")
             return "Image Analysis", "An image was provided for analysis."
-
+    
     @staticmethod
     def _save_run_log(
         user,
@@ -2046,7 +2533,7 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
         """
         try:
             from scripts.models import OpenAIRunLog
-
+            
             run_log = OpenAIRunLog.objects.create(
                 user=user,
                 thread_id=thread_id,
@@ -2064,10 +2551,10 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
                 full_script=full_script,
                 script_title=script_title,
             )
-
+            
             logger.info(f"Saved run log {run_log.uuid} for run_id {run_id}")
             return run_log
-
+            
         except Exception as e:
             logger.error(f"Failed to save run log: {str(e)}")
             return None
@@ -2078,13 +2565,13 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
     ) -> Tuple[bool, int]:
         """
         Validate if content meets word count requirements
-
+        
         Returns:
             Tuple of (is_valid, actual_word_count)
         """
         word_count = len(content.split())
         is_valid = min_length <= word_count <= max_length
-
+        
         # Only log validation failures to reduce noise
         if not is_valid:
             diff = (
@@ -2095,46 +2582,59 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             logger.debug(
                 f"[LENGTH] {content_type}: {word_count}w ({'short' if word_count < min_length else 'over'} by {diff}w)"
             )
-
+        
         return is_valid, word_count
 
     @staticmethod
     def _build_outline_system_prompt() -> str:
         """Build system prompt for outline generation using Chat Completions"""
         storytelling_manual = format_storytelling_manual_for_prompt()
-
+        
         return f"""You are an expert YouTube script writer and content strategist. Your task is to create detailed, actionable outlines that serve as blueprints for engaging YouTube videos.
 
-CRITICAL: You MUST respond with valid JSON only. The API is configured to enforce JSON output format.
+ CRITICAL: You MUST respond with valid JSON only. The API is configured to enforce JSON output format.
 
-MANDATORY VALIDATOR ENFORCEMENT:
+ MANDATORY VALIDATOR ENFORCEMENT - FIRST TRY SUCCESS REQUIRED 🚨
 Before creating any outline, you MUST validate against these critical requirements:
 
-S1 HOOK VALIDATORS (MANDATORY):
+S1 HOOK VALIDATORS (MANDATORY - NO EXCEPTIONS):
 - Hook duration MUST be ≤30 seconds (hard cap: 60s when justified)
 - Hook MUST contain action verb in first 1-2 sentences
 - Hook MUST be 3-6 sentence micro-scene with filmable action
 - Hook MUST pivot to chronology within 60 seconds
 - NO vague language like "high-stakes moment" without concrete dramatization
+- FORBIDDEN STARTERS: "Imagine", "Picture", "Let me", "Let's", "Welcome", "Today we"
 
-S2 OPEN LOOPS VALIDATORS (MANDATORY):
+S2 OPEN LOOPS VALIDATORS (MANDATORY - NO EXCEPTIONS):
 - MUST state 2-3 specific high-value questions in hook
 - MUST include transformation statement: "Learn X to achieve Y"
 - MUST specify which loops will be closed in later sections
 - NO generic "create curiosity by hinting" - be specific
 
-S6 VALUE DELIVERY VALIDATORS (MANDATORY):
+S6 VALUE DELIVERY VALIDATORS (MANDATORY - NO EXCEPTIONS):
 - For listicles/tutorials: First value point MUST start within 10 seconds of hook end
 - Hook MUST be ≤30 seconds (exceptions explicitly justified)
 - NO standalone 1-2 minute opening sections
 - Get to main content FAST
 
-FRAMEWORK REQUIREMENTS (MANDATORY):
+FRAMEWORK REQUIREMENTS (MANDATORY - NO EXCEPTIONS):
 - P02: Include specific sensory details in each section
 - P03: Map causal connectors between sections
 - P05/P11: Include emotional beats and stakes
 - P17: Add editor cues/visual plans
 - BONUS-02: End chapters with cliffhangers/unresolved threads
+
+VALIDATION CHECKLIST (MANDATORY):
+□ Hook starts with action verb/noun+action
+□ Hook ≤75 words (30 seconds)
+□ 2-3 specific questions in first 60 seconds
+□ Transformation statement included
+□ First value point within 10s for tutorials
+□ Sensory details included
+□ Emotional beats planned
+□ Visual cues described
+
+FAILURE TO MEET ANY REQUIREMENT WILL RESULT IN REGENERATION!
 
 JSON SCHEMA REQUIREMENTS:
 {{
@@ -2166,7 +2666,7 @@ JSON SCHEMA REQUIREMENTS:
   "section_order": [0, 1, 2, 3, 4],
   "validator_compliance_check": {{
     "s1_hook_structure": "PASS/FAIL with specific violations",
-    "s2_open_loops": "PASS/FAIL with specific violations",
+    "s2_open_loops": "PASS/FAIL with specific violations", 
     "s6_value_delivery": "PASS/FAIL with specific violations",
     "framework_gaps": "List of missing P02, P03, P05, P11, P17, BONUS-02 elements"
   }}
@@ -2219,11 +2719,32 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, 
 
 Topic: {description} | {tone_text} | Style: {template_style} | Target: {min_length:,}-{max_length:,}w script
 
-CRITICAL VALIDATOR ENFORCEMENT REQUIRED:
-• S1: Hook ≤30s, action verbs, 3-6 sentences, pivot within 60s
-• S2: 2-3 specific questions, transformation statement, loop closure plan
-• S6: First value point within 10s of hook end for tutorials/listicles
-• Framework: Sensory details (P02), causal connectors (P03), emotional beats (P05/P11), visual cues (P17), cliffhangers (BONUS-02)
+🚨 CRITICAL VALIDATOR ENFORCEMENT - FIRST TRY SUCCESS REQUIRED 🚨
+
+S1 HOOK VALIDATION (MANDATORY):
+- First sentence MUST start with ACTION VERB or CONCRETE NOUN + ACTION
+- Examples: "Mark's system crashed", "The explosion shattered", "Sarah discovered"
+- FORBIDDEN: "Imagine", "Picture", "Let me", "Let's", "Welcome", "Today we"
+- Duration: ≤30 seconds (~75 words max)
+- Structure: Action + 2-3 specific questions + transformation promise
+
+S2 OPEN LOOPS VALIDATION (MANDATORY):
+- Include 2-3 SPECIFIC questions in first 30-60 seconds
+- Questions must create curiosity gaps
+- Include transformation statement ("Today: X tactics that...")
+- Plan for loop closure in conclusion
+
+S6 VALUE DELIVERY VALIDATION (MANDATORY):
+- For tutorials/listicles: First value point within 10s of hook end
+- NO standalone intro sections after hook
+- Immediate value delivery required
+
+FRAMEWORK REQUIREMENTS (MANDATORY):
+- Sensory details (P02): Include specific sights, sounds, textures
+- Causal connectors (P03): "Because", "So", "Therefore" relationships
+- Emotional beats (P05/P11): Include emotional moments and stakes
+- Visual cues (P17): Describe what viewers will see
+- Cliffhangers (BONUS-02): End sections with curiosity hooks
 
 REQUIREMENTS:
 • Each section: 80-150w description + 5-8 detailed key point sentences
@@ -2232,16 +2753,25 @@ REQUIREMENTS:
 • Outline depth = script length (sparse = FAILS, detailed = success)
 • MUST include validator_compliance_check in JSON response
 
-CRITICAL: Return ONLY valid JSON matching the exact schema provided in the system prompt. The API enforces JSON format automatically.
+VALIDATION CHECKLIST:
+□ Hook starts with action verb/noun+action
+□ Hook ≤75 words (30 seconds)
+□ 2-3 specific questions in first 60 seconds
+□ Transformation statement included
+□ First value point within 10s for tutorials
+□ Sensory details included
+□ Emotional beats planned
+□ Visual cues described
 
-REMEMBER: Rich outline (500-800w) → proper script. Sparse outline → short script (fails)!
-VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
+CRITICAL: Return ONLY valid JSON matching the exact schema provided in the system prompt.
+VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!
+FAILURE TO MEET REQUIREMENTS WILL RESULT IN REGENERATION!"""
 
     @staticmethod
     def _build_script_system_prompt() -> str:
         """Build system prompt for script generation using Chat Completions"""
         storytelling_manual = format_storytelling_manual_for_prompt()
-
+        
         return f"""You are an expert YouTube script writer with extensive experience creating engaging, retention-focused video content. Your specialty is transforming detailed outlines into compelling, conversational scripts that keep viewers watching.
 
 CRITICAL: You MUST respond with valid JSON only. The API is configured to enforce JSON output format.
@@ -2309,7 +2839,7 @@ JSON SCHEMA REQUIREMENTS:
   "estimated_duration": "12-15 minutes",
   "validator_compliance_check": {{
     "s1_hook_structure": "PASS/FAIL with specific violations",
-    "s2_open_loops": "PASS/FAIL with specific violations",
+    "s2_open_loops": "PASS/FAIL with specific violations", 
     "s6_value_delivery": "PASS/FAIL with specific violations",
     "framework_gaps": "List of missing P02, P03, P05, P07, P09, P10, P13, P17, BONUS-02 elements"
   }}
@@ -2369,7 +2899,7 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, 
 
         # Calculate concrete targets
         target_words = (min_length + max_length) // 2
-
+        
         # Detect if this is a tutorial/listicle
         tutorial_keywords = [
             "trick",
@@ -2384,7 +2914,7 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, 
         is_tutorial = any(
             keyword in outline_text.lower() for keyword in tutorial_keywords
         )
-
+        
         if is_tutorial:
             s6_enforcement = """
 🚨 S6 TUTORIAL/LISTICLE STRUCTURAL ENFORCEMENT:
@@ -2414,7 +2944,7 @@ CRITICAL: NO standalone 1-2 minute intro section after hook. Hook → Value imme
 S6 NARRATIVE ENFORCEMENT:
 Use ≤60s prologue, then pivot to Chapter 1/chronological beginning.
 """
-
+        
         return f"""Generate complete script from outline below.
 
 🎯 MANDATORY: {min_length:,}-{max_length:,} WORDS in full_text field (Target: {target_words:,})
@@ -2424,8 +2954,8 @@ CRITICAL VALIDATOR ENFORCEMENT REQUIRED FOR SCRIPTS:
 • S1: Hook ≤30s, action verbs, 3-6 sentences, pivot within 60s, NO 6+ minute prologues
 • S2: 2-3 specific questions, transformation statement, questions in first 30-60s
 • S6: First value point within 10s of hook end for tutorials/listicles
-• Framework: Sensory details (P02), causal connectors (P03), emotional beats (P05/P11),
-  simplified (P07), plain language (P09), conversational (P10), concise (P13),
+• Framework: Sensory details (P02), causal connectors (P03), emotional beats (P05/P11), 
+  simplified (P07), plain language (P09), conversational (P10), concise (P13), 
   visual cues (P17), cliffhangers (BONUS-02)
 
 CRITICAL FAILURES TO AVOID:
@@ -2442,6 +2972,22 @@ CRITICAL:
 - Write for direct narration
 - Verify full_text ≥{min_length:,}w before submitting
 - MUST include validator_compliance_check in JSON response
+
+WORD COUNT VERIFICATION PROTOCOL:
+1. Write your content
+2. Count the words in full_text field
+3. If under {min_length:,} words:
+   - Add examples for each point (+50-100 words each)
+   - Expand transitions (+30-50 words each)
+   - Include backstory/context (+100-150 words)
+4. VERIFY AGAIN before submitting
+5. Include actual word count in response
+
+EXPANSION CHECKLIST (if needed):
+□ Every claim has an example/story
+□ Every transition has 2-3 sentences
+□ Every section has context/background
+□ Every point has "why this matters"
 
 {s6_enforcement}
 
@@ -2463,12 +3009,12 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
     ) -> Dict[str, Any]:
         """
         Check outline compliance against S1, S2, S6 validators and framework requirements
-
+        
         Args:
             sections: List of outline sections
             parsed_data: Full parsed JSON response
             template_style: Template style to determine validation strictness
-
+            
         Returns:
             Dictionary with compliance check results
         """
@@ -2477,21 +3023,21 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             return OpenAIScriptService._check_flexible_outline_compliance(
                 sections, parsed_data
             )
-
+        
         compliance_check = {
             "s1_hook_structure": "PASS",
-            "s2_open_loops": "PASS",
+            "s2_open_loops": "PASS", 
             "s6_value_delivery": "PASS",
             "framework_gaps": [],
             "overall_compliance": "PASS",
             "violations": [],
         }
-
+        
         if not sections:
             compliance_check["overall_compliance"] = "FAIL"
             compliance_check["violations"].append("No sections provided")
             return compliance_check
-
+        
         # Check S1 Hook Structure Validators
         first_section = sections[0]
         hook_content = (
@@ -2499,7 +3045,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             + " "
             + first_section.get("content", "")
         )
-
+        
         # S1.1: Hook duration check (look for timing indicators)
         timing = first_section.get("timing", "")
         if "minute" in timing.lower() and any(char.isdigit() for char in timing):
@@ -2512,7 +3058,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
                     compliance_check["violations"].append(
                         f"S1 violation: Hook duration {duration} minutes exceeds 60s limit"
                     )
-
+        
         # S1.2: Action verbs in first 1-2 sentences
         hook_sentences = hook_content.split(".")[:2]
         action_verbs = [
@@ -2539,7 +3085,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             compliance_check["violations"].append(
                 "S1 violation: No action verbs in first 1-2 sentences"
             )
-
+        
         # S1.3: Vague language check
         vague_terms = [
             "high-stakes moment",
@@ -2554,7 +3100,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             compliance_check["violations"].append(
                 "S1 violation: Contains vague language without concrete dramatization"
             )
-
+        
         # Check S2 Open Loops Validators
         # S2.1: Specific questions check
         question_indicators = ["?", "how", "what", "why", "when", "where"]
@@ -2566,7 +3112,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             compliance_check["violations"].append(
                 "S2 violation: No specific questions in hook"
             )
-
+        
         # S2.2: Transformation statement check
         transformation_indicators = [
             "learn",
@@ -2584,7 +3130,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             compliance_check["violations"].append(
                 "S2 violation: No transformation statement (Learn X to achieve Y)"
             )
-
+        
         # Check S6 Value Delivery Validators
         # S6.1: First value point timing (for tutorials/listicles)
         if len(sections) > 1:
@@ -2600,10 +3146,10 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
                         compliance_check["violations"].append(
                             f"S6 violation: First value point starts at {second_duration}s, exceeds 10s limit"
                         )
-
+        
         # Check Framework Requirements
         framework_gaps = []
-
+        
         # P02: Sensory details check
         sensory_words = [
             "see",
@@ -2621,7 +3167,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         )
         if not has_sensory_details:
             framework_gaps.append("P02: Missing sensory details")
-
+        
         # P03: Causal connectors check
         causal_connectors = [
             "therefore",
@@ -2636,7 +3182,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         )
         if not has_causal_connectors:
             framework_gaps.append("P03: Missing causal connectors")
-
+        
         # P05/P11: Emotional beats and stakes check
         emotional_words = [
             "stakes",
@@ -2652,7 +3198,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         )
         if not has_emotional_beats:
             framework_gaps.append("P05/P11: Missing emotional beats and stakes")
-
+        
         # P17: Visual cues check
         visual_words = [
             "show",
@@ -2666,7 +3212,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         has_visual_cues = any(word in str(sections).lower() for word in visual_words)
         if not has_visual_cues:
             framework_gaps.append("P17: Missing visual cues/editor notes")
-
+        
         # BONUS-02: Cliffhangers check
         cliffhanger_words = [
             "but",
@@ -2681,9 +3227,9 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         )
         if not has_cliffhangers:
             framework_gaps.append("BONUS-02: Missing cliffhangers/unresolved threads")
-
+        
         compliance_check["framework_gaps"] = framework_gaps
-
+        
         # Overall compliance check
         if (
             compliance_check["s1_hook_structure"] == "FAIL"
@@ -2692,8 +3238,173 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             or len(framework_gaps) > 2
         ):  # Allow up to 2 framework gaps
             compliance_check["overall_compliance"] = "FAIL"
-
+        
         return compliance_check
+
+    @staticmethod
+    def _calculate_compliance_score(violations: List[str]) -> Dict[str, Any]:
+        """Calculate a compliance score instead of binary pass/fail"""
+        
+        critical_violations = ['S1', 'S7']  # Must pass
+        important_violations = ['S2', 'S6']  # Should pass
+        minor_violations = ['P02', 'P03']  # Nice to have
+        
+        score = 100
+        blocking = False
+        
+        for violation in violations:
+            if any(critical in violation for critical in critical_violations):
+                score -= 30
+                blocking = True
+            elif any(important in violation for important in important_violations):
+                score -= 15
+            else:
+                score -= 5
+        
+        return {
+            'score': max(0, score),
+            'blocking': blocking,
+            'grade': 'PASS' if score >= 70 and not blocking else 'FAIL',
+            'severity': 'critical' if blocking else 'important' if score < 70 else 'minor'
+        }
+
+    @staticmethod
+    def _validate_section_quality(content: str, section_type, attempt: int, max_attempts: int) -> Tuple[bool, List[str]]:
+        """Validate section quality with specific checks"""
+        errors = []
+        
+        # Basic quality checks
+        if len(content.strip()) < 50:
+            errors.append("Content too short")
+        
+        # Check for AI-like patterns
+        ai_patterns = [
+            "So here's what happened",
+            "Let me tell you about",
+            "In this video, we will",
+            "Today we're going to",
+            "First, let's start with",
+            "Moving on to",
+            "As you can see",
+            "It's important to note"
+        ]
+        
+        for pattern in ai_patterns:
+            if pattern.lower() in content.lower():
+                errors.append(f"AI pattern detected: '{pattern}'")
+        
+        # Check for variety in sentence length
+        sentences = content.split('.')
+        if len(sentences) > 3:
+            sentence_lengths = [len(s.split()) for s in sentences if s.strip()]
+            if len(set(sentence_lengths)) < 3:  # Not enough variety
+                errors.append("Insufficient sentence length variety")
+        
+        # Hook-specific validation
+        if section_type.value == "hook_intro":
+            first_sentence = content.split('.')[0].strip()
+            if not any(word in first_sentence.lower().split()[:5] for word in ['crashed', 'exploded', 'discovered', 'warned', 'killed', 'shattered', 'buzzed', 'struck']):
+                errors.append("Hook lacks action verb in first 5 words")
+        
+        # Determine if errors are critical
+        critical_errors = [e for e in errors if "AI pattern" in e or "Hook lacks" in e]
+        is_valid = len(critical_errors) == 0 or attempt >= max_attempts - 1
+        
+        return is_valid, errors
+
+    @staticmethod
+    def _build_correction_prompt(quality_errors: List[str], content: str, word_target: int, 
+                                word_count_failed: bool, actual_words: int) -> str:
+        """Build a specific correction prompt based on validation failures"""
+        
+        corrections = []
+        
+        if word_count_failed:
+            corrections.append(f"WORD COUNT: Current {actual_words} words, need exactly {word_target} words")
+        
+        if quality_errors:
+            corrections.append(f"QUALITY ISSUES: {', '.join(quality_errors)}")
+        
+        correction_prompt = f"""REGENERATION REQUIRED:
+
+{chr(10).join(corrections)}
+
+INSTRUCTIONS:
+1. Fix ALL issues listed above
+2. Maintain narrative flow and conversational tone
+3. Use varied sentence lengths (3-25 words)
+4. Include specific examples and emotional beats
+5. Avoid repetitive AI patterns
+6. Count words before submitting
+
+Generate the corrected section now:"""
+        
+        return correction_prompt
+
+    @staticmethod
+    def _build_enhanced_outline_prompt(script_data: Dict[str, Any], violations: str, score_info: Dict) -> str:
+        """Build enhanced prompt with specific violation feedback"""
+        
+        tones = script_data.get("tones", ["informative"])
+        template_style = script_data.get("template_style", "medium")
+        description = script_data.get("description", "")
+        min_length = script_data.get("min_length", 0)
+        max_length = script_data.get("max_length", 1000)
+
+        tone_text = (
+            f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
+        )
+
+        return f""" REGENERATION REQUIRED - CRITICAL VIOLATIONS DETECTED 
+
+PREVIOUS ATTEMPT FAILED:
+Score: {score_info['score']}/100 | Grade: {score_info['grade']} | Severity: {score_info['severity']}
+
+VIOLATIONS TO FIX:
+{violations}
+
+TOPIC: {description} | {tone_text} | Style: {template_style} | Target: {min_length:,}-{max_length:,}w script
+
+🚨 CRITICAL VALIDATOR ENFORCEMENT - MUST PASS THIS TIME 🚨
+
+S1 HOOK VALIDATION (MANDATORY - NO EXCEPTIONS):
+- First sentence MUST start with ACTION VERB or CONCRETE NOUN + ACTION
+- Examples: "Mark's system crashed", "The explosion shattered", "Sarah discovered"
+- FORBIDDEN: "Imagine", "Picture", "Let me", "Let's", "Welcome", "Today we"
+- Duration: ≤30 seconds (~75 words max)
+- Structure: Action + 2-3 specific questions + transformation promise
+
+S2 OPEN LOOPS VALIDATION (MANDATORY - NO EXCEPTIONS):
+- Include 2-3 SPECIFIC questions in first 30-60 seconds
+- Questions must create curiosity gaps
+- Include transformation statement ("Today: X tactics that...")
+- Plan for loop closure in conclusion
+
+S6 VALUE DELIVERY VALIDATION (MANDATORY - NO EXCEPTIONS):
+- For tutorials/listicles: First value point within 10s of hook end
+- NO standalone intro sections after hook
+- Immediate value delivery required
+
+FRAMEWORK REQUIREMENTS (MANDATORY - NO EXCEPTIONS):
+- Sensory details (P02): Include specific sights, sounds, textures
+- Causal connectors (P03): "Because", "So", "Therefore" relationships
+- Emotional beats (P05/P11): Include emotional moments and stakes
+- Visual cues (P17): Describe what viewers will see
+- Cliffhangers (BONUS-02): End sections with curiosity hooks
+
+VALIDATION CHECKLIST (MANDATORY):
+□ Hook starts with action verb/noun+action
+□ Hook ≤75 words (30 seconds)
+□ 2-3 specific questions in first 60 seconds
+□ Transformation statement included
+□ First value point within 10s for tutorials
+□ Sensory details included
+□ Emotional beats planned
+□ Visual cues described
+
+CRITICAL: Return ONLY valid JSON matching the exact schema provided in the system prompt.
+FAILURE TO MEET REQUIREMENTS WILL RESULT IN ANOTHER REGENERATION!
+THIS IS YOUR FINAL ATTEMPT - MAKE IT COMPLIANT!"""
 
     @staticmethod
     def _check_flexible_outline_compliance(
@@ -2709,14 +3420,14 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             "violations": [],
             "template_type": "flexible_outline",
         }
-
+        
         # Only check basic structure
         if not sections or len(sections) < 3:
             compliance_check["overall_compliance"] = "FAIL"
             compliance_check["violations"].append(
                 "Flexible outline must have at least 3 sections"
             )
-
+        
         # Check total word count (100-300 range)
         total_words = sum(len(s.get("description", "").split()) for s in sections)
         if total_words < 100 or total_words > 300:
@@ -2724,7 +3435,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             compliance_check["violations"].append(
                 f"Flexible outline word count {total_words} outside range 100-300"
             )
-
+        
         return compliance_check
 
     @staticmethod
@@ -2733,58 +3444,58 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
     ) -> Dict[str, Any]:
         """
         Check script compliance against S1, S2, S6 validators and framework requirements
-
+        
         Args:
             full_text: Complete script content
             sections: List of script sections
             parsed_data: Full parsed JSON response
-
+            
         Returns:
             Dictionary with compliance check results
         """
         compliance_check = {
             "s1_hook_structure": "PASS",
-            "s2_open_loops": "PASS",
+            "s2_open_loops": "PASS", 
             "s6_value_delivery": "PASS",
             "framework_gaps": [],
             "overall_compliance": "PASS",
             "violations": [],
         }
-
+        
         if not full_text or not sections:
             compliance_check["overall_compliance"] = "FAIL"
             compliance_check["violations"].append("No script content provided")
             return compliance_check
-
+        
         # Extract hook content (first section or first 500 words)
         hook_content = ""
         if sections:
             first_section = sections[0]
             hook_content = first_section.get("content", "")
-
+        
         # If no section content, use first 500 words of full_text
         if not hook_content:
             hook_content = full_text[:500]
-
+        
         # Check S1 Hook Structure Validators
         # S1.1: Hook duration check - look for timing indicators or estimate from word count
         # Estimate: ~150 words per minute for spoken content
         hook_word_count = len(hook_content.split())
         estimated_hook_duration = hook_word_count / 150  # minutes
-
+        
         # Add two-tier validation
         if estimated_hook_duration > 0.5:  # 30 seconds
             compliance_check["s1_hook_structure"] = "FAIL"
             compliance_check["violations"].append(
                 f"S1 violation: Hook duration {estimated_hook_duration*60:.0f}s exceeds 30s target (60s hard cap)"
             )
-
+            
         if estimated_hook_duration > 1.0:  # 60 seconds - CRITICAL FAILURE
             compliance_check["s1_hook_structure"] = "FAIL"
             compliance_check["violations"].append(
                 f"S1 CRITICAL FAILURE: Hook duration {estimated_hook_duration*60:.0f}s exceeds 60s hard cap"
             )
-
+        
         # S1.2: Action verbs in first 1-2 sentences
         hook_sentences = hook_content.split(".")[:2]
         action_verbs = [
@@ -2814,7 +3525,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             compliance_check["violations"].append(
                 "S1 violation: No action verbs in first 1-2 sentences"
             )
-
+        
         # S1.3: Vague language check
         vague_terms = [
             "high-stakes moment",
@@ -2833,14 +3544,14 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             compliance_check["violations"].append(
                 "S1 violation: Contains vague language without concrete dramatization"
             )
-
+        
         # S1.4: Check for 6+ minute prologues (critical failure)
         if estimated_hook_duration > 6:
             compliance_check["s1_hook_structure"] = "FAIL"
             compliance_check["violations"].append(
                 f"S1 CRITICAL FAILURE: {estimated_hook_duration:.1f} minute prologue - this is a complete failure"
             )
-
+        
         # Check S2 Open Loops Validators
         # S2.1: Specific questions check
         question_indicators = ["?", "how", "what", "why", "when", "where"]
@@ -2852,7 +3563,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             compliance_check["violations"].append(
                 "S2 violation: No specific questions in hook"
             )
-
+        
         # S2.2: Transformation statement check
         transformation_indicators = [
             "learn",
@@ -2873,14 +3584,14 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             compliance_check["violations"].append(
                 "S2 violation: No transformation statement (Learn X to achieve Y)"
             )
-
+        
         # S2.3: Questions buried in monologue check
         if len(hook_content.split()) > 200:  # Very long hook
             compliance_check["s2_open_loops"] = "FAIL"
             compliance_check["violations"].append(
                 "S2 violation: Questions buried in long monologue"
             )
-
+        
         # Check S6 Value Delivery Validators
         # S6.1: First value point timing (for tutorials/listicles)
         if len(sections) > 1:
@@ -2900,7 +3611,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             has_value_indicators = any(
                 indicator in second_content.lower() for indicator in value_indicators
             )
-
+            
             if has_value_indicators:
                 # Estimate timing for second section
                 second_word_count = len(second_content.split())
@@ -2910,10 +3621,10 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
                     compliance_check["violations"].append(
                         f"S6 violation: First value point starts at {second_duration*60:.0f}s, exceeds 10s limit"
                     )
-
+        
         # Check Framework Requirements
         framework_gaps = []
-
+        
         # P02: Sensory details check
         sensory_words = [
             "see",
@@ -2931,7 +3642,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         has_sensory_details = any(word in full_text.lower() for word in sensory_words)
         if not has_sensory_details:
             framework_gaps.append("P02: Missing sensory details")
-
+        
         # P03: Causal connectors check
         causal_connectors = [
             "therefore",
@@ -2948,7 +3659,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         )
         if not has_causal_connectors:
             framework_gaps.append("P03: Missing causal connectors")
-
+        
         # P05/P11: Emotional beats and stakes check
         emotional_words = [
             "stakes",
@@ -2964,7 +3675,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         has_emotional_beats = any(word in full_text.lower() for word in emotional_words)
         if not has_emotional_beats:
             framework_gaps.append("P05/P11: Missing emotional beats and stakes")
-
+        
         # P07: Simplify check - look for unnecessary tangents
         tangent_indicators = [
             "meanwhile",
@@ -2978,7 +3689,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         )
         if has_tangents:
             framework_gaps.append("P07: Contains unnecessary tangents")
-
+        
         # P09: Jargon/clichés check
         cliche_indicators = [
             "storm of thoughts",
@@ -2993,7 +3704,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         )
         if has_cliches:
             framework_gaps.append("P09: Contains clichés and jargon")
-
+        
         # P10: Reading level check - look for overly complex sentences
         complex_indicators = [
             "notwithstanding",
@@ -3007,7 +3718,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         )
         if has_complex_language:
             framework_gaps.append("P10: Contains overly complex language")
-
+        
         # P13: Concision check - look for verbose constructions
         verbose_indicators = [
             "in order to",
@@ -3020,7 +3731,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         )
         if has_verbose_constructions:
             framework_gaps.append("P13: Contains verbose constructions")
-
+        
         # P17: Visual cues check
         visual_words = [
             "show",
@@ -3037,7 +3748,7 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         has_visual_cues = any(word in full_text.lower() for word in visual_words)
         if not has_visual_cues:
             framework_gaps.append("P17: Missing visual cues/editor notes")
-
+        
         # BONUS-02: Cliffhangers check
         cliffhanger_words = [
             "but",
@@ -3051,9 +3762,9 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
         has_cliffhangers = any(word in full_text.lower() for word in cliffhanger_words)
         if not has_cliffhangers:
             framework_gaps.append("BONUS-02: Missing cliffhangers/unresolved threads")
-
+        
         compliance_check["framework_gaps"] = framework_gaps
-
+        
         # Overall compliance check
         if (
             compliance_check["s1_hook_structure"] == "FAIL"
@@ -3062,5 +3773,5 @@ VALIDATOR COMPLIANCE IS MANDATORY - NO EXCEPTIONS!"""
             or len(framework_gaps) > 3
         ):  # Allow up to 3 framework gaps
             compliance_check["overall_compliance"] = "FAIL"
-
+        
         return compliance_check

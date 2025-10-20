@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
-import { convertURLParamsToFilters, FiltersState } from '../_utils/filterUtils';
+import { FiltersState } from '../_utils/filterUtils';
 import { NoteIcon, TimeIcon, VideoIcon } from './components';
 import Button from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
@@ -16,6 +15,7 @@ import { Slider } from 'components/shadcn_ui/slider';
 interface FilterScriptModalProps {
   trigger: React.ReactNode;
   onApplyFilters?: (filters: FiltersState) => void;
+  onClearFilters?: () => void; // ✅ Now supported
   initialFilters?: Partial<FiltersState>;
 }
 
@@ -28,28 +28,14 @@ const defaultFilters: FiltersState = {
 export default function FilterScriptModal({
   trigger,
   onApplyFilters,
+  onClearFilters,
   initialFilters = {},
 }: FilterScriptModalProps) {
   const [open, setOpen] = useState(false);
-  const searchParams = useSearchParams();
-
-  // Initialize filters from URL parameters
-  const urlFilters = convertURLParamsToFilters(searchParams);
-
   const [filters, setFilters] = useState<FiltersState>({
     ...defaultFilters,
     ...initialFilters,
-    ...urlFilters,
   });
-
-  // Update filters when URL parameters change
-  useEffect(() => {
-    const urlFilters = convertURLParamsToFilters(searchParams);
-    setFilters((prev) => ({
-      ...prev,
-      ...urlFilters,
-    }));
-  }, [searchParams]);
 
   const updateFilter = <K extends keyof FiltersState>(key: K, value: FiltersState[K]) => {
     setFilters((prev) => ({
@@ -59,14 +45,18 @@ export default function FilterScriptModal({
   };
 
   const handleApplyFilters = () => {
-    if (onApplyFilters) {
-      onApplyFilters(filters);
-    }
+    onApplyFilters?.(filters);
     setOpen(false);
   };
 
   const handleCancel = () => {
     setFilters({ ...defaultFilters, ...initialFilters });
+    setOpen(false);
+  };
+
+  const handleClear = () => {
+    setFilters({ ...defaultFilters, ...initialFilters });
+    onClearFilters?.();
     setOpen(false);
   };
 
@@ -81,27 +71,32 @@ export default function FilterScriptModal({
   return (
     <Dialog
       open={open}
-      setOpen={(value) => setOpen(value)}
+      setOpen={setOpen}
       trigger={trigger}
       title="Filter my scripts"
       description=""
       footer={
         <Row className="w-full gap-6">
           <Button variant="gray" onClick={handleCancel}>
-            <Text
-              variant="base"
-              className="font-extrabold [font-feature-settings:'liga'_off,'clig'_off]"
-            >
+            <Text variant="base" className="font-extrabold">
               Cancel
             </Text>
           </Button>
-          <Button type="submit" variant="green" onClick={handleApplyFilters}>
+          {onClearFilters && (
+            <Button variant="gray" onClick={handleClear}>
+              <Text variant="base" className="font-extrabold">
+                Clear filters
+              </Text>
+            </Button>
+          )}
+          <Button variant="green" onClick={handleApplyFilters}>
             Apply filters
           </Button>
         </Row>
       }
     >
       <>
+        {/* Last Edited */}
         <div className="my-4">
           <p className="mb-2 flex items-center gap-2 font-medium">
             <span>{TimeIcon}</span> Last edited:
@@ -130,7 +125,7 @@ export default function FilterScriptModal({
           </RadioGroup>
         </div>
 
-        {/* Word count */}
+        {/* Word Count */}
         <div className="my-4">
           <p className="mb-3 flex items-center gap-2 font-medium">
             <span>{NoteIcon}</span> Word count:
@@ -148,7 +143,6 @@ export default function FilterScriptModal({
             <Text variant="xs" className="text-[#AAACA6]">
               {filters.wordCount[1] - filters.wordCount[0]} words
             </Text>
-
             <Text variant="xs" className="text-[#AAACA6]">
               10,000 words
             </Text>

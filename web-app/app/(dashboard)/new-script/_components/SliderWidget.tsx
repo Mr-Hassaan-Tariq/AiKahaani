@@ -25,7 +25,7 @@ export default function SliderWidget({
 
   defaultValue?: number[];
 }) {
-  const [worldCounter, setWorldCounter] = useState(defaultValue || [range.min, range.default]);
+  const [value, setValue] = useState(defaultValue?.[1] ?? range.default);
 
   const {
     register,
@@ -36,16 +36,14 @@ export default function SliderWidget({
   const { onChange: onMaxLength } = register(MAX_LENGTH, validationSchema);
 
   useEffect(() => {
-    if (worldCounter) {
-      onMinLength({ target: { name: MIN_LENGTH, value: worldCounter[0] } });
-      onMaxLength({ target: { name: MAX_LENGTH, value: worldCounter[1] } });
-    }
-  }, [onMinLength, onMaxLength, worldCounter]);
+    onMinLength({ target: { name: MIN_LENGTH, value: 0 } });
+    onMaxLength({ target: { name: MAX_LENGTH, value } });
+  }, [value]);
 
   return (
     <Col className="gap-4">
       <Row className="justify-normal gap-2 text-white">
-        <span> {'What’s your video about?'}</span>
+        <span> {'Script length & duration'}</span>
         <InfoModal
           description={
             <Row className="gap-1 text-sm tracking-normal text-white">
@@ -55,9 +53,9 @@ export default function SliderWidget({
         />
       </Row>
       <Slider
-        defaultValue={worldCounter}
-        onValueChange={setWorldCounter}
-        min={range.min}
+        value={[value]}
+        onValueChange={(val) => setValue(val[0])}
+        min={0}
         max={range.max}
         step={10}
         disabled={disabled}
@@ -66,7 +64,7 @@ export default function SliderWidget({
 
       <Row>
         <Text variant="xs" className="text-[#AAACA6]">
-          {worldCounter[1] - worldCounter[0]} words
+          {value} words
         </Text>
 
         <Text variant="xs" className="text-[#AAACA6]">

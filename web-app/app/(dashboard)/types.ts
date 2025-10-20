@@ -18,3 +18,12 @@ export interface NotificationSettingsType {
   feature_updates: boolean;
   community_affiliate_updates: boolean;
 }
+
+export interface NotificationType {
+  id: number;
+  title: string;
+  message: string;
+  read: boolean;
+  created_at: string;
+  metadata: Record<string, any>;
+}

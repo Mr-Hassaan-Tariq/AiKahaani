@@ -31,6 +31,25 @@ export const useCardManager = (initialCards: CardData[], onDelete?: (cardId: num
   };
 
   const addNewCard = () => {
+    if (editingCard) {
+      const { title, description } = editValues;
+      const isTitleEmpty = !title.trim();
+      const isDescriptionEmpty = !description.trim();
+
+      if (isTitleEmpty || isDescriptionEmpty) {
+        setValidationErrors({
+          title: isTitleEmpty,
+          description: isDescriptionEmpty,
+        });
+
+        return;
+      }
+
+      updateCard(editingCard, 'title', title.trim());
+      updateCard(editingCard, 'description', description.trim());
+      setEditingCard(null);
+    }
+
     const newId = Math.max(...cards.map((card) => card.id), 0) + 1;
     const newCard: CardData = {
       id: newId,

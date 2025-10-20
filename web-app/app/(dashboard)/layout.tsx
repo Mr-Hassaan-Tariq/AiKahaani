@@ -6,7 +6,7 @@ import DesktopMenu from './_components/DesktopMenu';
 import { MobileDrawer } from './_components/Drawer';
 import { Dropdown } from './_components/DropdownMenu';
 import MobileMenu from './_components/MobileMenu';
-import { getUserProfile } from './actions';
+import { getNotifications, getUserProfile } from './actions';
 import ClientImage from 'components/ui/ClientImage';
 import PlanUpgradeModal from 'components/ui/PlanUpgradeModal';
 import Row from 'components/ui/Row';
@@ -15,7 +15,8 @@ import Text from 'components/ui/Text';
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data } = await getUserProfile();
 
-  // 🧠 Helper to get initials from name or username
+  const { data: notify } = await getNotifications();
+  const notifications = Array.isArray(notify) ? notify : notify ? [notify] : [];
   const getInitials = (name?: string, username?: string) => {
     const base = name || username || '';
     if (!base) return 'U';
@@ -73,7 +74,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </Text>
 
             <Row className="items-center gap-3">
-              <Dropdown />
+              <Dropdown notifications={notifications || []} />
+
               {data?.profile_picture ? (
                 <ClientImage
                   src={data.profile_picture}

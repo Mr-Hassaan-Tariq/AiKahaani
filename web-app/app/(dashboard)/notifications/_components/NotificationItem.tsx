@@ -40,6 +40,24 @@ export default function NotificationItem({
     }
   };
 
+  const getFinalURL = (link?: string) => {
+    if (!link) return '#';
+
+    if (link.startsWith('/scripts/')) {
+      const id = link.replace('scripts/', '');
+      return `/new-script/script/${id}`;
+    }
+
+    if (link.startsWith('/outlines/')) {
+      const id = link.replace('/outlines/', '');
+      return `/new-script/${id}`;
+    }
+
+    return link;
+  };
+
+  const finalActionLink = getFinalURL(actionLink);
+
   return (
     <>
       {/* Desktop */}
@@ -70,7 +88,7 @@ export default function NotificationItem({
 
             {actionText && actionLink && (
               <a
-                href={actionLink}
+                href={finalActionLink}
                 className="flex w-full items-center justify-end gap-2 text-right text-sm font-semibold hover:underline"
               >
                 {actionText} <Image src={RightSvg} height={20} width={20} alt="RightSvg" />
@@ -108,7 +126,7 @@ export default function NotificationItem({
           {actionText && actionLink && (
             <div className="flex w-full justify-end">
               <a
-                href={actionLink}
+                href={finalActionLink}
                 className="flex items-center gap-2 text-right text-sm font-semibold hover:underline"
               >
                 {actionText} <Image src={RightSvg} height={20} width={20} alt="RightSvg" />

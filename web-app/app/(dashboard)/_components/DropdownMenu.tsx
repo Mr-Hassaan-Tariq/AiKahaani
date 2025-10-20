@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import BellIcon from '@assets/svg/bell-notification.svg';
@@ -9,7 +9,6 @@ import { X } from 'lucide-react';
 
 import MagicPan from '../../../public/images/magicpen.svg';
 import { formatTimeAgo } from 'lib/utils';
-import { getClientDataAction } from 'lib/utils/clientDataActions';
 import Col from 'components/ui/Col';
 import {
   DropdownMenu,
@@ -17,46 +16,32 @@ import {
   DropdownMenuTrigger,
 } from 'components/shadcn_ui/dropdown-menu';
 
-type NotificationType = {
-  id: number;
-  title: string;
-  message: string;
-  read: boolean;
-  created_at: string;
-  metadata: Record<string, any>;
-};
-
-export function Dropdown() {
+export function Dropdown({ notifications }: { notifications: any[] }) {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationType[]>([]);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const data = await getClientDataAction<{ results: NotificationType[] }>(
-        'v1/notifications/all-notifications/?limit=4&offset=0',
-      );
-      if (data?.results) {
-        setNotifications(data.results);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    } finally {
-      setLoading(false);
+  const getFinalURL = (link?: string) => {
+    if (!link) return '#';
+
+    if (link.startsWith('/scripts/')) {
+      const id = link.replace('scripts/', '');
+      return `/new-script/script/${id}`;
     }
+
+    if (link.startsWith('/outlines/')) {
+      const id = link.replace('/outlines/', '');
+      return `/new-script/${id}`;
+    }
+
+    return link;
   };
 
-  useEffect(() => {
-    if (open) fetchNotifications();
-  }, [open]);
-
-  // 🔹 Handle redirect based on metadata
+  // Handle redirect based on metadata
   const handleNotificationClick = (metadata: Record<string, any>) => {
     const metaValue = metadata?.script || metadata?.outline;
     if (metaValue?.link) {
-      router.push(metaValue.link);
+      const finalURL = getFinalURL(metaValue?.link);
+      router.push(finalURL);
       setOpen(false);
     }
   };
@@ -80,36 +65,34 @@ export function Dropdown() {
         </div>
 
         {/* Notifications */}
-        {loading ? (
-          <p className="text-sm text-gray-400">Loading...</p>
-        ) : notifications.length > 0 ? (
-          notifications.map((item, index) => {
-            const hasMetadata = Object.keys(item.metadata || {}).length > 0;
+        {notifications?.length > 0 ? (
+          notifications[0]?.results?.map((item: any, index: number) => {
+            const hasMetadata = Object.keys(item?.metadata || {}).length > 0;
             const icon = hasMetadata ? MagicPan : BellIcon;
 
             return (
               <div
-                key={item.id}
+                key={item?.id}
                 className="mb-3 cursor-pointer rounded-lg p-2 transition-all hover:bg-[#3d3d3d]"
-                onClick={() => handleNotificationClick(item.metadata)}
+                onClick={() => handleNotificationClick(item?.metadata)}
               >
                 {/* Time Grouping */}
                 {(index === 0 ||
-                  formatTimeAgo(notifications[index - 1].created_at) !==
-                    formatTimeAgo(item.created_at)) && (
-                  <p className="mb-2 text-sm text-[#AAACA6]">{formatTimeAgo(item.created_at)}</p>
+                  formatTimeAgo(notifications[index - 1]?.created_at) !==
+                    formatTimeAgo(item?.created_at)) && (
+                  <p className="mb-2 text-sm text-[#AAACA6]">{formatTimeAgo(item?.created_at)}</p>
                 )}
 
                 {/* Item */}
                 <div className="flex items-start gap-2">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black">
-                    <Image src={icon} alt={item.title} width={16} height={16} />
+                    <Image src={icon} alt={item?.title} width={16} height={16} />
                   </div>
                   <Col className="gap-1">
                     <p className="text-sm font-medium">{item.title}</p>
                     <p className="text-xs text-[#AAACA6]">
-                      {item.message.slice(0, 50)}
-                      {item.message.length > 50 && '...'}
+                      {item?.message?.slice(0, 50)}
+                      {item?.message?.length > 50 && '...'}
                     </p>
                   </Col>
                 </div>

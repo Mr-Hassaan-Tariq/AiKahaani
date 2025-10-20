@@ -68,6 +68,7 @@ export default function Page() {
       return { values: data, errors };
     },
   });
+
   const {
     control,
     handleSubmit,
@@ -75,10 +76,21 @@ export default function Page() {
     formState: { isValid },
     register,
     reset,
+    resetField,
+    setValue,
   } = methods;
 
   useEffect(() => {
-    reset();
+    reset(
+      {
+        prompt: '',
+        tones: [],
+        duration: 'saved',
+        scriptOption: '',
+        manualTitle: '',
+      },
+      { keepErrors: false, keepDirty: false, keepTouched: false },
+    );
   }, [activeTab]);
 
   const onSubmit = async (data: any) => {
@@ -213,7 +225,7 @@ export default function Page() {
           Generate or optimize YouTube titles with AI.
         </Text>
 
-        <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Tabs activeTab={activeTab} setActiveTab={setActiveTab} isGenerating={isGenerating} />
 
         {!showTitles ? (
           <FormProvider {...methods}>
@@ -222,7 +234,13 @@ export default function Page() {
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="mt-6 w-full">
                 {activeTab === 'optimize' && (
-                  <OptimizeFormFields watch={watch} scripts={script?.results} register={register} />
+                  <OptimizeFormFields
+                    watch={watch}
+                    scripts={script?.results}
+                    register={register}
+                    resetField={resetField}
+                    setValue={setValue}
+                  />
                 )}
                 <PromptInput />
                 <Row>
