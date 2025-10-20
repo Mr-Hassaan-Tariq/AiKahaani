@@ -1794,8 +1794,10 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
 CRITICAL JSON REQUIREMENTS:
 - You MUST respond with valid JSON only in the format: {{"content": "your script content here"}}
 - Ensure your JSON is properly formatted and complete
-- Do not truncate your response - write concisely to fit within token limits
-- If your content is long, break it into shorter, punchier sentences
+- WRITE CONCISELY - you have very limited tokens (max ~1000)
+- Use short, punchy sentences to maximize impact within token limits
+- Prioritize essential content over flowery language
+- If approaching token limit, end the response gracefully
 
 STORYTELLING MANUAL:
 {storytelling_manual_formatted}
@@ -2115,9 +2117,9 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
             current_messages = conversation_messages.copy()
             current_messages.append({"role": "user", "content": section_prompt})
 
-            # Calculate reasonable max tokens for the target word count (further reduced to prevent rate limiting)
-            estimated_tokens = int(word_target * 1.1) + 200  # Further reduced from 1.2 to 1.1, buffer from 300 to 200
-            max_tokens = min(estimated_tokens, 1500)  # Further reduced cap from 2000 to 1500
+            # Calculate reasonable max tokens for the target word count (aggressively reduced to prevent truncation)
+            estimated_tokens = int(word_target * 0.9) + 150  # Reduced from 1.1 to 0.9, buffer from 200 to 150
+            max_tokens = min(estimated_tokens, 1000)  # Aggressively reduced cap from 1500 to 1000
 
             model_name = settings.OPENAI_MODEL.lower()
             api_params = {
@@ -2132,6 +2134,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                 # GPT-5 needs more tokens - multiply by 2
                 api_params["max_completion_tokens"] = max_tokens * 2
             else:
+                # For gpt-4.1 and other models, use max_tokens directly (no multiplication)
                 api_params["max_tokens"] = max_tokens
 
             try:
@@ -2185,6 +2188,10 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                             raw_content = raw_content.rstrip('\\').rstrip('"')
                             # Unescape the content
                             section_content = raw_content.replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t').replace('\\\\', '\\')
+                            # If content seems truncated, try to complete it gracefully
+                            if section_content and not section_content.endswith(('.', '!', '?', '"', "'")):
+                                # Add a simple completion if it looks truncated
+                                section_content = section_content.rstrip() + "..."
                             logger.info("Successfully extracted content from truncated/malformed JSON")
                         else:
                             # Fallback to raw content
