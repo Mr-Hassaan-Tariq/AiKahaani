@@ -380,7 +380,75 @@ def generate_script_outline(request):
             logger.error(
                 f"[OUTLINE_GENERATION] Raw response (first 500 chars): {outline_text[:500]}..."
             )
-            raise ValueError(f"OpenAI returned invalid JSON response: {str(e)}")
+            
+            # Try to fix truncated JSON by attempting to complete it
+            try:
+                logger.info(
+                    f"[OUTLINE_GENERATION] Attempting to fix truncated JSON for user {request.user.id}"
+                )
+                
+                # Check if the response looks like it was truncated mid-string
+                if '"' in outline_text and outline_text.count('"') % 2 == 1:
+                    # Odd number of quotes suggests truncated string
+                    logger.info("[OUTLINE_GENERATION] Detected truncated string, attempting to close it")
+                    
+                    # Try to find the last incomplete string and close it
+                    last_quote_pos = outline_text.rfind('"')
+                    if last_quote_pos > 0:
+                        # Check if this quote is the start of an incomplete string
+                        before_quote = outline_text[:last_quote_pos]
+                        if before_quote.rstrip().endswith(':'):
+                            # This looks like a key-value pair with incomplete value
+                            fixed_text = outline_text[:last_quote_pos] + '""'
+                            
+                            # Try to close the JSON structure
+                            if outline_text.rstrip().endswith(','):
+                                fixed_text = fixed_text.rstrip(',') + '}'
+                            elif not outline_text.rstrip().endswith('}'):
+                                fixed_text += '}'
+                            
+                            logger.info(f"[OUTLINE_GENERATION] Attempting to parse fixed JSON")
+                            outline_json_data = json.loads(fixed_text)
+                            
+                            # Extract structured data from fixed JSON response
+                            actual_outline_data = {
+                                "sections": outline_json_data.get("sections", []),
+                                "section_order": outline_json_data.get("section_order", []),
+                            }
+                            
+                            # Build outline text from sections
+                            sections = actual_outline_data.get("sections", [])
+                            outline_parts = []
+                            for section in sections:
+                                title = section.get("title", "")
+                                description = section.get("description", "")
+                                if title and description:
+                                    outline_parts.append(f"{title} - {description}")
+                            
+                            actual_outline_text = "\n\n".join(outline_parts)
+                            
+                            # Clean up any document references
+                            actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
+                            actual_outline_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text)
+                            actual_outline_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_outline_text)
+                            actual_outline_text = actual_outline_text.strip()
+                            
+                            logger.info(
+                                f"[OUTLINE_GENERATION] Successfully fixed truncated JSON for user {request.user.id} - "
+                                f"Sections: {len(sections)}, Outline text length: {len(actual_outline_text)}"
+                            )
+                        else:
+                            raise ValueError("Could not determine how to fix truncated JSON")
+                    else:
+                        raise ValueError("Could not find incomplete string to fix")
+                else:
+                    raise ValueError("JSON structure appears intact but invalid")
+                    
+            except Exception as fix_error:
+                logger.error(
+                    f"[OUTLINE_GENERATION] Failed to fix truncated JSON for user {request.user.id}: {str(fix_error)}"
+                )
+                raise ValueError(f"OpenAI returned invalid JSON response: {str(e)}")
 
         # Generate title using assistant if not provided or if provided title is empty/whitespace
         if title and title.strip():
@@ -668,10 +736,64 @@ def recreate_script_outline(request, uuid):
                 # Fallback to original data
                 actual_outline_data = outline_data or {}
                 actual_outline_text = outline_text
-        except (json.JSONDecodeError, TypeError):
-            # Fallback to original data
-            actual_outline_data = outline_data or {}
-            actual_outline_text = outline_text
+        except (json.JSONDecodeError, TypeError) as e:
+            # Try to fix truncated JSON by attempting to complete it
+            try:
+                logger.info(f"[OUTLINE_RECREATION] Attempting to fix truncated JSON: {str(e)}")
+                
+                # Check if the response looks like it was truncated mid-string
+                if '"' in outline_text and outline_text.count('"') % 2 == 1:
+                    # Odd number of quotes suggests truncated string
+                    logger.info("[OUTLINE_RECREATION] Detected truncated string, attempting to close it")
+                    
+                    # Try to find the last incomplete string and close it
+                    last_quote_pos = outline_text.rfind('"')
+                    if last_quote_pos > 0:
+                        # Check if this quote is the start of an incomplete string
+                        before_quote = outline_text[:last_quote_pos]
+                        if before_quote.rstrip().endswith(':'):
+                            # This looks like a key-value pair with incomplete value
+                            fixed_text = outline_text[:last_quote_pos] + '""'
+                            
+                            # Try to close the JSON structure
+                            if outline_text.rstrip().endswith(','):
+                                fixed_text = fixed_text.rstrip(',') + '}'
+                            elif not outline_text.rstrip().endswith('}'):
+                                fixed_text += '}'
+                            
+                            logger.info(f"[OUTLINE_RECREATION] Attempting to parse fixed JSON")
+                            outline_json_data = json.loads(fixed_text)
+                            
+                            if isinstance(outline_json_data, dict) and "sections" in outline_json_data:
+                                # Extract structured data from fixed JSON response
+                                actual_outline_data = {
+                                    "sections": outline_json_data.get("sections", []),
+                                    "section_order": outline_json_data.get("section_order", []),
+                                    "outline_text": outline_json_data.get("outline_text", ""),
+                                }
+                                actual_outline_text = outline_json_data.get("outline_text", outline_text)
+                                
+                                # Clean up any document references
+                                actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
+                                actual_outline_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text)
+                                actual_outline_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_outline_text)
+                                actual_outline_text = actual_outline_text.strip()
+                                
+                                logger.info(f"[OUTLINE_RECREATION] Successfully fixed truncated JSON")
+                            else:
+                                raise ValueError("Fixed JSON still invalid")
+                        else:
+                            raise ValueError("Could not determine how to fix truncated JSON")
+                    else:
+                        raise ValueError("Could not find incomplete string to fix")
+                else:
+                    raise ValueError("JSON structure appears intact but invalid")
+                    
+            except Exception as fix_error:
+                logger.error(f"[OUTLINE_RECREATION] Failed to fix truncated JSON: {str(fix_error)}")
+                # Fallback to original data
+                actual_outline_data = outline_data or {}
+                actual_outline_text = outline_text
 
         # Create new outline with "Recreated" prefix, but generate a fresh title
         if original_outline.title and original_outline.title.strip():

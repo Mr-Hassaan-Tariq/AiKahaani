@@ -1152,11 +1152,19 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
                     f"[OUTLINE] Using max_completion_tokens=20000 for {model_name} (no temperature)"
                 )
             else:
-                api_params["max_tokens"] = 3000
+                # Increase token limit for long/medium templates to prevent JSON truncation
+                template_style = script_data.get("template_style", "medium")
+                if template_style in ["long", "medium"]:
+                    api_params["max_tokens"] = 8000  # Increased for detailed JSON responses
+                    print(
+                        f"[OUTLINE] Using max_tokens=8000 for {template_style} template with {model_name}"
+                    )
+                else:
+                    api_params["max_tokens"] = 3000
+                    print(
+                        f"[OUTLINE] Using max_tokens=3000 for {template_style} template with {model_name}"
+                    )
                 api_params["temperature"] = 0.7
-                print(
-                    f"[OUTLINE] Using max_tokens and temperature=0.7 for {model_name}"
-                )
 
             response = client.chat.completions.create(**api_params)
 
