@@ -1791,7 +1791,11 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
             storytelling_manual_formatted = format_storytelling_manual_for_prompt()
             system_message = f"""You are an expert YouTube script writer creating engaging, human-like content section by section.
 
-CRITICAL: You must respond with valid JSON only in the format: {{"content": "your script content here"}}
+CRITICAL JSON REQUIREMENTS:
+- You MUST respond with valid JSON only in the format: {{"content": "your script content here"}}
+- Ensure your JSON is properly formatted and complete
+- Do not truncate your response - write concisely to fit within token limits
+- If your content is long, break it into shorter, punchier sentences
 
 STORYTELLING MANUAL:
 {storytelling_manual_formatted}
@@ -2111,9 +2115,9 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
             current_messages = conversation_messages.copy()
             current_messages.append({"role": "user", "content": section_prompt})
 
-            # Calculate reasonable max tokens for the target word count (reduced to prevent rate limiting)
-            estimated_tokens = int(word_target * 1.2) + 300  # Reduced from 1.5 to 1.2, buffer from 500 to 300
-            max_tokens = min(estimated_tokens, 2000)  # Reduced cap from 4000 to 2000
+            # Calculate reasonable max tokens for the target word count (further reduced to prevent rate limiting)
+            estimated_tokens = int(word_target * 1.1) + 200  # Further reduced from 1.2 to 1.1, buffer from 300 to 200
+            max_tokens = min(estimated_tokens, 1500)  # Further reduced cap from 2000 to 1500
 
             model_name = settings.OPENAI_MODEL.lower()
             api_params = {
@@ -2131,9 +2135,9 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                 api_params["max_tokens"] = max_tokens
 
             try:
-                # Add small delay to help with rate limiting
+                # Add delay to help with rate limiting
                 import time
-                time.sleep(0.5)  # 500ms delay between requests
+                time.sleep(1.0)  # Increased to 1 second delay between requests
                 
                 response = client.chat.completions.create(**api_params)
                 
@@ -2172,10 +2176,16 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                     try:
                         # Look for content field in the raw response
                         import re
-                        content_match = re.search(r'"content":\s*"([^"]*(?:\\.[^"]*)*)"', section_content_raw, re.DOTALL)
+                        # More flexible pattern to handle truncated JSON
+                        content_match = re.search(r'"content":\s*"([^"]*(?:\\.[^"]*)*)', section_content_raw, re.DOTALL)
                         if content_match:
-                            section_content = content_match.group(1).replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t')
-                            logger.info("Successfully extracted content from malformed JSON")
+                            # Extract the content and handle potential truncation
+                            raw_content = content_match.group(1)
+                            # Remove trailing backslashes and incomplete quotes
+                            raw_content = raw_content.rstrip('\\').rstrip('"')
+                            # Unescape the content
+                            section_content = raw_content.replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t').replace('\\\\', '\\')
+                            logger.info("Successfully extracted content from truncated/malformed JSON")
                         else:
                             # Fallback to raw content
                             section_content = section_content_raw
@@ -2188,11 +2198,11 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                 conversation_messages.append({"role": "assistant", "content": section_content})
 
                 # Limit conversation context to prevent token overflow
-                # Keep only system message + last 3 exchanges (6 messages total)
-                if len(conversation_messages) > 7:  # system + 6 messages = 7 total
-                    # Keep system message + last 6 messages
-                    conversation_messages = [conversation_messages[0]] + conversation_messages[-6:]
-                    logger.info(f"[CONVERSATION] Trimmed conversation context to prevent token overflow")
+                # Keep only system message + last 2 exchanges (4 messages total) for more aggressive trimming
+                if len(conversation_messages) > 5:  # system + 4 messages = 5 total
+                    # Keep system message + last 4 messages
+                    conversation_messages = [conversation_messages[0]] + conversation_messages[-2:]
+                    logger.info(f"[CONVERSATION] Trimmed conversation context to prevent token overflow (kept last 2 exchanges)")
 
                 # Validate word count and quality
                 actual_words = len(section_content.split())
@@ -2350,10 +2360,16 @@ HUMAN-LIKE WRITING: Write with:
             try:
                 # Look for content field in the raw response
                 import re
-                content_match = re.search(r'"content":\s*"([^"]*(?:\\.[^"]*)*)"', content, re.DOTALL)
+                # More flexible pattern to handle truncated JSON
+                content_match = re.search(r'"content":\s*"([^"]*(?:\\.[^"]*)*)', content, re.DOTALL)
                 if content_match:
-                    extracted_content = content_match.group(1).replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t')
-                    logger.info("[WC_STRATEGY] Successfully extracted content from malformed JSON")
+                    # Extract the content and handle potential truncation
+                    raw_content = content_match.group(1)
+                    # Remove trailing backslashes and incomplete quotes
+                    raw_content = raw_content.rstrip('\\').rstrip('"')
+                    # Unescape the content
+                    extracted_content = raw_content.replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t').replace('\\\\', '\\')
+                    logger.info("[WC_STRATEGY] Successfully extracted content from truncated/malformed JSON")
                     return extracted_content, tokens_used
                 else:
                     # Fallback to raw content
