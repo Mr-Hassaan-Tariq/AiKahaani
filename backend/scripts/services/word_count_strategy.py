@@ -7,6 +7,7 @@ completion using the storytelling strategies from prompt.py.
 """
 
 import logging
+import re
 from typing import Dict, List, Tuple, Optional
 from enum import Enum
 
@@ -72,6 +73,27 @@ class WordCountStrategy:
         )
         self.WORDS_PER_MINUTE = TemplateStyleConfig.WORDS_PER_MINUTE
         
+    def summarize_for_context(self, text: str, max_words: int = 60) -> str:
+        """Heuristic, deterministic summary for threading context across sections.
+        Picks first and last sentence (or first two), capped to max_words.
+        """
+        if not text:
+            return ""
+        # Split into sentences conservatively
+        sentences = re.split(r"[.!?]\s+", text.strip())
+        pick = []
+        if sentences:
+            pick.append(sentences[0])
+            if len(sentences) > 1:
+                pick.append(sentences[-1])
+            elif len(sentences) > 2:
+                pick = sentences[:2]
+        summary = " ".join(s for s in pick if s).strip()
+        words = summary.split()
+        if len(words) > max_words:
+            summary = " ".join(words[:max_words]) + "..."
+        return summary
+
     def calculate_section_word_targets(self, num_sections: Optional[int] = None) -> Dict[str, int]:
         """
         Calculate word count targets for each section type based on template requirements
