@@ -309,7 +309,7 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                         ],
                     }
                 ],
-                max_tokens=1000,  # Increased from 500 for better analysis
+                max_tokens=4096,  # Maximum for GPT-4.1
                 temperature=0.7,
             )
 
@@ -500,17 +500,15 @@ Make the title clickable and engaging for YouTube, and the description detailed 
             if "gpt-5" in model_name or "o1" in model_name:
                 # GPT-5 uses max_completion_tokens and doesn't support custom temperature
                 # GPT-5 needs MUCH more tokens - consumes 3-4x more than GPT-4o
-                api_params["max_completion_tokens"] = (
-                    16000  # Increased to handle large prompt + response
-                )
+                api_params["max_completion_tokens"] = 8192  # Maximum for GPT-5
                 # Don't set temperature - GPT-5 only accepts default (1)
                 # Note: GPT-5 might not support JSON mode - we'll handle response parsing flexibly
                 print(
-                    f"[TITLES] Using max_completion_tokens=16000 for {model_name} (no temperature, no JSON mode)"
+                    f"[TITLES] Using max_completion_tokens=8192 (maximum) for {model_name} (no temperature, no JSON mode)"
                 )
             else:
                 # Older models use max_tokens and support temperature
-                api_params["max_tokens"] = 2000
+                api_params["max_tokens"] = 4096  # Maximum for GPT-4.1
                 api_params["temperature"] = 0.7
 
             try:
@@ -1144,31 +1142,19 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
 
             # GPT-5 and o1 models have different parameter requirements
             if "gpt-5" in model_name or "o1" in model_name:
-                # GPT-5 needs more tokens - use higher limits based on template complexity
+                # GPT-5 needs more tokens - use maximum limits
                 template_style = script_data.get("template_style", "medium")
-                if template_style in ["long", "medium"]:
-                    api_params["max_completion_tokens"] = 4000  # Higher limit for GPT-5
-                    print(
-                        f"[OUTLINE] Using max_completion_tokens=4000 for {template_style} template with {model_name} (no temperature)"
-                    )
-                else:
-                    api_params["max_completion_tokens"] = 3500  # Slightly lower for shorter templates
-                    print(
-                        f"[OUTLINE] Using max_completion_tokens=3500 for {template_style} template with {model_name} (no temperature)"
-                    )
+                api_params["max_completion_tokens"] = 8192  # Maximum for GPT-5
+                print(
+                    f"[OUTLINE] Using max_completion_tokens=8192 (maximum) for {template_style} template with {model_name} (no temperature)"
+                )
             else:
-                # Set appropriate token limits based on template complexity
+                # Set maximum token limits for GPT-4.1
                 template_style = script_data.get("template_style", "medium")
-                if template_style in ["long", "medium"]:
-                    api_params["max_tokens"] = 3000  # Increased to allow detailed JSON responses
-                    print(
-                        f"[OUTLINE] Using max_tokens=3000 for {template_style} template with {model_name}"
-                    )
-                else:
-                    api_params["max_tokens"] = 2500  # Slightly lower for shorter templates
-                    print(
-                        f"[OUTLINE] Using max_tokens=2500 for {template_style} template with {model_name}"
-                    )
+                api_params["max_tokens"] = 4096  # Maximum for GPT-4.1
+                print(
+                    f"[OUTLINE] Using max_tokens=4096 (maximum) for {template_style} template with {model_name}"
+                )
                 api_params["temperature"] = 0.7
 
             response = client.chat.completions.create(**api_params)
@@ -1479,9 +1465,9 @@ Focus on making this section flow naturally from previous sections while maintai
             }
             
             if "gpt-5" in model_name or "o1" in model_name:
-                api_params["max_completion_tokens"] = 3000  # Increased from 2000
+                api_params["max_completion_tokens"] = 8192  # Maximum for GPT-5
             else:
-                api_params["max_tokens"] = 2500  # Increased from 1500
+                api_params["max_tokens"] = 4096  # Maximum for GPT-4.1
                 api_params["temperature"] = 0.7
             
             response = client.chat.completions.create(**api_params)
@@ -2124,7 +2110,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
 
             # Calculate reasonable max tokens for the target word count
             estimated_tokens = int(word_target * 1.2) + 300  # Increased from 0.9 to 1.2, buffer from 150 to 300
-            max_tokens = min(estimated_tokens, 2000)  # Increased cap from 1000 to 2000
+            max_tokens = min(estimated_tokens, 4096)  # Maximum for GPT-4.1
 
             model_name = settings.OPENAI_MODEL.lower()
             api_params = {
@@ -2136,8 +2122,8 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
 
             # GPT-5 and o1 models have different parameter requirements
             if "gpt-5" in model_name or "o1" in model_name:
-                # GPT-5 needs more tokens - use higher multiplier
-                api_params["max_completion_tokens"] = max_tokens * 2.5  # Increased multiplier from 2 to 2.5
+                # GPT-5 needs more tokens - use maximum
+                api_params["max_completion_tokens"] = 8192  # Maximum for GPT-5
             else:
                 # For gpt-4.1 and other models, use max_tokens directly (no multiplication)
                 api_params["max_tokens"] = max_tokens
@@ -2296,7 +2282,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
         """
         # Calculate reasonable max tokens for the target word count
         estimated_tokens = int(word_target * 1.8) + 800  # Increased from 1.5 to 1.8, buffer from 500 to 800
-        max_tokens = min(estimated_tokens, 6000)  # Increased cap from 4k to 6k tokens
+        max_tokens = min(estimated_tokens, 4096)  # Maximum for GPT-4.1
 
         # Build context-aware system prompt
         system_content = f"""You are an expert YouTube script writer. CRITICAL: You must generate exactly {word_target} words (±5% tolerance). Word count is MANDATORY and non-negotiable. Count your words before responding. Failure to meet word count will result in regeneration.
@@ -2498,11 +2484,9 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
 
             # GPT-5 and o1 models have different parameter requirements
             if "gpt-5" in model_name or "o1" in model_name:
-                api_params["max_completion_tokens"] = (
-                    2000  # Increased for image analysis
-                )
+                api_params["max_completion_tokens"] = 8192  # Maximum for GPT-5
             else:
-                api_params["max_tokens"] = 1000  # Increased from 500 for better analysis
+                api_params["max_tokens"] = 4096  # Maximum for GPT-4.1
                 api_params["temperature"] = 0.7
 
             response = client.chat.completions.create(**api_params)
