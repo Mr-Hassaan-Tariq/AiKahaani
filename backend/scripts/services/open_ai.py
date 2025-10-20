@@ -1791,6 +1791,8 @@ VERIFY: full_text field has {min_length:,}+ words before submitting."""
             storytelling_manual_formatted = format_storytelling_manual_for_prompt()
             system_message = f"""You are an expert YouTube script writer creating engaging, human-like content section by section.
 
+CRITICAL: You must respond with valid JSON only in the format: {{"content": "your script content here"}}
+
 STORYTELLING MANUAL:
 {storytelling_manual_formatted}
 
