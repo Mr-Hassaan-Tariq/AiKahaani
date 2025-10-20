@@ -2166,7 +2166,22 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                         
                 except json.JSONDecodeError as e:
                     logger.warning(f"Failed to parse JSON response: {str(e)}")
-                    section_content = section_content_raw
+                    logger.warning(f"Raw response content: {repr(section_content_raw[:500])}")
+                    
+                    # Try to extract content from malformed JSON
+                    try:
+                        # Look for content field in the raw response
+                        import re
+                        content_match = re.search(r'"content":\s*"([^"]*(?:\\.[^"]*)*)"', section_content_raw, re.DOTALL)
+                        if content_match:
+                            section_content = content_match.group(1).replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t')
+                            logger.info("Successfully extracted content from malformed JSON")
+                        else:
+                            # Fallback to raw content
+                            section_content = section_content_raw
+                    except Exception as extract_error:
+                        logger.warning(f"Failed to extract content from malformed JSON: {extract_error}")
+                        section_content = section_content_raw
 
                 # Add assistant response to conversation for context (but limit context size)
                 conversation_messages.append({"role": "user", "content": section_prompt})
@@ -2329,7 +2344,23 @@ HUMAN-LIKE WRITING: Write with:
             logger.warning(
                 f"[WC_STRATEGY] Failed to parse JSON response: {str(e)}, using raw content"
             )
-            return content, tokens_used
+            logger.warning(f"[WC_STRATEGY] Raw response content: {repr(content[:500])}")
+            
+            # Try to extract content from malformed JSON
+            try:
+                # Look for content field in the raw response
+                import re
+                content_match = re.search(r'"content":\s*"([^"]*(?:\\.[^"]*)*)"', content, re.DOTALL)
+                if content_match:
+                    extracted_content = content_match.group(1).replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t')
+                    logger.info("[WC_STRATEGY] Successfully extracted content from malformed JSON")
+                    return extracted_content, tokens_used
+                else:
+                    # Fallback to raw content
+                    return content, tokens_used
+            except Exception as extract_error:
+                logger.warning(f"[WC_STRATEGY] Failed to extract content from malformed JSON: {extract_error}")
+                return content, tokens_used
 
     @staticmethod
     def _combine_sections(sections: List[Dict]) -> str:
