@@ -387,6 +387,47 @@ def generate_script_outline(request):
                     f"[OUTLINE_GENERATION] Attempting to fix truncated JSON for user {request.user.id}"
                 )
                 
+                # Try to extract sections using regex if JSON is malformed
+                import re
+                sections_match = re.search(r'"sections":\s*\[(.*?)\]', outline_text, re.DOTALL)
+                if sections_match:
+                    logger.info("[OUTLINE_GENERATION] Found sections using regex extraction")
+                    # Extract sections content and try to parse
+                    sections_content = sections_match.group(1)
+                    # Try to extract individual section objects
+                    section_pattern = r'\{"title":\s*"([^"]*)",\s*"description":\s*"([^"]*)"'
+                    section_matches = re.findall(section_pattern, sections_content)
+                    
+                    if section_matches:
+                        sections = []
+                        for i, (title, desc) in enumerate(section_matches):
+                            sections.append({
+                                "title": title,
+                                "description": desc,
+                                "key_points": [],
+                                "word_target": 100
+                            })
+                        
+                        actual_outline_data = {
+                            "sections": sections,
+                            "section_order": list(range(len(sections))),
+                        }
+                        
+                        # Build outline text from sections
+                        outline_parts = []
+                        for section in sections:
+                            title = section.get("title", "")
+                            description = section.get("description", "")
+                            if title and description:
+                                outline_parts.append(f"{title} - {description}")
+                        
+                        actual_outline_text = "\n\n".join(outline_parts)
+                        logger.info(f"[OUTLINE_GENERATION] Successfully extracted {len(sections)} sections using regex")
+                    else:
+                        raise ValueError("Could not extract sections using regex")
+                else:
+                    raise ValueError("No sections found in response")
+                
                 # Check if the response looks like it was truncated mid-string
                 if '"' in outline_text and outline_text.count('"') % 2 == 1:
                     # Odd number of quotes suggests truncated string

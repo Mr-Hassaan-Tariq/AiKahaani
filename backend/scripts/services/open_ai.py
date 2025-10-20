@@ -1145,19 +1145,19 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
             # GPT-5 and o1 models have different parameter requirements
             if "gpt-5" in model_name or "o1" in model_name:
                 api_params["max_completion_tokens"] = (
-                    20000  # Increased - GPT-5 needs more
+                    4000  # Reduced from 20000 to prevent truncation
                 )
                 # Don't set temperature for GPT-5
                 print(
-                    f"[OUTLINE] Using max_completion_tokens=20000 for {model_name} (no temperature)"
+                    f"[OUTLINE] Using max_completion_tokens=4000 for {model_name} (no temperature)"
                 )
             else:
-                # Increase token limit for long/medium templates to prevent JSON truncation
+                # Reduce token limit to prevent JSON truncation
                 template_style = script_data.get("template_style", "medium")
                 if template_style in ["long", "medium"]:
-                    api_params["max_tokens"] = 8000  # Increased for detailed JSON responses
+                    api_params["max_tokens"] = 3000  # Reduced from 8000 to prevent truncation
                     print(
-                        f"[OUTLINE] Using max_tokens=8000 for {template_style} template with {model_name}"
+                        f"[OUTLINE] Using max_tokens=3000 for {template_style} template with {model_name}"
                     )
                 else:
                     api_params["max_tokens"] = 3000
@@ -2208,7 +2208,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                 # Keep only system message + last 2 exchanges (4 messages total) for more aggressive trimming
                 if len(conversation_messages) > 5:  # system + 4 messages = 5 total
                     # Keep system message + last 4 messages
-                    conversation_messages = [conversation_messages[0]] + conversation_messages[-2:]
+                    conversation_messages = [conversation_messages[0]] + conversation_messages[-1:]
                     logger.info(f"[CONVERSATION] Trimmed conversation context to prevent token overflow (kept last 2 exchanges)")
 
                 # Validate word count and quality
