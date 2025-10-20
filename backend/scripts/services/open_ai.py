@@ -653,24 +653,31 @@ OUTPUT: Return ONLY a JSON array of objects with this schema:
 - Count characters BEFORE submitting. If over 55 chars, REWRITE SHORTER.
 
 🎨 CREATIVE DIVERSITY RULES (AVOID REPETITION):
-**Synonym Rotation** - Don't repeat the same words across titles. Rotate these:
-  • Numbers: 3, 5, 7, 10 → also try: Few, Several, Simple, Quick
-  • Productivity → output, focus, work, energy, performance, results, efficiency
-  • Habits → routines, patterns, systems, rituals, practices, methods
-  • Secrets → truths, facts, tricks, moves, tactics, insights, lessons
-  • Productivity/Habits/Skills → swap freely, keep it fresh
+**Synonym Rotation** - NEVER repeat the same words across titles. Use varied vocabulary:
+  • Numbers: 3, 5, 7, 10 → also try: Few, Several, Simple, Quick, Single
+  • Morning → dawn, AM, early, daybreak, sunrise, start, beginning
+  • Routine → pattern, system, ritual, habit, practice, method, schedule
+  • Focus → attention, concentration, clarity, energy, flow, sharpness, drive
+  • Productivity → output, work, results, performance, efficiency, momentum, progress
+  • Habits → routines, patterns, systems, rituals, practices, methods, behaviors
+  • Secrets → truths, facts, tricks, moves, tactics, insights, lessons, methods
+  • Fix/Improve → transform, change, shift, boost, upgrade, enhance, optimize
+  
+**CRITICAL**: If you use "morning" in Title 1, use "dawn/AM/early" in others. If you use "routine" in Title 2, use "system/pattern/habit" in others. MAXIMUM FRESHNESS!
 
 **Structure Variation** - Don't use same pattern twice in a batch:
   • Mix question marks, periods, dashes
   • Vary sentence structure (statements, questions, commands)
   • Alternate between "you" and implied subject
   • Some with numbers, some without
+  • Include 1-2 story-based/quantified titles per batch
 
 **Emotional Tone Mixing** - Vary confidence level across batch:
   • Bold/Confident: "Never Trust [X] Again" "This Changes Everything"
   • Relatable/Softer: "Why I Finally Quit [X]" "The One Thing That Worked"
   • Urgent/Warning: "Stop [X] Before It's Late" "Your [X] Is Broken"
   • Curious/Mystery: "What Nobody Tells You About [X]"
+  • Story/Proof: "This 5-Minute Habit Fixed My [X]" "How I Doubled [X] in a Week"
 
 🔥 INTRIGUING TITLE FORMULA:
 1. **Start with a HOOK** (shock, number, power word, or mystery)
@@ -690,6 +697,16 @@ OUTPUT: Return ONLY a JSON array of objects with this schema:
 - "What Happens When You [unexpected action]"
 - "Your [X] Isn't Working. Here's Why"
 - "The [X] Mistake Everyone Makes"
+
+🎯 STORY-BASED / QUANTIFIED PATTERNS (include 1-2 per batch for human touch):
+- "This [X]-Minute Habit Fixed My [Problem]"
+- "How I Doubled [Benefit] in [Timeframe]"
+- "I Tried [X] for [Time Period]. Here's What Happened"
+- "[Specific Action] Changed [Outcome] in [Days/Weeks]"
+- "The [Number]-[Unit] [Thing] That Transformed [Result]"
+- "I Quit [X] for [Timeframe]. Results Shocked Me"
+
+Examples: "This 5-Minute Habit Fixed My Focus" | "How I Doubled Energy in a Week" | "I Woke at 5AM for 30 Days"
 
 ❌ FORBIDDEN (AUTO-REJECT):
 - "How to..." - BANNED
@@ -738,27 +755,33 @@ Generate {title_count} YouTube titles that will get HIGH CLICK-THROUGH RATES.
 ✓ Vary EMOTIONAL TONE:
   - 2-3 titles: Bold/Confident ("Never Trust X Again")
   - 2-3 titles: Relatable/Softer ("Why I Finally Quit X")
+  - 1-2 titles: Story/Quantified ("This 5-Min Habit Fixed My Focus")
   - 2-3 titles: Urgent/Warning ("Stop X Before It's Late")
-✓ Rotate VOCABULARY (don't repeat):
+✓ Rotate VOCABULARY (CRITICAL - avoid word repetition):
+  - NEVER repeat words like "morning," "routine," "focus" across titles
+  - Use synonyms: If Title 1 uses "morning" → Title 2 uses "dawn/AM/early"
+  - Use synonyms: If Title 2 uses "routine" → Title 3 uses "habit/system/pattern"
   - Use synonyms: output/focus/performance/results instead of repeating "productivity"
   - Vary structures: questions, statements, commands
   - Mix with/without numbers (not all "5 [X]")
 ✓ Different PATTERNS per title (don't template):
   - Title 1: Question format
-  - Title 2: Statement with dash
-  - Title 3: Command/Warning
-  - Title 4: Mystery reveal
+  - Title 2: Story-based with specific metric ("This 10-Min Habit...")
+  - Title 3: Statement with dash
+  - Title 4: Command/Warning
+  - Title 5: Mystery reveal
   - Continue rotating...
 
 🎯 ANGLE ROTATION - Use one per title, don't repeat:
 1. **Contrarian**: "Everyone Says [X]. They're Wrong"
 2. **Single Change**: "I Changed [One Thing]. Everything Shifted"
-3. **Proof-Based**: "The [X] That Actually Worked for Me"
-4. **Cost-First**: "Ignoring [X] Cost Me [Consequence]"
-5. **Mystery/Secret**: "What [Authority] Won't Tell You About [X]"
-6. **Warning**: "Your [X] Is Broken. Here's Why"
-7. **Transformation**: "[Specific Action] Changed Everything"
-8. **Forbidden Knowledge**: "The [X] Truth They Don't Share"
+3. **Story/Quantified**: "This 5-Min Habit Fixed My [Problem]" or "I Doubled [X] in a Week"
+4. **Proof-Based**: "The [X] That Actually Worked for Me"
+5. **Cost-First**: "Ignoring [X] Cost Me [Consequence]"
+6. **Mystery/Secret**: "What [Authority] Won't Tell You About [X]"
+7. **Warning**: "Your [X] Is Broken. Here's Why"
+8. **Transformation**: "[Specific Action] Changed Everything"
+9. **Forbidden Knowledge**: "The [X] Truth They Don't Share"
 
 🔥 MAKE EACH TITLE:
 - Start with a power word or number (vary which)
@@ -777,10 +800,11 @@ Generate {title_count} YouTube titles that will get HIGH CLICK-THROUGH RATES.
 □ Specific (not vague)?
 □ Different angle from other titles in this batch?
 □ Different emotional tone from neighbors?
-□ No repeated vocabulary across batch?
+□ No repeated vocabulary across batch? (Check: morning/routine/focus/productivity)
+□ At least 1-2 story/quantified titles in batch? ("This 5-Min Habit..." / "I Doubled X in a Week")
 □ Would YOU click it?
 
-Return ONLY valid JSON array. Every title MUST pass all checks above and feel FRESH.
+Return ONLY valid JSON array. Every title MUST pass all checks above and feel FRESH, not templated.
 """
         if tones:
             base += f"\n\n🎨 Tones to incorporate: {', '.join(tones)}"
