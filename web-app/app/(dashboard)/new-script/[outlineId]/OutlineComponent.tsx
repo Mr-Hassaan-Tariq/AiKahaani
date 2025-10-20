@@ -146,45 +146,36 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
     handleKeyDown,
   } = useCardManager(initialCards, handleDelete);
 
-  // Handle reorder callback
-  const handleReorder = (newCards: any[], sectionOrder: number[]) => {
-    if (!outline) return;
+  // // Handle reorder callback
+  // const handleReorder = (newCards: any[], sectionOrder: number[]) => {
+  //   if (!outline) return;
 
-    // Convert cards back to outline format with reordered sections
-    const reorderedOutlineData = convertCardsToOutline(newCards, outline);
+  //   // Convert cards back to outline format with reordered sections
+  //   const reorderedOutlineData = convertCardsToOutline(newCards, outline);
 
-    // Call API to update the outline order
-    updateOutlineOrder(
-      {
-        uuid: outline.uuid,
-        sectionOrder,
-        outlineData: reorderedOutlineData.outline_data,
-      },
-      {
-        onSuccess: () => {
-          toast.success('Success', 'Section order updated successfully');
-        },
-        onError: (error) => {
-          logger.error(error);
-          toast.error('Something went wrong', 'Error updating section order');
-          // Revert the local state on error
-          setCards(cards);
-        },
-      },
-    );
-  };
+  //   // Call API to update the outline order
+  //   updateOutlineOrder(
+  //     {
+  //       uuid: outline.uuid,
+  //       sectionOrder,
+  //       outlineData: reorderedOutlineData.outline_data,
+  //     },
+  //     {
+  //       onSuccess: () => {
+  //         toast.success('Success', 'Section order updated successfully');
+  //       },
+  //       onError: (error) => {
+  //         logger.error(error);
+  //         toast.error('Something went wrong', 'Error updating section order');
+  //         // Revert the local state on error
+  //         setCards(cards);
+  //       },
+  //     },
+  //   );
+  // };
 
   const { handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd } =
-    useDragAndDrop(
-      cards,
-      setCards,
-      draggedCard,
-      setDraggedCard,
-      dragOverIndex,
-      setDragOverIndex,
-      outline?.section_order || [],
-      handleReorder,
-    );
+    useDragAndDrop(cards, setCards, draggedCard, setDraggedCard, dragOverIndex, setDragOverIndex);
 
   // Track changes
   useEffect(() => {
