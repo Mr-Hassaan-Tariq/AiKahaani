@@ -1145,24 +1145,24 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
             # GPT-5 and o1 models have different parameter requirements
             if "gpt-5" in model_name or "o1" in model_name:
                 api_params["max_completion_tokens"] = (
-                    2000  # Further reduced from 4000 to prevent truncation
+                    1000  # Aggressively reduced from 2000 to prevent truncation
                 )
                 # Don't set temperature for GPT-5
                 print(
-                    f"[OUTLINE] Using max_completion_tokens=2000 for {model_name} (no temperature)"
+                    f"[OUTLINE] Using max_completion_tokens=1000 for {model_name} (no temperature)"
                 )
             else:
-                # Further reduce token limit to prevent JSON truncation
+                # Aggressively reduce token limit to prevent JSON truncation
                 template_style = script_data.get("template_style", "medium")
                 if template_style in ["long", "medium"]:
-                    api_params["max_tokens"] = 2000  # Further reduced from 3000 to prevent truncation
+                    api_params["max_tokens"] = 1000  # Aggressively reduced from 2000 to prevent truncation
                     print(
-                        f"[OUTLINE] Using max_tokens=2000 for {template_style} template with {model_name}"
+                        f"[OUTLINE] Using max_tokens=1000 for {template_style} template with {model_name}"
                     )
                 else:
-                    api_params["max_tokens"] = 2000
+                    api_params["max_tokens"] = 1000
                     print(
-                        f"[OUTLINE] Using max_tokens=2000 for {template_style} template with {model_name}"
+                        f"[OUTLINE] Using max_tokens=1000 for {template_style} template with {model_name}"
                     )
                 api_params["temperature"] = 0.7
 

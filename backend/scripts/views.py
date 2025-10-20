@@ -489,6 +489,64 @@ def generate_script_outline(request):
                     else:
                         raise ValueError("No sections found in response")
                 
+                # Try a more robust extraction approach as final fallback
+                logger.info("[OUTLINE_GENERATION] Attempting robust content extraction from truncated response")
+                
+                # Extract all title-description pairs from the response, even if JSON is broken
+                import re
+                # Look for any pattern that looks like: "title": "..." followed by "description": "..."
+                title_desc_pattern = r'"title":\s*"([^"]*)"[^}]*"description":\s*"([^"]*)"'
+                matches = re.findall(title_desc_pattern, outline_text, re.DOTALL)
+                
+                if matches:
+                    logger.info(f"[OUTLINE_GENERATION] Found {len(matches)} title-description pairs using robust extraction")
+                    sections = []
+                    for i, (title, desc) in enumerate(matches):
+                        # Clean up the description (remove any trailing incomplete text)
+                        desc = desc.strip()
+                        if desc and not desc.endswith(('.', '!', '?', '"')):
+                            # If description seems truncated, try to find a natural break
+                            last_sentence = desc.rfind('.')
+                            if last_sentence > len(desc) * 0.7:  # If last sentence is in the last 30%
+                                desc = desc[:last_sentence + 1]
+                        
+                        sections.append({
+                            "title": title.strip(),
+                            "description": desc,
+                            "key_points": [],
+                            "word_target": 100
+                        })
+                    
+                    if sections:
+                        actual_outline_data = {
+                            "sections": sections,
+                            "section_order": list(range(len(sections))),
+                        }
+                        
+                        # Build outline text from sections
+                        outline_parts = []
+                        for section in sections:
+                            title = section.get("title", "")
+                            description = section.get("description", "")
+                            if title and description:
+                                outline_parts.append(f"{title} - {description}")
+                        
+                        actual_outline_text = "\n\n".join(outline_parts)
+                        
+                        # Clean up any document references
+                        actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
+                        actual_outline_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text)
+                        actual_outline_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_outline_text)
+                        actual_outline_text = actual_outline_text.strip()
+                        
+                        logger.info(
+                            f"[OUTLINE_GENERATION] Successfully extracted {len(sections)} sections using robust extraction for user {request.user.id}"
+                        )
+                    else:
+                        raise ValueError("No valid sections found using robust extraction")
+                else:
+                    raise ValueError("No title-description pairs found in response")
+                
                 # Check if the response looks like it was truncated mid-string
                 if '"' in outline_text and outline_text.count('"') % 2 == 1:
                     # Odd number of quotes suggests truncated string
