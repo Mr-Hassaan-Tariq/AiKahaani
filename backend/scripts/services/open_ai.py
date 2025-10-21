@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Lazy client initialization to avoid import-time errors in tests
 _client = None
+_title_client = None
 
 # Compliant hook examples for prompts
 EXAMPLE_COMPLIANT_HOOKS = """
@@ -61,6 +62,16 @@ def get_openai_client():
         print(f"[OPENAI_CLIENT] Initialized with model: {settings.OPENAI_MODEL}")
         logger.info(f"[OPENAI_CLIENT] Initialized with model: {settings.OPENAI_MODEL}")
     return _client
+
+
+def get_title_generation_client():
+    """Get OpenAI client specifically for title generation, initializing it lazily"""
+    global _title_client
+    if _title_client is None:
+        _title_client = openai.OpenAI(api_key=settings.TITLE_GENERATION_API_KEY)
+        print(f"[TITLE_CLIENT] Initialized with model: {settings.TITLE_GENERATION_MODEL}")
+        logger.info(f"[TITLE_CLIENT] Initialized with model: {settings.TITLE_GENERATION_MODEL}")
+    return _title_client
 
 
 def format_storytelling_manual_for_prompt() -> str:
@@ -476,7 +487,7 @@ Make the title clickable and engaging for YouTube, and the description detailed 
         """
         start_time = time.time()
         try:
-            client = get_openai_client()
+            client = get_title_generation_client()
 
             # Build the message content
             system_prompt = OpenAIScriptService._build_title_system_prompt()
@@ -486,10 +497,10 @@ Make the title clickable and engaging for YouTube, and the description detailed 
 
             # Use Chat Completions API instead of Assistant API
             # GPT-5 and newer models use max_completion_tokens instead of max_tokens
-            model_name = settings.OPENAI_MODEL.lower()
+            model_name = settings.TITLE_GENERATION_MODEL.lower()
 
             api_params = {
-                "model": settings.OPENAI_MODEL,
+                "model": settings.TITLE_GENERATION_MODEL,
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},

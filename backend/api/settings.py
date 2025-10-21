@@ -369,3 +369,10 @@ OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
 # OpenAI Chat Completions API Configuration
 # Using GPT-5 model for all generation tasks
 OPENAI_MODEL = environ.get("OPENAI_MODEL", "gpt-4.1")
+
+######################################################################
+# Title Generation Configuration
+######################################################################
+# Separate OpenAI configuration for title generation
+TITLE_GENERATION_API_KEY = environ.get("TITLE_GENERATION_API_KEY", environ.get("OPENAI_API_KEY"))
+TITLE_GENERATION_MODEL = environ.get("TITLE_GENERATION_MODEL", "gpt-4.1")
