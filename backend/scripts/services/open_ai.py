@@ -1948,39 +1948,12 @@ Focus on making this section flow naturally from previous sections while maintai
             # Initialize conversation thread for continuous context
             conversation_messages = []
             
-            # Add system message with storytelling manual
-            storytelling_manual_formatted = format_storytelling_manual_for_prompt()
-            system_message = f"""You are an expert YouTube script writer creating engaging, human-like content section by section.
+            # Add optimized system message (no full storytelling manual - rules are in section prompts)
+            system_message = """You are an expert YouTube script writer. Generate engaging content section by section.
 
-CRITICAL JSON REQUIREMENTS:
-- You MUST respond with valid JSON only in the format: {{"content": "your script content here"}}
-- Ensure your JSON is properly formatted and complete
-- WRITE CONCISELY - you have very limited tokens (max ~1000)
-- Use short, punchy sentences to maximize impact within token limits
-- Prioritize essential content over flowery language
-- If approaching token limit, end the response gracefully
-
-STORYTELLING MANUAL:
-{storytelling_manual_formatted}
-
-WRITING REQUIREMENTS:
-- Write conversationally (use contractions, rhetorical questions)
-- Vary sentence length dramatically (3-25 words)
-- Include emotional beats and personal touches
-- Start some sentences with conjunctions ("But", "And", "So")
-- Use fragments for emphasis ("Silence. Then chaos.")
-
-FORBIDDEN PATTERNS:
-- "So here's what happened..." or "Let me tell you about..."
-- "In this video, we will..." or "Today we're going to..."
-- "First, let's start with..." or "Moving on to..."
-- Repetitive sentence structures
-
-HOOK REQUIREMENTS (first section only):
-- Start with ACTION VERB in first sentence
-- Create immediate tension or curiosity
-- Ask compelling questions or make bold statements
-- Include specific, concrete details
+CRITICAL: Respond with valid JSON only: {{"content": "your script content here"}}
+WRITE CONCISELY: Limited tokens (~1000 max). Use short, punchy sentences.
+PRIORITY: Essential content over flowery language. End gracefully if approaching limits.
 
 Build naturally on previous sections, maintaining narrative flow."""
 
@@ -2278,8 +2251,17 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
             current_messages = conversation_messages.copy()
             current_messages.append({"role": "user", "content": section_prompt})
 
-            # Calculate reasonable max tokens for the target word count
-            estimated_tokens = int(word_target * 1.2) + 300  # Increased from 0.9 to 1.2, buffer from 150 to 300
+            # Calculate section-specific max tokens for better content generation
+            if section_type.value == "hook_intro":
+                # Hooks need more tokens due to complexity and storytelling requirements
+                estimated_tokens = int(word_target * 2.5) + 600
+            elif section_type.value == "conclusion":
+                # Conclusions need more tokens for strong endings and call-to-action
+                estimated_tokens = int(word_target * 2.2) + 500
+            else:
+                # Main content sections - more generous allocation
+                estimated_tokens = int(word_target * 2.0) + 400
+            
             max_tokens = min(estimated_tokens, 4096)  # Maximum for GPT-4.1
 
             model_name = settings.OPENAI_MODEL.lower()
@@ -2322,6 +2304,13 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
 
                 tokens_used = response.usage.total_tokens if response.usage else 0
                 total_tokens += tokens_used
+                
+                # Log token usage for monitoring
+                token_percentage = (tokens_used / max_tokens) * 100 if max_tokens > 0 else 0
+                logger.info(
+                    f"[TOKENS] Section {i+1} ({section_type.value}): Used {tokens_used}/{max_tokens} tokens "
+                    f"({token_percentage:.1f}%) for {word_target} words"
+                )
 
                 # Parse JSON response
                 import json
@@ -2450,8 +2439,8 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
         Returns:
             Tuple of (content, tokens_used)
         """
-        # Calculate reasonable max tokens for the target word count
-        estimated_tokens = int(word_target * 1.8) + 800  # Increased from 1.5 to 1.8, buffer from 500 to 800
+        # Calculate more generous max tokens for better content generation
+        estimated_tokens = int(word_target * 2.2) + 600  # More generous allocation
         max_tokens = min(estimated_tokens, 4096)  # Maximum for GPT-4.1
 
         # Build context-aware system prompt
