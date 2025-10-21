@@ -177,23 +177,19 @@ class WordCountStrategy:
         
         if section_type == SectionType.HOOK_INTRO:
             return [
-                "S1", "S2", "S3", "S4", "S5", "S6", "S7",  # Opening strategies
-                "P01", "P02", "P05", "P11", "P12"  # Core principles for hooks
+                "S1", "S2", "S3", "S4", "S5", "S6", "S7"  # All opening strategies
             ]
         elif section_type == SectionType.MAIN_CONTENT:
             return [
-                "P01", "P02", "P03", "P04", "P05", "P06", "P07",  # Core principles
-                "P08", "P09", "P10", "P11", "P12", "P13", "P14", "P15", "P16", "P17",
-                "APP-01", "APP-02", "APP-03"  # Application techniques
+                "C1", "C2"  # Case studies for main content
             ]
         elif section_type == SectionType.CONCLUSION:
             return [
-                "P01", "P05", "P11", "P12",  # Transformation and stakes
-                "BONUS-02", "BONUS-04"  # Strong endings and emphasis
+                "S1", "S2"  # Use opening strategies for strong conclusions
             ]
         else:  # TRANSITION
             return [
-                "P03", "P04", "P12", "P13"  # Causality, rhythm, open loops, concision
+                "S2"  # Open loops for transitions
             ]
     
     def _determine_section_type(self, section_index: int, total_sections: int) -> SectionType:
@@ -212,7 +208,7 @@ class WordCountStrategy:
                                     section_index: int, 
                                     total_sections: int,
                                     word_target: int,
-                                    storytelling_manual: str) -> str:
+                                    storytelling_manual: str = "") -> str:
         """
         Build a section-specific prompt using relevant strategies from prompt.py
         
@@ -221,7 +217,7 @@ class WordCountStrategy:
             section_index: Current section index
             total_sections: Total number of sections
             word_target: Target word count for this section
-            storytelling_manual: Formatted storytelling manual from prompt.py
+            storytelling_manual: Deprecated parameter - filtering now happens internally
             
         Returns:
             Section-specific prompt string
@@ -238,6 +234,9 @@ class WordCountStrategy:
         
         # Section-specific instructions
         section_instructions = self._get_section_instructions(section_type, word_target)
+        
+        # Filter storytelling manual to only include relevant rules
+        filtered_manual = self._filter_storytelling_manual_for_strategies(strategies)
         
         prompt = f"""
 Generate content for: {section_title}
@@ -257,8 +256,8 @@ APPLY THESE STORYTELLING STRATEGIES:
 SPECIFIC INSTRUCTIONS FOR THIS SECTION:
 {section_instructions}
 
-STORYTELLING MANUAL REFERENCE:
-{storytelling_manual}
+RELEVANT STORYTELLING RULES:
+{filtered_manual}
 
 REQUIREMENTS:
 - Write exactly {word_target} words (±5% tolerance - STRICT REQUIREMENT)
@@ -278,6 +277,46 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
 }}
 """
         return prompt
+    
+    def _filter_storytelling_manual_for_strategies(self, strategies: List[str]) -> str:
+        """
+        Filter the storytelling manual to only include rules relevant to the given strategies
+        
+        Args:
+            strategies: List of strategy IDs (e.g., ["S1", "S2", "P01"])
+            
+        Returns:
+            Filtered storytelling manual text containing only relevant rules
+        """
+        from .prompt import prompt as storytelling_rules
+        
+        filtered_rules = []
+        
+        for rule in storytelling_rules:
+            if rule.get("id") in strategies:
+                # Format the rule for inclusion in prompt
+                rule_text = f"\n{rule['id']}: {rule['principle_rule']}"
+                rule_text += f"\nExplanation: {rule['explanation']}"
+                
+                if "framework_formula" in rule:
+                    rule_text += "\nFramework:"
+                    for step in rule["framework_formula"]:
+                        rule_text += f"\n• {step}"
+                
+                if "validators" in rule:
+                    rule_text += "\nValidators:"
+                    for validator in rule["validators"]:
+                        rule_text += f"\n• {validator}"
+                
+                if "case_study_example" in rule:
+                    rule_text += f"\nExample: {rule['case_study_example']}"
+                
+                filtered_rules.append(rule_text)
+        
+        if not filtered_rules:
+            return "No specific rules apply to this section type."
+        
+        return "\n".join(filtered_rules)
     
     def _build_strategy_guidance(self, section_type: SectionType, strategies: List[str]) -> str:
         """Build specific guidance based on strategies for the section type"""

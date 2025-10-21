@@ -2003,7 +2003,7 @@ Build naturally on previous sections, maintaining narrative flow."""
                     section_index=i,
                     total_sections=num_sections,
                     word_target=section_word_target,
-                    storytelling_manual=storytelling_manual_formatted,
+                    storytelling_manual="",  # No longer needed - filtering happens internally
                 )
 
                 # Generate section content using conversation thread
