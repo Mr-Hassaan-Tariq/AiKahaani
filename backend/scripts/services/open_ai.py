@@ -1992,6 +1992,7 @@ Build naturally on previous sections, maintaining narrative flow."""
                         section_type,
                         wc_strategy,
                         client,
+                        section_index=i,
                     )
                 )
                 
@@ -2045,6 +2046,7 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
                             section_type,
                             wc_strategy,
                             client,
+                            section_index=i,
                         )
                     )
                     section_tokens += expansion_tokens
@@ -2228,6 +2230,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
         section_type,
         wc_strategy,
         client,
+        section_index: int = 0,
     ) -> Tuple[str, int]:
         """
         Generate content for a single section using conversation thread for natural context flow
@@ -2239,6 +2242,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
             section_type: Section type for validation
             wc_strategy: Word count strategy instance
             client: OpenAI client instance
+            section_index: Index of the section (0-based) for logging purposes
         
         Returns:
             Tuple of (content, tokens_used)
@@ -2288,7 +2292,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                     
                 section_content_raw = choice.message.content
                 if not section_content_raw:
-                    logger.error(f"[CONVERSATION] OpenAI API returned empty content for section {i+1}")
+                    logger.error(f"[CONVERSATION] OpenAI API returned empty content for section {section_index+1}")
                     logger.error(f"[CONVERSATION] API Response: {response}")
                     logger.error(f"[CONVERSATION] Model: {settings.OPENAI_MODEL}")
                     logger.error(f"[CONVERSATION] Max tokens: {max_tokens}")
@@ -2300,7 +2304,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                 # Log token usage for monitoring
                 token_percentage = (tokens_used / max_tokens) * 100 if max_tokens > 0 else 0
                 logger.info(
-                    f"[TOKENS] Section {i+1} ({section_type.value}): Used {tokens_used}/{max_tokens} tokens "
+                    f"[TOKENS] Section {section_index+1} ({section_type.value}): Used {tokens_used}/{max_tokens} tokens "
                     f"({token_percentage:.1f}%) for {word_target} words - FULL TOKEN LIMIT ENABLED"
                 )
 
