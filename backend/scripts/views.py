@@ -307,442 +307,60 @@ def generate_script_outline(request):
             f"Model: {metadata.get('model', 'unknown')}"
         )
 
-        # Parse JSON response - OpenAI should always return valid JSON
-        import json
-        import re
-
+        # Use the pre-parsed outline_data directly (chunked approach returns parsed data)
         logger.debug(
-            f"[OUTLINE_GENERATION] Processing outline response for user {request.user.id}"
+            f"[OUTLINE_GENERATION] Using pre-parsed outline data for user {request.user.id}"
         )
         
-        # Check for empty response first
-        if not outline_text or not outline_text.strip():
+        # Check if outline_data is valid
+        if not outline_data or not isinstance(outline_data, dict):
             logger.error(
-                f"[OUTLINE_GENERATION] OpenAI returned empty response for user {request.user.id}"
+                f"[OUTLINE_GENERATION] Invalid outline_data structure for user {request.user.id}"
             )
-            raise ValueError(
-                "OpenAI returned empty response - this indicates an API error or rate limiting"
-            )
+            raise ValueError("Invalid outline data structure")
         
-        try:
-            # Parse JSON directly - API enforces JSON format
-            logger.debug(
-                f"[OUTLINE_GENERATION] Parsing JSON response length: {len(outline_text)}"
+        if "sections" not in outline_data:
+            logger.error(
+                f"[OUTLINE_GENERATION] Missing sections in outline_data for user {request.user.id}"
             )
-            
-            outline_json_data = json.loads(outline_text)
-            if (
-                not isinstance(outline_json_data, dict)
-                or "sections" not in outline_json_data
-            ):
-                raise ValueError("Invalid JSON structure: missing 'sections' field")
-            
-            # Extract structured data from JSON response
-            actual_outline_data = {
-                "sections": outline_json_data.get("sections", []),
-                "section_order": outline_json_data.get("section_order", []),
-            }
-            
-            # Reconstruct outline text from sections to avoid redundancy
-            sections = actual_outline_data.get("sections", [])
-            if not sections:
-                raise ValueError("Invalid JSON structure: missing 'sections' field")
-            
-            # Build outline text from sections
-            outline_parts = []
-            for section in sections:
-                title = section.get("title", "")
-                description = section.get("description", "")
-                if title and description:
-                    outline_parts.append(f"{title} - {description}")
-            
-            actual_outline_text = "\n\n".join(outline_parts)
+            raise ValueError("No sections found in outline data")
+        
+        outline_json_data = outline_data
+        
+        # Extract structured data from JSON response
+        actual_outline_data = {
+            "sections": outline_json_data.get("sections", []),
+            "section_order": outline_json_data.get("section_order", []),
+        }
+        
+        # Reconstruct outline text from sections to avoid redundancy
+        sections = actual_outline_data.get("sections", [])
+        if not sections:
+            raise ValueError("No sections found in outline data")
+        
+        # Build outline text from sections
+        outline_parts = []
+        for section in sections:
+            title = section.get("title", "")
+            description = section.get("description", "")
+            if title and description:
+                outline_parts.append(f"{title} - {description}")
+        
+        actual_outline_text = "\n\n".join(outline_parts)
 
-            # Clean up any document references
-            actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
-            actual_outline_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text)
-            actual_outline_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_outline_text)
-            actual_outline_text = actual_outline_text.strip()
-            
-            logger.info(
-                f"[OUTLINE_GENERATION] Parsed JSON outline for user {request.user.id} - "
-                       f"Sections: {len(actual_outline_data.get('sections', []))}, "
-                f"Outline text length: {len(actual_outline_text)}"
-            )
+        # Clean up any document references
+        import re
+        actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
+        actual_outline_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text)
+        actual_outline_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_outline_text)
+        actual_outline_text = actual_outline_text.strip()
+        
+        logger.info(
+            f"[OUTLINE_GENERATION] Processed outline for user {request.user.id} - "
+            f"Sections: {len(actual_outline_data.get('sections', []))}, "
+            f"Outline text length: {len(actual_outline_text)}"
+        )
                        
-        except (json.JSONDecodeError, TypeError, ValueError) as e:
-            logger.error(
-                f"[OUTLINE_GENERATION] JSON parsing failed for user {request.user.id}: {str(e)}"
-            )
-            logger.error(
-                f"[OUTLINE_GENERATION] Raw response length: {len(outline_text)}"
-            )
-            logger.error(
-                f"[OUTLINE_GENERATION] Raw response (first 500 chars): {outline_text[:500]}..."
-            )
-            
-            # Try to fix truncated JSON by attempting to complete it
-            try:
-                logger.info(
-                    f"[OUTLINE_GENERATION] Attempting to fix truncated JSON for user {request.user.id}"
-                )
-                
-                # Try to extract sections using regex if JSON is malformed
-                import re
-                
-                # First try to extract complete sections
-                sections_match = re.search(r'"sections":\s*\[(.*?)\]', outline_text, re.DOTALL)
-                if sections_match:
-                    logger.info("[OUTLINE_GENERATION] Found sections using regex extraction")
-                    sections_content = sections_match.group(1)
-                    
-                    # Try to extract individual section objects with more flexible pattern
-                    section_pattern = r'\{\s*"title":\s*"([^"]*)",\s*"description":\s*"([^"]*)"'
-                    section_matches = re.findall(section_pattern, sections_content)
-                    
-                    if section_matches:
-                        sections = []
-                        for i, (title, desc) in enumerate(section_matches):
-                            sections.append({
-                                "title": title,
-                                "description": desc,
-                                "key_points": [],
-                                "word_target": 100
-                            })
-                        
-                        actual_outline_data = {
-                            "sections": sections,
-                            "section_order": list(range(len(sections))),
-                        }
-                        
-                        # Build outline text from sections
-                        outline_parts = []
-                        for section in sections:
-                            title = section.get("title", "")
-                            description = section.get("description", "")
-                            if title and description:
-                                outline_parts.append(f"{title} - {description}")
-                        
-                        actual_outline_text = "\n\n".join(outline_parts)
-                        logger.info(f"[OUTLINE_GENERATION] Successfully extracted {len(sections)} sections using regex")
-                    else:
-                        # Try to extract from truncated JSON
-                        logger.info("[OUTLINE_GENERATION] Trying to extract from truncated JSON")
-                        # Look for any complete section objects in the response
-                        complete_sections = re.findall(r'\{\s*"title":\s*"([^"]*)",\s*"description":\s*"([^"]*)"', outline_text)
-                        if complete_sections:
-                            sections = []
-                            for i, (title, desc) in enumerate(complete_sections):
-                                sections.append({
-                                    "title": title,
-                                    "description": desc,
-                                    "key_points": [],
-                                    "word_target": 100
-                                })
-                            
-                            actual_outline_data = {
-                                "sections": sections,
-                                "section_order": list(range(len(sections))),
-                            }
-                            
-                            # Build outline text from sections
-                            outline_parts = []
-                            for section in sections:
-                                title = section.get("title", "")
-                                description = section.get("description", "")
-                                if title and description:
-                                    outline_parts.append(f"{title} - {description}")
-                            
-                            actual_outline_text = "\n\n".join(outline_parts)
-                            logger.info(f"[OUTLINE_GENERATION] Successfully extracted {len(sections)} complete sections from truncated JSON")
-                        else:
-                            raise ValueError("Could not extract any complete sections")
-                else:
-                    # Try to extract individual section objects directly from the response
-                    logger.info("[OUTLINE_GENERATION] Trying to extract sections directly from response")
-                    section_objects = re.findall(r'\{\s*"title":\s*"([^"]*)",\s*"description":\s*"([^"]*)"', outline_text)
-                    if section_objects:
-                        sections = []
-                        for i, (title, desc) in enumerate(section_objects):
-                            sections.append({
-                                "title": title,
-                                "description": desc,
-                                "key_points": [],
-                                "word_target": 100
-                            })
-                        
-                        actual_outline_data = {
-                            "sections": sections,
-                            "section_order": list(range(len(sections))),
-                        }
-                        
-                        # Build outline text from sections
-                        outline_parts = []
-                        for section in sections:
-                            title = section.get("title", "")
-                            description = section.get("description", "")
-                            if title and description:
-                                outline_parts.append(f"{title} - {description}")
-                        
-                        actual_outline_text = "\n\n".join(outline_parts)
-                        logger.info(f"[OUTLINE_GENERATION] Successfully extracted {len(sections)} sections directly from response")
-                    else:
-                        raise ValueError("No sections found in response")
-                
-                # Try a more robust extraction approach as final fallback
-                logger.info("[OUTLINE_GENERATION] Attempting robust content extraction from truncated response")
-                
-                # Extract all title-description pairs from the response, even if JSON is broken
-                import re
-                # Look for any pattern that looks like: "title": "..." followed by "description": "..."
-                title_desc_pattern = r'"title":\s*"([^"]*)"[^}]*"description":\s*"([^"]*)"'
-                matches = re.findall(title_desc_pattern, outline_text, re.DOTALL)
-                
-                if matches:
-                    logger.info(f"[OUTLINE_GENERATION] Found {len(matches)} title-description pairs using robust extraction")
-                    sections = []
-                    for i, (title, desc) in enumerate(matches):
-                        # Clean up the description (remove any trailing incomplete text)
-                        desc = desc.strip()
-                        if desc and not desc.endswith(('.', '!', '?', '"')):
-                            # If description seems truncated, try to find a natural break
-                            last_sentence = desc.rfind('.')
-                            if last_sentence > len(desc) * 0.7:  # If last sentence is in the last 30%
-                                desc = desc[:last_sentence + 1]
-                        
-                        sections.append({
-                            "title": title.strip(),
-                            "description": desc,
-                            "key_points": [],
-                            "word_target": 100
-                        })
-                    
-                    if sections:
-                        actual_outline_data = {
-                            "sections": sections,
-                            "section_order": list(range(len(sections))),
-                        }
-                        
-                        # Build outline text from sections
-                        outline_parts = []
-                        for section in sections:
-                            title = section.get("title", "")
-                            description = section.get("description", "")
-                            if title and description:
-                                outline_parts.append(f"{title} - {description}")
-                        
-                        actual_outline_text = "\n\n".join(outline_parts)
-                        
-                        # Clean up any document references
-                        actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
-                        actual_outline_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text)
-                        actual_outline_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_outline_text)
-                        actual_outline_text = actual_outline_text.strip()
-                        
-                        logger.info(
-                            f"[OUTLINE_GENERATION] Successfully extracted {len(sections)} sections using robust extraction for user {request.user.id}"
-                        )
-                    else:
-                        raise ValueError("No valid sections found using robust extraction")
-                else:
-                    raise ValueError("No title-description pairs found in response")
-                
-                # Try to repair malformed JSON using a more robust approach
-                logger.info("[OUTLINE_GENERATION] Attempting to repair malformed JSON")
-                
-                def repair_json(text):
-                    """Attempt to repair common JSON issues"""
-                    # Remove any trailing incomplete content
-                    text = text.strip()
-                    
-                    # If it ends with a comma, remove it
-                    if text.endswith(','):
-                        text = text[:-1]
-                    
-                    # Count quotes to detect unterminated strings
-                    quote_count = text.count('"')
-                    if quote_count % 2 == 1:
-                        # Odd number of quotes - find the last unclosed string
-                        last_quote = text.rfind('"')
-                        if last_quote > 0:
-                            # Check if this is the start of an incomplete string
-                            before_quote = text[:last_quote].rstrip()
-                            if before_quote.endswith(':'):
-                                # This looks like a key-value pair with incomplete value
-                                text = text[:last_quote] + '""'
-                            else:
-                                # Try to find a natural break point and close the string
-                                # Look for the last complete sentence or word boundary
-                                remaining_text = text[last_quote + 1:]
-                                if remaining_text:
-                                    # Find the last complete word or sentence
-                                    words = remaining_text.split()
-                                    if len(words) > 1:
-                                        # Take all but the last word to avoid incomplete words
-                                        complete_text = ' '.join(words[:-1])
-                                        text = text[:last_quote + 1] + complete_text + '"'
-                                    else:
-                                        # Just close the string
-                                        text = text[:last_quote + 1] + '"'
-                    
-                    # Ensure proper JSON structure closure
-                    if not text.rstrip().endswith('}'):
-                        # Count opening and closing braces
-                        open_braces = text.count('{')
-                        close_braces = text.count('}')
-                        
-                        # Add missing closing braces
-                        missing_braces = open_braces - close_braces
-                        if missing_braces > 0:
-                            text += '}' * missing_braces
-                    
-                    return text
-                
-                def repair_json_advanced(text):
-                    """Advanced JSON repair for complex cases"""
-                    # Handle unterminated strings more intelligently
-                    lines = text.split('\n')
-                    repaired_lines = []
-                    
-                    for line in lines:
-                        # Check for unterminated strings in each line
-                        quote_count = line.count('"')
-                        if quote_count % 2 == 1:
-                            # This line has an unterminated string
-                            # Try to find a natural break point
-                            last_quote = line.rfind('"')
-                            if last_quote > 0:
-                                before_quote = line[:last_quote].rstrip()
-                                after_quote = line[last_quote + 1:]
-                                
-                                if before_quote.endswith(':'):
-                                    # Key-value pair, close with empty string
-                                    repaired_line = line[:last_quote] + '""'
-                                elif after_quote.strip():
-                                    # Try to find a word boundary
-                                    words = after_quote.split()
-                                    if len(words) > 1:
-                                        # Take complete words only
-                                        complete_text = ' '.join(words[:-1])
-                                        repaired_line = line[:last_quote + 1] + complete_text + '"'
-                                    else:
-                                        # Just close the string
-                                        repaired_line = line[:last_quote + 1] + '"'
-                                else:
-                                    # Just close the string
-                                    repaired_line = line[:last_quote + 1] + '"'
-                            else:
-                                repaired_line = line + '"'
-                        else:
-                            repaired_line = line
-                        
-                        repaired_lines.append(repaired_line)
-                    
-                    return '\n'.join(repaired_lines)
-                
-                # Try multiple repair strategies
-                repair_strategies = [
-                    lambda t: repair_json(t),
-                    lambda t: repair_json_advanced(t),
-                    lambda t: repair_json(t) + '}',
-                    lambda t: repair_json_advanced(t) + '}',
-                    lambda t: repair_json(t).rstrip(',') + '}',
-                ]
-                
-                for i, strategy in enumerate(repair_strategies):
-                    try:
-                        fixed_text = strategy(outline_text)
-                        logger.info(f"[OUTLINE_GENERATION] Trying repair strategy {i + 1}")
-                        outline_json_data = json.loads(fixed_text)
-                        
-                        # Extract structured data from fixed JSON response
-                        actual_outline_data = {
-                            "sections": outline_json_data.get("sections", []),
-                            "section_order": outline_json_data.get("section_order", []),
-                        }
-                        
-                        # Build outline text from sections
-                        sections = actual_outline_data.get("sections", [])
-                        if sections:
-                            outline_parts = []
-                            for section in sections:
-                                title = section.get("title", "")
-                                description = section.get("description", "")
-                                if title and description:
-                                    outline_parts.append(f"{title} - {description}")
-                            
-                            actual_outline_text = "\n\n".join(outline_parts)
-                            
-                            # Clean up any document references
-                            actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
-                            actual_outline_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text)
-                            actual_outline_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_outline_text)
-                            actual_outline_text = actual_outline_text.strip()
-                            
-                            logger.info(
-                                f"[OUTLINE_GENERATION] Successfully repaired JSON using strategy {i + 1} for user {request.user.id} - "
-                                f"Sections: {len(sections)}, Outline text length: {len(actual_outline_text)}"
-                            )
-                            break
-                        else:
-                            continue
-                    except (json.JSONDecodeError, ValueError) as repair_error:
-                        logger.debug(f"[OUTLINE_GENERATION] Repair strategy {i + 1} failed: {str(repair_error)}")
-                        continue
-                else:
-                    # All repair strategies failed, try regex extraction as fallback
-                    logger.info("[OUTLINE_GENERATION] All JSON repair strategies failed, trying regex extraction")
-                    
-                    # Try to extract sections using a more flexible regex pattern
-                    # Look for any text that looks like section titles and descriptions
-                    section_pattern = r'"(?:title|name)":\s*"([^"]*)"[^}]*"(?:description|content)":\s*"([^"]*)"'
-                    matches = re.findall(section_pattern, outline_text, re.IGNORECASE | re.DOTALL)
-                    
-                    if matches:
-                        sections = []
-                        for i, (title, desc) in enumerate(matches):
-                            sections.append({
-                                "title": title.strip(),
-                                "description": desc.strip(),
-                                "key_points": [],
-                                "word_target": 100
-                            })
-                        
-                        if sections:
-                            actual_outline_data = {
-                                "sections": sections,
-                                "section_order": list(range(len(sections))),
-                            }
-                            
-                            # Build outline text from sections
-                            outline_parts = []
-                            for section in sections:
-                                title = section.get("title", "")
-                                description = section.get("description", "")
-                                if title and description:
-                                    outline_parts.append(f"{title} - {description}")
-                            
-                            actual_outline_text = "\n\n".join(outline_parts)
-                            
-                            # Clean up any document references
-                            actual_outline_text = re.sub(r"■[^■]*?■", "", actual_outline_text)
-                            actual_outline_text = re.sub(r"[0-9]+:\d+†[^■]*?■", "", actual_outline_text)
-                            actual_outline_text = re.sub(r"\n\s*\n\s*\n", "\n\n", actual_outline_text)
-                            actual_outline_text = actual_outline_text.strip()
-                            
-                            logger.info(
-                                f"[OUTLINE_GENERATION] Successfully extracted {len(sections)} sections using fallback regex for user {request.user.id}"
-                            )
-                        else:
-                            raise ValueError("No valid sections found using fallback regex")
-                    else:
-                        raise ValueError("All JSON repair strategies and fallback extraction failed")
-                    
-            except Exception as fix_error:
-                logger.error(
-                    f"[OUTLINE_GENERATION] Failed to fix truncated JSON for user {request.user.id}: {str(fix_error)}"
-                )
-                raise ValueError(f"OpenAI returned invalid JSON response: {str(e)}")
 
         # Generate title using assistant if not provided or if provided title is empty/whitespace
         if title and title.strip():
