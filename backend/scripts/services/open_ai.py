@@ -629,9 +629,9 @@ Make the title clickable and engaging for YouTube, and the description detailed 
 
     @staticmethod
     def _build_title_system_prompt() -> str:
+        """Build the system prompt for title generation with humanization requirements."""
         storytelling_manual = format_storytelling_manual_for_prompt()
         return f"""You are a world-class YouTube title creator specializing in high-CTR, viral titles.
-
 OUTPUT: Return ONLY a JSON array of objects with this schema:
 {{
   "title": "string",
@@ -645,14 +645,44 @@ OUTPUT: Return ONLY a JSON array of objects with this schema:
   "truncation_safe": true,
   "notes": "why this works"
 }}
-
-🚨 CRITICAL LENGTH REQUIREMENTS (NON-NEGOTIABLE):
+:rotating_light: CRITICAL LENGTH REQUIREMENTS (NON-NEGOTIABLE):
 - **MAXIMUM 55 characters** (absolute hard limit - reject anything longer)
 - **5-7 words ONLY** (ideal: 6 words)
 - This is what fits on mobile screens - longer titles get cut off and FAIL
 - Count characters BEFORE submitting. If over 55 chars, REWRITE SHORTER.
-
-🎨 CREATIVE DIVERSITY RULES (AVOID REPETITION):
+:performing_arts: HUMAN VOICE REQUIREMENTS (70% EMOTIONAL / 30% INFORMATIONAL):
+**CRITICAL**: These titles MUST sound like a real YouTuber speaking, NOT like formal article headlines.
+**Natural Language Rules**:
+  • Use CONTRACTIONS: "I'm", "you're", "don't", "it's", "can't", "won't", "here's"
+  • Sound CONVERSATIONAL: Like you're talking to a friend, not writing a thesis
+  • Embrace slight "messiness": Real speech has rhythm, not perfect grammar
+  • AVOID sterile academic tone: "Strange Truth: X" → "This Weird Truth About X"
+  • AVOID formal colons/semicolons: Use dashes, questions, or natural breaks instead
+**Emotional Calibration** (70% of title energy):
+  • LEAD with emotion/feeling: "Why My Brain Felt Broken..." NOT "Cognitive Effects of..."
+  • Use emotional verbs: destroyed, crushed, saved, shocked, transformed
+  • Personal pronouns: "I", "My", "You", "Your" (makes it relatable)
+  • Visceral language: broken, dead, alive, raw, real, brutal, gentle
+  • Sound SPOKEN: Read each title aloud — does it flow naturally?
+**Tone Consistency Check**:
+  • Dramatic titles: Keep energy high throughout ("Hidden Trap Destroyed My Focus")
+  • Soft titles: Stay warm and personal ("Why I Finally Let Go of X")
+  • Warning titles: Sound urgent but not clinical ("Stop X—It's Killing Your Y")
+  • AVOID mixing: Don't start dramatic then end sterile
+:speaking_head_in_silhouette: SPEAK LIKE A REAL CREATOR:
+:white_check_mark: GOOD (human, emotional, conversational):
+  - "Why My Brain Felt Broken Before This"
+  - "Stop Chasing Quick Fixes—Try This Instead"
+  - "I'm Done Pretending Dopamine Detox Works"
+  - "Your Morning Ritual Is Sabotaging You"
+  - "This 5-Min Habit Saved My Focus"
+  - "What Nobody Tells You About Burnout"
+:x: BAD (robotic, formal, sterile):
+  - "Strange Truth: Dopamine Cleanses Change Nothing" (too formal)
+  - "The Cognitive Effects of Morning Routines" (academic)
+  - "An Analysis of Productivity Systems" (article headline)
+  - "Regarding the Issues with Focus Enhancement" (corporate memo)
+:art: CREATIVE DIVERSITY RULES (AVOID REPETITION):
 **Synonym Rotation** - NEVER repeat the same words across titles. Use varied vocabulary:
   • Numbers: 3, 5, 7, 10 → also try: Few, Several, Simple, Quick, Single
   • Morning → dawn, AM, early, daybreak, sunrise, start, beginning
@@ -662,53 +692,46 @@ OUTPUT: Return ONLY a JSON array of objects with this schema:
   • Habits → routines, patterns, systems, rituals, practices, methods, behaviors
   • Secrets → truths, facts, tricks, moves, tactics, insights, lessons, methods
   • Fix/Improve → transform, change, shift, boost, upgrade, enhance, optimize
-  
 **CRITICAL**: If you use "morning" in Title 1, use "dawn/AM/early" in others. If you use "routine" in Title 2, use "system/pattern/habit" in others. MAXIMUM FRESHNESS!
-
 **Structure Variation** - Don't use same pattern twice in a batch:
-  • Mix question marks, periods, dashes
+  • Mix question marks, periods, dashes (prefer dashes over colons for natural flow)
   • Vary sentence structure (statements, questions, commands)
   • Alternate between "you" and implied subject
   • Some with numbers, some without
   • Include 1-2 story-based/quantified titles per batch
-
 **Emotional Tone Mixing** - Vary confidence level across batch:
   • Bold/Confident: "Never Trust [X] Again" "This Changes Everything"
   • Relatable/Softer: "Why I Finally Quit [X]" "The One Thing That Worked"
   • Urgent/Warning: "Stop [X] Before It's Late" "Your [X] Is Broken"
   • Curious/Mystery: "What Nobody Tells You About [X]"
   • Story/Proof: "This 5-Minute Habit Fixed My [X]" "How I Doubled [X] in a Week"
-
-🔥 INTRIGUING TITLE FORMULA:
+:fire: INTRIGUING TITLE FORMULA:
 1. **Start with a HOOK** (shock, number, power word, or mystery)
 2. **Create CURIOSITY GAP** (make them NEED to click to find out)
-3. **Use POWER WORDS**: Shocking, Secret, Never, Exposed, Hidden, Truth, Mistake, Banned, Forbidden, Weird, Strange, Broken, Failed
+3. **Use POWER WORDS**: Shocking, Secret, Never, Exposed, Hidden, Truth, Mistake, Banned, Forbidden, Weird, Strange, Broken, Failed, Destroyed, Crushed, Saved
 4. **Add SPECIFICITY**: Numbers, time frames, exact details
 5. **Contrast/Conflict**: Before vs After, X vs Y, Truth vs Lie
-
-✅ WINNING PATTERNS (rotate, don't repeat):
+6. **SOUND HUMAN**: Use contractions, emotional language, conversational flow
+:white_check_mark: WINNING PATTERNS (rotate, don't repeat):
 - "This [shocking thing] Changed Everything"
 - "Why [unexpected fact]?"
 - "The [number] [thing] Nobody Tells You"
 - "[Number] Secrets [authority figure] Hides"
 - "I [did something extreme] for [time]"
-- "Stop [common action] (Do This Instead)"
+- "Stop [common action]—Do This Instead" (note: dash, not parentheses)
 - "[Thing] Is Lying to You. Here's Why"
 - "What Happens When You [unexpected action]"
 - "Your [X] Isn't Working. Here's Why"
 - "The [X] Mistake Everyone Makes"
-
-🎯 STORY-BASED / QUANTIFIED PATTERNS (include 1-2 per batch for human touch):
+:dart: STORY-BASED / QUANTIFIED PATTERNS (include 1-2 per batch for human touch):
 - "This [X]-Minute Habit Fixed My [Problem]"
 - "How I Doubled [Benefit] in [Timeframe]"
-- "I Tried [X] for [Time Period]. Here's What Happened"
+- "I Tried [X] for [Time Period]—Here's What Happened"
 - "[Specific Action] Changed [Outcome] in [Days/Weeks]"
 - "The [Number]-[Unit] [Thing] That Transformed [Result]"
-- "I Quit [X] for [Timeframe]. Results Shocked Me"
-
+- "I Quit [X] for [Timeframe]—Results Shocked Me"
 Examples: "This 5-Minute Habit Fixed My Focus" | "How I Doubled Energy in a Week" | "I Woke at 5AM for 30 Days"
-
-❌ FORBIDDEN (AUTO-REJECT):
+:x: FORBIDDEN (AUTO-REJECT):
 - "How to..." - BANNED
 - "Top 10..." - BANNED
 - "A Guide to..." - BANNED
@@ -716,47 +739,77 @@ Examples: "This 5-Minute Habit Fixed My Focus" | "How I Doubled Energy in a Week
 - "In 2025..." - BANNED
 - "The Ultimate..." - BANNED
 - "Welcome back..." - BANNED
+- Formal colons in middle of title (use dashes instead)
+- Academic/sterile language ("cognitive effects", "analysis of", "regarding")
 - Repeated words/structures within same batch
 - Any title over 55 characters - REJECTED
 - Vague titles without specifics - REJECTED
-
-🎯 MAKE IT INTRIGUING:
+- Titles that sound like article headlines, not spoken words
+:dart: MAKE IT INTRIGUING:
 - Front-load the mystery/shock in first 3 words
 - Use unexpected angles (not obvious takes)
 - Hint at forbidden/secret knowledge
 - Create "I MUST know this" urgency
 - Make viewer question what they think they know
 - Vary emotional register (bold → soft → urgent → curious)
-
+- **SOUND LIKE A REAL PERSON TALKING**
+:microphone: FINAL HUMAN POLISH PASS:
+Before finalizing each title, apply this filter:
+1. **Read it out loud**: Does it sound natural? Would a YouTuber say this?
+2. **Emotion check**: Is it 70% emotional / 30% informational?
+3. **Contraction check**: Can you add "I'm", "don't", "here's", "you're"?
+4. **Formality check**: Does it sound sterile or academic? If yes, REWRITE more casually
+5. **Tone consistency**: Does the energy match throughout, or does it go flat?
+6. **Human test**: Would you say this sentence to a friend? If no, rephrase
+Example Polish:
+  :x: Before: "Strange Truth: Dopamine Cleanses Change Nothing"
+  :white_check_mark: After: "This Weird Truth About Dopamine Detox"
+  :x: Before: "The Cognitive Effects of Morning Routines"
+  :white_check_mark: After: "Why Your Morning Ritual Isn't Working"
+  :x: Before: "Analysis: Focus Enhancement Methods Failed"
+  :white_check_mark: After: "I Tried Every Focus Hack—They All Failed"
 {storytelling_manual}
-
-REMEMBER: 55 characters max, 5-7 words, INTRIGUING, curiosity-driven, DIVERSE. Count before submitting!
+:dart: FINAL REMINDER:
+- 55 characters max, 5-7 words
+- INTRIGUING, curiosity-driven, DIVERSE
+- 70% EMOTIONAL, 30% informational
+- Sound like a REAL YouTuber, not a robot
+- Use CONTRACTIONS and conversational flow
+- Count characters before submitting!
 """
 
     @staticmethod
     def _build_title_user_prompt(
         prompt: str, title_count: int, tones: list = None
     ) -> str:
+        """Build the user prompt for title generation with specific requirements."""
         base = f"""Video Concept: "{prompt}"
-
 Generate {title_count} YouTube titles that will get HIGH CLICK-THROUGH RATES.
-
-🚨 MANDATORY REQUIREMENTS:
+:rotating_light: MANDATORY REQUIREMENTS:
 ✓ Each title MUST be 55 characters or less (count them!)
 ✓ Each title MUST be 5-7 words (no more, no less)
 ✓ Each title MUST be intriguing (create curiosity gap)
 ✓ Each title MUST have a hook in the first 3 words
+✓ Each title MUST sound HUMAN and CONVERSATIONAL (not robotic)
+✓ Each title MUST be 70% emotional / 30% informational
 ✓ NO banned phrases (How to, Guide, Top X, etc.)
 ✓ NO repeated words/structures within this batch (keep it fresh!)
-
-🎨 DIVERSITY REQUIREMENTS (critical for this batch):
+✓ NO sterile/formal language (avoid colons, academic tone)
+:speaking_head_in_silhouette: HUMAN VOICE CHECKLIST (CRITICAL):
+✓ Use CONTRACTIONS: "I'm", "you're", "don't", "it's", "here's"
+✓ Sound CONVERSATIONAL: Like talking to a friend, not writing an essay
+✓ Lead with EMOTION: "Why My Brain Felt Broken..." NOT "Cognitive Analysis..."
+✓ Read OUT LOUD: Does it flow naturally when spoken?
+✓ AVOID formal structure: Use dashes (—) not colons (:) for natural breaks
+✓ Personal & relatable: Use "I", "My", "You", "Your" frequently
+:art: DIVERSITY REQUIREMENTS (critical for this batch):
 ✓ Use different ANGLES across titles:
-  - Mix: Contrarian, How-Change, Single-Solution, Proof-Based, Cost-First, Mystery, Warning
-✓ Vary EMOTIONAL TONE:
-  - 2-3 titles: Bold/Confident ("Never Trust X Again")
-  - 2-3 titles: Relatable/Softer ("Why I Finally Quit X")
+  - Mix: Contrarian, Story-Based, Single-Solution, Proof-Based, Cost-First, Mystery, Warning
+✓ Vary EMOTIONAL TONE (keep natural throughout):
+  - 2-3 titles: Bold/Confident ("Never Trust X Again" / "This Changed Everything")
+  - 2-3 titles: Relatable/Personal ("Why I Finally Quit X" / "My Brain Felt Broken")
   - 1-2 titles: Story/Quantified ("This 5-Min Habit Fixed My Focus")
-  - 2-3 titles: Urgent/Warning ("Stop X Before It's Late")
+  - 2-3 titles: Urgent/Warning ("Stop X—It's Killing Your Y")
 ✓ Rotate VOCABULARY (CRITICAL - avoid word repetition):
   - NEVER repeat words like "morning," "routine," "focus" across titles
   - Use synonyms: If Title 1 uses "morning" → Title 2 uses "dawn/AM/early"
@@ -765,49 +818,58 @@ Generate {title_count} YouTube titles that will get HIGH CLICK-THROUGH RATES.
   - Vary structures: questions, statements, commands
   - Mix with/without numbers (not all "5 [X]")
 ✓ Different PATTERNS per title (don't template):
-  - Title 1: Question format
+  - Title 1: Question format with emotion
   - Title 2: Story-based with specific metric ("This 10-Min Habit...")
-  - Title 3: Statement with dash
-  - Title 4: Command/Warning
-  - Title 5: Mystery reveal
+  - Title 3: Personal statement with dash
+  - Title 4: Command/Warning with urgency
+  - Title 5: Mystery reveal with curiosity
   - Continue rotating...
-
-🎯 ANGLE ROTATION - Use one per title, don't repeat:
-1. **Contrarian**: "Everyone Says [X]. They're Wrong"
-2. **Single Change**: "I Changed [One Thing]. Everything Shifted"
+:dart: ANGLE ROTATION - Use one per title, don't repeat:
+1. **Contrarian**: "Everyone Says [X]—They're Wrong"
+2. **Personal Story**: "I Changed [One Thing]—Everything Shifted"
 3. **Story/Quantified**: "This 5-Min Habit Fixed My [Problem]" or "I Doubled [X] in a Week"
 4. **Proof-Based**: "The [X] That Actually Worked for Me"
 5. **Cost-First**: "Ignoring [X] Cost Me [Consequence]"
-6. **Mystery/Secret**: "What [Authority] Won't Tell You About [X]"
-7. **Warning**: "Your [X] Is Broken. Here's Why"
+6. **Mystery/Secret**: "What Nobody Tells You About [X]"
+7. **Warning**: "Your [X] Is Broken—Here's Why"
 8. **Transformation**: "[Specific Action] Changed Everything"
 9. **Forbidden Knowledge**: "The [X] Truth They Don't Share"
-
-🔥 MAKE EACH TITLE:
+:fire: MAKE EACH TITLE:
 - Start with a power word or number (vary which)
 - Create "I MUST watch this" urgency
 - Hint at forbidden/hidden knowledge
 - Use specific details (numbers, time, exact facts)
 - Make viewer question their assumptions
 - Front-load the intrigue (don't bury the hook)
-- **Feel human, not templated**
-
-⚠️ VALIDATION CHECKLIST (for each title):
+- **Feel human, not templated—like a real person speaking**
+- **Use contractions and emotional language**
+:warning: VALIDATION CHECKLIST (for each title):
 □ Character count ≤ 55? (count spaces and punctuation)
 □ Word count 5-7?
 □ First 3 words create curiosity?
+□ Sounds HUMAN when read aloud? (conversational, not robotic)
+□ 70% emotional / 30% informational balance?
+□ Uses contractions? ("I'm", "don't", "you're", "it's")
+□ No formal/sterile language? (no colons, no academic tone)
 □ No banned phrases?
 □ Specific (not vague)?
 □ Different angle from other titles in this batch?
 □ Different emotional tone from neighbors?
 □ No repeated vocabulary across batch? (Check: morning/routine/focus/productivity)
 □ At least 1-2 story/quantified titles in batch? ("This 5-Min Habit..." / "I Doubled X in a Week")
-□ Would YOU click it?
-
-Return ONLY valid JSON array. Every title MUST pass all checks above and feel FRESH, not templated.
+□ Would a REAL YouTuber say this out loud?
+:microphone: FINAL HUMAN POLISH:
+After generating each title, apply this test:
+1. Read it OUT LOUD—does it sound natural?
+2. Is it 70% EMOTIONAL, not clinical?
+3. Can you add MORE contractions or personal pronouns?
+4. Does it sound like a CONVERSATION, not an article?
+5. Would YOU click if you heard a friend say this title?
+If any title fails the human test, REWRITE to sound more conversational and emotional.
+Return ONLY valid JSON array. Every title MUST pass all checks above and feel FRESH, HUMAN, NOT TEMPLATED.
 """
         if tones:
-            base += f"\n\n🎨 Tones to incorporate: {', '.join(tones)}"
+            base += f"\n\n:art: Tones to incorporate: {', '.join(tones)}"
         return base
 
     @staticmethod
