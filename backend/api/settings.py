@@ -368,4 +368,4 @@ OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
 
 # OpenAI Chat Completions API Configuration
 # Using GPT-5 model for all generation tasks
-OPENAI_MODEL = environ.get("OPENAI_MODEL", "gpt-5")
+OPENAI_MODEL = environ.get("OPENAI_MODEL", "gpt-4.1")

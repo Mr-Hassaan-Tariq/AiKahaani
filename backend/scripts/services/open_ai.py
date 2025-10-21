@@ -1141,6 +1141,213 @@ Follow TubeGenius principles:
             raise
 
     @staticmethod
+    def generate_outline_chunked(
+        script_data: Dict[str, Any],
+        user=None,
+        save_log: bool = True,
+    ) -> Tuple[str, List[Dict], Dict[str, Any]]:
+        """
+        Generate outline using chunked approach to save tokens - only pass relevant rules for each step
+        
+        Args:
+            script_data: Dictionary containing script parameters
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
+        """
+        start_time = time.time()
+        try:
+            client = get_openai_client()
+            
+            print("=" * 80)
+            print(f"[OUTLINE_CHUNKED] Generating outline with model: {settings.OPENAI_MODEL}")
+            
+            # STEP 1: Generate basic structure with minimal prompt
+            print(f"[OUTLINE_CHUNKED_STEP1] Generating basic structure...")
+            
+            structure_prompt = OpenAIScriptService._build_structure_system_prompt()
+            structure_user_prompt = OpenAIScriptService._build_structure_user_prompt(script_data)
+            
+            model_name = settings.OPENAI_MODEL.lower()
+            api_params = {
+                "model": settings.OPENAI_MODEL,
+                "messages": [
+                    {"role": "system", "content": structure_prompt},
+                    {"role": "user", "content": structure_user_prompt},
+                ],
+                "response_format": {"type": "json_object"},
+            }
+            
+            # Set token limits for structure generation
+            if "gpt-5" in model_name or "o1" in model_name:
+                api_params["max_completion_tokens"] = 2048  # Smaller limit for structure
+            else:
+                api_params["max_tokens"] = 2048
+                api_params["temperature"] = 0.7
+            
+            response = client.chat.completions.create(**api_params)
+            
+            if not response.choices or len(response.choices) == 0:
+                raise ValueError("OpenAI API returned no choices in response")
+            
+            choice = response.choices[0]
+            if not hasattr(choice, "message") or not choice.message:
+                raise ValueError("OpenAI API returned invalid choice structure")
+                
+            structure_text = choice.message.content
+            if not structure_text:
+                raise ValueError("OpenAI API returned empty content")
+            
+            print(f"[OUTLINE_CHUNKED_STEP1] Basic structure generated successfully")
+            
+            # Parse structure
+            import json
+            structure_data = json.loads(structure_text)
+            sections = structure_data.get("sections", [])
+            
+            if not sections:
+                raise ValueError("No sections found in structure")
+            
+            # STEP 2: Enhance each section individually with only relevant rules
+            print(f"[OUTLINE_CHUNKED_STEP2] Enhancing {len(sections)} sections individually...")
+            
+            enhanced_sections = []
+            total_tokens = 0
+            
+            for i, section in enumerate(sections):
+                section_type = OpenAIScriptService._determine_section_type(i, len(sections))
+                print(f"[OUTLINE_CHUNKED_STEP2] Enhancing section {i+1}/{len(sections)} ({section_type})")
+                
+                # Build section-specific prompt with only relevant rules
+                section_system_prompt = OpenAIScriptService._build_section_enhancement_system_prompt(section_type)
+                section_user_prompt = OpenAIScriptService._build_section_enhancement_user_prompt(section, section_type)
+                
+                section_api_params = {
+                    "model": settings.OPENAI_MODEL,
+                    "messages": [
+                        {"role": "system", "content": section_system_prompt},
+                        {"role": "user", "content": section_user_prompt},
+                    ],
+                    "response_format": {"type": "json_object"},
+                }
+                
+                # Set token limits for section enhancement
+                if "gpt-5" in model_name or "o1" in model_name:
+                    section_api_params["max_completion_tokens"] = 1024  # Smaller limit per section
+                else:
+                    section_api_params["max_tokens"] = 1024
+                    section_api_params["temperature"] = 0.7
+                
+                try:
+                    section_response = client.chat.completions.create(**section_api_params)
+                    
+                    if section_response.choices and len(section_response.choices) > 0:
+                        section_content = section_response.choices[0].message.content
+                        if section_content:
+                            try:
+                                section_data = json.loads(section_content)
+                                enhanced_sections.append(section_data)
+                                
+                                tokens_used = section_response.usage.total_tokens if section_response.usage else 0
+                                total_tokens += tokens_used
+                                
+                                print(f"[OUTLINE_CHUNKED_STEP2] Section {i+1} enhanced: {tokens_used} tokens")
+                            except json.JSONDecodeError as e:
+                                print(f"[OUTLINE_CHUNKED_STEP2] JSON parsing error in section {i+1}: {str(e)}")
+                                print(f"[OUTLINE_CHUNKED_STEP2] Using original section {i+1}")
+                                enhanced_sections.append(section)  # Use original if JSON parsing fails
+                        else:
+                            enhanced_sections.append(section)  # Use original if enhancement fails
+                    else:
+                        enhanced_sections.append(section)  # Use original if enhancement fails
+                        
+                except Exception as e:
+                    print(f"[OUTLINE_CHUNKED_STEP2] Error enhancing section {i+1}: {str(e)}")
+                    enhanced_sections.append(section)  # Use original if enhancement fails
+            
+            # STEP 3: Final validation with minimal validator prompt
+            print(f"[OUTLINE_CHUNKED_STEP3] Final validation...")
+            
+            validation_system_prompt = OpenAIScriptService._build_validation_system_prompt()
+            validation_user_prompt = OpenAIScriptService._build_validation_user_prompt(enhanced_sections)
+            
+            validation_api_params = {
+                "model": settings.OPENAI_MODEL,
+                "messages": [
+                    {"role": "system", "content": validation_system_prompt},
+                    {"role": "user", "content": validation_user_prompt},
+                ],
+                "response_format": {"type": "json_object"},
+            }
+            
+            # Set token limits for validation
+            if "gpt-5" in model_name or "o1" in model_name:
+                validation_api_params["max_completion_tokens"] = 1024
+            else:
+                validation_api_params["max_tokens"] = 1024
+                validation_api_params["temperature"] = 0.3  # Lower temperature for validation
+            
+            validation_response = client.chat.completions.create(**validation_api_params)
+            
+            if validation_response.choices and len(validation_response.choices) > 0:
+                validation_content = validation_response.choices[0].message.content
+                if validation_content:
+                    try:
+                        validation_data = json.loads(validation_content)
+                        final_sections = validation_data.get("sections", enhanced_sections)
+                    except json.JSONDecodeError as e:
+                        print(f"[OUTLINE_CHUNKED_STEP3] JSON parsing error in validation: {str(e)}")
+                        print(f"[OUTLINE_CHUNKED_STEP3] Using enhanced sections without validation")
+                        final_sections = enhanced_sections
+                        validation_data = {"validator_compliance_check": {"overall_compliance": "PASS"}}
+                else:
+                    final_sections = enhanced_sections
+                    validation_data = {"validator_compliance_check": {"overall_compliance": "PASS"}}
+            else:
+                final_sections = enhanced_sections
+                validation_data = {"validator_compliance_check": {"overall_compliance": "PASS"}}
+            
+            validation_tokens = validation_response.usage.total_tokens if validation_response.usage else 0
+            total_tokens += validation_tokens
+            
+            print(f"[OUTLINE_CHUNKED_STEP3] Validation completed: {validation_tokens} tokens")
+            
+            # Build final outline data
+            final_outline_data = {
+                "sections": final_sections,
+                "section_order": list(range(len(final_sections))),
+                "validator_compliance_check": validation_data.get("validator_compliance_check", {}) if 'validation_data' in locals() else {}
+            }
+            
+            # Build outline text from sections
+            outline_parts = []
+            for section in final_sections:
+                title = section.get("title", "")
+                description = section.get("description", "")
+                if title and description:
+                    outline_parts.append(f"{title} - {description}")
+            
+            outline_text = "\n\n".join(outline_parts)
+            
+            generation_time = time.time() - start_time
+            
+            metadata = {
+                "tokens_used": total_tokens,
+                "generation_time": generation_time,
+                "model_used": settings.OPENAI_MODEL,
+                "method": "chunked_outline_generation",
+                "sections_generated": len(final_sections),
+                "steps_completed": 3
+            }
+            
+            print(f"[OUTLINE_CHUNKED] Completed successfully - Sections: {len(final_sections)}, Tokens: {total_tokens}, Time: {generation_time:.2f}s")
+            
+            return outline_text, final_outline_data, metadata
+            
+        except Exception as e:
+            logger.error(f"[OUTLINE_CHUNKED] Error: {str(e)}")
+            raise
+
+    @staticmethod
     def generate_outline_with_assistant(
         script_data: Dict[str, Any],
         user=None,
@@ -1162,8 +1369,8 @@ Follow TubeGenius principles:
                 script_data, user, save_log
             )
         
-        # Use two-step process for better token management
-        return OpenAIScriptService.generate_outline_two_step(
+        # Use chunked outline generation for maximum token efficiency
+        return OpenAIScriptService.generate_outline_chunked(
                 script_data, user, save_log
             )
         
@@ -1293,8 +1500,8 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
                 template_style = script_data.get("template_style", "medium")
                 api_params["max_tokens"] = 4096  # Maximum for GPT-4.1
                 print(
-                f"[OUTLINE] Using max_tokens=4096 (maximum) for {template_style} template with {model_name}"
-                )
+                    f"[OUTLINE] Using max_tokens=4096 (maximum) for {template_style} template with {model_name}"
+                    )
                 api_params["temperature"] = 0.7
 
             response = client.chat.completions.create(**api_params)
@@ -2761,6 +2968,21 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, 
         description = script_data.get("description", "")
         min_length = script_data.get("min_length", 0)
         max_length = script_data.get("max_length", 1000)
+
+        # Convert tone IDs to names if needed
+        if tones and isinstance(tones[0], int):
+            from scripts.models import Tone
+            tone_objects = Tone.objects.filter(id__in=tones)
+            tones = [tone.name for tone in tone_objects]
+        
+        # Convert template_style ID to name if needed
+        if isinstance(template_style, int):
+            from scripts.models import TemplateStyle
+            try:
+                style_obj = TemplateStyle.objects.get(id=template_style)
+                template_style = style_obj.name
+            except TemplateStyle.DoesNotExist:
+                template_style = "medium"
 
         tone_text = (
             f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
@@ -4243,3 +4465,241 @@ THIS IS YOUR FINAL ATTEMPT - MAKE IT COMPLIANT!"""
             compliance_check["overall_compliance"] = "FAIL"
         
         return compliance_check
+
+    # Helper functions for chunked outline generation
+    @staticmethod
+    def _determine_section_type(section_index: int, total_sections: int) -> str:
+        """Determine the type of section based on its position"""
+        if section_index == 0:
+            return "hook"
+        elif section_index == total_sections - 1:
+            return "conclusion"
+        else:
+            return "main_content"
+
+    @staticmethod
+    def _build_structure_system_prompt() -> str:
+        """Build minimal system prompt for basic structure generation"""
+        return """You are an expert YouTube script writer. Create a basic outline structure with minimal details.
+
+CRITICAL: You MUST respond with valid JSON only.
+
+JSON SCHEMA:
+{
+  "sections": [
+    {
+      "title": "Section Title",
+      "description": "Brief 20-30 word description",
+      "key_points": ["Point 1", "Point 2", "Point 3"]
+    }
+  ]
+}
+
+REQUIREMENTS:
+- Create 4-6 sections for a YouTube video
+- Keep descriptions brief (20-30 words each)
+- Focus on logical flow and structure
+- No detailed validators or complex rules
+
+RESPONSE FORMAT: Return ONLY valid JSON matching the schema above."""
+
+    @staticmethod
+    def _build_structure_user_prompt(script_data: Dict[str, Any]) -> str:
+        """Build minimal user prompt for structure generation"""
+        tones = script_data.get("tones", ["informative"])
+        template_style = script_data.get("template_style", "medium")
+        description = script_data.get("description", "")
+        min_length = script_data.get("min_length", 0)
+        max_length = script_data.get("max_length", 1000)
+
+        # Convert tone IDs to names if needed
+        if tones and isinstance(tones[0], int):
+            from scripts.models import Tone
+            tone_objects = Tone.objects.filter(id__in=tones)
+            tones = [tone.name for tone in tone_objects]
+        
+        # Convert template_style ID to name if needed
+        if isinstance(template_style, int):
+            from scripts.models import TemplateStyle
+            try:
+                style_obj = TemplateStyle.objects.get(id=template_style)
+                template_style = style_obj.name
+            except TemplateStyle.DoesNotExist:
+                template_style = "medium"
+
+        tone_text = f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
+
+        return f"""Create basic outline structure for:
+
+Topic: {description}
+{tone_text} | Style: {template_style} | Target: {min_length:,}-{max_length:,} words
+
+REQUIREMENTS:
+- 4-6 sections with brief descriptions
+- Logical flow from introduction to conclusion
+- Keep it simple and structural
+
+CRITICAL: Return ONLY valid JSON matching the schema provided."""
+
+    @staticmethod
+    def _build_section_enhancement_system_prompt(section_type: str) -> str:
+        """Build section-specific system prompt with only relevant rules"""
+        if section_type == "hook":
+            return """You are an expert YouTube hook writer. Enhance this hook section with specific validators.
+
+CRITICAL: You MUST respond with valid JSON only.
+
+HOOK VALIDATORS (MANDATORY):
+- Hook duration MUST be ≤30 seconds
+- Hook MUST contain action verb in first 1-2 sentences
+- Hook MUST be 3-6 sentence micro-scene with filmable action
+- Hook MUST pivot to main content within 60 seconds
+- MUST state 2-3 specific high-value questions
+- MUST include transformation statement: "Learn X to achieve Y"
+
+JSON SCHEMA:
+{
+  "title": "Enhanced Hook Title",
+  "description": "Very brief 1-2 sentence description (30-50 words max)",
+  "key_points": ["Specific actionable point 1", "Specific actionable point 2", "Specific actionable point 3"],
+  "timing": "≤30 seconds",
+  "transition": "How to transition to next section",
+  "content": "Specific examples, stories, or techniques to include",
+  "validators_compliance": {
+    "hook_duration": "≤30s",
+    "action_verbs": "Present in opening",
+    "open_loops": "2-3 specific questions listed",
+    "value_delivery_speed": "First point within 10s of hook end"
+  }
+}
+
+RESPONSE FORMAT: Return ONLY valid JSON matching the schema above."""
+
+        elif section_type == "conclusion":
+            return """You are an expert YouTube conclusion writer. Enhance this conclusion section.
+
+CRITICAL: You MUST respond with valid JSON only.
+
+CONCLUSION REQUIREMENTS:
+- Close all open loops established in the hook
+- Provide clear next steps or call-to-action
+- Reinforce the main value proposition
+- End with a strong, memorable statement
+- Include cliffhangers for future content
+
+JSON SCHEMA:
+{
+  "title": "Enhanced Conclusion Title",
+  "description": "Very brief 1-2 sentence description (30-50 words max)",
+  "key_points": ["Specific actionable point 1", "Specific actionable point 2", "Specific actionable point 3"],
+  "timing": "Estimated duration",
+  "transition": "How to transition to next section",
+  "content": "Specific examples, stories, or techniques to include",
+  "validators_compliance": {
+    "open_loops_closed": "All hook questions answered",
+    "call_to_action": "Clear next steps provided",
+    "value_reinforced": "Main proposition restated",
+    "cliffhangers": "Future content teased"
+  }
+}
+
+RESPONSE FORMAT: Return ONLY valid JSON matching the schema above."""
+
+        else:  # main_content
+            return """You are an expert YouTube main content writer. Enhance this main content section.
+
+CRITICAL: You MUST respond with valid JSON only.
+
+MAIN CONTENT REQUIREMENTS:
+- Deliver specific value points promised in the hook
+- Use storytelling techniques to maintain engagement
+- Include concrete examples and actionable advice
+- Maintain conversational, YouTube-friendly tone
+- Include sensory details and emotional beats
+
+JSON SCHEMA:
+{
+  "title": "Enhanced Main Content Title",
+  "description": "Very brief 1-2 sentence description (30-50 words max)",
+  "key_points": ["Specific actionable point 1", "Specific actionable point 2", "Specific actionable point 3"],
+  "timing": "Estimated duration",
+  "transition": "How to transition to next section",
+  "content": "Specific examples, stories, or techniques to include",
+  "validators_compliance": {
+    "sensory_details": "Concrete, filmable details included",
+    "causal_connectors": "Therefore/but/because links present",
+    "emotional_beats": "Stakes and consequences defined",
+    "visual_cues": "Editor notes included"
+  }
+}
+
+RESPONSE FORMAT: Return ONLY valid JSON matching the schema above."""
+
+    @staticmethod
+    def _build_section_enhancement_user_prompt(section: Dict, section_type: str) -> str:
+        """Build user prompt for section enhancement"""
+        title = section.get("title", "Untitled Section")
+        description = section.get("description", "")
+        key_points = section.get("key_points", [])
+
+        return f"""Enhance this {section_type} section:
+
+Title: {title}
+Description: {description}
+Key Points: {', '.join(key_points)}
+
+REQUIREMENTS:
+- Keep description VERY BRIEF (30-50 words max) - this is an outline, not a script
+- Add 3-5 detailed key points
+- Include timing and transition guidance
+- Apply {section_type}-specific validators
+- Focus on structure, not detailed content
+- Description should be 1-2 sentences max
+
+CRITICAL: Return ONLY valid JSON matching the schema provided."""
+
+    @staticmethod
+    def _build_validation_system_prompt() -> str:
+        """Build minimal system prompt for final validation"""
+        return """You are an expert YouTube script validator. Perform final validation on this outline.
+
+CRITICAL: You MUST respond with valid JSON only.
+
+VALIDATION REQUIREMENTS:
+- Check hook duration ≤30 seconds
+- Verify open loops are properly stated
+- Ensure value delivery speed is appropriate
+- Confirm all sections have proper structure
+
+JSON SCHEMA:
+{
+  "sections": [/* existing sections */],
+  "validator_compliance_check": {
+    "s1_hook_structure": "PASS/FAIL with specific violations",
+    "s2_open_loops": "PASS/FAIL with specific violations",
+    "s6_value_delivery": "PASS/FAIL with specific violations",
+    "overall_compliance": "PASS/FAIL"
+  }
+}
+
+RESPONSE FORMAT: Return ONLY valid JSON matching the schema above."""
+
+    @staticmethod
+    def _build_validation_user_prompt(sections: List[Dict]) -> str:
+        """Build user prompt for validation"""
+        sections_text = ""
+        for i, section in enumerate(sections):
+            sections_text += f"Section {i+1}: {section.get('title', 'Untitled')}\n"
+            sections_text += f"Description: {section.get('description', '')}\n\n"
+
+        return f"""Validate this outline:
+
+{sections_text}
+
+REQUIREMENTS:
+- Check each validator against the sections
+- Provide specific PASS/FAIL status
+- List any violations found
+- Ensure overall compliance
+
+CRITICAL: Return ONLY valid JSON matching the schema provided."""

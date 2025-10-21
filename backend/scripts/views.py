@@ -809,7 +809,7 @@ def generate_script_outline(request):
             section_order=default_section_order,  # Set default section order
             original_outline=actual_outline_text,
             status="generated",
-            openai_model=metadata["model"],
+            openai_model=metadata.get("model_used", metadata.get("model", "unknown")),
             tokens_used=metadata["tokens_used"],
             generation_time=metadata["generation_time"],
         )
