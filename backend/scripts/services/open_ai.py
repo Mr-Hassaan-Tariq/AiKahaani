@@ -2251,20 +2251,10 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
             current_messages = conversation_messages.copy()
             current_messages.append({"role": "user", "content": section_prompt})
 
-            # Calculate section-specific max tokens for better content generation
-            if section_type.value == "hook_intro":
-                # Hooks need more tokens due to complexity and storytelling requirements
-                estimated_tokens = int(word_target * 2.5) + 600
-            elif section_type.value == "conclusion":
-                # Conclusions need more tokens for strong endings and call-to-action
-                estimated_tokens = int(word_target * 2.2) + 500
-            else:
-                # Main content sections - more generous allocation
-                estimated_tokens = int(word_target * 2.0) + 400
-            
-            max_tokens = min(estimated_tokens, 4096)  # Maximum for GPT-4.1
-
+            # Use full token limits since each section is a separate OpenAI call
+            # No need to calculate estimated tokens - use maximum available
             model_name = settings.OPENAI_MODEL.lower()
+            
             api_params = {
                 "model": settings.OPENAI_MODEL,
                 "messages": current_messages,
@@ -2276,9 +2266,11 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
             if "gpt-5" in model_name or "o1" in model_name:
                 # GPT-5 needs more tokens - use maximum
                 api_params["max_completion_tokens"] = 8192  # Maximum for GPT-5
+                max_tokens = 8192
             else:
-                # For gpt-4.1 and other models, use max_tokens directly (no multiplication)
-                api_params["max_tokens"] = max_tokens
+                # For gpt-4.1 and other models, use full token limit
+                api_params["max_tokens"] = 4096  # Maximum for GPT-4.1
+                max_tokens = 4096
 
             try:
                 # Add delay to help with rate limiting
@@ -2309,7 +2301,7 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                 token_percentage = (tokens_used / max_tokens) * 100 if max_tokens > 0 else 0
                 logger.info(
                     f"[TOKENS] Section {i+1} ({section_type.value}): Used {tokens_used}/{max_tokens} tokens "
-                    f"({token_percentage:.1f}%) for {word_target} words"
+                    f"({token_percentage:.1f}%) for {word_target} words - FULL TOKEN LIMIT ENABLED"
                 )
 
                 # Parse JSON response
@@ -2439,9 +2431,14 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
         Returns:
             Tuple of (content, tokens_used)
         """
-        # Calculate more generous max tokens for better content generation
-        estimated_tokens = int(word_target * 2.2) + 600  # More generous allocation
-        max_tokens = min(estimated_tokens, 4096)  # Maximum for GPT-4.1
+        # Use full token limits since this is a separate OpenAI call
+        # No need to calculate estimated tokens - use maximum available
+        model_name = settings.OPENAI_MODEL.lower()
+        
+        if "gpt-5" in model_name or "o1" in model_name:
+            max_tokens = 8192  # Maximum for GPT-5
+        else:
+            max_tokens = 4096  # Maximum for GPT-4.1
 
         # Build context-aware system prompt
         system_content = f"""You are an expert YouTube script writer. CRITICAL: You must generate exactly {word_target} words (±5% tolerance). Word count is MANDATORY and non-negotiable. Count your words before responding. Failure to meet word count will result in regeneration.
@@ -3293,11 +3290,10 @@ REQUIREMENTS:
 CRITICAL: Count words before submitting - content must be {section_word_target} words minimum.
 FAILURE TO MEET WORD COUNT WILL RESULT IN REGENERATION."""
                 
-                # Calculate reasonable max tokens for the target word count
-                estimated_tokens = int(section_word_target * 1.2) + 300
-                max_tokens = min(estimated_tokens, 4096)  # Maximum for GPT-4.1
-                
+                # Use full token limits since this is a separate OpenAI call
+                # No need to calculate estimated tokens - use maximum available
                 model_name = settings.OPENAI_MODEL.lower()
+                
                 api_params = {
                     "model": settings.OPENAI_MODEL,
                     "messages": [
@@ -3310,9 +3306,11 @@ FAILURE TO MEET WORD COUNT WILL RESULT IN REGENERATION."""
                 
                 # GPT-5 and o1 models have different parameter requirements
                 if "gpt-5" in model_name or "o1" in model_name:
-                    api_params["max_completion_tokens"] = 4096  # Lower limit for sections
+                    api_params["max_completion_tokens"] = 8192  # Maximum for GPT-5
+                    max_tokens = 8192
                 else:
-                    api_params["max_tokens"] = max_tokens
+                    api_params["max_tokens"] = 4096  # Maximum for GPT-4.1
+                    max_tokens = 4096
                 
                 try:
                     response = client.chat.completions.create(**api_params)
