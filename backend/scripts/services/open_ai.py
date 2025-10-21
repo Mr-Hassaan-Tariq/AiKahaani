@@ -1164,8 +1164,8 @@ Follow TubeGenius principles:
         
         # Use two-step process for better token management
         return OpenAIScriptService.generate_outline_two_step(
-            script_data, user, save_log
-        )
+                script_data, user, save_log
+            )
         
         # Original stateless approach
         try:
@@ -1293,7 +1293,7 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
                 template_style = script_data.get("template_style", "medium")
                 api_params["max_tokens"] = 4096  # Maximum for GPT-4.1
                 print(
-                    f"[OUTLINE] Using max_tokens=4096 (maximum) for {template_style} template with {model_name}"
+                f"[OUTLINE] Using max_tokens=4096 (maximum) for {template_style} template with {model_name}"
                 )
                 api_params["temperature"] = 0.7
 
@@ -1660,7 +1660,7 @@ Focus on making this section flow naturally from previous sections while maintai
         save_log: bool = True,
     ) -> Tuple[str, List[Dict], Dict[str, Any]]:
         """
-        Generate full script using OpenAI Chat Completions API with targeted section generation
+        Generate full script using OpenAI Chat Completions API
         
         Args:
             outline_text: The outline text to generate script from
@@ -1668,177 +1668,13 @@ Focus on making this section flow naturally from previous sections while maintai
             user: User object for logging (optional)
             save_log: Whether to save run log to database (default: True)
         """
-        # Use targeted section generation for better token management
-        return OpenAIScriptService.generate_script_with_targeted_sections(
+        min_length = script_data.get("min_length", 1000)
+        max_length = script_data.get("max_length", 5000)
+        
+        # Use section-specific approach for better token management
+        return OpenAIScriptService.generate_script_section_specific(
             outline_text, script_data, user, save_log
         )
-        
-    @staticmethod
-    def generate_outline_with_context_awareness(
-            safety_buffer = int(min_length * 0.1)  # 10% buffer
-            safe_target = target_mid + safety_buffer
-            
-            # Enhanced prompt with length enforcement
-            enhanced_prompt = f"""{user_prompt}
-
-🚨 MANDATORY: {min_length:,}-{max_length:,} WORDS (Target: {safe_target:,})
-Scripts under {min_length:,} words = AUTOMATIC REJECTION
-
-SECTION LENGTH FORMULA:
-- Hook/Intro: 400-500 words
-- EACH main section: 450-550 words (80-100w intro + 3x100-120w points + 50-80w transition)
-- Conclusion/CTA: 300-400 words
-
-EXPANSION TECHNIQUES (USE ALL):
-1. Examples: Add concrete story/case for every claim (50-100w each)
-2. Analogies: Compare to familiar concepts (40-80w each)
-3. Elaborate: Turn 1 sentence into 3-4 with "what/why/how"
-4. Context: Add "why this matters" for all points
-5. Storytelling: Setup→tension→resolution for facts
-6. Engagement: Rhetorical questions, direct address
-7. Transitions: 2-3 sentence bridges between sections
-8. Background: Provide context before new concepts
-
-VERIFY: full_text field has {min_length:,}+ words before submitting."""
-            
-            # Calculate reasonable max completion tokens based on target length
-            # For a 3000 word script: ~4000 tokens for text + 2000 for JSON structure = 6000 total
-            # Add 50% buffer for safety
-            estimated_tokens = int(
-                (max_length * 1.5) + 2000
-            )  # 1.5 tokens per word + JSON overhead
-            max_tokens = min(
-                estimated_tokens, 10000
-            )  # Cap at 10k to prevent excessive usage
-            
-            # Use Chat Completions API instead of Assistant API
-            model_name = settings.OPENAI_MODEL.lower()
-            api_params = {
-                "model": settings.OPENAI_MODEL,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": enhanced_prompt},
-                ],
-                "response_format": {"type": "json_object"},
-            }
-
-            # GPT-5 and o1 models have different parameter requirements
-            if "gpt-5" in model_name or "o1" in model_name:
-                # GPT-5 needs more tokens - multiply by 2
-                api_params["max_completion_tokens"] = max_tokens * 2
-            else:
-                api_params["max_tokens"] = max_tokens
-                api_params["temperature"] = 0.7
-
-            response = client.chat.completions.create(**api_params)
-
-            logger.info(
-                f"[SCRIPT] Generated script using Chat Completions API (target: {min_length}-{max_length}w)"
-            )
-
-            # Extract content and token usage with validation
-            if not response.choices or len(response.choices) == 0:
-                raise ValueError("OpenAI API returned no choices in response")
-            
-            choice = response.choices[0]
-            if not hasattr(choice, "message") or not choice.message:
-                raise ValueError("OpenAI API returned invalid choice structure")
-                
-            script_content = choice.message.content
-            if not script_content:
-                raise ValueError(
-                    "OpenAI API returned empty content - this may indicate rate limiting or API error"
-                )
-                
-            tokens_used = response.usage.total_tokens if response.usage else 0
-
-            generation_time = time.time() - start_time
-            
-            logger.debug(
-                f"[SCRIPT] OpenAI API response validated - content length: {len(script_content)}, tokens: {tokens_used}"
-            )
-
-            # Parse script sections
-            sections = OpenAIScriptService._parse_script_sections(script_content)
-            
-            # Extract actual script text from JSON for accurate word count
-            actual_script_text = script_content  # Default to full content
-            try:
-                script_json_data = json.loads(script_content)
-                if (
-                    isinstance(script_json_data, dict)
-                    and "full_text" in script_json_data
-                ):
-                    actual_script_text = script_json_data["full_text"]
-            except json.JSONDecodeError:
-                # Not JSON, use raw content
-                pass
-            
-            # Calculate word count
-            word_count = len(actual_script_text.split())
-            is_valid, actual_word_count = OpenAIScriptService._validate_word_count(
-                actual_script_text, min_length, max_length, "Script"
-            )
-
-            # Generate unique identifiers for logging
-            thread_id = f"chat_{int(time.time())}"
-            run_id = f"run_{int(time.time())}"
-
-            # Initialize metadata first
-            metadata = {
-                "tokens_used": tokens_used,
-                "generation_time": generation_time,
-                "model": settings.OPENAI_MODEL,
-                "assistant_id": "chat-completions",
-                "vector_store_id": "none",
-                "thread_id": thread_id,
-                "run_id": run_id,
-                "file_search_used": False,
-                "word_count": word_count,
-                "length_valid": is_valid,
-            }
-            
-            # Check validator compliance for scripts
-            compliance_check = OpenAIScriptService._check_script_validator_compliance(
-                actual_script_text,
-                sections,
-                script_json_data if "script_json_data" in locals() else {},
-            )
-            
-            # Add compliance check to metadata
-            metadata["validator_compliance"] = compliance_check
-
-            # Log result (success or warning about word count)
-            if is_valid:
-                logger.info(
-                    f"[SCRIPT] ✓ Success: {word_count}w ({generation_time:.1f}s)"
-                )
-            else:
-                logger.warning(
-                    f"[SCRIPT] ⚠️ Word count mismatch: {word_count}w (target: {min_length}-{max_length}w)"
-                )
-            
-            # Save run log to database
-            if save_log:
-                OpenAIScriptService._save_run_log(
-                    user=user,
-                    thread_id=thread_id,
-                    run_id=run_id,
-                    assistant_id="chat-completions",
-                    tokens_used=tokens_used,
-                    word_count=word_count,
-                    file_search_used=False,
-                    file_search_snippets=[],
-                    run_type="script_generation",
-                    generation_time=generation_time,
-                    model=settings.OPENAI_MODEL,
-                )
-            
-            return script_content, sections, metadata
-
-        except Exception as e:
-            logger.error(f"[SCRIPT] Generation failed: {str(e)}")
-            raise
 
     @staticmethod
     def generate_script_with_word_count_strategy(
@@ -3028,11 +2864,9 @@ TASK: Enhance the basic outline by adding validators_compliance fields to each s
 CRITICAL: Return ONLY valid JSON matching the enhanced schema provided in the system prompt."""
 
     @staticmethod
-    def _build_section_specific_system_prompt(section_type: str, section_index: int, total_sections: int) -> str:
-        """Build section-specific system prompt with only relevant rules"""
-        
-        if section_index == 0:  # Hook/Intro section
-            return """You are an expert YouTube script writer specializing in hook creation. Your task is to create compelling opening sections that immediately capture viewer attention.
+    def _build_hook_system_prompt() -> str:
+        """Build minimal system prompt for hook section generation"""
+        return """You are an expert YouTube script writer specializing in hook creation. Create compelling opening sections that immediately capture viewer attention.
 
 CRITICAL: You MUST respond with valid JSON only.
 
@@ -3058,43 +2892,23 @@ VALUE DELIVERY VALIDATORS (MANDATORY - NO EXCEPTIONS):
 
 JSON SCHEMA:
 {
-  "content": "Your script content here...",
+  "content": "Your hook script content here...",
   "word_count": 450,
-  "section_type": "hook_intro"
+  "section_type": "hook_intro",
+  "validators_compliance": {
+    "hook_duration": "≤30s",
+    "action_verbs": "Present in opening",
+    "open_loops": "2-3 specific questions listed",
+    "value_delivery_speed": "First point within 10s of hook end"
+  }
 }
 
 RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, no explanations, no additional text."""
 
-        elif section_index == total_sections - 1:  # Conclusion section
-            return """You are an expert YouTube script writer specializing in conclusion creation. Your task is to create compelling closing sections that wrap up the content and drive action.
-
-CRITICAL: You MUST respond with valid JSON only.
-
-CONCLUSION REQUIREMENTS (MANDATORY):
-- Close all open loops established in the hook
-- Provide clear next steps or call-to-action
-- Reinforce the main value proposition
-- End with a strong, memorable statement
-- Include cliffhangers for future content (BONUS-02)
-
-FRAMEWORK REQUIREMENTS (MANDATORY):
-- P02: Include specific sensory details
-- P03: Use causal connectors (therefore, but, because)
-- P05/P11: Include emotional beats and stakes
-- P17: Add editor cues/visual plans
-- BONUS-02: End with cliffhangers/unresolved threads
-
-JSON SCHEMA:
-{
-  "content": "Your script content here...",
-  "word_count": 450,
-  "section_type": "conclusion"
-}
-
-RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, no explanations, no additional text."""
-
-        else:  # Main content sections
-            return """You are an expert YouTube script writer specializing in main content creation. Your task is to create engaging, value-packed sections that deliver on the hook's promises.
+    @staticmethod
+    def _build_main_content_system_prompt() -> str:
+        """Build minimal system prompt for main content section generation"""
+        return """You are an expert YouTube script writer specializing in main content creation. Create engaging, value-packed sections that deliver on the hook's promises.
 
 CRITICAL: You MUST respond with valid JSON only.
 
@@ -3118,132 +2932,62 @@ FRAMEWORK REQUIREMENTS (MANDATORY):
 
 JSON SCHEMA:
 {
-  "content": "Your script content here...",
+  "content": "Your main content script here...",
   "word_count": 450,
-  "section_type": "main_content"
+  "section_type": "main_content",
+  "validators_compliance": {
+    "sensory_details": "Concrete, filmable details included",
+    "causal_connectors": "Therefore/but/because links present",
+    "emotional_beats": "Stakes and consequences defined",
+    "visual_cues": "Editor notes included",
+    "cliffhangers": "Unresolved threads at section ends",
+    "simplified": "No tangents or unnecessary details",
+    "plain_language": "No jargon or clichés",
+    "conversational": "High-school reading level",
+    "concise": "No verbose constructions"
+  }
 }
 
 RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, no explanations, no additional text."""
 
     @staticmethod
-    def _generate_section_with_targeted_prompt(
-        section_data: Dict,
-        section_index: int,
-        total_sections: int,
-        word_target: int,
-        previous_sections: List[Dict] = None,
-        client=None
-    ) -> Tuple[str, int]:
-        """
-        Generate content for a single section using section-specific prompts with only relevant rules
-        
-        Args:
-            section_data: Section data from outline
-            section_index: Current section index
-            total_sections: Total number of sections
-            word_target: Target word count for this section
-            previous_sections: List of previously generated sections for context
-            client: OpenAI client instance
-        
-        Returns:
-            Tuple of (content, tokens_used)
-        """
-        if client is None:
-            client = get_openai_client()
-            
-        # Build section-specific system prompt (only relevant rules)
-        system_prompt = OpenAIScriptService._build_section_specific_system_prompt(
-            "section", section_index, total_sections
-        )
-        
-        # Build minimal user prompt with just section data
-        section_title = section_data.get("title", f"Section {section_index + 1}")
-        section_description = section_data.get("description", "")
-        key_points = section_data.get("key_points", [])
-        
-        # Add context from previous sections if available
-        context_text = ""
-        if previous_sections and len(previous_sections) > 0:
-            context_text = "\n\nPREVIOUS SECTIONS CONTEXT:\n"
-            for i, prev_section in enumerate(previous_sections[-2:]):  # Only last 2 sections
-                prev_title = prev_section.get("title", f"Section {i+1}")
-                prev_content = prev_section.get("content", "")
-                # Summarize previous content to save tokens
-                if len(prev_content) > 200:
-                    prev_content = prev_content[:200] + "..."
-                context_text += f"- {prev_title}: {prev_content}\n"
-        
-        user_prompt = f"""Generate content for: {section_title}
+    def _build_conclusion_system_prompt() -> str:
+        """Build minimal system prompt for conclusion section generation"""
+        return """You are an expert YouTube script writer specializing in conclusion creation. Create compelling closing sections that wrap up the content and drive action.
 
-Section Description: {section_description}
+CRITICAL: You MUST respond with valid JSON only.
 
-Key Points to Cover:
-{chr(10).join(f"• {point}" for point in key_points)}
+CONCLUSION REQUIREMENTS (MANDATORY):
+- Close all open loops established in the hook
+- Provide clear next steps or call-to-action
+- Reinforce the main value proposition
+- End with a strong, memorable statement
+- Include cliffhangers for future content (BONUS-02)
 
-Word Count Target: {word_target} words (STRICT REQUIREMENT)
+FRAMEWORK REQUIREMENTS (MANDATORY):
+- P02: Include specific sensory details
+- P03: Use causal connectors (therefore, but, because)
+- P05/P11: Include emotional beats and stakes
+- P17: Add editor cues/visual plans
+- BONUS-02: End with cliffhangers/unresolved threads
 
-Section Index: {section_index + 1} of {total_sections}{context_text}
+JSON SCHEMA:
+{
+  "content": "Your conclusion script content here...",
+  "word_count": 450,
+  "section_type": "conclusion",
+  "validators_compliance": {
+    "open_loops_closed": "All hook questions answered",
+    "call_to_action": "Clear next steps provided",
+    "value_reinforced": "Main proposition restated",
+    "cliffhangers": "Future content teased"
+  }
+}
 
-REQUIREMENTS:
-- Write exactly {word_target} words (±5% tolerance - STRICT REQUIREMENT)
-- Follow the section-specific strategies in the system prompt
-- Ensure content flows naturally and maintains engagement
-- Include specific examples, sensory details, and emotional beats
-- Write in a conversational, YouTube-friendly tone
-
-CRITICAL: Count words before submitting - content must be {word_target} words minimum.
-FAILURE TO MEET WORD COUNT WILL RESULT IN REGENERATION."""
-
-        # Calculate reasonable max tokens for the target word count
-        estimated_tokens = int(word_target * 1.2) + 300
-        max_tokens = min(estimated_tokens, 4096)  # Maximum for GPT-4.1
-
-        model_name = settings.OPENAI_MODEL.lower()
-        api_params = {
-            "model": settings.OPENAI_MODEL,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            "response_format": {"type": "json_object"},
-            "temperature": 0.7,
-        }
-
-        # GPT-5 and o1 models have different parameter requirements
-        if "gpt-5" in model_name or "o1" in model_name:
-            api_params["max_completion_tokens"] = 8192  # Maximum for GPT-5
-        else:
-            api_params["max_tokens"] = max_tokens
-
-        try:
-            response = client.chat.completions.create(**api_params)
-            
-            if not response.choices or len(response.choices) == 0:
-                raise ValueError("OpenAI API returned no choices in response")
-            
-            choice = response.choices[0]
-            if not hasattr(choice, "message") or not choice.message:
-                raise ValueError("OpenAI API returned invalid choice structure")
-                
-            content_text = choice.message.content
-            if not content_text:
-                raise ValueError("OpenAI API returned empty content")
-            
-            # Parse JSON response
-            import json
-            parsed_response = json.loads(content_text)
-            content = parsed_response.get("content", "")
-            
-            tokens_used = response.usage.total_tokens if response.usage else 0
-            
-            return content, tokens_used
-            
-        except Exception as e:
-            logger.error(f"[SECTION_TARGETED] Error generating section {section_index + 1}: {str(e)}")
-            raise
+RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, no explanations, no additional text."""
 
     @staticmethod
-    def generate_script_with_targeted_sections(
+    def generate_script_section_specific(
         outline_text: str,
         script_data: Dict[str, Any],
         user=None,
@@ -3270,7 +3014,7 @@ FAILURE TO MEET WORD COUNT WILL RESULT IN REGENERATION."""
                 raise ValueError("No sections found in outline")
             
             print("=" * 80)
-            print(f"[SCRIPT_TARGETED] Generating script with {len(sections)} sections using model: {settings.OPENAI_MODEL}")
+            print(f"[SCRIPT_SECTION_SPECIFIC] Generating script with {len(sections)} sections using model: {settings.OPENAI_MODEL}")
             
             # Calculate word targets for each section
             min_length = script_data.get("min_length", 1000)
@@ -3284,39 +3028,120 @@ FAILURE TO MEET WORD COUNT WILL RESULT IN REGENERATION."""
             total_tokens = 0
             
             for i, section in enumerate(sections):
-                # Adjust word target for first/last sections
+                # Determine section type and adjust word target
                 if i == 0:  # Hook section
                     section_word_target = max(words_per_section // 2, 200)  # Shorter hook
+                    section_type = "hook"
+                    system_prompt = OpenAIScriptService._build_hook_system_prompt()
                 elif i == len(sections) - 1:  # Conclusion section
                     section_word_target = max(words_per_section // 2, 200)  # Shorter conclusion
+                    section_type = "conclusion"
+                    system_prompt = OpenAIScriptService._build_conclusion_system_prompt()
                 else:  # Main content sections
                     section_word_target = words_per_section
+                    section_type = "main_content"
+                    system_prompt = OpenAIScriptService._build_main_content_system_prompt()
                 
-                print(f"[SCRIPT_TARGETED] Generating section {i+1}/{len(sections)}: '{section.get('title', 'Untitled')}' ({section_word_target} words)")
+                print(f"[SCRIPT_SECTION_SPECIFIC] Generating {section_type} section {i+1}/{len(sections)}: '{section.get('title', 'Untitled')}' ({section_word_target} words)")
                 
-                # Generate section using targeted prompt
-                section_content, section_tokens = OpenAIScriptService._generate_section_with_targeted_prompt(
-                    section_data=section,
-                    section_index=i,
-                    total_sections=len(sections),
-                    word_target=section_word_target,
-                    previous_sections=generated_sections,
-                    client=client
-                )
+                # Build section-specific user prompt
+                section_title = section.get("title", f"Section {i+1}")
+                section_description = section.get("description", "")
+                key_points = section.get("key_points", [])
                 
-                # Create section object
-                section_obj = {
-                    "title": section.get("title", f"Section {i+1}"),
-                    "content": section_content,
-                    "word_count": len(section_content.split()),
-                    "section_index": i,
-                    "section_type": "hook_intro" if i == 0 else "conclusion" if i == len(sections) - 1 else "main_content"
+                # Add context from previous sections if available
+                context_text = ""
+                if generated_sections and len(generated_sections) > 0:
+                    context_text = "\n\nPREVIOUS SECTIONS CONTEXT:\n"
+                    for j, prev_section in enumerate(generated_sections[-2:]):  # Only last 2 sections
+                        prev_title = prev_section.get("title", f"Section {j+1}")
+                        prev_content = prev_section.get("content", "")
+                        # Summarize previous content to save tokens
+                        if len(prev_content) > 200:
+                            prev_content = prev_content[:200] + "..."
+                        context_text += f"- {prev_title}: {prev_content}\n"
+                
+                user_prompt = f"""Generate {section_type} content for: {section_title}
+
+Section Description: {section_description}
+
+Key Points to Cover:
+{chr(10).join(f"• {point}" for point in key_points)}
+
+Word Count Target: {section_word_target} words (STRICT REQUIREMENT)
+
+Section Index: {i + 1} of {len(sections)}{context_text}
+
+REQUIREMENTS:
+- Write exactly {section_word_target} words (±5% tolerance - STRICT REQUIREMENT)
+- Follow the {section_type}-specific strategies in the system prompt
+- Ensure content flows naturally and maintains engagement
+- Include specific examples, sensory details, and emotional beats
+- Write in a conversational, YouTube-friendly tone
+
+CRITICAL: Count words before submitting - content must be {section_word_target} words minimum.
+FAILURE TO MEET WORD COUNT WILL RESULT IN REGENERATION."""
+                
+                # Calculate reasonable max tokens for the target word count
+                estimated_tokens = int(section_word_target * 1.2) + 300
+                max_tokens = min(estimated_tokens, 4096)  # Maximum for GPT-4.1
+                
+                model_name = settings.OPENAI_MODEL.lower()
+                api_params = {
+                    "model": settings.OPENAI_MODEL,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0.7,
                 }
                 
-                generated_sections.append(section_obj)
-                total_tokens += section_tokens
+                # GPT-5 and o1 models have different parameter requirements
+                if "gpt-5" in model_name or "o1" in model_name:
+                    api_params["max_completion_tokens"] = 4096  # Lower limit for sections
+                else:
+                    api_params["max_tokens"] = max_tokens
                 
-                print(f"[SCRIPT_TARGETED] Section {i+1} completed: {section_obj['word_count']} words, {section_tokens} tokens")
+                try:
+                    response = client.chat.completions.create(**api_params)
+                    
+                    if not response.choices or len(response.choices) == 0:
+                        raise ValueError("OpenAI API returned no choices in response")
+                    
+                    choice = response.choices[0]
+                    if not hasattr(choice, "message") or not choice.message:
+                        raise ValueError("OpenAI API returned invalid choice structure")
+                        
+                    content_text = choice.message.content
+                    if not content_text:
+                        raise ValueError("OpenAI API returned empty content")
+                    
+                    # Parse JSON response
+                    import json
+                    parsed_response = json.loads(content_text)
+                    content = parsed_response.get("content", "")
+                    
+                    tokens_used = response.usage.total_tokens if response.usage else 0
+                    total_tokens += tokens_used
+                    
+                    # Create section object
+                    section_obj = {
+                        "title": section_title,
+                        "content": content,
+                        "word_count": len(content.split()),
+                        "section_index": i,
+                        "section_type": section_type,
+                        "validators_compliance": parsed_response.get("validators_compliance", {})
+                    }
+                    
+                    generated_sections.append(section_obj)
+                    
+                    print(f"[SCRIPT_SECTION_SPECIFIC] {section_type.capitalize()} section {i+1} completed: {section_obj['word_count']} words, {tokens_used} tokens")
+                    
+                except Exception as e:
+                    logger.error(f"[SCRIPT_SECTION_SPECIFIC] Error generating {section_type} section {i + 1}: {str(e)}")
+                    raise
             
             # Combine all sections into full script
             full_text_parts = []
@@ -3331,18 +3156,18 @@ FAILURE TO MEET WORD COUNT WILL RESULT IN REGENERATION."""
                 "tokens_used": total_tokens,
                 "generation_time": generation_time,
                 "model_used": settings.OPENAI_MODEL,
-                "method": "targeted_section_generation",
+                "method": "section_specific_generation",
                 "sections_generated": len(generated_sections),
                 "target_length": f"{min_length}-{max_length} words",
                 "actual_length": len(full_text.split())
             }
             
-            print(f"[SCRIPT_TARGETED] Completed successfully - Sections: {len(generated_sections)}, Tokens: {total_tokens}, Time: {generation_time:.2f}s")
+            print(f"[SCRIPT_SECTION_SPECIFIC] Completed successfully - Sections: {len(generated_sections)}, Tokens: {total_tokens}, Time: {generation_time:.2f}s")
             
             return full_text, generated_sections, metadata
             
         except Exception as e:
-            logger.error(f"[SCRIPT_TARGETED] Error: {str(e)}")
+            logger.error(f"[SCRIPT_SECTION_SPECIFIC] Error: {str(e)}")
             raise
 
     @staticmethod
