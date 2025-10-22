@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.db import models
 from model_utils.models import TimeStampedModel
+from django.conf import settings
 
 User = get_user_model()
 
@@ -320,3 +321,21 @@ class OpenAIRunLog(TimeStampedModel):
             models.Index(fields=["run_id"]),
             models.Index(fields=["user", "-created"]),
         ]
+
+
+class UserTitles(TimeStampedModel):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="user_titles"
+    )
+    titles = models.JSONField(default=list)
+
+    class Meta:
+        verbose_name = "User Title"
+        verbose_name_plural = "User Titles"
+        ordering = ["-created"]
+
+    def __str__(self):
+        return f"Titles for {self.user}"

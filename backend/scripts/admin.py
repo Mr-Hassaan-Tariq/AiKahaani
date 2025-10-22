@@ -9,6 +9,7 @@ from .models import (
     TemplateStyle,
     TitleTone,
     Tone,
+    UserTitles
 )
 
 # Register your models here.
@@ -184,3 +185,11 @@ class OpenAIRunLogAdmin(admin.ModelAdmin):
         ),
         ("Timestamps", {"fields": ("created", "modified"), "classes": ("collapse",)}),
     )
+
+
+@admin.register(UserTitles)
+class UserTitlesAdmin(admin.ModelAdmin):
+    list_display = ("user", "created", "modified")
+    search_fields = ("user__username",)
+    list_filter = ("created",)
+    readonly_fields = ("created", "modified")

@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from api.mixins import MethodSpecificThrottleMixin
 from notifications.helpers import NotificationHelper
 from payments.permissions import HasActiveSubscriptionPermission
-from scripts.models import ScriptTitle, TitleTone
+from scripts.models import ScriptTitle, TitleTone, UserTitles
 from scripts.services.open_ai import OpenAIScriptService
 
 from .serializers import (
@@ -22,6 +22,7 @@ from .serializers import (
     GenerateTitlesResponseSerializer,
     TitleToneSerializer,
 )
+from scripts.utils import save_generated_titles
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +85,9 @@ class GenerateTitlesView(APIView, MethodSpecificThrottleMixin):
                 titles_count=len(title_strings),
                 prompt=prompt,
             )
+
+            # ✅ Save in UserTitles model (append unique titles)
+            save_generated_titles(request.user, title_strings)
 
             # Create notification for successful title generation
             try:
@@ -206,6 +210,9 @@ class GenerateTitlesOptimizedView(APIView, MethodSpecificThrottleMixin):
                         user_provided_title=user_title,  # Store the user provided title
                     )
 
+                # ✅ Save unique titles to UserTitles model
+                save_generated_titles(request.user, title_strings)
+
                 # Create notification for successful optimized title generation
                 try:
                     optimization_type = "script-based" if script else "title-based"
@@ -262,3 +269,54 @@ class TitleToneListView(generics.ListAPIView, MethodSpecificThrottleMixin):
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class UserTitlesListView(APIView):
+    permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
+
+    @extend_schema(
+        summary="Get all saved titles for the authenticated user",
+        description=(
+            "Retrieve all unique titles generated or optimized by the authenticated user. "
+            "Combines titles from all UserTitles records belonging to the user."
+        ),
+        responses={
+            200: OpenApiResponse(
+                description="Titles retrieved successfully",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "user": {"type": "string", "example": "john_doe"},
+                        "titles": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "example": [
+                                "How to Grow on YouTube Fast",
+                                "10 Tips for Better Thumbnails",
+                                "The Secret Behind Viral Shorts"
+                            ],
+                        },
+                    },
+                },
+            ),
+            401: OpenApiResponse(description="Authentication credentials were not provided or are invalid"),
+        },
+    )
+    def get(self, request):
+        """
+        Retrieve all titles saved for the authenticated user.
+        Returns a combined list of all unique titles across UserTitles records.
+        """
+        user = request.user
+        user_titles_qs = UserTitles.objects.filter(user=user)
+
+        all_titles = []
+        for record in user_titles_qs:
+            for title in record.titles:
+                if title not in all_titles:
+                    all_titles.append(title)
+
+        return Response(
+            {"user": user.username, "titles": all_titles},
+            status=status.HTTP_200_OK
+        )
