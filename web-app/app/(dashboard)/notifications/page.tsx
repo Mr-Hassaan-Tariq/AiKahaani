@@ -74,21 +74,20 @@ export default function NotificationsPage() {
 
   return (
     <NotificationTabs>
-      <div className="flex min-h-[42vh] flex-col">
-        {query && components[query] ? (
-          components[query]
-        ) : loading ? (
-          <div className="flex flex-1 items-center justify-center">
-            <p className="text-lg text-gray-400">Loading notifications...</p>
-          </div>
-        ) : hasNotifications ? (
-          <>
-            <div className="flex-1">
+      <div className="flex min-h-[calc(100vh-200px)] flex-1 flex-col">
+        <div className="flex-1 overflow-y-auto">
+          {query && components[query] ? (
+            components[query]
+          ) : loading ? (
+            <div className="flex flex-1 items-center justify-center">
+              <p className="text-lg text-gray-400">Loading notifications...</p>
+            </div>
+          ) : hasNotifications ? (
+            <>
               {notifications.map((item) => {
                 const scriptLink = item.metadata?.script?.link;
                 const outlineLink = item.metadata?.outline?.link;
                 const link = scriptLink || outlineLink;
-                // const label = item.metadata?.script?.label || item.metadata?.outline?.label;
                 const icon = link ? MagicPan : BellIcon;
 
                 return (
@@ -105,26 +104,30 @@ export default function NotificationsPage() {
                         prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
                       )
                     }
-                    actionText={'Use this style'}
+                    actionText="Use this style"
                     actionLink={link}
                   />
                 );
               })}
+            </>
+          ) : (
+            <div className="flex flex-1 items-center justify-center">
+              <EmptyState
+                icon={BellIcon}
+                title="You’re all caught up!"
+                description="There are no new notifications at the moment. Check back later or explore the latest features in the meantime."
+              />
             </div>
+          )}
+        </div>
 
+        {!loading && !hasNotifications && (
+          <div className="pt-4">
             <Pagination
               totalItems={totalItems}
               itemsPerPage={itemsPerPage}
               currentPage={currentPage}
               onPageChange={handlePageChange}
-            />
-          </>
-        ) : (
-          <div className="flex flex-1 items-center justify-center">
-            <EmptyState
-              icon={BellIcon}
-              title="You’re all caught up!"
-              description="There are no new notifications at the moment. Check back later or explore the latest features in the meantime."
             />
           </div>
         )}
