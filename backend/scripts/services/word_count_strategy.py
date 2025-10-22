@@ -266,6 +266,14 @@ REQUIREMENTS:
 - Include specific examples, sensory details, and emotional beats
 - Write in a conversational, YouTube-friendly tone
 
+🎭 HUMAN VOICE (ALL SECTIONS):
+- Sound like a STORYTELLER, not a mechanical narrator
+- Use contractions, natural pacing, emotional punctuation (ellipses, dashes)
+- Show HUMAN REACTIONS before exposition
+- Vary sentence rhythm: mix short punches with flowing narrative
+- Create psychological tension and anticipation
+- Make viewers FEEL before they understand
+
 CRITICAL: Count words before submitting - content must be {word_target} words minimum.
 FAILURE TO MEET WORD COUNT WILL RESULT IN REGENERATION.
 
@@ -475,26 +483,63 @@ TRANSITION EXAMPLES:
         if section_type == SectionType.HOOK_INTRO:
             return f"""
 HOOK/INTRO SPECIFIC (VALIDATOR ENFORCED):
-- Start with a dramatic, high-stakes moment
+
+🎭 HUMANIZE THE INTRO (CRITICAL):
+- Write like a STORYTELLER TEASING something incredible, not describing a movie scene
+- Sound like a narrator pulling the viewer in: "At first, it looked like nothing. But then..."
+- Add MYSTERY and ANTICIPATION: Make them NEED to know what happens next
+- Create PSYCHOLOGICAL TENSION from the first sentence
+
+✍️ NATURAL VOICE & RHYTHM:
+- Use CONTRACTIONS: "didn't", "wasn't", "couldn't", "it's"
+- Loosen grammar for realism: Short beats. Ellipses... Em dashes—like this
+- Vary sentence length dramatically: Mix 3-word punches. With longer flowing narrative sentences.
+- Less "perfect grammar," more natural spoken pacing
+- Use emotional punctuation (ellipses, dashes, short fragments)
+
+❤️ EMOTIONAL REALISM FIRST:
+- Show HUMAN REACTIONS before exposition (disbelief, fear, denial, curiosity)
+- Example: "She froze. This couldn't be real." → THEN explain what happened
+- Viewers connect with REACTIONS, not just events
+- Make them FEEL before they understand
+
+🔥 INTRIGUE LOOPS (MANDATORY):
+- Plant questions in viewer's head within FIRST MINUTE
 - Create 2-3 open-loop questions to be answered later
+- Make them psychologically unable to click away
+- Questions MUST be stated cleanly in first 30-60 seconds
+
+⚡ TECHNICAL REQUIREMENTS:
+- Start with dramatic, high-stakes moment
 - Include vivid, filmable details
-- Keep pace fast with varied sentence lengths
 - Anchor viewers within first 2 lines
 - Duration MUST be ≤30 seconds (≈{word_target//3} words)
-- CRITICAL: NO 6+ minute prologues (this is a complete failure)
+- CRITICAL: NO 6+ minute prologues (complete failure)
 - For tutorials/listicles: First value point within 10 seconds of hook end
 - MUST include transformation statement: "Learn X to achieve Y"
-- Questions MUST be stated cleanly in first 30-60 seconds
+
+Remember: STORYTELLER pulling viewers in, not mechanical AI narrator!
 """
         elif section_type == SectionType.MAIN_CONTENT:
             return f"""
 MAIN CONTENT SPECIFIC:
+
+🎭 MAINTAIN HUMAN VOICE:
+- Continue the STORYTELLER tone from the intro
+- Use contractions, natural pacing, emotional punctuation
+- Show human reactions and emotional realism throughout
+- Vary sentence rhythm: short beats mixed with flowing narrative
+- Keep psychological tension and anticipation alive
+
+📖 CONTENT DEVELOPMENT:
 - Develop each key point with examples and stories
 - Use "therefore," "but," "because" between ideas
 - Add sensory details and concrete images
 - Include emotional beats and character development
 - Maintain engagement with rhetorical questions
 - Each major point: 150-200 words
+
+Remember: Keep the human storyteller voice consistent!
 """
         elif section_type == SectionType.CONCLUSION:
             return f"""
