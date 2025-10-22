@@ -250,6 +250,8 @@ Word Count Target: {word_target} words (STRICT REQUIREMENT)
 
 Section Type: {section_type.value.replace('_', ' ').title()}
 
+🚨 IMPORTANT: The rules below reference structural concepts like "Before/Conflict/After", "Open Loops", "Chapter X". These are FRAMEWORKS to guide your narrative structure. Use them internally to shape your writing, but NEVER include them as literal labels or headings in the script output. Write natural, flowing narrative prose.
+
 APPLY THESE STORYTELLING STRATEGIES:
 {strategy_guidance}
 
@@ -338,11 +340,13 @@ CRITICAL HOOK REQUIREMENTS (S1-S7 VALIDATOR ENFORCEMENT):
 - S1: MUST pivot to main content within 60 seconds
 - S1: NO vague language like "high-stakes moment" without concrete dramatization
 - S1: NO 6+ minute atmospheric prologues (this is a CRITICAL FAILURE)
-- S2: MUST state 2-3 specific high-value questions in hook
+- S2: MUST state 2-3 specific high-value questions in hook (create open loops naturally)
 - S2: MUST include transformation statement: "Learn X to achieve Y"
 - S2: Questions MUST be stated cleanly in first 30-60 seconds
 - S2: NO questions buried in long monologues
 - S6: For tutorials/listicles: First value point MUST start within 10 seconds of hook end
+
+NOTE: Terms like "open loops", "Before/Conflict/After" are structural frameworks - use them to guide writing, but don't include as literal labels in script.
 - S6: Hook MUST be ≤30 seconds (exceptions explicitly justified)
 - S6: NO standalone 1-2 minute opening sections
 - S7: ABSOLUTELY NO channel trailers, personal updates, or CTAs
@@ -383,13 +387,13 @@ HOOK VALIDATION CHECKLIST:
 """,
                 SectionType.MAIN_CONTENT: """
 MAIN CONTENT STRATEGIES (P01-P17 ENFORCEMENT):
-- P01: EVERY section must show transformation: Before → Conflict → After
+- P01: EVERY section must show transformation: Before → Conflict → After (use as structural guide, not literal labels)
 - P02: MINIMUM 1 concrete sensory detail per section (flexible requirement)
 - P03: Link beats with "therefore," "but," "because" (not "and then")
 - P05: Create emotional progression, not just setup + mystery
 - P09: NO overdramatic phrasing - write like talking to a friend
 - P10: 8th-10th grade reading level, spoken English flow
-- P12: Plant 2-3 specific open loops per section
+- P12: Plant 2-3 specific open loops per section (create curiosity naturally, don't write "Open Loop:" as label)
 
 SENSORY DETAIL REQUIREMENTS (P02) - FLEXIBLE:
 ✅ "The smell of ozone filled the air as the machine hummed with a metallic vibration"
@@ -461,7 +465,7 @@ CONCLUSION VALIDATION CHECKLIST:
 TRANSITION STRATEGIES (P03, P04, P12, P13):
 - P03: Link beats with causal connectors ("therefore," "but," "because")
 - P04: Vary sentence length for flow and rhythm
-- P12: Plant open loops for next section with specific questions
+- P12: Plant open loops for next section with specific questions (create curiosity, not literal "Open Loop:" labels)
 - P13: Remove unnecessary words, keep concise
 
 TRANSITION EXAMPLES:
@@ -544,7 +548,7 @@ Remember: Keep the human storyteller voice consistent!
         elif section_type == SectionType.CONCLUSION:
             return f"""
 CONCLUSION SPECIFIC:
-- Resolve all open loops from earlier sections
+- Resolve all open loops from earlier sections (answer questions, not write "Open Loop:")
 - Complete the transformation arc
 - Summarize key takeaways clearly
 - End with strong, memorable statement
@@ -957,7 +961,7 @@ TRANSITION SPECIFIC:
 - Use concrete, filmable details that create immersion""",
             
             "Main content must show transformation/change (P01)": """
-- Show change: Before → Conflict → After
+- Show change: Before → Conflict → After (as narrative flow, not as literal labels)
 - Include emotional progression, not just setup + mystery
 - Add realizations, discoveries, or character development""",
             

@@ -1517,10 +1517,12 @@ HOOK/INTRO SECTION:
 • NO channel trailers, personal updates, or CTAs
 • Examples: "Sarah's phone buzzed at 3 AM..." or "The explosion shattered..."
 
+NOTE: "Open loops", "Before/Conflict/After", etc. are structural concepts to guide outline creation - they should NOT appear as literal text/labels in the final script.
+
 MAIN CONTENT SECTIONS:
-• MUST show transformation: Before → Conflict → After
+• MUST show transformation: Before → Conflict → After (as narrative flow, not as labels in text)
 • MINIMUM 3 concrete sensory details per section
-• MUST plant 2-3 specific open loops per section
+• MUST plant 2-3 specific open loops per section (create curiosity, don't write "Open Loop:")
 • Use natural, spoken English (8th-10th grade level)
 • Include emotional progression, not just setup + mystery
 • Link beats with "therefore," "but," "because"
@@ -2023,6 +2025,14 @@ Focus on making this section flow naturally from previous sections while maintai
             
             # Add optimized system message (no full storytelling manual - rules are in section prompts)
             system_message = """You are an expert YouTube script writer. Generate engaging content section by section.
+
+🚨 CRITICAL: STRUCTURAL LABELS ARE GUIDELINES, NOT OUTPUT TEXT
+• The prompts contain structural concepts like "Before/Conflict/After", "Open Loops", "Chapter X"
+• These are FRAMEWORKS to guide how you structure the narrative
+• DO NOT include these labels as literal text in the script output
+• Use these concepts internally to shape your writing, but write natural narrative prose
+• Example: Don't write "Before: Sarah was happy. Conflict: She lost her job. After: She found meaning."
+• Instead: Write a flowing narrative that naturally follows that arc without the labels
 
 🎭 HUMAN VOICE & EMOTIONAL REALISM (CRITICAL):
 • Write like a STORYTELLER pulling viewers in, not an AI describing scenes
@@ -2536,6 +2546,12 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
 
         # Build context-aware system prompt
         system_content = f"""You are an expert YouTube script writer. CRITICAL: You must generate exactly {word_target} words (±5% tolerance). Word count is MANDATORY and non-negotiable. Count your words before responding. Failure to meet word count will result in regeneration.
+
+🚨 CRITICAL: STRUCTURAL LABELS ARE GUIDELINES, NOT OUTPUT TEXT
+- Prompts will reference concepts like "Before/Conflict/After", "Open Loops", "Chapter X"
+- These are FRAMEWORKS to guide narrative structure - use them internally
+- NEVER write these as literal labels/headings in the script output
+- Write natural, flowing narrative prose that embodies these concepts without naming them
 
 CONTEXT AWARENESS: You are writing a section of a larger script. Use the previous sections as context to:
 - Maintain narrative flow and emotional continuity
@@ -3172,6 +3188,8 @@ CRITICAL: Return ONLY valid JSON matching the enhanced schema provided in the sy
 
 CRITICAL: You MUST respond with valid JSON only.
 
+🚨 IMPORTANT: Structural concepts mentioned below (like "open loops") are GUIDELINES for how to structure your writing. DO NOT include them as literal labels/headings in the script. Write natural narrative that embodies these concepts.
+
 HOOK VALIDATORS (MANDATORY - NO EXCEPTIONS):
 - Hook duration MUST be ≤30 seconds (hard cap: 60s when justified)
 - Hook MUST contain action verb in first 1-2 sentences
@@ -3213,6 +3231,8 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, 
         return """You are an expert YouTube script writer specializing in main content creation. Create engaging, value-packed sections that deliver on the hook's promises.
 
 CRITICAL: You MUST respond with valid JSON only.
+
+🚨 IMPORTANT: Structural concepts mentioned below are GUIDELINES for narrative structure. Use them internally to shape your writing, but don't include them as literal labels in the script output.
 
 MAIN CONTENT REQUIREMENTS (MANDATORY):
 - Deliver specific value points promised in the hook
@@ -3258,6 +3278,8 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, 
         return """You are an expert YouTube script writer specializing in conclusion creation. Create compelling closing sections that wrap up the content and drive action.
 
 CRITICAL: You MUST respond with valid JSON only.
+
+🚨 IMPORTANT: Structural concepts like "open loops" are GUIDELINES. Use them to shape your writing, but don't include them as literal labels in the script output.
 
 CONCLUSION REQUIREMENTS (MANDATORY):
 - Close all open loops established in the hook
@@ -3547,6 +3569,8 @@ FAILURE TO MEET REQUIREMENTS WILL RESULT IN REGENERATION!"""
 
 CRITICAL: You MUST respond with valid JSON only. The API is configured to enforce JSON output format.
 
+🚨 IMPORTANT: The validation rules below reference structural concepts like "open loops", "Before/Conflict/After", "Chapter X". These are FRAMEWORKS to guide your narrative structure. Use them to shape your writing, but NEVER include them as literal labels or headings in the script output. Write natural, flowing narrative prose.
+
 MANDATORY VALIDATOR ENFORCEMENT FOR SCRIPTS:
 Before creating any script, you MUST validate against these critical requirements:
 
@@ -3713,7 +3737,7 @@ CRITICAL: NO standalone 1-2 minute intro section after hook. Hook → Value imme
         else:
             s6_enforcement = """
 S6 NARRATIVE ENFORCEMENT:
-Use ≤60s prologue, then pivot to Chapter 1/chronological beginning.
+Use ≤60s prologue, then pivot to Chapter 1/chronological beginning. (Note: "Chapter 1" is a structural concept - don't write it as a heading in the script)
 """
         
         return f"""Generate complete script from outline below.
