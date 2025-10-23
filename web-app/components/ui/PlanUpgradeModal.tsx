@@ -394,21 +394,44 @@ function TrailWidget({ data, handleUpgrade, isTrial = false, onOpenAllPlans }: T
 
                     <Separator className="w-full bg-white/[.16]" />
 
-                    <Col className="scrollbar-hide scroll-fade-y h-40 gap-4 overflow-y-auto">
-                      {e?.features &&
-                        Object.keys(JSON.parse(e?.features)).map((feature: string) => (
-                          <Row key={feature} className="justify-normal gap-2">
-                            {JSON.parse(e?.features)[feature] ? (
-                              <CircleCheck size={24} className="text-[#00B559]" />
-                            ) : (
-                              <CircleX size={24} className="text-[#FF5050]" />
-                            )}
-                            <Text variant="base" className="capitalize text-white">
-                              {feature?.replace(/_/g, ' ')}
-                            </Text>
-                          </Row>
-                        ))}
-                    </Col>
+                    <div className="relative">
+                      <Col
+                        className="scrollbar-hide h-40 gap-4 overflow-y-auto"
+                        id="featuresScroll"
+                      >
+                        {e?.features &&
+                          Object.keys(JSON.parse(e?.features)).map((feature: string) => (
+                            <Row key={feature} className="justify-normal gap-2">
+                              {JSON.parse(e?.features)[feature] ? (
+                                <CircleCheck size={24} className="text-[#00B559]" />
+                              ) : (
+                                <CircleX size={24} className="text-[#FF5050]" />
+                              )}
+                              <Text variant="base" className="capitalize text-white">
+                                {feature?.replace(/_/g, ' ')}
+                              </Text>
+                            </Row>
+                          ))}
+                      </Col>
+
+                      <div
+                        className="absolute bottom-1 right-2 animate-bounce cursor-pointer opacity-70"
+                        onClick={() => {
+                          const el = document.getElementById('featuresScroll');
+                          if (el) el.scrollBy({ top: 80, behavior: 'smooth' });
+                        }}
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                          className="text-white"
+                        >
+                          <path d="M12 16l-6-6h12l-6 6z" />
+                        </svg>
+                      </div>
+                    </div>
 
                     <Separator className="w-full bg-white/[.16]" />
 

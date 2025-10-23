@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import PaginationClient from '../../../../components/common/PaginationClient';
 import MyScriptsList from './MyScriptsList';
 import MyScriptsTabWrapper from './MyScriptsTabWrapper';
@@ -66,15 +64,16 @@ export default function MyScriptsContent(props: Props) {
     setPageSize,
     onApplyFilters,
     onClearFilters,
+    loading,
   } = props;
 
   const renderBody = () => {
     if (activeTab === 'outlines') {
-      return <OutlinesPage initialScripts={scripts} />;
+      return <OutlinesPage initialScripts={scripts} loading={loading} />;
     }
 
     if (activeTab === 'scripts') {
-      return <ScriptsPage initialScripts={scripts} />;
+      return <ScriptsPage initialScripts={scripts} loading={loading} />;
     }
 
     // default 'all'
@@ -84,6 +83,7 @@ export default function MyScriptsContent(props: Props) {
         error={error}
         isError={!!error}
         searchQuery={searchValue}
+        loading={loading}
       />
     );
   };

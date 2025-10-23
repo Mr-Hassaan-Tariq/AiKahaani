@@ -11,6 +11,7 @@ interface MyScriptsListProps {
   error?: any;
   isError?: boolean;
   searchQuery?: string;
+  loading?: boolean;
 }
 
 export default function MyScriptsList({
@@ -18,6 +19,7 @@ export default function MyScriptsList({
   error,
   isError,
   searchQuery,
+  loading = false,
 }: MyScriptsListProps) {
   const [scripts, setScripts] = useState<ScriptGeneration[]>(initialScripts);
   const { actions } = useScriptActions();
@@ -51,7 +53,7 @@ export default function MyScriptsList({
         </div>
       )}
 
-      <ScriptList scripts={scripts} actions={actions} loading={false} emptyState={emptyState} />
+      <ScriptList scripts={scripts} actions={actions} loading={loading} emptyState={emptyState} />
     </>
   );
 }

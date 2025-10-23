@@ -10,9 +10,10 @@ import { ScriptGeneration } from 'lib/api/types';
 
 interface OutlinesPageProps {
   initialScripts?: ScriptGeneration[];
+  loading?: boolean;
 }
 
-export default function OutlinesPage({ initialScripts = [] }: OutlinesPageProps) {
+export default function OutlinesPage({ initialScripts = [], loading = false }: OutlinesPageProps) {
   const { actions } = useScriptActions();
 
   // Filter scripts to only show outlines
@@ -22,7 +23,7 @@ export default function OutlinesPage({ initialScripts = [] }: OutlinesPageProps)
     <ScriptList
       scripts={outlineScripts}
       actions={actions}
-      loading={false}
+      loading={loading}
       emptyState={
         <EmptyState
           icon={Icon}

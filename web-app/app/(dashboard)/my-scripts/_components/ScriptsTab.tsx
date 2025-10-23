@@ -33,10 +33,8 @@ export default function ScriptsTab({
   onClearFilters,
   searchValue = '',
 }: Props) {
-  // local input to support controlled input + keep parent value in sync via onSearch (debounced in wrapper)
   const [localInput, setLocalInput] = React.useState<string>(searchValue);
 
-  // keep local input synced when parent searchValue changes (for example if you clear filters)
   React.useEffect(() => {
     setLocalInput(searchValue);
   }, [searchValue]);
@@ -47,18 +45,12 @@ export default function ScriptsTab({
   }, [localInput]);
 
   const handleTabClick = (tabLabel: string) => {
-    // map tab label to our keys. We'll assume TABS_CONFIG order is stable.
     const found = TABS_CONFIG.find((t) => t.label === tabLabel);
     if (!found) return;
 
-    // derive key from path or label. If your TABS_CONFIG has a `key` it would be ideal.
-    // We'll infer:
-    const lower = found.path.includes('outlines')
-      ? 'outlines'
-      : found.path.includes('scripts')
-        ? 'scripts'
-        : 'all';
-    setActiveTab(lower as TabKey);
+    if (found.query === 'outlines') setActiveTab('outlines');
+    else if (found.query === 'scripts') setActiveTab('scripts');
+    else setActiveTab('all');
   };
 
   return (
@@ -95,12 +87,8 @@ export default function ScriptsTab({
           <Tabs
             defaultValue={TABS_CONFIG[0].label}
             value={
-              TABS_CONFIG.find((t) => {
-                // ensure active tab selected visually
-                if (activeTab === 'outlines') return t.path.includes('outlines');
-                if (activeTab === 'scripts') return t.path.includes('scripts');
-                return !t.path.includes('outlines') && !t.path.includes('scripts');
-              })?.label || TABS_CONFIG[0].label
+              TABS_CONFIG.find((t) => t.query === activeTab || (!t.query && activeTab === 'all'))
+                ?.label
             }
             className=""
           >

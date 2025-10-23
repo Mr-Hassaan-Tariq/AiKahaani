@@ -25,7 +25,7 @@ export default function SliderWidget({
 
   defaultValue?: number[];
 }) {
-  const [value, setValue] = useState(defaultValue?.[1] ?? range.default);
+  const [worldCounter, setWorldCounter] = useState(defaultValue || [range.min, range.default]);
 
   const {
     register,
@@ -36,9 +36,11 @@ export default function SliderWidget({
   const { onChange: onMaxLength } = register(MAX_LENGTH, validationSchema);
 
   useEffect(() => {
-    onMinLength({ target: { name: MIN_LENGTH, value: 0 } });
-    onMaxLength({ target: { name: MAX_LENGTH, value } });
-  }, [value]);
+    if (worldCounter) {
+      onMinLength({ target: { name: MIN_LENGTH, value: worldCounter[0] } });
+      onMaxLength({ target: { name: MAX_LENGTH, value: worldCounter[1] } });
+    }
+  }, [onMinLength, onMaxLength, worldCounter]);
 
   return (
     <Col className="gap-4">
@@ -53,9 +55,9 @@ export default function SliderWidget({
         />
       </Row>
       <Slider
-        value={[value]}
-        onValueChange={(val) => setValue(val[0])}
-        min={0}
+        defaultValue={worldCounter}
+        onValueChange={setWorldCounter}
+        min={range.min}
         max={range.max}
         step={10}
         disabled={disabled}
@@ -64,7 +66,7 @@ export default function SliderWidget({
 
       <Row>
         <Text variant="xs" className="text-[#AAACA6]">
-          {value} words
+          {worldCounter[1] - worldCounter[0]} words
         </Text>
 
         <Text variant="xs" className="text-[#AAACA6]">

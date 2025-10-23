@@ -10,9 +10,10 @@ import { ScriptGeneration } from 'lib/api/types';
 
 interface ScriptsPageProps {
   initialScripts?: ScriptGeneration[];
+  loading?: boolean;
 }
 
-export default function ScriptsPage({ initialScripts = [] }: ScriptsPageProps) {
+export default function ScriptsPage({ initialScripts = [], loading = false }: ScriptsPageProps) {
   const { actions } = useScriptActions();
 
   // Filter scripts to only show full scripts
@@ -22,7 +23,7 @@ export default function ScriptsPage({ initialScripts = [] }: ScriptsPageProps) {
     <ScriptList
       scripts={scriptScripts}
       actions={actions}
-      loading={false}
+      loading={loading}
       emptyState={
         <EmptyState
           icon={Icon}
