@@ -1511,27 +1511,31 @@ STRUCTURE: {suggested_sections} sections with specific word count targets:
 QUALITY REQUIREMENTS FOR EACH SECTION:
 
 HOOK/INTRO SECTION:
-• MUST start with action verb (not "Imagine," "Picture," "Let me")
-• MUST create 2-3 specific open loops with concrete questions
-• MUST include vivid sensory details and fast pacing
-• NO channel trailers, personal updates, or CTAs
-• Examples: "Sarah's phone buzzed at 3 AM..." or "The explosion shattered..."
+• Line 1-2: Hook with emotion or mystery - make them curious IMMEDIATELY
+• MUST create 2-3 specific open loops with concrete questions in first 30 seconds
+• Use simple, punchy language with contractions
+• NO setup or context first - jump into the moment
+• Examples: "The call came at 3 AM. She knew something was wrong." or "It started with a single message."
+• FORBIDDEN: Academic words, formal tone, "Imagine/Picture/Let me" openings
 
 NOTE: "Open loops", "Before/Conflict/After", etc. are structural concepts to guide outline creation - they should NOT appear as literal text/labels in the final script.
 
 MAIN CONTENT SECTIONS:
 • MUST show transformation: Before → Conflict → After (as narrative flow, not as labels in text)
 • MINIMUM 3 concrete sensory details per section
-• MUST plant 2-3 specific open loops per section (create curiosity, don't write "Open Loop:")
-• Use natural, spoken English (8th-10th grade level)
-• Include emotional progression, not just setup + mystery
-• Link beats with "therefore," "but," "because"
+• MUST plant 2-3 specific open loops per section (create curiosity naturally, don't write "Open Loop:" as label)
+• MUST end section with unanswered question or unresolved tension - make them want to keep watching
+• Use simple, conversational language (6th-7th grade level)
+• Include emotional reactions and realizations, not just events
+• Link ideas with simple words: "so", "but", "because", "and then" - NO "therefore", "however", "consequently"
+• Use contractions in EVERY section: it's, don't, can't, wasn't
 
 CONCLUSION SECTION:
-• End with emotional reflection or haunting unresolved question
+• End with emotional reflection or haunting question that sticks
+• Use simple, conversational language - talk like a friend
 • NO clichés like "stay curious," "stay brave," "thanks for watching"
-• Create original insights tied to transformation arc
-• Examples: "The question is: what else don't we know?"
+• Make them FEEL something or THINK about something new
+• Examples: "So what else don't we know?", "And that's the thing - we'll never really know.", "The real question is: what would you do?"
 
 EACH SECTION MUST HAVE:
 • Description: 80-150 words (NOT 1-2 sentences!)
@@ -2034,28 +2038,38 @@ Focus on making this section flow naturally from previous sections while maintai
 • Example: Don't write "Before: Sarah was happy. Conflict: She lost her job. After: She found meaning."
 • Instead: Write a flowing narrative that naturally follows that arc without the labels
 
-🎭 HUMAN VOICE & EMOTIONAL REALISM (CRITICAL):
-• Write like a STORYTELLER pulling viewers in, not an AI describing scenes
-• Use NATURAL pacing: contractions, ellipses, em dashes, short beats
-• Show HUMAN REACTIONS before exposition (disbelief, fear, denial, curiosity)
-• Loosen grammar for realism: "At first, it looked like nothing. But then..."
-• Create PSYCHOLOGICAL TENSION and anticipation in every section
-• Vary sentence length: Mix short punchy beats with flowing narrative
+🎭 LANGUAGE LEVEL - 6TH-7TH GRADE (MANDATORY):
+• A 10-year-old and an 80-year-old should both instantly understand every word
+• Use SIMPLE, PLAIN language - no academic or documentary vocabulary
+• ALWAYS use contractions: it's, don't, can't, they're, wasn't, couldn't, didn't
+• FORBIDDEN WORDS: therefore, however, consequently, thus, nevertheless, phenomenon, essentially, fundamentally, significant, moreover, furthermore, subsequently
+• USE INSTEAD: so, but, because, and, that's why, then, next, this means, here's the thing
 
-🔥 INTROS MUST:
-• Sound like a narrator TEASING something incredible
-• Add mystery and tension ("At first glance... but something was wrong")
-• Make viewers NEED to know what happens next
-• Plant intrigue loops within first minute
-• Show reactions > events (connect emotionally first)
+🔥 CONVERSATIONAL TONE (CRITICAL):
+• Write like you're TALKING to a friend, not writing an essay
+• Use short, punchy sentences mixed with natural flow
+• Start sentences with: "But here's the thing...", "And that's when...", "So...", "Now..."
+• Show EMOTION first, facts second: "She couldn't believe it. The test results were..." not "The test results indicated..."
+• Create tension in EVERY line - make them curious about the next sentence
+
+🎯 INTROS MUST HOOK IN 2 LINES:
+• Line 1: Something shocking, mysterious, or emotionally charged happens
+• Line 2: Make them need to know why/what/how
+• NO setup, NO context first - jump straight into the moment
+• Examples: "The message arrived at 3 AM. Sarah's hands shook as she read it." NOT "Sarah was a normal person until one night..."
+
+SECTION ENDINGS (MANDATORY):
+• EVERY section must end with an unanswered question or unresolved tension
+• Make them curious about what's next - create a mini-cliffhanger
+• Examples: "But that wasn't even the strangest part.", "The question is: why?", "And then everything changed."
+• NO neat conclusions - keep the loop open until the very end
 
 TECHNICAL:
 • Respond with valid JSON only: {{"content": "your script content here"}}
-• WRITE CONCISELY: Limited tokens (~1000 max). Use short, punchy sentences.
-• PRIORITY: Essential content over flowery language. End gracefully if approaching limits.
+• WRITE CONCISELY: Use short, punchy sentences. No fluff.
 • Build naturally on previous sections, maintaining narrative flow
 
-Remember: HUMAN STORYTELLER voice, not mechanical AI narrator!"""
+Remember: Talk like a FRIEND telling a story, not a narrator describing events!"""
 
             conversation_messages.append({"role": "system", "content": system_message})
             
@@ -2553,21 +2567,37 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
 - NEVER write these as literal labels/headings in the script output
 - Write natural, flowing narrative prose that embodies these concepts without naming them
 
+📚 LANGUAGE LEVEL - 6TH-7TH GRADE (MANDATORY):
+- Every word should be instantly clear to a 10-year-old or 80-year-old
+- ALWAYS use contractions: it's, don't, can't, wasn't, they're, couldn't, didn't, wasn't
+
+FORBIDDEN WORDS (Replace these):
+❌ therefore, however, consequently, thus, hence → ✅ so, but, because, and, that's why
+❌ nevertheless, moreover, furthermore → ✅ but, also, and, plus
+❌ phenomenon, subsequently, essentially → ✅ thing, then/next, basically
+❌ fundamentally, significant, substantial → ✅ really, big, huge, major
+❌ utilize, implement, commence → ✅ use, do, start
+❌ indicate, demonstrate, illustrate → ✅ show, prove, mean
+❌ ascertain, endeavor, facilitate → ✅ find out, try, help
+
+TALK LIKE THIS:
+✅ "So here's what happened..."
+✅ "But that's not the crazy part..."
+✅ "And that's when things got weird..."
+✅ "It didn't make sense..."
+- Talk like a friend telling a story over coffee, not writing an essay
+
+SECTION ENDINGS (MANDATORY):
+- END every section with curiosity or unresolved tension
+- Create mini-cliffhangers: "But that's not even the weird part.", "And then it got worse.", "The question is: why?"
+- Make them need to keep watching
+
 CONTEXT AWARENESS: You are writing a section of a larger script. Use the previous sections as context to:
 - Maintain narrative flow and emotional continuity
 - Build on previous content naturally
 - Avoid repetition of phrases or structures
-- Create smooth transitions
-- Develop the story arc progressively
-- Maintain consistent tone while adding variety
-
-HUMAN-LIKE WRITING: Write with:
-- Natural rhythm and pacing variations
-- Emotional depth and human imperfections
-- Conversational tone that feels spoken
-- Dynamic sentence lengths
-- Personal touches and authentic voice
-- Avoid AI-like repetitive patterns"""
+- Create smooth transitions with simple language
+- Keep the conversational tone consistent"""
 
         # Add previous sections context if available
         if previous_sections and len(previous_sections) > 0:

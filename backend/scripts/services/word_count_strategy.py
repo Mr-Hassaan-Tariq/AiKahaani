@@ -252,6 +252,23 @@ Section Type: {section_type.value.replace('_', ' ').title()}
 
 🚨 IMPORTANT: The rules below reference structural concepts like "Before/Conflict/After", "Open Loops", "Chapter X". These are FRAMEWORKS to guide your narrative structure. Use them internally to shape your writing, but NEVER include them as literal labels or headings in the script output. Write natural, flowing narrative prose.
 
+📚 LANGUAGE LEVEL - 6TH-7TH GRADE (MANDATORY):
+- Every word should be instantly clear to a 10-year-old or 80-year-old
+- ALWAYS use contractions: it's, don't, can't, wasn't, they're, couldn't, didn't
+
+FORBIDDEN WORDS (Replace these):
+❌ therefore, however, consequently, thus → ✅ so, but, because, that's why
+❌ nevertheless, moreover, furthermore → ✅ but, also, and, plus
+❌ phenomenon, subsequently, essentially → ✅ thing, then/next, basically
+❌ utilize, implement, commence → ✅ use, do, start
+❌ indicate, demonstrate, facilitate → ✅ show, prove, help
+
+TALK LIKE THIS:
+✅ "So here's what happened..."
+✅ "But that's not the crazy part..."
+✅ "It didn't make sense..."
+- Talk like a friend, not a documentary
+
 APPLY THESE STORYTELLING STRATEGIES:
 {strategy_guidance}
 
@@ -264,17 +281,16 @@ RELEVANT STORYTELLING RULES:
 REQUIREMENTS:
 - Write exactly {word_target} words (±5% tolerance - STRICT REQUIREMENT)
 - Follow the storytelling strategies listed above
-- Ensure content flows naturally and maintains engagement
-- Include specific examples, sensory details, and emotional beats
-- Write in a conversational, YouTube-friendly tone
+- END section with curiosity hook - unanswered question or unresolved tension
+- Include specific examples, sensory details, and emotional reactions
+- Write in simple, conversational language
 
-🎭 HUMAN VOICE (ALL SECTIONS):
-- Sound like a STORYTELLER, not a mechanical narrator
-- Use contractions, natural pacing, emotional punctuation (ellipses, dashes)
-- Show HUMAN REACTIONS before exposition
-- Vary sentence rhythm: mix short punches with flowing narrative
-- Create psychological tension and anticipation
-- Make viewers FEEL before they understand
+🎭 CONVERSATIONAL TONE (CRITICAL):
+- Talk like you're telling a story to a FRIEND, not narrating a documentary
+- Use contractions in EVERY sentence where natural
+- Start sentences with: "But here's the thing...", "And that's when...", "So...", "Now..."
+- Show EMOTION first, facts second: "She couldn't believe it." not "The results indicated..."
+- Create tension in EVERY line - make them curious about the next sentence
 
 CRITICAL: Count words before submitting - content must be {word_target} words minimum.
 FAILURE TO MEET WORD COUNT WILL RESULT IN REGENERATION.
@@ -334,17 +350,17 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
         guidance_map = {
                 SectionType.HOOK_INTRO: """
 CRITICAL HOOK REQUIREMENTS (S1-S7 VALIDATOR ENFORCEMENT):
-- S1: MUST start with ACTION VERB in first sentence (not "Imagine" or "Picture this")
+- S1: Line 1-2 must hook IMMEDIATELY with emotion or mystery - no setup first
 - S1: Hook duration MUST be ≤30 seconds (hard cap: 60s when justified)
-- S1: MUST be 3-6 sentence micro-scene with filmable action
-- S1: MUST pivot to main content within 60 seconds
-- S1: NO vague language like "high-stakes moment" without concrete dramatization
+- S1: Jump straight into the moment - use simple, punchy language with contractions
+- S1: FORBIDDEN: "Imagine", "Picture this", academic vocabulary, formal tone
 - S1: NO 6+ minute atmospheric prologues (this is a CRITICAL FAILURE)
-- S2: MUST state 2-3 specific high-value questions in hook (create open loops naturally)
-- S2: MUST include transformation statement: "Learn X to achieve Y"
+- S2: Create 2-3 unanswered questions in first 30 seconds (create curiosity naturally)
+- S2: Use simple language a 10-year-old would understand
 - S2: Questions MUST be stated cleanly in first 30-60 seconds
 - S2: NO questions buried in long monologues
 - S6: For tutorials/listicles: First value point MUST start within 10 seconds of hook end
+- LANGUAGE: 6th-7th grade level, contractions required, NO formal connector words
 
 NOTE: Terms like "open loops", "Before/Conflict/After" are structural frameworks - use them to guide writing, but don't include as literal labels in script.
 - S6: Hook MUST be ≤30 seconds (exceptions explicitly justified)
@@ -389,11 +405,13 @@ HOOK VALIDATION CHECKLIST:
 MAIN CONTENT STRATEGIES (P01-P17 ENFORCEMENT):
 - P01: EVERY section must show transformation: Before → Conflict → After (use as structural guide, not literal labels)
 - P02: MINIMUM 1 concrete sensory detail per section (flexible requirement)
-- P03: Link beats with "therefore," "but," "because" (not "and then")
-- P05: Create emotional progression, not just setup + mystery
-- P09: NO overdramatic phrasing - write like talking to a friend
-- P10: 8th-10th grade reading level, spoken English flow
+- P03: Link beats with simple words: "so", "but", "because", "and then" (NOT "therefore", "however", "consequently")
+- P05: Create emotional progression - show reactions and feelings, not just events
+- P09: NO academic or formal phrasing - write like talking to a friend over coffee
+- P10: 6th-7th grade reading level - a 10-year-old should understand every word
 - P12: Plant 2-3 specific open loops per section (create curiosity naturally, don't write "Open Loop:" as label)
+- P13: End EVERY section with unanswered question or unresolved tension to maintain engagement
+- CONTRACTIONS REQUIRED: Use it's, don't, can't, wasn't, they're in every section
 
 SENSORY DETAIL REQUIREMENTS (P02) - FLEXIBLE:
 ✅ "The smell of ozone filled the air as the machine hummed with a metallic vibration"
@@ -435,18 +453,19 @@ TRANSFORMATION CHECKLIST (P01):
 """,
             SectionType.CONCLUSION: """
 CONCLUSION REQUIREMENTS (BONUS-02/BONUS-04 ENFORCEMENT):
-- End with emotional reflection or haunting unresolved question
+- End with emotional reflection or haunting question that sticks with them
+- Use simple, conversational language - talk like a friend, not a narrator
 - NO cliché phrases like "stay curious," "stay brave," "that's all for today"
-- Create original, deeper reflection that ties to the transformation arc
-- Use strong sentence endings with key insights
+- Make them FEEL something or THINK about something new
+- Use contractions and simple words: "So what's next?", "And that's the thing..."
 
 CONCLUSION SUCCESS EXAMPLES (COPY THESE PATTERNS):
-✅ "The question is: if this happened to them, what else don't we know?"
-✅ "But the real mystery isn't what happened - it's why we're still talking about it today."
+✅ "So here's the question: if this happened to them, what else don't we know?"
+✅ "But the real mystery isn't what happened - it's why we're still talking about it."
 ✅ "Sarah never found out who sent that message. And maybe that's the point."
-✅ "The system still runs today, but nobody talks about what happened that night."
-✅ "The real question isn't what they found, but what they're still looking for."
-✅ "This changes everything we thought we knew about how the system works."
+✅ "The system still runs today. But nobody talks about what happened that night."
+✅ "The real question isn't what they found - it's what they're still looking for."
+✅ "And that changes everything we thought we knew."
 
 CONCLUSION FAILURES TO AVOID:
 ❌ "Stay curious, stay brave" (cliché)
@@ -463,16 +482,19 @@ CONCLUSION VALIDATION CHECKLIST:
 """,
             SectionType.TRANSITION: """
 TRANSITION STRATEGIES (P03, P04, P12, P13):
-- P03: Link beats with causal connectors ("therefore," "but," "because")
-- P04: Vary sentence length for flow and rhythm
-- P12: Plant open loops for next section with specific questions (create curiosity, not literal "Open Loop:" labels)
-- P13: Remove unnecessary words, keep concise
+- P03: Link beats with SIMPLE words: "so", "but", "because" (NOT "therefore", "however", "consequently")
+- P04: Vary sentence length for flow and rhythm - mix short punches with longer flow
+- P12: End with curiosity hook - make them wonder what's next (not literal "Open Loop:" labels)
+- P13: Remove unnecessary words, keep concise and punchy
+- ALWAYS use contractions: it's, don't, can't, wasn't
 
 TRANSITION EXAMPLES:
 ✅ "But this discovery led to something even more disturbing..."
-✅ "However, what happened next would change everything they thought they knew."
-✅ "The question is: why did this happen? And more importantly, what happens next?"
+✅ "And that's when things got really strange..."
+✅ "So here's the question: why did this happen? And what happens next?"
+✅ "But that's not even the weird part..."
 
+❌ "However, what happened next..." (too formal)
 ❌ "Now let's move on to..." (generic transition)
 ❌ "In the next part..." (boring setup)
 ❌ "Speaking of which..." (weak connection)
@@ -488,30 +510,29 @@ TRANSITION EXAMPLES:
             return f"""
 HOOK/INTRO SPECIFIC (VALIDATOR ENFORCED):
 
-🎭 HUMANIZE THE INTRO (CRITICAL):
-- Write like a STORYTELLER TEASING something incredible, not describing a movie scene
-- Sound like a narrator pulling the viewer in: "At first, it looked like nothing. But then..."
-- Add MYSTERY and ANTICIPATION: Make them NEED to know what happens next
-- Create PSYCHOLOGICAL TENSION from the first sentence
+🎯 HOOK IN 2 LINES (MANDATORY):
+- Line 1: Something shocking, mysterious, or emotionally charged happens
+- Line 2: Make them NEED to know why/what/how
+- NO setup, NO context first - jump straight into the moment
+- Example: "The call came at 3 AM. She knew something was wrong."
 
-✍️ NATURAL VOICE & RHYTHM:
-- Use CONTRACTIONS: "didn't", "wasn't", "couldn't", "it's"
-- Loosen grammar for realism: Short beats. Ellipses... Em dashes—like this
-- Vary sentence length dramatically: Mix 3-word punches. With longer flowing narrative sentences.
-- Less "perfect grammar," more natural spoken pacing
-- Use emotional punctuation (ellipses, dashes, short fragments)
+📚 SIMPLE LANGUAGE (6TH-7TH GRADE):
+- Use words a 10-year-old understands instantly
+- ALWAYS use contractions: it's, don't, can't, wasn't, didn't
+- FORBIDDEN: academic words, formal phrases, "therefore/however/consequently"
+- Talk like telling a friend a crazy story over coffee
 
-❤️ EMOTIONAL REALISM FIRST:
-- Show HUMAN REACTIONS before exposition (disbelief, fear, denial, curiosity)
-- Example: "She froze. This couldn't be real." → THEN explain what happened
-- Viewers connect with REACTIONS, not just events
-- Make them FEEL before they understand
+✍️ CONVERSATIONAL VOICE:
+- Short, punchy sentences mixed with natural flow
+- Start with: "So...", "But here's the thing...", "And that's when..."
+- Show EMOTION first: "She couldn't believe it." not "The results were surprising."
+- Create tension in EVERY line - make them curious about the next sentence
 
-🔥 INTRIGUE LOOPS (MANDATORY):
-- Plant questions in viewer's head within FIRST MINUTE
-- Create 2-3 open-loop questions to be answered later
-- Make them psychologically unable to click away
-- Questions MUST be stated cleanly in first 30-60 seconds
+🔥 CREATE OPEN LOOPS (MANDATORY):
+- Plant 2-3 specific open loops with concrete questions in first 30 seconds
+- Create curiosity naturally - make them wonder what happens next
+- Example: "But why did it happen? And what was she hiding?"
+- These questions should be answered later in the script
 
 ⚡ TECHNICAL REQUIREMENTS:
 - Start with dramatic, high-stakes moment
@@ -528,32 +549,37 @@ Remember: STORYTELLER pulling viewers in, not mechanical AI narrator!
             return f"""
 MAIN CONTENT SPECIFIC:
 
-🎭 MAINTAIN HUMAN VOICE:
-- Continue the STORYTELLER tone from the intro
-- Use contractions, natural pacing, emotional punctuation
-- Show human reactions and emotional realism throughout
-- Vary sentence rhythm: short beats mixed with flowing narrative
-- Keep psychological tension and anticipation alive
+📚 SIMPLE LANGUAGE (6TH-7TH GRADE):
+- Use words a 10-year-old understands - no academic vocabulary
+- ALWAYS use contractions: it's, don't, can't, wasn't
+- Link ideas with SIMPLE words: "so", "but", "because" (NOT "therefore", "however", "consequently")
+- Talk like a friend, not a documentary narrator
 
-📖 CONTENT DEVELOPMENT:
-- Develop each key point with examples and stories
-- Use "therefore," "but," "because" between ideas
-- Add sensory details and concrete images
-- Include emotional beats and character development
-- Maintain engagement with rhetorical questions
+🎭 CONVERSATIONAL TONE:
+- Show emotional reactions, not just events: "She couldn't believe it." not "The results indicated..."
+- Start sentences naturally: "So...", "But here's the thing...", "And that's when..."
+- Mix short punchy sentences with natural flow
+- Create tension in every line - make them curious about the next sentence
+
+🔥 SECTION ENDING (MANDATORY):
+- Plant 1-2 open loops at the end of section (create curiosity for what's next)
+- END every section with unanswered question or unresolved tension
+- Examples: "But that's not even the weird part.", "And then it got worse.", "The question is: why?"
+- Make them need to keep watching
 - Each major point: 150-200 words
 
-Remember: Keep the human storyteller voice consistent!
+Remember: Talk like a friend telling a story, not a narrator describing events!
 """
         elif section_type == SectionType.CONCLUSION:
             return f"""
 CONCLUSION SPECIFIC:
-- Resolve all open loops from earlier sections (answer questions, not write "Open Loop:")
-- Complete the transformation arc
-- Summarize key takeaways clearly
-- End with strong, memorable statement
-- Include call-to-action if appropriate
-- Provide closure while maintaining engagement
+- Answer the big questions raised earlier (don't write "Open Loop:")
+- Complete the story journey with emotion
+- Use simple, conversational language - talk like a friend
+- End with a haunting question or reflection that sticks
+- Examples: "So what would you do?", "And that's the thing - we'll never know."
+- Use contractions: it's, don't, can't, wasn't
+- Make them FEEL something or THINK about something new
 """
         else:  # TRANSITION
             return f"""
@@ -962,13 +988,16 @@ TRANSITION SPECIFIC:
             
             "Main content must show transformation/change (P01)": """
 - Show change: Before → Conflict → After (as narrative flow, not as literal labels)
-- Include emotional progression, not just setup + mystery
-- Add realizations, discoveries, or character development""",
+- Include emotional reactions and realizations, not just events
+- Use simple language and contractions: it's, don't, can't
+- End section with curiosity hook - make them want to keep watching""",
             
             "Content must use natural, spoken English (P09/P10)": """
 - Write like talking to a friend: "So here's what happened..."
-- Avoid overdramatic phrasing: "shadowy silhouettes" → "dark shapes"
-- Use simple, conversational language""",
+- Use 6th-7th grade reading level - a 10-year-old should understand every word
+- FORBIDDEN: therefore, however, consequently, phenomenon, thus
+- USE: so, but, because, and, that's why, then, next
+- Always use contractions where natural""",
             
             "Section must plant specific curiosity threads (P12)": """
 - Add specific questions: "But why did the system fail exactly then?"
