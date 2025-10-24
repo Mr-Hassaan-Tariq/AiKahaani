@@ -396,7 +396,7 @@ function TrailWidget({ data, handleUpgrade, isTrial = false, onOpenAllPlans }: T
 
                     <div className="relative">
                       <Col
-                        className="scrollbar-hide h-40 gap-4 overflow-y-auto"
+                        className="scrollbar-hide h-32 gap-4 overflow-y-auto"
                         id="featuresScroll"
                       >
                         {e?.features &&
@@ -413,24 +413,6 @@ function TrailWidget({ data, handleUpgrade, isTrial = false, onOpenAllPlans }: T
                             </Row>
                           ))}
                       </Col>
-
-                      <div
-                        className="absolute bottom-1 right-2 animate-bounce cursor-pointer opacity-70"
-                        onClick={() => {
-                          const el = document.getElementById('featuresScroll');
-                          if (el) el.scrollBy({ top: 80, behavior: 'smooth' });
-                        }}
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                          className="text-white"
-                        >
-                          <path d="M12 16l-6-6h12l-6 6z" />
-                        </svg>
-                      </div>
                     </div>
 
                     <Separator className="w-full bg-white/[.16]" />

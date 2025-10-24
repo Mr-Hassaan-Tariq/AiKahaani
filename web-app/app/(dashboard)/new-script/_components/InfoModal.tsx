@@ -11,11 +11,11 @@ export default function InfoModal({ description }: { description: ReactNode }) {
         <InfoIcon size={16} className="text-white" />
       </PopoverTrigger>
       <PopoverContent
-        className="w-fit max-w-56 rounded-lg border border-[#BAFF38]/[12%] bg-brand-surface bg-white/10 p-2"
+        className="w-full rounded-lg border border-[#BAFF38]/[12%] bg-brand-surface bg-white/10 p-2"
         align="start"
         side="top"
       >
-        <Text variant="sm" className="w-fit text-white">
+        <Text variant="sm" className="w-full text-white">
           {description}
         </Text>
       </PopoverContent>

@@ -13,7 +13,7 @@ export default function ScriptList({
       <div className={`mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 ${className}`}>
         {Array.from({ length: 6 }).map((_, index) => (
           <div key={index} className="animate-pulse">
-            <div className="h-64 rounded-lg bg-gray-800"></div>
+            <div className="h-64 rounded-lg bg-white/10"></div>
           </div>
         ))}
       </div>

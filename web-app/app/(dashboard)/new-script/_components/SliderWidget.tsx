@@ -25,7 +25,9 @@ export default function SliderWidget({
 
   defaultValue?: number[];
 }) {
-  const [worldCounter, setWorldCounter] = useState(defaultValue || [range.min, range.default]);
+  const initialWorldCounter = defaultValue || [range.min, range.default];
+  const [worldCounter, setWorldCounter] = useState(initialWorldCounter);
+
 
   const {
     register,
@@ -55,7 +57,7 @@ export default function SliderWidget({
         />
       </Row>
       <Slider
-        defaultValue={worldCounter}
+        defaultValue={initialWorldCounter}
         onValueChange={setWorldCounter}
         min={range.min}
         max={range.max}
@@ -66,11 +68,11 @@ export default function SliderWidget({
 
       <Row>
         <Text variant="xs" className="text-[#AAACA6]">
-          {worldCounter[1] - worldCounter[0]} words
+          {worldCounter[0]} words
         </Text>
 
         <Text variant="xs" className="text-[#AAACA6]">
-          {range.max} words
+          {worldCounter[1]} words
         </Text>
       </Row>
 
