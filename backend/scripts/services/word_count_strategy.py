@@ -66,7 +66,8 @@ class WordCountStrategy:
     """
     
     def __init__(self, template_style: str = "medium"):
-        self.template_style = template_style.lower()
+        # Normalize template style: lowercase and replace spaces with underscores
+        self.template_style = template_style.lower().replace(" ", "_")
         self.config = TemplateStyleConfig.TEMPLATE_CONFIGS.get(
             self.template_style, 
             TemplateStyleConfig.TEMPLATE_CONFIGS["medium"]
@@ -246,7 +247,13 @@ Section Description: {section_description}
 Key Points to Cover:
 {self._format_key_points(key_points)}
 
-Word Count Target: {word_target} words (STRICT REQUIREMENT)
+🎙️ DURATION TARGET: {int(word_target / 140)} min {int((word_target / 140 % 1) * 60):02d} sec of spoken English (@ 140 words/minute)
+📊 WORD COUNT RANGE: This section MUST have a word count between {int(word_target * 0.95)} and {int(word_target * 1.05)} words (±5%).
+🎯 Approximate Token Target: ~{int(word_target * 1.33)} tokens.
+
+⚠️  CRITICAL: You MUST generate {int(word_target / 140)} min {int((word_target / 140 % 1) * 60):02d} sec of content = {word_target} words.
+    Think: "How much content does someone need to speak for {int(word_target / 140)} minutes?"
+    This is not a suggestion - it's a strict requirement.
 
 Section Type: {section_type.value.replace('_', ' ').title()}
 
@@ -279,7 +286,7 @@ RELEVANT STORYTELLING RULES:
 {filtered_manual}
 
 REQUIREMENTS:
-- Write exactly {word_target} words (±5% tolerance - STRICT REQUIREMENT)
+- 📊 WORD COUNT: Write AT LEAST {word_target} words (±5% acceptable, but NEVER fall short)
 - Follow the storytelling strategies listed above
 - END section with curiosity hook - unanswered question or unresolved tension
 - Include specific examples, sensory details, and emotional reactions
@@ -287,13 +294,32 @@ REQUIREMENTS:
 
 🎭 CONVERSATIONAL TONE (CRITICAL):
 - Talk like you're telling a story to a FRIEND, not narrating a documentary
-- Use contractions in EVERY sentence where natural
 - Start sentences with: "But here's the thing...", "And that's when...", "So...", "Now..."
 - Show EMOTION first, facts second: "She couldn't believe it." not "The results indicated..."
 - Create tension in EVERY line - make them curious about the next sentence
 
-CRITICAL: Count words before submitting - content must be {word_target} words minimum.
-FAILURE TO MEET WORD COUNT WILL RESULT IN REGENERATION.
+🚨 CONTRACTIONS - USE EVERYWHERE (MANDATORY):
+You MUST use contractions throughout. Never write:
+❌ it is, do not, does not, cannot, could not, would not, should not, did not, was not, were not, are not, will not, they are, we are, you are
+✅ it's, don't, doesn't, can't, couldn't, wouldn't, shouldn't, didn't, wasn't, weren't, aren't, won't, they're, we're, you're
+Apply contractions to EVERY sentence where natural. Scripts without contractions will be rejected.
+
+🚨 WORD COUNT VERIFICATION (MANDATORY):
+BEFORE submitting your response, verify the word count using code generation.
+
+VERIFICATION PROCESS:
+1. Write your content naturally following all the guidance above
+2. Use code generation to count your words:
+   - Split your content by whitespace
+   - Count the number of words
+   - Verify it meets the target
+3. If the count shows you're under {int(word_target * 0.95)} words ({word_target} target):
+   - ADD MORE CONTENT using the expansion strategies provided
+   - Re-run the verification code with the expanded content
+4. ONLY submit your final JSON response when code execution confirms {int(word_target * 0.95)}+ words
+
+DO NOT guess word count - use code generation to get the accurate count.
+The validation method used is: split by whitespace and count tokens.
 
 RESPONSE FORMAT: Return JSON object with this exact structure:
 {{
@@ -710,7 +736,8 @@ TRANSITION SPECIFIC:
                 "title": section.get("title", "Untitled Section"),
                 "content": section.get("content", ""),
                 "start_time": section.get("start_time", "00:00"),
-                "end_time": section.get("end_time", "00:00")
+                "end_time": section.get("end_time", "00:00"),
+                "validator_compliance": section.get("validator_compliance", {})
             }
             formatted_sections.append(formatted_section)
         

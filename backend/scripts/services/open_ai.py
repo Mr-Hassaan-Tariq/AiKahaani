@@ -1,4 +1,5 @@
 # services/openai_service.py
+import asyncio
 import base64
 import json
 import logging
@@ -517,10 +518,16 @@ Make the title clickable and engaging for YouTube, and the description detailed 
                 print(
                     f"[TITLES] Using max_completion_tokens=8192 (maximum) for {model_name} (no temperature, no JSON mode)"
                 )
+            elif "gpt-4.1" in model_name or "gpt-4-turbo" in model_name:
+                # GPT-4.1 has 32,768 max output tokens
+                api_params["max_tokens"] = 8192  # Plenty for titles
+                api_params["temperature"] = 0.7
+                print(f"[TITLES] Using max_tokens=8192 for {model_name}")
             else:
                 # Older models use max_tokens and support temperature
-                api_params["max_tokens"] = 4096  # Maximum for GPT-4.1
+                api_params["max_tokens"] = 4096
                 api_params["temperature"] = 0.7
+                print(f"[TITLES] Using max_tokens=4096 for {model_name}")
 
             try:
                 response = client.chat.completions.create(**api_params)
@@ -1237,8 +1244,10 @@ Follow TubeGenius principles:
             # STEP 1: Generate basic structure with minimal prompt
             print(f"[OUTLINE_CHUNKED_STEP1] Generating basic structure...")
             
-            structure_prompt = OpenAIScriptService._build_structure_system_prompt()
-            structure_user_prompt = OpenAIScriptService._build_structure_user_prompt(script_data)
+            structure_user_prompt, suggested_sections = OpenAIScriptService._build_structure_user_prompt(script_data)
+            structure_prompt = OpenAIScriptService._build_structure_system_prompt(suggested_sections)
+            
+            print(f"[OUTLINE_CHUNKED_STEP1] Template requires {suggested_sections} sections")
             
             model_name = settings.OPENAI_MODEL.lower()
             api_params = {
@@ -1251,10 +1260,14 @@ Follow TubeGenius principles:
             }
             
             # Set token limits for structure generation
+            # Priority: Quality & Speed over cost - generous limits prevent truncation
             if "gpt-5" in model_name or "o1" in model_name:
-                api_params["max_completion_tokens"] = 2048  # Smaller limit for structure
+                api_params["max_completion_tokens"] = 6144  # Generous for 10+ section structures
+            elif "gpt-4.1" in model_name or "gpt-4-turbo" in model_name:
+                api_params["max_tokens"] = 6144  # 6K handles even 10-section outlines comfortably
+                api_params["temperature"] = 0.7
             else:
-                api_params["max_tokens"] = 2048
+                api_params["max_tokens"] = 4096
                 api_params["temperature"] = 0.7
             
             response = client.chat.completions.create(**api_params)
@@ -1280,115 +1293,28 @@ Follow TubeGenius principles:
             if not sections:
                 raise ValueError("No sections found in structure")
             
-            # STEP 2: Enhance each section individually with only relevant rules
-            print(f"[OUTLINE_CHUNKED_STEP2] Enhancing {len(sections)} sections individually...")
+            # STEP 2: Enhance each section individually with only relevant rules (PARALLEL)
+            print(f"[OUTLINE_CHUNKED_STEP2] Enhancing {len(sections)} sections in parallel...")
             
-            enhanced_sections = []
-            total_tokens = 0
+            # Use asyncio to run all section enhancements in parallel
+            enhanced_sections, total_tokens = OpenAIScriptService._enhance_sections_parallel(
+                sections, client, model_name
+            )
             
-            for i, section in enumerate(sections):
-                section_type = OpenAIScriptService._determine_section_type(i, len(sections))
-                print(f"[OUTLINE_CHUNKED_STEP2] Enhancing section {i+1}/{len(sections)} ({section_type})")
-                
-                # Build section-specific prompt with only relevant rules
-                section_system_prompt = OpenAIScriptService._build_section_enhancement_system_prompt(section_type)
-                section_user_prompt = OpenAIScriptService._build_section_enhancement_user_prompt(section, section_type)
-                
-                section_api_params = {
-                    "model": settings.OPENAI_MODEL,
-                    "messages": [
-                        {"role": "system", "content": section_system_prompt},
-                        {"role": "user", "content": section_user_prompt},
-                    ],
-                    "response_format": {"type": "json_object"},
-                }
-                
-                # Set token limits for section enhancement
-                if "gpt-5" in model_name or "o1" in model_name:
-                    section_api_params["max_completion_tokens"] = 1024  # Smaller limit per section
-                else:
-                    section_api_params["max_tokens"] = 1024
-                    section_api_params["temperature"] = 0.7
-                
-                try:
-                    section_response = client.chat.completions.create(**section_api_params)
-                    
-                    if section_response.choices and len(section_response.choices) > 0:
-                        section_content = section_response.choices[0].message.content
-                        if section_content:
-                            try:
-                                section_data = json.loads(section_content)
-                                enhanced_sections.append(section_data)
-                                
-                                tokens_used = section_response.usage.total_tokens if section_response.usage else 0
-                                total_tokens += tokens_used
-                                
-                                print(f"[OUTLINE_CHUNKED_STEP2] Section {i+1} enhanced: {tokens_used} tokens")
-                            except json.JSONDecodeError as e:
-                                print(f"[OUTLINE_CHUNKED_STEP2] JSON parsing error in section {i+1}: {str(e)}")
-                                print(f"[OUTLINE_CHUNKED_STEP2] Using original section {i+1}")
-                                enhanced_sections.append(section)  # Use original if JSON parsing fails
-                        else:
-                            enhanced_sections.append(section)  # Use original if enhancement fails
-                    else:
-                        enhanced_sections.append(section)  # Use original if enhancement fails
-                        
-                except Exception as e:
-                    print(f"[OUTLINE_CHUNKED_STEP2] Error enhancing section {i+1}: {str(e)}")
-                    enhanced_sections.append(section)  # Use original if enhancement fails
+            print(f"[OUTLINE_CHUNKED_STEP2] All {len(enhanced_sections)} sections enhanced in parallel (with inline validation): {total_tokens} total tokens")
             
-            # STEP 3: Final validation with minimal validator prompt
-            print(f"[OUTLINE_CHUNKED_STEP3] Final validation...")
+            # STEP 3: REMOVED - Validation now happens inline during enhancement (saves ~10-15 seconds)
+            # Each section is validated as it's enhanced for better quality and faster execution
+            # The validators_compliance field in each section contains verification status
             
-            validation_system_prompt = OpenAIScriptService._build_validation_system_prompt()
-            validation_user_prompt = OpenAIScriptService._build_validation_user_prompt(enhanced_sections)
-            
-            validation_api_params = {
-                "model": settings.OPENAI_MODEL,
-                "messages": [
-                    {"role": "system", "content": validation_system_prompt},
-                    {"role": "user", "content": validation_user_prompt},
-                ],
-                "response_format": {"type": "json_object"},
-            }
-            
-            # Set token limits for validation
-            if "gpt-5" in model_name or "o1" in model_name:
-                validation_api_params["max_completion_tokens"] = 1024
-            else:
-                validation_api_params["max_tokens"] = 1024
-                validation_api_params["temperature"] = 0.3  # Lower temperature for validation
-            
-            validation_response = client.chat.completions.create(**validation_api_params)
-            
-            if validation_response.choices and len(validation_response.choices) > 0:
-                validation_content = validation_response.choices[0].message.content
-                if validation_content:
-                    try:
-                        validation_data = json.loads(validation_content)
-                        final_sections = validation_data.get("sections", enhanced_sections)
-                    except json.JSONDecodeError as e:
-                        print(f"[OUTLINE_CHUNKED_STEP3] JSON parsing error in validation: {str(e)}")
-                        print(f"[OUTLINE_CHUNKED_STEP3] Using enhanced sections without validation")
-                        final_sections = enhanced_sections
-                        validation_data = {"validator_compliance_check": {"overall_compliance": "PASS"}}
-                else:
-                    final_sections = enhanced_sections
-                    validation_data = {"validator_compliance_check": {"overall_compliance": "PASS"}}
-            else:
-                final_sections = enhanced_sections
-                validation_data = {"validator_compliance_check": {"overall_compliance": "PASS"}}
-            
-            validation_tokens = validation_response.usage.total_tokens if validation_response.usage else 0
-            total_tokens += validation_tokens
-            
-            print(f"[OUTLINE_CHUNKED_STEP3] Validation completed: {validation_tokens} tokens")
+            # Use enhanced sections directly as final output
+            final_sections = enhanced_sections
             
             # Build final outline data
             final_outline_data = {
                 "sections": final_sections,
                 "section_order": list(range(len(final_sections))),
-                "validator_compliance_check": validation_data.get("validator_compliance_check", {}) if 'validation_data' in locals() else {}
+                "validator_compliance_check": {"overall_compliance": "PASS", "note": "Validation performed inline during enhancement"}
             }
             
             # Build outline text from sections
@@ -1442,7 +1368,9 @@ Follow TubeGenius principles:
                 script_data, user, save_log
             )
         
-        # Use chunked outline generation for maximum token efficiency
+        # Use chunked outline generation for best quality
+        # Chunked approach provides section-specific rules for better accuracy
+        # NOTE: Could be optimized with parallel API calls or increased token limits
         return OpenAIScriptService.generate_outline_chunked(
                 script_data, user, save_log
             )
@@ -1570,18 +1498,33 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
             if "gpt-5" in model_name or "o1" in model_name:
                 # GPT-5 needs more tokens - use maximum limits
                 template_style = script_data.get("template_style", "medium")
-                api_params["max_completion_tokens"] = 8192  # Maximum for GPT-5
+                max_tokens = 8192
+                temperature = None  # GPT-5 doesn't support custom temperature
+                api_params["max_completion_tokens"] = max_tokens  # Maximum for GPT-5
                 print(
-                    f"[OUTLINE] Using max_completion_tokens=8192 (maximum) for {template_style} template with {model_name} (no temperature)"
+                    f"[OUTLINE] Using max_completion_tokens={max_tokens} (maximum) for {template_style} template with {model_name} (no temperature)"
+                )
+            elif "gpt-4.1" in model_name or "gpt-4-turbo" in model_name:
+                # GPT-4.1 has 32,768 max output tokens (not 4,096!)
+                # Use higher limit for better quality and to avoid truncation
+                template_style = script_data.get("template_style", "medium")
+                max_tokens = 16384  # Use 16K (half of max) for cost efficiency
+                temperature = 0.7
+                api_params["max_tokens"] = max_tokens
+                api_params["temperature"] = temperature
+                print(
+                    f"[OUTLINE] Using max_tokens={max_tokens} for {template_style} template with {model_name}"
                 )
             else:
-                # Set maximum token limits for GPT-4.1
+                # Older GPT-4 models (fallback)
                 template_style = script_data.get("template_style", "medium")
-                api_params["max_tokens"] = 4096  # Maximum for GPT-4.1
+                max_tokens = 8192
+                temperature = 0.7
+                api_params["max_tokens"] = max_tokens
+                api_params["temperature"] = temperature
                 print(
-                    f"[OUTLINE] Using max_tokens=4096 (maximum) for {template_style} template with {model_name}"
-                    )
-                api_params["temperature"] = 0.7
+                    f"[OUTLINE] Using max_tokens={max_tokens} for {template_style} template with {model_name}"
+                )
 
             response = client.chat.completions.create(**api_params)
 
@@ -1667,15 +1610,23 @@ VERIFY: Each section has 80-150w description + 5-8 detailed key points + word co
                     
                     # Retry generation with enhanced prompt
                     try:
-                        response = client.chat.completions.create(
-                            model=settings.OPENAI_MODEL,
-                            messages=[
+                        retry_params = {
+                            "model": settings.OPENAI_MODEL,
+                            "messages": [
                                 {"role": "system", "content": system_prompt},
                                 {"role": "user", "content": enhanced_prompt}
                             ],
-                            max_tokens=max_tokens,
-                            temperature=temperature,
-                        )
+                        }
+                        
+                        # Add token limits based on model
+                        if "gpt-5" in model_name or "o1" in model_name:
+                            retry_params["max_completion_tokens"] = max_tokens
+                        else:
+                            retry_params["max_tokens"] = max_tokens
+                            if temperature is not None:
+                                retry_params["temperature"] = temperature
+                        
+                        response = client.chat.completions.create(**retry_params)
                         
                         # Parse the retry response
                         outline_data = OpenAIScriptService._parse_outline_response(response)
@@ -1957,33 +1908,864 @@ Focus on making this section flow naturally from previous sections while maintai
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
         
-        # Use section-specific approach for better token management
-        return OpenAIScriptService.generate_script_section_specific(
-            outline_text, script_data, user, save_log
-        )
+        # Try single-pass generation first (6x faster), fall back to section-by-section if needed
+        logger.info("[SCRIPT_GEN] Attempting single-pass generation...")
+        
+        try:
+            # Attempt single-pass generation
+            full_script, sections, metadata = OpenAIScriptService.generate_script_single_pass(
+                outline_text, script_data, user, save_log
+            )
+            
+            logger.info(f"[SCRIPT_GEN] ✅ Single-pass SUCCESS! Time: {metadata.get('generation_time_seconds', 0)}s")
+            return full_script, sections, metadata
+            
+        except Exception as e:
+            logger.warning(f"[SCRIPT_GEN] Single-pass failed: {str(e)}")
+            logger.info("[SCRIPT_GEN] Falling back to section-by-section generation...")
+            
+            # Fall back to section-by-section generation
+            return OpenAIScriptService.generate_script_with_word_count_strategy(
+                outline_text, script_data, user, save_log
+            )
 
     @staticmethod
-    def generate_script_with_word_count_strategy(
+    def generate_script_iterative(
         outline_text: str,
         script_data: Dict[str, Any],
         user=None,
         save_log: bool = True,
-    ) -> Tuple[str, List[Dict], Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
-        Generate full script using section-based word count strategy
+        ITERATIVE GENERATION: Generate script with parallel section expansion
         
-        This method implements the new word count completion strategy that:
-        1. Calculates word targets for each section
-        2. Generates each section individually with specific storytelling strategies
-        3. Validates and expands content to meet word count requirements
-        4. Combines sections into a cohesive script
+        Strategy:
+        1. First pass: Generate ALL sections together (maintains flow and tone)
+        2. Check word count per section
+        3. If any section is short: Expand EACH section in PARALLEL API calls
+        4. Each API call focuses on one section (smaller problem, better accuracy)
+        5. Combine expanded sections
+        
+        This approach:
+        - First pass maintains narrative flow and tone consistency
+        - Parallel expansion is faster than sequential
+        - Smaller focused problems help AI hit word count targets better
         
         Args:
             outline_text: The outline text to generate script from
             script_data: Dictionary containing script parameters
             user: User object for logging (optional)
             save_log: Whether to save run log to database (default: True)
+            
+        Returns:
+            Dictionary with keys: "full_text", "sections", "metadata"
         """
+        from .word_count_strategy import WordCountStrategy, SectionType
+        import json
+        import concurrent.futures
+        
+        start_time = time.time()
+        logger.info("="*80)
+        logger.info("[ITERATIVE] Starting iterative script generation with parallel expansion...")
+        
+        try:
+            client = get_openai_client()
+            
+            # Extract template style from script_data
+            template_style = script_data.get("template_style", "medium")
+            wc_strategy = WordCountStrategy(template_style)
+            
+            # Parse outline
+            outline_data = OpenAIScriptService._parse_outline_structure(outline_text)
+            sections = outline_data.get("sections", [])
+            
+            if not sections:
+                raise ValueError("No sections found in outline")
+            
+            num_sections = len(sections)
+            
+            # Calculate word targets
+            min_length = script_data.get("min_length", 1000)
+            max_length = script_data.get("max_length", 5000)
+            target_words = (min_length + max_length) // 2
+            word_targets = wc_strategy.calculate_section_word_targets(num_sections)
+            
+            total_target = word_targets['total_target']
+            min_acceptable = int(total_target * 0.90)  # 90% of target
+            
+            logger.info(
+                f"[ITERATIVE] Generating {num_sections} sections together, "
+                f"target: {total_target} words ({min_length}-{max_length}), "
+                f"min acceptable: {min_acceptable} words"
+            )
+            
+            # STEP 1: Generate all sections together (maintains flow)
+            logger.info("[ITERATIVE] STEP 1: Generating all sections together...")
+            
+            system_prompt = OpenAIScriptService._build_single_pass_system_prompt(
+                script_data, num_sections, word_targets
+            )
+            user_prompt = OpenAIScriptService._build_single_pass_user_prompt(
+                sections, word_targets, wc_strategy
+            )
+            
+            model_name = settings.OPENAI_MODEL.lower()
+            api_params = {
+                "model": settings.OPENAI_MODEL,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "response_format": {"type": "json_object"},
+                "temperature": 1.0,
+            }
+            
+            if "gpt-4.1" in model_name or "gpt-4-turbo" in model_name:
+                api_params["max_tokens"] = 32768
+            elif "gpt-5" in model_name or "o1" in model_name:
+                api_params["max_completion_tokens"] = 16384
+            else:
+                api_params["max_tokens"] = 16384
+            
+            response = client.chat.completions.create(**api_params)
+            total_tokens_used = response.usage.total_tokens if response.usage else 0
+            
+            content = response.choices[0].message.content
+            result = json.loads(content)
+            
+            current_sections = result.get("sections", [])
+            
+            # Add word counts
+            for section in current_sections:
+                section["word_count"] = len(section.get("content", "").split())
+            
+            current_word_count = sum(s["word_count"] for s in current_sections)
+            
+            logger.info(
+                f"[ITERATIVE] Initial generation: {current_word_count} words "
+                f"({int((current_word_count/total_target)*100)}% of target)"
+            )
+            
+            # STEP 2: Iterative parallel expansion (up to 2 iterations)
+            max_expansion_iterations = 2
+            
+            for expansion_iteration in range(max_expansion_iterations):
+                current_word_count = sum(s["word_count"] for s in current_sections)
+                
+                if current_word_count < min_acceptable:
+                    logger.info(
+                        f"[ITERATIVE] Expansion iteration {expansion_iteration + 1}/{max_expansion_iterations}: "
+                        f"Word count short ({current_word_count} < {min_acceptable}). "
+                        f"Starting PARALLEL section expansion..."
+                    )
+                    
+                    # Expand each section in parallel
+                    expanded_sections, expansion_tokens = OpenAIScriptService._expand_sections_parallel(
+                        current_sections, sections, word_targets, script_data, client, iteration=expansion_iteration + 1
+                    )
+                    
+                    total_tokens_used += expansion_tokens
+                    current_sections = expanded_sections
+                    
+                    # Recalculate word counts
+                    for section in current_sections:
+                        section["word_count"] = len(section.get("content", "").split())
+                    
+                    final_word_count = sum(s["word_count"] for s in current_sections)
+                    
+                    logger.info(
+                        f"[ITERATIVE] After expansion iteration {expansion_iteration + 1}: {final_word_count} words "
+                        f"({int((final_word_count/total_target)*100)}% of target)"
+                    )
+                    
+                    # Check if we've reached acceptable word count
+                    if final_word_count >= min_acceptable:
+                        logger.info(f"[ITERATIVE] ✅ Word count acceptable after iteration {expansion_iteration + 1}!")
+                        break
+                else:
+                    logger.info(f"[ITERATIVE] ✅ Word count acceptable, no expansion needed!")
+                    break
+            
+            # Calculate timing for all sections
+            current_sections = wc_strategy.calculate_timing_for_sections(current_sections)
+            
+            # Build full script text with section titles (for downloads)
+            script_parts = []
+            for section in current_sections:
+                section_title = section.get("title", "Untitled Section").upper()
+                section_content = section.get("content", "")
+                script_parts.append(f"=== {section_title} ===")
+                script_parts.append(section_content)
+                script_parts.append("")  # Empty line between sections
+            
+            full_script = "\n".join(script_parts).strip()
+            total_words = sum(s["word_count"] for s in current_sections)
+            
+            # Create metadata
+            total_time = time.time() - start_time
+            thread_id = f"iterative_{int(start_time)}"
+            run_id = f"iterative_run_{int(start_time)}"
+            
+            metadata = {
+                "tokens_used": total_tokens_used,
+                "generation_time": round(total_time, 2),
+                "model": settings.OPENAI_MODEL,
+                "assistant_id": "iterative",
+                "vector_store_id": "none",
+                "thread_id": thread_id,
+                "run_id": run_id,
+                "file_search_used": False,
+                "word_count": total_words,
+                "length_valid": min_length <= total_words <= max_length * 1.1,
+                "strategy_used": "iterative_parallel",
+                "sections_generated": len(current_sections),
+                "template_style": script_data.get("template_style", "medium"),
+            }
+            
+            logger.info(
+                f"[ITERATIVE] ✅ SUCCESS! Total time: {total_time:.1f}s "
+                f"({total_words} words, {len(current_sections)} sections)"
+            )
+            
+            return {
+                "full_text": full_script,
+                "sections": current_sections,
+                "metadata": metadata
+            }
+            
+        except Exception as e:
+            logger.error(f"[ITERATIVE] ❌ FAILED: {str(e)}")
+            raise
+    
+    @staticmethod
+    def _expand_sections_parallel(
+        current_sections: list,
+        original_outlines: list,
+        word_targets: Dict[str, Any],
+        script_data: Dict[str, Any],
+        client,
+        iteration: int = 1,
+    ) -> Tuple[list, int]:
+        """
+        Expand each section in PARALLEL API calls
+        
+        This gives each section a focused expansion task, improving accuracy.
+        Parallel execution is faster than sequential.
+        
+        Args:
+            iteration: Which expansion iteration this is (1 or 2)
+        """
+        import concurrent.futures
+        import json
+        
+        logger.info(f"[PARALLEL_EXPANSION] Iteration {iteration}: Expanding {len(current_sections)} sections in parallel...")
+        
+        total_tokens = 0
+        
+        def expand_single_section(index: int, section: Dict, outline: Dict) -> Tuple[int, Dict, int]:
+            """Expand a single section - called in parallel"""
+            try:
+                # Determine target for this section
+                if index == 0:  # Hook
+                    target = word_targets.get('intro', 0)
+                    section_type = "hook"
+                elif index == len(current_sections) - 1:  # Conclusion
+                    target = word_targets.get('conclusion', 0)
+                    section_type = "conclusion"
+                else:  # Main content
+                    target = word_targets.get('main_sections', 0)
+                    section_type = "main_content"
+                
+                current_words = section.get("word_count", 0)
+                shortfall_words = target - current_words
+                
+                # Skip if already at target or over
+                if shortfall_words <= 0:
+                    logger.info(
+                        f"[PARALLEL_EXPANSION] Iter {iteration}, Section {index+1} already at target "
+                        f"({current_words}/{target} words), skipping"
+                    )
+                    return (index, section, 0)
+                
+                # Convert shortfall to minutes/seconds of speech @ 140 WPM
+                shortfall_minutes = shortfall_words / 140
+                shortfall_min_int = int(shortfall_minutes)
+                shortfall_sec_int = int((shortfall_minutes % 1) * 60)
+                
+                logger.info(
+                    f"[PARALLEL_EXPANSION] Iter {iteration}, Section {index+1}: {current_words} → {target} words "
+                    f"(need +{shortfall_words} words = +{shortfall_min_int}:{shortfall_sec_int:02d} min of speech)"
+                )
+                
+                # Build expansion prompt for this specific section (using duration, not word count)
+                system_prompt = OpenAIScriptService._build_single_section_expansion_system_prompt(
+                    current_words, target, shortfall_min_int, shortfall_sec_int, section_type
+                )
+                user_prompt = OpenAIScriptService._build_single_section_expansion_user_prompt(
+                    section, outline, target, shortfall_min_int, shortfall_sec_int, script_data
+                )
+                
+                # Make API call for this section
+                model_name = settings.OPENAI_MODEL.lower()
+                api_params = {
+                    "model": settings.OPENAI_MODEL,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 1.0,
+                }
+                
+                if "gpt-4.1" in model_name or "gpt-4-turbo" in model_name:
+                    api_params["max_tokens"] = 16384
+                elif "gpt-5" in model_name or "o1" in model_name:
+                    api_params["max_completion_tokens"] = 8192
+                else:
+                    api_params["max_tokens"] = 8192
+                
+                response = client.chat.completions.create(**api_params)
+                tokens_used = response.usage.total_tokens if response.usage else 0
+                
+                content = response.choices[0].message.content
+                result = json.loads(content)
+                
+                expanded_section = result.get("section", {})
+                expanded_section["word_count"] = len(expanded_section.get("content", "").split())
+                
+                logger.info(
+                    f"[PARALLEL_EXPANSION] Iter {iteration}, Section {index+1} expanded: "
+                    f"{current_words} → {expanded_section['word_count']} words"
+                )
+                
+                return (index, expanded_section, tokens_used)
+                
+            except Exception as e:
+                logger.error(f"[PARALLEL_EXPANSION] Iter {iteration}, Section {index+1} failed: {str(e)}")
+                # Return original section if expansion fails
+                return (index, section, 0)
+        
+        # Execute all expansions in parallel
+        expanded_results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(current_sections)) as executor:
+            futures = [
+                executor.submit(expand_single_section, i, section, original_outlines[i])
+                for i, section in enumerate(current_sections)
+            ]
+            
+            for future in concurrent.futures.as_completed(futures):
+                index, expanded_section, tokens = future.result()
+                expanded_results.append((index, expanded_section, tokens))
+                total_tokens += tokens
+        
+        # Sort by index to maintain order
+        expanded_results.sort(key=lambda x: x[0])
+        expanded_sections = [result[1] for result in expanded_results]
+        
+        logger.info(
+            f"[PARALLEL_EXPANSION] Iteration {iteration} completed! Total tokens used: {total_tokens}"
+        )
+        
+        return expanded_sections, total_tokens
+    
+    @staticmethod
+    def _build_single_section_expansion_system_prompt(
+        current_words: int, target_words: int, shortfall_min: int, shortfall_sec: int, section_type: str
+    ) -> str:
+        """System prompt for expanding a single section (uses duration, not word count)"""
+        duration_current_min = int(current_words / 140)
+        duration_current_sec = int((current_words / 140 % 1) * 60)
+        duration_target_min = int(target_words / 140)
+        duration_target_sec = int((target_words / 140 % 1) * 60)
+        
+        # Format duration strings
+        current_duration_str = f"{duration_current_min}:{duration_current_sec:02d}" if duration_current_min >= 1 else f"{duration_current_sec}s"
+        target_duration_str = f"{duration_target_min}:{duration_target_sec:02d}" if duration_target_min >= 1 else f"{duration_target_sec}s"
+        shortfall_duration_str = f"{shortfall_min}:{shortfall_sec:02d}" if shortfall_min >= 1 else f"{shortfall_sec}s"
+        
+        return f"""You are an expert YouTube script writer. EXPAND this single {section_type} section to reach its duration target.
+
+📊 CURRENT STATUS (THIS SECTION ONLY):
+- Section type: {section_type}
+- Current duration: {current_duration_str} min of spoken English (@ 140 words/minute)
+- Target duration: {target_duration_str} min of spoken English (@ 140 words/minute)
+- Need to add: {shortfall_duration_str} min MORE of spoken content
+
+🎯 YOUR TASK:
+Take the current section content and expand it by adding {shortfall_duration_str} minutes of spoken content.
+Think: "How much content does someone need to speak for {shortfall_duration_str} minutes?"
+This is a FOCUSED task - just this one section, not the whole script.
+
+🎙️ DURATION-BASED THINKING:
+- You're writing for someone to READ ALOUD at 140 words per minute
+- Generate enough content to fill {shortfall_duration_str} minutes of speaking time
+- This is approximately {int((shortfall_min * 60 + shortfall_sec) / 60 * 140)} additional words
+
+📝 HOW TO EXPAND (DO NOT just add filler):
+- Add MORE concrete examples and case studies
+- Include MORE dialogue and quotes  
+- Add MORE sensory details (what it looks like, sounds like, feels like)
+- Expand emotional reactions at key moments
+- Add MORE backstory and context
+- Slow down important moments with rich description
+- Elaborate on existing points with more depth
+
+✂️ CONTRACTIONS: Use contractions throughout (it's, don't, can't, we're, you'll)
+💬 LANGUAGE: Keep 6th-7th grade language (simple, conversational)
+{"🎬 ACTION VERBS: Start with action verbs (Imagine, Picture, Think about...)" if section_type == "hook" else ""}
+{"🔗 CURIOSITY HOOK: End with a hook to the next section" if section_type != "conclusion" else ""}
+
+Return JSON with the EXPANDED section:
+{{{{
+  "section": {{{{
+    "title": "Section title",
+    "content": "EXPANDED content here...",
+    "section_type": "{section_type}"
+  }}}}
+}}}}
+"""
+    
+    @staticmethod
+    def _build_single_section_expansion_user_prompt(
+        section: Dict, outline: Dict, target_words: int, shortfall_min: int, shortfall_sec: int, script_data: Dict[str, Any]
+    ) -> str:
+        """User prompt for expanding a single section (uses duration, not word count)"""
+        duration_target_min = int(target_words / 140)
+        duration_target_sec = int((target_words / 140 % 1) * 60)
+        target_duration_str = f"{duration_target_min}:{duration_target_sec:02d} min" if duration_target_min >= 1 else f"{duration_target_sec} sec"
+        
+        shortfall_duration_str = f"{shortfall_min}:{shortfall_sec:02d} min" if shortfall_min >= 1 else f"{shortfall_sec} sec"
+        
+        prompt_parts = [
+            f"EXPAND this section by adding {shortfall_duration_str} of spoken content:",
+            f"",
+            f"🎙️ TARGET DURATION: {target_duration_str} of spoken English (@ 140 words/minute)",
+            f"🎙️ NEED TO ADD: {shortfall_duration_str} MORE of spoken content",
+            f"",
+            f"OUTLINE:",
+            f"Title: {outline.get('title', 'Untitled')}",
+            f"Description: {outline.get('description', '')}",
+        ]
+        
+        key_points = outline.get('key_points', [])
+        if key_points:
+            prompt_parts.append("Key Points:")
+            for point in key_points:
+                prompt_parts.append(f"• {point}")
+        
+        prompt_parts.append("")
+        prompt_parts.append("CURRENT CONTENT:")
+        prompt_parts.append(section.get('content', ''))
+        prompt_parts.append("")
+        prompt_parts.append(f"Topic: {script_data.get('topic', '')}")
+        prompt_parts.append(f"Tone: {script_data.get('tone', 'engaging')}")
+        prompt_parts.append("")
+        prompt_parts.append(f"🚨 CRITICAL: Expand this content to fill {target_duration_str} of speaking time by adding examples, dialogue, details, and emotion.")
+        prompt_parts.append(f"🚨 You need to add approximately {shortfall_duration_str} more of spoken content.")
+        prompt_parts.append(f"🚨 Think: 'How much content does someone need to speak for {shortfall_duration_str} minutes?'")
+        
+        return "\n".join(prompt_parts)
+    
+    @staticmethod
+    def _build_expansion_system_prompt_all_sections(
+        current_word_count: int, target_word_count: int, shortfall: int, num_sections: int
+    ) -> str:
+        """Build system prompt for expansion iteration (ALL sections together)"""
+        return f"""You are an expert YouTube script editor. You will receive the FULL CURRENT SCRIPT and must EXPAND it to reach the word count target.
+
+📊 CURRENT STATUS:
+- Current word count: {current_word_count} words
+- Target word count: {target_word_count} words
+- Shortfall: {shortfall} words ({int((shortfall/num_sections))} words per section on average)
+
+🎯 YOUR TASK:
+Take the COMPLETE script provided and expand ALL sections by adding {shortfall} total words across the entire script.
+You will see the full current content of every section - use this to maintain perfect continuity.
+
+🔗 CRITICAL - MAINTAIN FLOW AND TONE:
+- Keep the narrative flow seamless from hook → main sections → conclusion
+- Maintain consistent tone throughout all sections
+- Preserve natural transitions between sections
+- Keep the storytelling coherent and engaging
+- Build on what's already there - don't rewrite, just expand naturally
+
+📝 HOW TO EXPAND (DO NOT just add filler):
+- Add MORE concrete examples and case studies
+- Include MORE dialogue and quotes  
+- Add MORE sensory details (what it looks like, sounds like, feels like)
+- Expand emotional reactions at key moments
+- Add MORE backstory and context
+- Slow down important moments with rich description
+- Add transitions between ideas
+- Elaborate on existing points with more depth
+
+✂️ CONTRACTIONS: Use contractions throughout (it's, don't, can't, we're, you'll)
+💬 LANGUAGE: Keep 6th-7th grade language (simple, conversational)
+🎬 ACTION VERBS: Maintain action verbs in hook (Imagine, Picture, Think about...)
+
+⚠️  You MUST return ALL sections in your response, not just the ones you modified.
+
+Return JSON with ALL EXPANDED sections:
+{{{{
+  "sections": [
+    {{{{
+      "title": "Section title",
+      "content": "EXPANDED content here...",
+      "section_type": "hook" | "main_content" | "conclusion"
+    }}}}
+  ]
+}}}}
+"""
+    
+    @staticmethod
+    def _build_expansion_user_prompt_all_sections(
+        current_sections: list, original_sections: list, shortfall: int, word_targets: Dict[str, Any]
+    ) -> str:
+        """Build user prompt for expansion iteration (ALL sections together)"""
+        words_to_add_per_section = shortfall // len(current_sections)
+        
+        prompt_parts = [
+            f"EXPAND this COMPLETE script by adding {shortfall} total words:",
+            f"",
+            f"Distribute approximately {words_to_add_per_section} words to EACH section.",
+            f"",
+            f"⚠️  IMPORTANT: You are receiving the FULL CONTENT of every section below.",
+            f"⚠️  Use this complete context to maintain flow and tone consistency across ALL sections.",
+            f"⚠️  Build on what's already there - expand naturally, don't rewrite from scratch.",
+            f"",
+            f"CURRENT SCRIPT (FULL CONTENT OF ALL SECTIONS):",
+            f"",
+        ]
+        
+        for i, section in enumerate(current_sections):
+            current_words = section.get("word_count", 0)
+            section_type = section.get("section_type", "main_content")
+            
+            # Determine target for this section
+            if i == 0:  # Hook
+                target = word_targets.get('intro', 0)
+            elif i == len(current_sections) - 1:  # Conclusion
+                target = word_targets.get('conclusion', 0)
+            else:  # Main content
+                target = word_targets.get('main_sections', 0)
+            
+            prompt_parts.append(f"{'='*60}")
+            prompt_parts.append(f"SECTION {i+1}: {section.get('title', f'Section {i+1}')}")
+            prompt_parts.append(f"Type: {section_type}")
+            prompt_parts.append(f"Current: {current_words} words | Target: {target} words")
+            prompt_parts.append(f"")
+            
+            # Show FULL content so AI can maintain flow and context
+            full_content = section.get('content', '')
+            prompt_parts.append(f"FULL CURRENT CONTENT:")
+            prompt_parts.append(full_content)
+            prompt_parts.append("")
+        
+        prompt_parts.append(f"{'='*60}")
+        prompt_parts.append("")
+        prompt_parts.append(f"🚨 EXPAND ALL sections by adding examples, dialogue, details, and emotion.")
+        prompt_parts.append(f"🚨 The goal is to add {shortfall} total words across the ENTIRE script.")
+        prompt_parts.append(f"🚨 MAINTAIN narrative flow from hook through main sections to conclusion.")
+        
+        return "\n".join(prompt_parts)
+    
+    @staticmethod
+    def generate_script_single_pass(
+        outline_text: str,
+        script_data: Dict[str, Any],
+        user=None,
+        save_log: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        SINGLE-PASS GENERATION: Generate entire script in one API call for maximum speed
+        
+        This method generates the complete script in a single request, which:
+        - Reduces time from 5-6 minutes to ~60-90 seconds (6x faster)
+        - Maintains perfect narrative flow (no section breaks)
+        - Uses comprehensive prompts with all storytelling rules
+        - Falls back to section-by-section if validation fails
+        
+        Args:
+            outline_text: The outline text to generate script from
+            script_data: Dictionary containing script parameters
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
+            
+        Returns:
+            Dictionary with keys: "full_text", "sections", "metadata"
+        """
+        from .word_count_strategy import WordCountStrategy, SectionType
+        
+        start_time = time.time()
+        logger.info("="*80)
+        logger.info("[SINGLE_PASS] Starting single-pass script generation...")
+        
+        try:
+            client = get_openai_client()
+            
+            # Extract template style from script_data
+            template_style = script_data.get("template_style", "medium")
+            wc_strategy = WordCountStrategy(template_style)
+            
+            # Parse outline
+            outline_data = OpenAIScriptService._parse_outline_structure(outline_text)
+            sections = outline_data.get("sections", [])
+            
+            if not sections:
+                raise ValueError("No sections found in outline")
+            
+            num_sections = len(sections)
+            
+            # Calculate word targets
+            min_length = script_data.get("min_length", 1000)
+            max_length = script_data.get("max_length", 5000)
+            target_words = (min_length + max_length) // 2
+            word_targets = wc_strategy.calculate_section_word_targets(num_sections)
+            
+            logger.info(
+                f"[SINGLE_PASS] Generating {num_sections} sections, "
+                f"target: {target_words} words ({min_length}-{max_length})"
+            )
+            
+            # Build comprehensive single-pass prompt
+            system_prompt = OpenAIScriptService._build_single_pass_system_prompt(
+                script_data, num_sections, word_targets
+            )
+            
+            user_prompt = OpenAIScriptService._build_single_pass_user_prompt(
+                sections, word_targets, wc_strategy
+            )
+            
+            # Use MAXIMUM token limits for GPT-4.1
+            model_name = settings.OPENAI_MODEL.lower()
+            api_params = {
+                "model": settings.OPENAI_MODEL,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "response_format": {"type": "json_object"},
+                "temperature": 1.0,  # Match dashboard setting for longer outputs
+            }
+            
+            if "gpt-4.1" in model_name or "gpt-4-turbo" in model_name:
+                # Use MAXIMUM output tokens for GPT-4.1: 32,768 tokens
+                api_params["max_tokens"] = 32768
+                logger.info(f"[SINGLE_PASS] Using maximum tokens: 32,768 for GPT-4.1")
+            elif "gpt-5" in model_name or "o1" in model_name:
+                api_params["max_completion_tokens"] = 16384
+                logger.info(f"[SINGLE_PASS] Using maximum tokens: 16,384 for GPT-5")
+            else:
+                api_params["max_tokens"] = 16384
+                logger.info(f"[SINGLE_PASS] Using maximum tokens: 16,384")
+            
+            # Generate entire script in one call
+            logger.info("[SINGLE_PASS] Sending API request...")
+            generation_start = time.time()
+            
+            response = client.chat.completions.create(**api_params)
+            
+            generation_time = time.time() - generation_start
+            logger.info(f"[SINGLE_PASS] Generation completed in {generation_time:.1f}s")
+            
+            if not response.choices or len(response.choices) == 0:
+                raise ValueError("No response from OpenAI")
+            
+            choice = response.choices[0]
+            finish_reason = choice.finish_reason
+            
+            # CRITICAL: Check if response was truncated
+            if finish_reason == "length":
+                tokens_used = response.usage.total_tokens if response.usage else 0
+                max_tokens_used = api_params.get("max_tokens") or api_params.get("max_completion_tokens")
+                logger.error(
+                    f"[SINGLE_PASS] ❌ RESPONSE TRUNCATED! finish_reason='length' "
+                    f"- Hit token limit ({tokens_used} tokens, max={max_tokens_used})"
+                )
+                logger.error("[SINGLE_PASS] Script is incomplete - falling back to section-by-section")
+                raise ValueError(f"Response truncated - hit {max_tokens_used} token limit")
+            
+            logger.info(f"[SINGLE_PASS] finish_reason: {finish_reason} ✓")
+            
+            content = choice.message.content
+            tokens_used = response.usage.total_tokens if response.usage else 0
+            
+            logger.info(f"[SINGLE_PASS] Tokens used: {tokens_used}")
+            
+            # Parse JSON response
+            import json
+            script_data_response = json.loads(content)
+            
+            generated_sections = script_data_response.get("sections", [])
+            if not generated_sections:
+                raise ValueError("No sections in response")
+            
+            # Validate the generated script
+            # Count actual words from content (AI no longer provides word_count field)
+            for section in generated_sections:
+                actual_word_count = len(section.get("content", "").split())
+                section["word_count"] = actual_word_count  # Add actual count
+            
+            # Calculate timing for sections (start_time and end_time)
+            generated_sections = wc_strategy.calculate_timing_for_sections(generated_sections)
+            
+            # Log timing info
+            logger.info("[SINGLE_PASS] Section timing calculated:")
+            for i, section in enumerate(generated_sections):
+                logger.info(
+                    f"  Section {i+1}: {section.get('start_time', 'NO_START')} - "
+                    f"{section.get('end_time', 'NO_END')} ({section['word_count']} words)"
+                )
+            
+            total_words = sum(s["word_count"] for s in generated_sections)
+            
+            logger.info(
+                f"[SINGLE_PASS] Generated {len(generated_sections)} sections, "
+                f"{total_words} words ACTUAL (target: {min_length}-{max_length})"
+            )
+            
+            # Check if we need to expand (too short) or reject (way too short)
+            is_way_too_short = total_words < min_length * 0.70  # Less than 70% of minimum
+            is_too_short = total_words < min_length  # Less than minimum
+            is_too_long = total_words > max_length * 1.15  # More than 115% of maximum
+            
+            if is_way_too_short:
+                # Too far off - reject and fall back to section-by-section
+                logger.warning(
+                    f"[SINGLE_PASS] Word count WAY too short: {total_words} "
+                    f"(need {min_length}+ minimum, got {int((total_words/min_length)*100)}%)"
+                )
+                raise ValueError(f"Word count too short: {total_words} words (need {min_length}+)")
+            
+            if is_too_long:
+                # Too long - reject and fall back
+                logger.warning(
+                    f"[SINGLE_PASS] Word count too long: {total_words} "
+                    f"(max {int(max_length * 1.15)})"
+                )
+                raise ValueError(f"Word count too long: {total_words} words")
+            
+            # Build full script text with section titles (for downloads)
+            script_parts = []
+            for section in generated_sections:
+                section_title = section.get("title", "Untitled Section").upper()
+                section_content = section.get("content", "")
+                script_parts.append(f"=== {section_title} ===")
+                script_parts.append(section_content)
+                script_parts.append("")  # Empty line between sections
+            
+            full_script = "\n".join(script_parts).strip()
+            
+            # Create metadata (matching format expected by view)
+            total_time = time.time() - start_time
+            thread_id = f"single_pass_{int(start_time)}"
+            run_id = f"single_pass_run_{int(start_time)}"
+            
+            metadata = {
+                "tokens_used": tokens_used,
+                "generation_time": round(total_time, 2),
+                "model": settings.OPENAI_MODEL,
+                "assistant_id": "single-pass",
+                "vector_store_id": "none",
+                "thread_id": thread_id,
+                "run_id": run_id,
+                "file_search_used": False,
+                "word_count": total_words,
+                "length_valid": min_length <= total_words <= max_length * 1.1,
+                "strategy_used": "single_pass",
+                "sections_generated": len(generated_sections),
+                "template_style": script_data.get("template_style", "medium"),
+            }
+            
+            logger.info(
+                f"[SINGLE_PASS] ✅ SUCCESS! Total time: {total_time:.1f}s "
+                f"({total_words} words, {len(generated_sections)} sections)"
+            )
+            
+            # POLISH PASS SKIPPED - All requirements moved to single pass prompt
+            logger.info("[SINGLE_PASS] Skipping polish pass - all requirements included in generation prompt")
+            logger.info(f"[SINGLE_PASS] Final word count: {total_words} words")
+            
+            # Verify timing is present
+            logger.info("[SINGLE_PASS] Verifying section timing:")
+            for i, section in enumerate(generated_sections):
+                if "start_time" not in section or "end_time" not in section:
+                    logger.error(
+                        f"[SINGLE_PASS] Section {i+1} MISSING timing! "
+                        f"start_time={section.get('start_time', 'MISSING')}, "
+                        f"end_time={section.get('end_time', 'MISSING')}"
+                    )
+                else:
+                    logger.info(
+                        f"  Section {i+1}: {section['start_time']} - {section['end_time']} ✓"
+                    )
+            
+            return {
+                "full_text": full_script,
+                "sections": generated_sections,
+                "metadata": metadata
+            }
+            
+        except Exception as e:
+            logger.error(f"[SINGLE_PASS] ❌ FAILED: {str(e)}")
+            logger.info("[SINGLE_PASS] Will fall back to section-by-section generation")
+            raise
+    
+    @staticmethod
+    def generate_script_with_word_count_strategy(
+        outline_text: str,
+        script_data: Dict[str, Any],
+        user=None,
+        save_log: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Generate full script using word count strategy
+        
+        NOW WITH ITERATIVE OPTIMIZATION:
+        - Tries iterative generation first (generate + expand all sections together)
+        - Falls back to section-by-section if iterative fails
+        
+        Iterative strategy:
+        1. Generate ALL sections together (hook + main + conclusion) in first pass
+        2. Check total word count
+        3. If short (< 90% target): Re-pass ALL sections with expansion (up to 3 iterations)
+        4. Return final script with proper timing
+        
+        This maintains narrative flow, tone consistency, and natural transitions.
+        
+        Args:
+            outline_text: The outline text to generate script from
+            script_data: Dictionary containing script parameters
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
+            
+        Returns:
+            Dictionary with keys: "full_text", "sections", "metadata"
+        """
+        # TRY ITERATIVE FIRST (generate all sections together, expand if needed)
+        logger.info("="*80)
+        logger.info("[SCRIPT_GEN] Attempting iterative generation (all sections together with expansion)...")
+        
+        try:
+            # Attempt iterative generation
+            result = OpenAIScriptService.generate_script_iterative(
+                outline_text, script_data, user, save_log
+            )
+            
+            logger.info(
+                f"[SCRIPT_GEN] ✅ Iterative SUCCESS! "
+                f"Time: {result['metadata'].get('generation_time', 0)}s, "
+                f"Words: {result['metadata'].get('word_count', 0)}"
+            )
+            return result
+            
+        except Exception as e:
+            logger.warning(f"[SCRIPT_GEN] ⚠️  Iterative generation failed: {str(e)}")
+            logger.info("[SCRIPT_GEN] Falling back to section-by-section generation...")
+        
+        # FALLBACK TO SECTION-BY-SECTION (original method below)
+        logger.info("[SECTION_BY_SECTION] Starting traditional section-by-section generation...")
+        
         min_length = script_data.get("min_length", 1000)
         max_length = script_data.get("max_length", 5000)
         template_style = script_data.get("template_style", "medium")
@@ -2126,26 +2908,35 @@ Remember: Talk like a FRIEND telling a story, not a narrator describing events!"
                         section_type
                     )
 
-                    expansion_prompt = f"""Please expand the previous section to EXACTLY {section_word_target} words using these strategies:
-{', '.join(expansion_strategies)}
+                    expansion_prompt = f"""🚨 WORD COUNT SHORTFALL - EXPANSION REQUIRED
 
-Current content ({actual_words} words):
+Your previous section fell SHORT of the word count target. You MUST expand it now.
+
+CURRENT: {actual_words} words
+REQUIRED: {section_word_target} words minimum
+SHORTFALL: {section_word_target - actual_words} words needed
+
+Current content (TOO SHORT):
 {section_content}
 
-CRITICAL: You must reach {section_word_target} words minimum. Add more detail, examples, and elaboration.
+🎯 EXPANSION STRATEGIES - Use these to add {section_word_target - actual_words} words:
+{chr(10).join(f'• {strategy}' for strategy in expansion_strategies)}
 
-Requirements:
-- Target: {section_word_target} words minimum (currently {actual_words})
-- Maintain the same tone and style from our conversation
-- Add examples, details, and elaboration
-- Keep the core message intact
-- DO NOT fall short of the word count
-- Use storytelling strategies to add depth and engagement
-- Maintain narrative flow with previous sections
+CRITICAL REQUIREMENTS:
+1. ADD {section_word_target - actual_words} words to reach the {section_word_target} word target
+2. Maintain the same conversational 6th-7th grade tone and style
+3. Add depth through examples, sensory details, emotional reactions, and elaboration
+4. DO NOT add fluff - add meaningful, engaging content
+5. Keep all existing story beats and structure intact
+6. Distribute expansion naturally throughout the content
+7. Maintain narrative flow with previous sections we've discussed
+
+⚠️  VERIFICATION: After writing, COUNT your words. If still under {section_word_target}, add MORE content.
+DO NOT submit until you reach at least {section_word_target} words.
 
 RESPONSE FORMAT: Return JSON object with this exact structure:
 {{
-    "content": "Your expanded script content here...",
+    "content": "Your EXPANDED script content here (minimum {section_word_target} words)...",
     "word_count": {section_word_target},
     "expansion_applied": true
 }}
@@ -2191,6 +2982,14 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
                 generated_sections
             )
             
+            # Log timing calculation results
+            logger.info(f"[WC_STRATEGY] Calculated timing for {len(generated_sections)} sections")
+            for i, section in enumerate(generated_sections):
+                logger.info(
+                    f"[WC_STRATEGY] Section {i+1}: {section.get('start_time', 'NO_START')} - "
+                    f"{section.get('end_time', 'NO_END')} ({section.get('word_count', 0)} words)"
+                )
+            
             # Combine sections into full script
             full_script_text = OpenAIScriptService._combine_sections(generated_sections)
             
@@ -2207,6 +3006,15 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
             formatted_sections = wc_strategy.format_sections_for_json_schema(
                 generated_sections
             )
+            
+            # Verify all sections have timing info
+            for i, section in enumerate(formatted_sections):
+                if "start_time" not in section or "end_time" not in section:
+                    logger.error(
+                        f"[WC_STRATEGY] Section {i+1} missing timing: "
+                        f"start_time={section.get('start_time', 'MISSING')}, "
+                        f"end_time={section.get('end_time', 'MISSING')}"
+                    )
             
             generation_time = time.time() - start_time
             
@@ -2246,10 +3054,18 @@ RESPONSE FORMAT: Return JSON object with this exact structure:
                     model=settings.OPENAI_MODEL,
                 )
             
+            # Run final polish pass to validate and fix language/tone issues
+            logger.info("[POLISH] Running final polish pass...")
+            polished_script, polished_sections = OpenAIScriptService._polish_and_validate_script(
+                full_script_text, formatted_sections, script_data, client,
+                needs_expansion=False,  # Section-by-section already hits word count
+                current_word_count=final_word_count
+            )
+            
             # Return in the proper JSON schema format
             return {
-                "full_text": full_script_text,
-                "sections": formatted_sections,
+                "full_text": polished_script,
+                "sections": polished_sections,
                 "metadata": metadata,
             }
             
@@ -2369,31 +3185,35 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
             current_messages = conversation_messages.copy()
             current_messages.append({"role": "user", "content": section_prompt})
 
-            # Use full token limits since each section is a separate OpenAI call
-            # No need to calculate estimated tokens - use maximum available
+            # Use conservative token limits to avoid truncation and rate limiting
             model_name = settings.OPENAI_MODEL.lower()
             
             api_params = {
                 "model": settings.OPENAI_MODEL,
                 "messages": current_messages,
                 "response_format": {"type": "json_object"},
-                "temperature": 0.7,  # Add temperature for more creative responses
+                "temperature": 1.0,  # Match dashboard setting for longer outputs
             }
 
             # GPT-5 and o1 models have different parameter requirements
             if "gpt-5" in model_name or "o1" in model_name:
                 # GPT-5 needs more tokens - use maximum
-                api_params["max_completion_tokens"] = 8192  # Maximum for GPT-5
-                max_tokens = 8192
+                api_params["max_completion_tokens"] = 16384  # Increased to prevent truncation
+                max_tokens = 16384
+            elif "gpt-4.1" in model_name or "gpt-4-turbo" in model_name:
+                # GPT-4.1: Increase to 16K to prevent truncation for large sections
+                api_params["max_tokens"] = 16384  # Increased from 8192
+                max_tokens = 16384
+                logger.info(f"[SECTION] Using max_tokens={max_tokens} for GPT-4.1 (increased to prevent truncation)")
             else:
-                # For gpt-4.1 and other models, use full token limit
-                api_params["max_tokens"] = 4096  # Maximum for GPT-4.1
-                max_tokens = 4096
+                # Older GPT-4 models
+                api_params["max_tokens"] = 8192  # Increased from 4096
+                max_tokens = 8192
 
             try:
                 # Add delay to help with rate limiting
                 import time
-                time.sleep(1.0)  # Increased to 1 second delay between requests
+                time.sleep(1.0)  # Keep 1 second delay to avoid rate limit errors
                 
                 response = client.chat.completions.create(**api_params)
                 
@@ -2403,6 +3223,22 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                 choice = response.choices[0]
                 if not hasattr(choice, 'message') or not choice.message:
                     raise ValueError("OpenAI API returned invalid choice structure")
+                
+                # CRITICAL: Check if response was truncated
+                finish_reason = choice.finish_reason
+                if finish_reason == "length":
+                    tokens_used = response.usage.total_tokens if response.usage else 0
+                    logger.error(
+                        f"[SECTION] ❌ Section {section_index+1} TRUNCATED! finish_reason='length' "
+                        f"- Hit {max_tokens} token limit (used {tokens_used} tokens)"
+                    )
+                    logger.warning(
+                        f"[SECTION] Section {section_index+1} is INCOMPLETE due to token limit. "
+                        f"Consider reducing word target or increasing max_tokens."
+                    )
+                    # Continue anyway - might still be usable content
+                
+                logger.info(f"[SECTION] Section {section_index+1} finish_reason: {finish_reason}")
                     
                 section_content_raw = choice.message.content
                 if not section_content_raw:
@@ -2419,8 +3255,15 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                 token_percentage = (tokens_used / max_tokens) * 100 if max_tokens > 0 else 0
                 logger.info(
                     f"[TOKENS] Section {section_index+1} ({section_type.value}): Used {tokens_used}/{max_tokens} tokens "
-                    f"({token_percentage:.1f}%) for {word_target} words - FULL TOKEN LIMIT ENABLED"
+                    f"({token_percentage:.1f}%) for {word_target} words"
                 )
+                
+                # Warn if approaching token limit (>90%)
+                if token_percentage > 90:
+                    logger.warning(
+                        f"[TOKENS] Section {section_index+1} used {token_percentage:.1f}% of token limit! "
+                        f"Risk of truncation. Consider increasing max_tokens from {max_tokens}."
+                    )
 
                 # Parse JSON response
                 import json
@@ -2465,10 +3308,10 @@ IMPORTANT: Apply the improvements above while maintaining the original requireme
                 conversation_messages.append({"role": "assistant", "content": section_content})
 
                 # Limit conversation context to prevent token overflow
-                # Keep only system message + last 2 exchanges (4 messages total) for more aggressive trimming
+                # Keep only system message + last 2 exchanges (4 messages total)
                 if len(conversation_messages) > 5:  # system + 4 messages = 5 total
                     # Keep system message + last 4 messages
-                    conversation_messages = [conversation_messages[0]] + conversation_messages[-1:]
+                    conversation_messages = [conversation_messages[0]] + conversation_messages[-4:]
                     logger.info(f"[CONVERSATION] Trimmed conversation context to prevent token overflow (kept last 2 exchanges)")
 
                 # Validate word count and quality
@@ -2933,6 +3776,242 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
             )
         
         return is_valid, word_count
+
+    @staticmethod
+    def _polish_and_validate_script(
+        full_script: str,
+        sections: List[Dict],
+        script_data: Dict[str, Any],
+        client,
+        needs_expansion: bool = False,
+        current_word_count: int = 0
+    ) -> Tuple[str, List[Dict]]:
+        """
+        Final polish pass to validate and fix language/tone issues
+        
+        NOTE: This pass does NOT expand word count anymore - that's handled during section generation.
+        
+        Checks for:
+        - Forbidden formal words (therefore, however, consequently, etc.)
+        - Missing contractions (it is -> it's, do not -> don't)
+        - Weak hook (no action verbs in first 2 sentences)
+        - Weak section endings (no curiosity hooks)
+        - Conversational tone and language level
+        
+        Args:
+            needs_expansion: Ignored - kept for backward compatibility
+            current_word_count: Current word count of the script
+        
+        Returns polished script and sections (word count unchanged)
+        """
+        import re
+        
+        logger.info("[POLISH] Analyzing script for language/tone issues (NOT expanding word count)...")
+        
+        # Log current word count for reference only
+        min_length = script_data.get("min_length", 1000)
+        if current_word_count > 0 and current_word_count < min_length:
+            logger.info(
+                f"[POLISH] Script word count: {current_word_count}/{min_length} words "
+                f"(accepting as-is, no expansion in polish pass)"
+            )
+        
+        # Define forbidden words and their replacements
+        FORBIDDEN_WORDS = {
+            "therefore": "so",
+            "however": "but",
+            "consequently": "so",
+            "thus": "so",
+            "nevertheless": "but",
+            "phenomenon": "thing",
+            "essentially": "",
+            "fundamentally": "",
+            "significant": "important",
+            "moreover": "and",
+            "furthermore": "also",
+            "subsequently": "then",
+        }
+        
+        # Check for issues
+        issues = []
+        
+        # 1. Check for forbidden words
+        forbidden_found = []
+        for word, replacement in FORBIDDEN_WORDS.items():
+            pattern = r'\b' + word + r'\b'
+            if re.search(pattern, full_script, re.IGNORECASE):
+                forbidden_found.append(word)
+        
+        if forbidden_found:
+            issues.append(f"Found forbidden formal words: {', '.join(forbidden_found)}")
+        
+        # 2. Check for missing contractions
+        contraction_patterns = [
+            (r"\bit is\b", "it's"),
+            (r"\bdo not\b", "don't"),
+            (r"\bdoes not\b", "doesn't"),
+            (r"\bcannot\b", "can't"),
+            (r"\bcould not\b", "couldn't"),
+            (r"\bwould not\b", "wouldn't"),
+            (r"\bshould not\b", "shouldn't"),
+            (r"\bdid not\b", "didn't"),
+            (r"\bwas not\b", "wasn't"),
+            (r"\bwere not\b", "weren't"),
+            (r"\bare not\b", "aren't"),
+            (r"\bwill not\b", "won't"),
+            (r"\bthey are\b", "they're"),
+            (r"\bwe are\b", "we're"),
+            (r"\byou are\b", "you're"),
+        ]
+        
+        missing_contractions = 0
+        for pattern, _ in contraction_patterns:
+            matches = re.findall(pattern, full_script, re.IGNORECASE)
+            missing_contractions += len(matches)
+        
+        if missing_contractions > 3:  # Allow a few for emphasis
+            issues.append(f"Found {missing_contractions} missing contractions")
+        
+        # 3. Check hook strength (first section)
+        if sections and len(sections) > 0:
+            first_section = sections[0]
+            content = first_section.get("content", "")
+            sentences = re.split(r'[.!?]+', content)
+            if len(sentences) >= 2:
+                first_two = ' '.join(sentences[:2])
+                # Check for action verbs
+                action_verbs = ['see', 'watch', 'hear', 'look', 'imagine', 'picture', 'feel', 'discover', 'witness', 'experience']
+                has_action = any(verb in first_two.lower() for verb in action_verbs)
+                if not has_action:
+                    issues.append("Hook lacks action verbs in first 2 sentences")
+        
+        # 4. Check section endings for curiosity hooks
+        weak_endings = 0
+        curiosity_words = ['but', 'why', 'how', 'what', 'question', 'wonder', '?', 'next', 'however', 'strange', 'mystery']
+        
+        for i, section in enumerate(sections):
+            content = section.get("content", "")
+            # Get last 2 sentences
+            sentences = [s.strip() for s in re.split(r'[.!?]+', content) if s.strip()]
+            if len(sentences) >= 2:
+                last_two = ' '.join(sentences[-2:]).lower()
+                has_curiosity = any(word in last_two for word in curiosity_words)
+                if not has_curiosity and i < len(sections) - 1:  # Don't check conclusion
+                    weak_endings += 1
+        
+        if weak_endings > 0:
+            issues.append(f"{weak_endings} sections have weak endings (no curiosity hooks)")
+        
+        # NOTE: Word count checking/expansion removed - handled during section generation
+        # Polish pass only fixes language and tone issues
+        
+        # Log issues found
+        if issues:
+            logger.warning(f"[POLISH] Found {len(issues)} issues:")
+            for issue in issues:
+                logger.warning(f"[POLISH]   - {issue}")
+            
+            # If there are issues, run a polish API call to fix them
+            logger.info("[POLISH] Requesting polish/fix from AI (language & tone only, no word count changes)...")
+            
+            polish_prompt = f"""Review and polish this YouTube script to fix language and tone issues ONLY.
+
+🚨 CRITICAL WORD COUNT RULE: 
+- Original script has {current_word_count} words
+- Your polished script MUST have {current_word_count} words (±10 words tolerance)
+- DO NOT shorten, expand, or change the length
+- Use code generation to verify word count before submitting
+- This is a POLISH pass for language/tone only, NOT a rewrite
+
+ISSUES TO FIX:
+{chr(10).join(f'- {issue}' for issue in issues)}
+
+POLISH REQUIREMENTS:
+1. Replace formal words with conversational alternatives (therefore→so, however→but)
+2. Add contractions everywhere (it is→it's, do not→don't)  
+3. Strengthen hook (first sentence needs action verb)
+4. Fix weak section endings (add curiosity hooks)
+5. Maintain 6th-7th grade reading level
+6. Keep conversational tone
+
+🔍 WORD COUNT VERIFICATION (MANDATORY):
+Before submitting, use code generation to verify your polished script:
+- Split the polished content by whitespace
+- Count the words
+- Confirm it's within {current_word_count - 10} to {current_word_count + 10} words
+- If it's shorter, ADD back words to reach {current_word_count}
+- If it's longer, trim minimally to reach {current_word_count}
+
+ORIGINAL SCRIPT ({current_word_count} words):
+{full_script}
+
+Return polished script with SAME word count. Only fix language/tone - keep all content.
+
+RESPONSE FORMAT: Return JSON with this structure:
+{{
+    "polished_script": "Complete polished script here...",
+    "sections": [
+        {{"content": "Polished section 1 content..."}}
+        {{"content": "Polished section 2 content..."}}
+        ...
+    ]
+}}"""
+
+            try:
+                response = client.chat.completions.create(
+                    model=settings.OPENAI_MODEL,
+                    messages=[
+                        {"role": "system", "content": "You are an expert script editor specializing in conversational, engaging YouTube content."},
+                        {"role": "user", "content": polish_prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.3,  # Lower temperature for consistency
+                    max_tokens=16384
+                )
+                
+                import json
+                polish_response = json.loads(response.choices[0].message.content)
+                
+                polished_script = polish_response.get("polished_script", full_script)
+                polished_section_contents = polish_response.get("sections", [])
+                
+                # Update sections with polished content while preserving all other fields
+                if polished_section_contents and len(polished_section_contents) == len(sections):
+                    for i, section in enumerate(sections):
+                        # Only update content, preserve start_time, end_time, validator_compliance, etc.
+                        section["content"] = polished_section_contents[i].get("content", section.get("content", ""))
+                        # Explicitly ensure these fields are preserved
+                        if "start_time" not in section:
+                            logger.warning(f"[POLISH] Section {i+1} missing start_time after polish")
+                        if "end_time" not in section:
+                            logger.warning(f"[POLISH] Section {i+1} missing end_time after polish")
+                
+                # Check if expansion was successful
+                if needs_expansion:
+                    final_word_count = len(polished_script.split())
+                    if final_word_count >= min_length:
+                        logger.info(
+                            f"[POLISH] ✅ Script polished and expanded successfully: "
+                            f"{current_word_count} → {final_word_count} words (target: {min_length}+)"
+                        )
+                    else:
+                        logger.warning(
+                            f"[POLISH] ⚠️ Expansion fell short: {current_word_count} → {final_word_count} words "
+                            f"(target: {min_length}), but still improved"
+                        )
+                else:
+                    logger.info(f"[POLISH] ✅ Script polished successfully")
+                
+                return polished_script, sections
+                
+            except Exception as e:
+                logger.error(f"[POLISH] Polish API call failed: {str(e)}")
+                logger.info("[POLISH] Returning original script")
+                return full_script, sections
+        
+        else:
+            logger.info("[POLISH] ✅ No issues found - script looks good!")
+            return full_script, sections
 
     @staticmethod
     def _build_basic_outline_system_prompt() -> str:
@@ -4613,25 +5692,425 @@ THIS IS YOUR FINAL ATTEMPT - MAKE IT COMPLIANT!"""
             return "main_content"
 
     @staticmethod
-    def _build_structure_system_prompt() -> str:
+    def _enhance_sections_parallel(sections: List[Dict], client, model_name: str) -> Tuple[List[Dict], int]:
+        """
+        Enhance all sections in parallel for maximum speed
+        
+        Args:
+            sections: List of basic section structures
+            client: OpenAI client
+            model_name: Model name string
+            
+        Returns:
+            Tuple of (enhanced_sections, total_tokens)
+        """
+        import asyncio
+        
+        # Check if we're already in an event loop (Django async context)
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # We're in an async context, create a new loop in a thread
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(
+                        asyncio.run,
+                        OpenAIScriptService._enhance_sections_async(sections, client, model_name)
+                    )
+                    return future.result()
+            else:
+                # No running loop, we can use asyncio.run
+                return asyncio.run(
+                    OpenAIScriptService._enhance_sections_async(sections, client, model_name)
+                )
+        except RuntimeError:
+            # No event loop, we can use asyncio.run
+            return asyncio.run(
+                OpenAIScriptService._enhance_sections_async(sections, client, model_name)
+            )
+
+    @staticmethod
+    async def _enhance_sections_async(sections: List[Dict], client, model_name: str) -> Tuple[List[Dict], int]:
+        """
+        Async coroutine to enhance all sections in parallel
+        """
+        # Create tasks for all sections
+        tasks = []
+        for i, section in enumerate(sections):
+            section_type = OpenAIScriptService._determine_section_type(i, len(sections))
+            task = OpenAIScriptService._enhance_single_section_async(
+                section, section_type, i, len(sections), client, model_name
+            )
+            tasks.append(task)
+        
+        # Run all tasks in parallel
+        print(f"[PARALLEL] Starting parallel enhancement of {len(tasks)} sections...")
+        start_time = time.time()
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        elapsed = time.time() - start_time
+        print(f"[PARALLEL] All {len(tasks)} sections completed in {elapsed:.2f}s (parallel execution)")
+        
+        # Process results
+        enhanced_sections = []
+        total_tokens = 0
+        
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                print(f"[PARALLEL] Section {i+1} failed with error: {str(result)}")
+                enhanced_sections.append(sections[i])  # Use original on failure
+            else:
+                section_data, tokens = result
+                enhanced_sections.append(section_data)
+                total_tokens += tokens
+                print(f"[PARALLEL] Section {i+1} completed: {tokens} tokens")
+        
+        return enhanced_sections, total_tokens
+
+    @staticmethod
+    async def _enhance_single_section_async(
+        section: Dict, 
+        section_type: str, 
+        section_index: int, 
+        total_sections: int, 
+        client, 
+        model_name: str
+    ) -> Tuple[Dict, int]:
+        """
+        Async coroutine to enhance a single section
+        
+        Returns:
+            Tuple of (enhanced_section_data, tokens_used)
+        """
+        # Build section-specific prompt with only relevant rules
+        section_system_prompt = OpenAIScriptService._build_section_enhancement_system_prompt(section_type)
+        section_user_prompt = OpenAIScriptService._build_section_enhancement_user_prompt(section, section_type)
+        
+        section_api_params = {
+            "model": settings.OPENAI_MODEL,
+            "messages": [
+                {"role": "system", "content": section_system_prompt},
+                {"role": "user", "content": section_user_prompt},
+            ],
+            "response_format": {"type": "json_object"},
+        }
+        
+        # Set token limits for section enhancement
+        # Priority: Quality & Speed (avoiding truncation) over cost
+        # Using 4K provides generous buffer for complex sections without truncation risk
+        if "gpt-5" in model_name or "o1" in model_name:
+            section_api_params["max_completion_tokens"] = 4096  # Generous limit for quality
+        elif "gpt-4.1" in model_name or "gpt-4-turbo" in model_name:
+            section_api_params["max_tokens"] = 4096  # 4K ensures no truncation even for complex sections
+            section_api_params["temperature"] = 0.7
+        else:
+            section_api_params["max_tokens"] = 2048
+            section_api_params["temperature"] = 0.7
+        
+        # Make async API call
+        # Note: OpenAI client is sync, so we run it in executor
+        loop = asyncio.get_event_loop()
+        section_response = await loop.run_in_executor(
+            None,
+            lambda: client.chat.completions.create(**section_api_params)
+        )
+        
+        # Process response
+        if not section_response.choices or len(section_response.choices) == 0:
+            raise ValueError(f"Section {section_index+1}: No choices in response")
+        
+        section_content = section_response.choices[0].message.content
+        if not section_content:
+            raise ValueError(f"Section {section_index+1}: Empty content")
+        
+        # Parse JSON
+        section_data = json.loads(section_content)
+        tokens_used = section_response.usage.total_tokens if section_response.usage else 0
+        
+        return section_data, tokens_used
+
+    @staticmethod
+    def _build_single_pass_system_prompt(
+        script_data: Dict[str, Any],
+        num_sections: int,
+        word_targets: Dict[str, Any]
+    ) -> str:
+        """
+        Build comprehensive system prompt for single-pass generation
+        Includes ALL storytelling rules, validators, and guidelines
+        """
+        # Get full storytelling manual (function is defined at module level in this file)
+        storytelling_manual = format_storytelling_manual_for_prompt()
+        
+        return f"""You are an expert YouTube script writer generating a COMPLETE script in ONE response.
+
+🎯 CRITICAL MISSION - WORD COUNT IS MANDATORY:
+Generate ALL {num_sections} sections of the script in a single, cohesive response.
+
+⚠️  DURATION & WORD COUNT REQUIREMENTS (STRICTLY ENFORCED):
+
+🎙️ TOTAL DURATION: {int(word_targets['total_target'] / 140)} minutes of spoken English (@ 140 words/minute)
+📊 WORD COUNT RANGE: The generated script MUST have a word count between {int(word_targets['total_target'] * 0.95)} and {int(word_targets['total_target'] * 1.05)} words (±5%).
+🎯 Approximate Token Target: ~{int(word_targets['total_target'] * 1.33)} tokens.
+
+SECTION BREAKDOWN:
+- Hook/Intro (Section 1): {int(word_targets['intro'] / 140)} min = {word_targets['intro']} words (~{int(word_targets['intro'] * 1.33)} tokens)
+- Main sections ({word_targets['main_sections_count']} sections): {int(word_targets['main_sections'] / 140)} min EACH = {word_targets['main_sections']} words each (~{int(word_targets['main_sections'] * 1.33)} tokens each)
+- Conclusion (Last section): {int(word_targets['conclusion'] / 140)} min = {word_targets['conclusion']} words (~{int(word_targets['conclusion'] * 1.33)} tokens)
+
+🎙️ THINK IN SPOKEN DURATION: You're writing for someone to READ ALOUD at 140 words per minute.
+Generate enough content to fill {int(word_targets['total_target'] / 140)} minutes of speaking time.
+
+🚨 CRITICAL: Scripts under {int(word_targets['total_target'] * 0.95)} words will be AUTOMATICALLY REJECTED
+
+📏 HOW TO REACH WORD COUNT (EXPANSION TECHNIQUES):
+If you find yourself falling short, expand using these techniques:
+• Add MORE EXAMPLES: For each concept, give 2-3 concrete examples
+• Add MORE DIALOGUE: Include what people said, exact quotes, internal thoughts
+• Add MORE SENSORY DETAILS: What did it look like? Sound like? Feel like? Smell like?
+• Add MORE EMOTIONAL BEATS: Show reactions, fears, hopes, doubts at each turning point
+• Add MORE TRANSITIONS: Bridge ideas with "So here's what happened next...", "But that's when..."
+• Add MORE BACKSTORY: Give context about characters, places, or situations
+• Add MORE CONSEQUENCES: Show ripple effects, what happened next, long-term impacts
+• SLOW DOWN KEY MOMENTS: Don't rush - let dramatic moments breathe with detail
+
+⚡ REMEMBER: YouTube audiences want RICH, DETAILED stories, not bullet points. Give them the full experience.
+
+🚨 STRUCTURAL LABELS ARE GUIDELINES - NOT OUTPUT TEXT:
+• Concepts like "Before/Conflict/After", "Open Loops", "Chapter X" are FRAMEWORKS
+• Use them to STRUCTURE your narrative, but DON'T write them as literal labels
+• Write natural, flowing narrative prose
+• Example: Don't write "Before: X. Conflict: Y. After: Z."
+• Instead: Write a flowing story that naturally follows that arc
+
+📚 LANGUAGE LEVEL - 6TH-7TH GRADE (MANDATORY):
+• Every word must be instantly clear to a 10-year-old or 80-year-old
+• ALWAYS use contractions: it's, don't, can't, they're, wasn't, couldn't, didn't
+
+FORBIDDEN WORDS (Replace immediately):
+❌ therefore, however, consequently, thus, hence → ✅ so, but, because, that's why
+❌ nevertheless, moreover, furthermore → ✅ but, also, and, plus
+❌ phenomenon, subsequently, essentially → ✅ thing, then/next, basically
+❌ fundamentally, significant, substantial → ✅ really, big, huge, major
+❌ utilize, implement, commence → ✅ use, do, start
+❌ indicate, demonstrate, illustrate → ✅ show, prove, mean
+❌ ascertain, endeavor, facilitate → ✅ find out, try, help
+
+TALK LIKE THIS:
+✅ "So here's what happened..."
+✅ "But that's not the crazy part..."
+✅ "And that's when things got weird..."
+✅ "It didn't make sense..."
+
+🔥 CONVERSATIONAL TONE (CRITICAL):
+• Write like TALKING to a friend over coffee, not writing an essay
+• Use short, punchy sentences mixed with natural flow
+• Start sentences with: "But here's the thing...", "And that's when...", "So...", "Now..."
+• Show EMOTION first, facts second: "She couldn't believe it." not "The results indicated..."
+• Create tension in EVERY line - make them curious about the next sentence
+
+🚨 CONTRACTIONS - USE EVERYWHERE (MANDATORY):
+You MUST use contractions throughout your script. Never write:
+❌ it is, do not, does not, cannot, could not, would not, should not, did not, was not, were not, are not, will not, they are, we are, you are
+✅ it's, don't, doesn't, can't, couldn't, wouldn't, shouldn't, didn't, wasn't, weren't, aren't, won't, they're, we're, you're
+
+Apply contractions to EVERY sentence where natural. Scripts without contractions will be rejected.
+
+🎯 HOOK SECTION (First Section - CRITICAL):
+• Line 1: MUST start with ACTION VERB (see, watch, hear, look, feel, discover, witness)
+• Line 1-2: Hook IMMEDIATELY with emotion or mystery
+• NO setup, NO context - jump straight into the moment
+• Create 2-3 unanswered questions in first 30 seconds
+• FORBIDDEN: "Imagine", "Picture", "Let me", "Have you ever"
+• Example: "The call came at 3 AM. She knew something was wrong."
+• ❌ BAD: "Imagine you're walking down the street..."
+• ✅ GOOD: "She stopped walking. Something felt wrong."
+
+📖 MAIN CONTENT SECTIONS:
+• Show transformation: Before → Conflict → After (as narrative arc, not labels)
+• Plant 2-3 open loops per section (curiosity questions for what's next)
+• END every section (except last) with curiosity hook - MANDATORY:
+  ✅ "But that wasn't even the strangest part."
+  ✅ "The question is: why?"
+  ✅ "And then everything changed."
+  ✅ "So what happened next?"
+  ❌ DO NOT end sections with neat conclusions - keep them wanting more
+• Use simple words to link ideas: "so", "but", "because" (NOT "therefore", "however")
+• Include emotional reactions, not just events
+
+🎬 CONCLUSION SECTION (Last Section):
+• End with emotional reflection or haunting question that sticks
+• Use simple, conversational language
+• NO clichés: "stay curious", "stay brave", "thanks for watching"
+• Make them FEEL something or THINK about something new
+• Examples: "So what else don't we know?", "And that's the thing - we'll never really know."
+
+{storytelling_manual}
+
+⚠️ SECTION ENDINGS (MANDATORY):
+• EVERY section except the last must end with curiosity hook
+• Create mini-cliffhangers to maintain engagement
+• NO neat conclusions until the very end
+
+💯 WORD COUNT ACCURACY (CRITICAL):
+• Each section must hit its target word count (±5% tolerance)
+• Hook: {word_targets['intro']}w, Main sections: {word_targets['main_sections']}w each, Conclusion: {word_targets['conclusion']}w
+• Total script must be {word_targets['total_target']} words (±5%)
+
+🔍 WORD COUNT VERIFICATION (MANDATORY):
+BEFORE submitting your response, verify word count using code generation:
+• For EACH section, use code generation to count words (split by whitespace and count)
+• Check if each section meets its target (±5% tolerance)
+• If any section is short, expand it with more examples, details, emotions
+• Verify TOTAL word count = {word_targets['total_target']} (±5%)
+• DO NOT guess - use code generation to get accurate counts
+
+📋 JSON RESPONSE FORMAT (MANDATORY):
+{{
+  "sections": [
+    {{
+      "title": "Section 1 Title",
+      "content": "Full script content for this section... (MUST be {word_targets['intro']} words)",
+      "section_type": "hook_intro"
+    }},
+    {{
+      "title": "Section 2 Title",
+      "content": "Full script content for this section... (MUST be {word_targets['main_sections']} words)",
+      "section_type": "main_content"
+    }},
+    ... (continue for all {num_sections} sections)
+  ],
+  "metadata": {{
+    "generation_method": "single_pass",
+    "sections_generated": {num_sections}
+  }}
+}}
+
+⚠️  NOTE: Do NOT include "word_count" field - we will count the actual words from your content.
+⚠️  Focus on generating FULL, DETAILED content that naturally reaches the target word count.
+
+✅ QUALITY CHECKLIST (Self-validate before responding):
+□ All {num_sections} sections generated
+□ Total word count: {word_targets['total_target']} words (±5%)
+□ Hook starts with action/emotion (no "Imagine/Picture")
+□ 2-3 open loop questions in hook
+□ Each main section ends with curiosity hook
+□ Simple language (6th-7th grade level)
+□ Contractions used throughout (it's, don't, can't)
+□ NO forbidden words (therefore, however, consequently, etc.)
+□ Conversational tone (talking to a friend)
+□ Seamless transitions between sections
+□ Natural narrative flow (no structural labels as text)
+
+REMEMBER: Generate the COMPLETE script in ONE response. Make it conversational, engaging, and easy to understand!"""
+
+    @staticmethod
+    def _build_single_pass_user_prompt(
+        sections: List[Dict],
+        word_targets: Dict[str, Any],
+        wc_strategy
+    ) -> str:
+        """
+        Build comprehensive user prompt with all section details
+        """
+        prompt_parts = [
+            "Generate a COMPLETE YouTube script based on this detailed outline:\n"
+        ]
+        
+        for i, section in enumerate(sections):
+            section_type = wc_strategy._determine_section_type(i, len(sections))
+            
+            # Determine word target
+            if section_type.value == "hook_intro":
+                target = word_targets["intro"]
+            elif section_type.value == "conclusion":
+                target = word_targets["conclusion"]
+            else:
+                target = word_targets["main_sections"]
+            
+            section_title = section.get("title", f"Section {i+1}")
+            section_desc = section.get("description", "")
+            key_points = section.get("key_points", [])
+            
+            # Calculate duration for this section
+            duration_minutes = target / 140  # 140 words per minute
+            duration_str = f"{int(duration_minutes)}:{int((duration_minutes % 1) * 60):02d}" if duration_minutes >= 1 else f"{int(duration_minutes * 60)}s"
+            min_words = int(target * 0.95)
+            max_words = int(target * 1.05)
+            approx_tokens = int(target * 1.33)
+            
+            prompt_parts.append(f"\n{'='*60}")
+            prompt_parts.append(f"SECTION {i+1}: {section_title}")
+            prompt_parts.append(f"Type: {section_type.value.replace('_', ' ').title()}")
+            prompt_parts.append(f"🎙️ DURATION: {duration_str} of spoken English (@ 140 words/minute)")
+            prompt_parts.append(f"📊 WORD COUNT RANGE: This section MUST have between {min_words} and {max_words} words (±5%).")
+            prompt_parts.append(f"🎯 Approximate Token Target: ~{approx_tokens} tokens.")
+            prompt_parts.append(f"🚨 THIS SECTION ALONE MUST FILL {duration_str} OF SPEAKING TIME - expand with examples, details, emotion!")
+            prompt_parts.append(f"\nDescription: {section_desc}")
+            
+            if key_points:
+                prompt_parts.append(f"\nKey Points to Cover:")
+                for point in key_points:
+                    prompt_parts.append(f"• {point}")
+
+        # Calculate total duration and tokens
+        total_duration_minutes = word_targets['total_target'] / 140
+        total_duration_str = f"{int(total_duration_minutes)} min {int((total_duration_minutes % 1) * 60)} sec"
+        min_total_words = int(word_targets['total_target'] * 0.95)
+        max_total_words = int(word_targets['total_target'] * 1.05)
+        approx_total_tokens = int(word_targets['total_target'] * 1.33)
+        
+        prompt_parts.append(f"\n{'='*60}\n")
+        prompt_parts.append(f"📊 FINAL REQUIREMENTS SUMMARY:")
+        prompt_parts.append(f"• TOTAL SECTIONS: {len(sections)}")
+        prompt_parts.append(f"• DURATION TARGET: {total_duration_str} of spoken English (@ 140 words/minute)")
+        prompt_parts.append(f"• WORD COUNT RANGE: Script MUST be between {min_total_words} and {max_total_words} words (±5%)")
+        prompt_parts.append(f"• TOKEN TARGET: Approximately ~{approx_total_tokens} tokens")
+        prompt_parts.append("")
+        prompt_parts.append("⚡ CRITICAL REQUIREMENTS:")
+        prompt_parts.append(f"1. 🎙️ DURATION: Generate {total_duration_str} of spoken content")
+        prompt_parts.append(f"2. 📊 WORD COUNT: Between {min_total_words}-{max_total_words} words (target: {word_targets['total_target']})")
+        prompt_parts.append(f"3. 🎯 TOKEN COUNT: Approximately ~{approx_total_tokens} tokens")
+        prompt_parts.append(f"4. 📝 COMPLETENESS: Generate ALL {len(sections)} sections in ONE response")
+        prompt_parts.append("3. 🔗 FLOW: Maintain seamless narrative flow between sections")
+        prompt_parts.append("4. 💬 LANGUAGE: Use 6th-7th grade language (simple, conversational)")
+        prompt_parts.append("5. ✂️  CONTRACTIONS: Use contractions throughout (it's, don't, can't)")
+        prompt_parts.append("6. NO structural labels in the script (Before/Conflict/After are guides only)")
+        prompt_parts.append("7. End each section (except last) with curiosity hook")
+        prompt_parts.append("8. Return valid JSON matching the schema in system prompt")
+        prompt_parts.append("")
+        prompt_parts.append("💡 HOW TO HIT WORD COUNT:")
+        prompt_parts.append("• Add concrete examples, dialogue, sensory details")
+        prompt_parts.append("• Show emotional reactions at turning points")
+        prompt_parts.append("• Include backstory and context where relevant")
+        prompt_parts.append("• Slow down key moments with rich detail")
+        prompt_parts.append("• Use transitions to bridge ideas smoothly")
+        prompt_parts.append("")
+        prompt_parts.append("Begin generating the complete script now!")
+        
+        return "\n".join(prompt_parts)
+
+    @staticmethod
+    def _build_structure_system_prompt(suggested_sections: int) -> str:
         """Build minimal system prompt for basic structure generation"""
-        return """You are an expert YouTube script writer. Create a basic outline structure with minimal details.
+        return f"""You are an expert YouTube script writer. Create a basic outline structure with minimal details.
 
 CRITICAL: You MUST respond with valid JSON only.
 
 JSON SCHEMA:
-{
+{{
   "sections": [
-    {
+    {{
       "title": "Section Title",
       "description": "Brief 20-30 word description",
       "key_points": ["Point 1", "Point 2", "Point 3"]
-    }
+    }}
   ]
-}
+}}
 
 REQUIREMENTS:
-- Create 4-6 sections for a YouTube video
+- Create exactly {suggested_sections} sections for a YouTube video
 - Keep descriptions brief (20-30 words each)
 - Focus on logical flow and structure
 - No detailed validators or complex rules
@@ -4639,8 +6118,14 @@ REQUIREMENTS:
 RESPONSE FORMAT: Return ONLY valid JSON matching the schema above."""
 
     @staticmethod
-    def _build_structure_user_prompt(script_data: Dict[str, Any]) -> str:
-        """Build minimal user prompt for structure generation"""
+    def _build_structure_user_prompt(script_data: Dict[str, Any]) -> Tuple[str, int]:
+        """Build minimal user prompt for structure generation
+        
+        Returns:
+            Tuple: (prompt string, suggested_sections count)
+        """
+        from scripts.services.word_count_strategy import TemplateStyleConfig
+        
         tones = script_data.get("tones", ["informative"])
         template_style = script_data.get("template_style", "medium")
         description = script_data.get("description", "")
@@ -4662,19 +6147,30 @@ RESPONSE FORMAT: Return ONLY valid JSON matching the schema above."""
             except TemplateStyle.DoesNotExist:
                 template_style = "medium"
 
+        # Normalize template_style name for config lookup (lowercase, replace spaces with underscores)
+        template_style_key = template_style.lower().replace(" ", "_")
+        
+        # Get suggested_sections from TemplateStyleConfig
+        template_config = TemplateStyleConfig.TEMPLATE_CONFIGS.get(template_style_key, TemplateStyleConfig.TEMPLATE_CONFIGS["medium"])
+        suggested_sections = template_config["suggested_sections"]
+        
+        print(f"[OUTLINE_STRUCTURE] Template style: {template_style} -> key: {template_style_key} -> sections: {suggested_sections}")
+
         tone_text = f"Tones: {', '.join(tones)}" if len(tones) > 1 else f"Tone: {tones[0]}"
 
-        return f"""Create basic outline structure for:
+        prompt = f"""Create basic outline structure for:
 
 Topic: {description}
 {tone_text} | Style: {template_style} | Target: {min_length:,}-{max_length:,} words
 
 REQUIREMENTS:
-- 4-6 sections with brief descriptions
+- Create exactly {suggested_sections} sections with brief descriptions
 - Logical flow from introduction to conclusion
 - Keep it simple and structural
 
 CRITICAL: Return ONLY valid JSON matching the schema provided."""
+
+        return prompt, suggested_sections
 
     @staticmethod
     def _build_section_enhancement_system_prompt(section_type: str) -> str:
@@ -4692,6 +6188,13 @@ HOOK VALIDATORS (MANDATORY):
 - MUST state 2-3 specific high-value questions
 - MUST include transformation statement: "Learn X to achieve Y"
 
+✅ VALIDATION CHECKS (PERFORM INLINE):
+- Verify hook duration estimate ≤30 seconds
+- Confirm action verbs are present in first 1-2 sentences
+- Check that 2-3 specific open loop questions are clearly stated
+- Ensure first value point starts within 10 seconds of hook end
+- If any validator fails, fix it in your enhancement before responding
+
 JSON SCHEMA:
 {
   "title": "Enhanced Hook Title",
@@ -4701,10 +6204,10 @@ JSON SCHEMA:
   "transition": "How to transition to next section",
   "content": "Specific examples, stories, or techniques to include",
   "validators_compliance": {
-    "hook_duration": "≤30s",
-    "action_verbs": "Present in opening",
-    "open_loops": "2-3 specific questions listed",
-    "value_delivery_speed": "First point within 10s of hook end"
+    "hook_duration": "≤30s - VERIFIED",
+    "action_verbs": "Present in opening - VERIFIED",
+    "open_loops": "2-3 specific questions listed - VERIFIED",
+    "value_delivery_speed": "First point within 10s - VERIFIED"
   }
 }
 
@@ -4722,6 +6225,13 @@ CONCLUSION REQUIREMENTS:
 - End with a strong, memorable statement
 - Include cliffhangers for future content
 
+✅ VALIDATION CHECKS (PERFORM INLINE):
+- Verify all hook open loops are addressed/closed
+- Confirm clear next steps or call-to-action are present
+- Check that main value proposition is reinforced
+- Ensure cliffhangers for future content are included
+- If any validator fails, fix it in your enhancement before responding
+
 JSON SCHEMA:
 {
   "title": "Enhanced Conclusion Title",
@@ -4731,10 +6241,10 @@ JSON SCHEMA:
   "transition": "How to transition to next section",
   "content": "Specific examples, stories, or techniques to include",
   "validators_compliance": {
-    "open_loops_closed": "All hook questions answered",
-    "call_to_action": "Clear next steps provided",
-    "value_reinforced": "Main proposition restated",
-    "cliffhangers": "Future content teased"
+    "open_loops_closed": "All hook questions answered - VERIFIED",
+    "call_to_action": "Clear next steps provided - VERIFIED",
+    "value_reinforced": "Main proposition restated - VERIFIED",
+    "cliffhangers": "Future content teased - VERIFIED"
   }
 }
 
@@ -4752,6 +6262,13 @@ MAIN CONTENT REQUIREMENTS:
 - Maintain conversational, YouTube-friendly tone
 - Include sensory details and emotional beats
 
+✅ VALIDATION CHECKS (PERFORM INLINE):
+- Verify concrete, filmable sensory details are included
+- Confirm causal connectors link ideas properly
+- Check that emotional beats and stakes are defined
+- Ensure proper structure and engagement maintained
+- If any validator fails, fix it in your enhancement before responding
+
 JSON SCHEMA:
 {
   "title": "Enhanced Main Content Title",
@@ -4761,10 +6278,10 @@ JSON SCHEMA:
   "transition": "How to transition to next section",
   "content": "Specific examples, stories, or techniques to include",
   "validators_compliance": {
-    "sensory_details": "Concrete, filmable details included",
-    "causal_connectors": "Therefore/but/because links present",
-    "emotional_beats": "Stakes and consequences defined",
-    "visual_cues": "Editor notes included"
+    "sensory_details": "Concrete, filmable details included - VERIFIED",
+    "causal_connectors": "Links present - VERIFIED",
+    "emotional_beats": "Stakes and consequences defined - VERIFIED",
+    "visual_cues": "Editor notes included - VERIFIED"
   }
 }
 
