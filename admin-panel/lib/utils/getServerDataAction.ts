@@ -19,7 +19,7 @@ export async function getServerDataAction<T>(
   try {
     const cookieStore = await cookies();
     const userCookie = cookieStore.get('access_token');
-    if (!userCookie?.value) return redirect('/signup');
+    if (!userCookie?.value) return redirect('/signin');
 
     const res = await fetch(`${baseUrl}${endpoint}`, {
       method: 'GET',

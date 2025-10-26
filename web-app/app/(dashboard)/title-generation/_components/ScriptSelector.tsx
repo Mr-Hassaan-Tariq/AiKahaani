@@ -68,7 +68,7 @@ export default function ScriptSelector({
           className="w-[var(--radix-popover-trigger-width)] border-[#BAFF38]/[12%] bg-[#2D2D2D] p-0"
           align="start"
         >
-          {scripts.map((script) => {
+          {scripts?.map((script) => {
             const isSelected = selectedValue === script.uuid;
             return (
               <div

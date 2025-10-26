@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import type { SignupRequest, User } from './types';
-import { UpdateUserRequest } from './user';
+import { AdminUser, UpdateUserRequest, UpdateUserStatusRequest } from './user';
 import { api, authService, userService } from './wrapper';
 
 // Authentication hook
@@ -182,4 +182,181 @@ export const useApiStatus = () => {
   }, []);
 
   return { isOnline };
+};
+
+// Admin User Management hook
+export const useAdminUsers = () => {
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+  });
+
+  // Get all users
+  const getUsers = useCallback(async (page: number = 1, limit: number = 20, search?: string) => {
+    if (!api.isAuthenticated()) {
+      setError('User not authenticated');
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await userService.getAdminUsers(page, limit, search);
+      setUsers(response.results);
+      setPagination({
+        page: page,
+        limit: limit,
+        total: response.count,
+      });
+      return response;
+    } catch (err) {
+      const error = err as { message: string };
+      const errorMessage = error.message || 'Failed to get users';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Get a specific user
+  const getUser = useCallback(async (userId: string) => {
+    if (!api.isAuthenticated()) {
+      setError('User not authenticated');
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const user = await userService.getAdminUser(userId);
+      return user;
+    } catch (err) {
+      const error = err as { message: string };
+      const errorMessage = error.message || 'Failed to get user';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Update user status
+  const updateUserStatus = useCallback(
+    async (userId: string, statusData: UpdateUserStatusRequest) => {
+      if (!api.isAuthenticated()) {
+        setError('User not authenticated');
+        return null;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await userService.updateUserStatus(userId, statusData);
+
+        // Update the user in the local state
+        setUsers((prevUsers) =>
+          prevUsers.map((user) => (user?.id === userId ? response?.user : user)),
+        );
+        setUsers;
+
+        return response;
+      } catch (err) {
+        const error = err as { message: string };
+        const errorMessage = error.message || 'Failed to update user status';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  // Delete user
+  const deleteUser = useCallback(async (userId: string) => {
+    if (!api.isAuthenticated()) {
+      setError('User not authenticated');
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await userService.deleteUser(userId);
+
+      // Remove the user from local state
+      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+
+      // Update total count
+      setPagination((prev) => ({
+        ...prev,
+        total: prev.total - 1,
+      }));
+
+      return response;
+    } catch (err) {
+      const error = err as { message: string };
+      const errorMessage = error.message || 'Failed to delete user';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Activate user
+  const activateUser = useCallback(
+    async (userId: string) => {
+      return updateUserStatus(userId, { is_active: true });
+    },
+    [updateUserStatus],
+  );
+
+  // Deactivate user
+  const deactivateUser = useCallback(
+    async (userId: string) => {
+      return updateUserStatus(userId, { is_active: false });
+    },
+    [updateUserStatus],
+  );
+
+  // Grant admin privileges
+  const grantAdminPrivileges = useCallback(
+    async (userId: string) => {
+      return updateUserStatus(userId, { is_admin: true });
+    },
+    [updateUserStatus],
+  );
+
+  // Revoke admin privileges
+  const revokeAdminPrivileges = useCallback(
+    async (userId: string) => {
+      return updateUserStatus(userId, { is_admin: false });
+    },
+    [updateUserStatus],
+  );
+
+  return {
+    users,
+    loading,
+    error,
+    pagination,
+    getUsers,
+    getUser,
+    updateUserStatus,
+    deleteUser,
+    activateUser,
+    deactivateUser,
+    grantAdminPrivileges,
+    revokeAdminPrivileges,
+  };
 };

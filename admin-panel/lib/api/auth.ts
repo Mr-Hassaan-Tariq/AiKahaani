@@ -79,12 +79,12 @@ export class AuthService {
   }> {
     try {
       const response = await this.apiClient.post<{
-        success: boolean;
+        success?: boolean;
         message?: string;
         user?: User;
-        access?: string;
-        refresh?: string;
-      }>('/auth/admin-login/', {
+        access_token?: string;
+        refresh_token?: string;
+      }>('/auth/admin/login/', {
         email,
         password,
       });
@@ -94,11 +94,17 @@ export class AuthService {
       }
 
       // Store tokens if login is successful
-      if (response.data.success && response.data.access && response.data.refresh) {
-        this.apiClient.setTokens(response.data.access, response.data.refresh);
+      if (response.data.access_token && response.data.refresh_token) {
+        this.apiClient.setTokens(response.data.access_token, response.data.refresh_token);
       }
 
-      return response.data;
+      return {
+        success: true,
+        message: response.data.message,
+        user: response.data.user,
+        access: response.data.access_token,
+        refresh: response.data.refresh_token,
+      };
     } catch (error) {
       const apiError = error as { data: ApiError; status: number };
       throw {

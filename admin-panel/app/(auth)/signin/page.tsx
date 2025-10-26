@@ -58,7 +58,7 @@ export default function AdminLogin() {
       const response = await authService.adminLogin(formData.email, formData.password);
 
       if (response.success) {
-        router.push('/dashboard');
+        router.push('/');
       }
     } catch (validationError) {
       if (validationError instanceof yup.ValidationError) {

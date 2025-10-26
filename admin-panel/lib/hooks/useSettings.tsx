@@ -10,7 +10,7 @@ import { processError } from 'lib/utils/clientDataActions';
 async function updateProfileImage(formData: FormData) {
   const token = Cookies.get('access_token');
 
-  if (!token) return (window.location.href = '/signup');
+  if (!token) return (window.location.href = '/signin');
 
   const res = await fetch(`${baseUrl}v1/users/profile-picture`, {
     method: method.patch,

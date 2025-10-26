@@ -14,7 +14,7 @@ export default function LogoutModal() {
 
   const handleLogout = useCallback(() => {
     Cookies.remove('access_token');
-    router.push('/signup');
+    router.push('/signin');
   }, [router]);
 
   return (

@@ -42,9 +42,11 @@ export default function Dialog({
             {title}
           </Text>
           {description && (
-            <Text variant="lg" className="text-center text-[#AAACA6]">
-              {description}
-            </Text>
+            <Text
+              variant="lg"
+              className="text-center leading-[28px] text-[#AAACA6]"
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
           )}
         </Col>
         <div className="">{children}</div>

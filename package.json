@@ -6,10 +6,13 @@
   "scripts": {
     "website:start": "pnpm --filter=website run start",
     "web-app:start": "pnpm --filter=web-app run start",
+    "admin-panel:start": "pnpm --filter=admin-panel run start",
     "website:build": "pnpm --filter=website run build",
     "web-app:build": "pnpm --filter=web-app run build",
+    "admin-panel:build": "pnpm --filter=admin-panel run build",
     "website": "pnpm --filter=website run dev",
     "web-app": "pnpm run --filter=web-app dev",
+    "admin-panel": "pnpm run --filter=admin-panel dev",
     "check": "./scripts/check-all.sh",
     "check:website": "cd website && pnpm lint && pnpm prettier:check && pnpm type-check",
     "check:web-app": "cd web-app && pnpm lint && pnpm prettier:check && pnpm type-check",

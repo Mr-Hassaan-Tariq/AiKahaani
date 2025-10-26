@@ -1,7 +1,7 @@
 import React from 'react';
 
-import SettingTabs from '../SettingTabs';
+import Page from './page';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return <SettingTabs>{children}</SettingTabs>;
+export default function Layout({}: { children: React.ReactNode }) {
+  return <Page />;
 }

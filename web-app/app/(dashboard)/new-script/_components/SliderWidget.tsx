@@ -28,7 +28,6 @@ export default function SliderWidget({
   const initialWorldCounter = defaultValue || [range.min, range.default];
   const [worldCounter, setWorldCounter] = useState(initialWorldCounter);
 
-
   const {
     register,
     formState: { errors },

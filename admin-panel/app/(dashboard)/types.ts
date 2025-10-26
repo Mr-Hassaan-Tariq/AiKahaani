@@ -18,3 +18,38 @@ export interface NotificationSettingsType {
   feature_updates: boolean;
   community_affiliate_updates: boolean;
 }
+
+export type NicheChannel = {
+  name: string;
+  link: string;
+};
+
+export type NicheStructure = {
+  intro?: string;
+  body?: string;
+  outro?: string;
+};
+
+export type Niche = {
+  thumbnail_url: string | null;
+  id: number;
+  admin: number;
+  title: string;
+  tagline: string;
+  thumbnail: string | null;
+  script_structure: NicheStructure | null;
+  tone: string[];
+  pacing: string[];
+  top_channels: NicheChannel[];
+  best_for: string[];
+  status: string;
+  created: string;
+  modified: string;
+};
+
+export type NichePaginatedResponse = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Niche[];
+};

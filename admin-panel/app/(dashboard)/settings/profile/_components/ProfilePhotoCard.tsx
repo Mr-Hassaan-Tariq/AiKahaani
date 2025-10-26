@@ -10,7 +10,20 @@ import Col from 'components/ui/Col';
 import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
-export default function ProfilePhotoCard({ profileImage }: { profileImage?: string }) {
+export default function ProfilePhotoCard({
+  profileImage,
+  fullname,
+}: {
+  profileImage?: string;
+  fullname?: string | undefined;
+}) {
+  const getInitials = (name?: string) => {
+    if (!name) return '';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  };
+
   return (
     <Card>
       <Col className="gap-6 lg:gap-8">
@@ -19,26 +32,20 @@ export default function ProfilePhotoCard({ profileImage }: { profileImage?: stri
         </Text>
 
         <Row className="flex-col justify-normal gap-6 md:flex-row">
-          {/* <Image
-            src={profileImage || brokenImage}
-            alt="DP"
-            width={500}
-            height={500}
-            priority={true}
-            className="h-[120px] w-[120px] rounded-full bg-white/10 object-cover"
-            onError={(e) => {
-              e.currentTarget.src = brokenImage.src;
-            }}
-          /> */}
-
-          <ClientImage
-            src={profileImage || ''}
-            alt="DP"
-            width={500}
-            height={500}
-            priority={true}
-            className="h-[120px] w-[120px] rounded-full bg-white/10 object-cover"
-          />
+          {profileImage ? (
+            <ClientImage
+              src={profileImage}
+              alt="DP"
+              width={500}
+              height={500}
+              priority={true}
+              className="h-[120px] w-[120px] rounded-full bg-white/10 object-cover"
+            />
+          ) : (
+            <div className="flex h-[120px] w-[120px] items-center justify-center rounded-full bg-gray-600 text-4xl font-semibold text-white">
+              {getInitials(fullname)}
+            </div>
+          )}
 
           <Col className="gap-6">
             <Col className="gap-3">
@@ -55,10 +62,11 @@ export default function ProfilePhotoCard({ profileImage }: { profileImage?: stri
                 </Text>
               </Row>
             </Col>
+
             <Row className="justify-center lg:justify-normal">
               <ChangePhotoModal
                 trigger={
-                  <Button variant="gray" className="flex w-fit items-center ...">
+                  <Button variant="gray" className="flex w-fit items-center">
                     {changePhotoIcon} Change photo
                   </Button>
                 }

@@ -15,7 +15,7 @@ export default async function Page() {
           {error.message?.toString()}
         </Text>
       )}
-      <ProfilePhotoCard profileImage={data?.profile_picture} />
+      <ProfilePhotoCard profileImage={data?.profile_picture} fullname={data?.fullname} />
       <ProfileCardDetail profile={data} />
     </Col>
   );

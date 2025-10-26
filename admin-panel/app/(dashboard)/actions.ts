@@ -1,6 +1,6 @@
 'use server';
 
-import { NotificationSettingsType, UserProfileType } from './types';
+import { NichePaginatedResponse, NotificationSettingsType, UserProfileType } from './types';
 import { getServerDataAction, updateServerDataAction } from 'lib/utils/getServerDataAction';
 
 export async function getUserProfile() {
@@ -13,4 +13,8 @@ export async function getNotificationSettings() {
 
 export async function updateNotificationSettings(settings: NotificationSettingsType) {
   return await updateServerDataAction<NotificationSettingsType>('v1/users/notifications', settings);
+}
+
+export async function getNiches() {
+  return await getServerDataAction<NichePaginatedResponse>('v1/admin/niches');
 }

@@ -38,7 +38,7 @@ export default function ScriptList({
 
   return (
     <div className={`mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 ${className}`}>
-      {scripts.map((script) => (
+      {scripts?.map((script) => (
         <ScriptCard key={script.uuid} script={script} actions={actions} />
       ))}
     </div>

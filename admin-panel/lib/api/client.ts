@@ -54,7 +54,7 @@ export class ApiClient {
   // Get refresh token from localStorage
   private getRefreshToken(): string | null {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('refresh_token');
+      return this.getCookie('refresh_token');
     }
     return null;
   }
@@ -62,16 +62,16 @@ export class ApiClient {
   // Set tokens in localStorage
   private setTokensInStorage(access: string, refresh: string): void {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
+      document.cookie = `access_token=${encodeURIComponent(access)}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
+      document.cookie = `refresh_token=${encodeURIComponent(refresh)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
     }
   }
 
   // Clear tokens from localStorage
   private clearTokensFromStorage(): void {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
   }
 
