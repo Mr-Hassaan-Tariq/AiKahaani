@@ -4,7 +4,8 @@ import logging
 from drf_spectacular.utils import (
     OpenApiResponse,
     extend_schema,
-    OpenApiParameter
+    OpenApiParameter,
+    OpenApiExample
 )
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
@@ -303,7 +304,12 @@ class UserTitlesListView(APIView, LimitOffsetPagination):
                 location=OpenApiParameter.QUERY,
                 required=False,
                 description="Number of results to return per page.",
-                examples=[{"value": 10}],
+                examples=[
+                    OpenApiExample(
+                        name="Example Value",
+                        value=10
+                    )
+                ],
             ),
             OpenApiParameter(
                 name="offset",
@@ -311,7 +317,12 @@ class UserTitlesListView(APIView, LimitOffsetPagination):
                 location=OpenApiParameter.QUERY,
                 required=False,
                 description="The initial index from which to return results.",
-                examples=[{"value": 0}],
+                examples=[
+                    OpenApiExample(
+                        name="Example Value",
+                        value=0
+                    )
+                ],
             ),
         ],
         responses={

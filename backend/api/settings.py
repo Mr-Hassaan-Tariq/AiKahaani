@@ -356,7 +356,7 @@ SPECTACULAR_SETTINGS = {
     "AUTHENTICATION_WHITELIST": [
         "users.authentication.JWTAuthenticationWithAccessTokenBlacklist",
     ],
-    "EXTENSIONS": [
+    "AUTHENTICATION_EXTENSIONS": [
         "users.spectacular_extensions.JWTAuthenticationWithAccessTokenBlacklistExtension",
     ],
 }
