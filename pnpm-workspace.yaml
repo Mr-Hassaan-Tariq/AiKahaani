@@ -2,3 +2,4 @@ packages:
   - "web-app"
   - "backend"
   - "website"
+  - "admin-panel"
