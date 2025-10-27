@@ -23,9 +23,7 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
           content: e.script,
         })) || [];
 
-  const allContent = sections
-    ?.map((e: any) => `${e.timeRange} ${e.title}\n${e.content}`)
-    .join('\n\n');
+  const allContent = sections?.map((e: any) => `${e.content}`).join('\n\n');
 
   return (
     <Col className="gap-8">

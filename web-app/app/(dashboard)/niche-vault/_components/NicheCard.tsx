@@ -9,15 +9,29 @@ import Card from 'components/ui/Card';
 import Text from 'components/ui/Text';
 
 interface NicheCardProps {
-  image: any;
+  id: number;
   title: string;
   description: string;
-  tags: string[];
-  examples: string[];
-  onClick?: () => void;
+  tone: string[];
+  pacing: string[];
+  topChannels: { name: string; link: string }[];
+  thumbnailUrl?: string | null;
 }
 
-const NicheCard: FC<NicheCardProps> = ({ image, title, description, tags, examples }) => {
+const NicheCard: FC<NicheCardProps> = ({
+  id,
+  title,
+  description,
+  tone,
+  pacing,
+  topChannels,
+  thumbnailUrl,
+}) => {
+  const tags = [...(tone || []), ...(pacing || [])];
+  const examples = topChannels?.map((c) => c.name) || [];
+
+  const videoUrl = topChannels[0]?.link || '';
+
   const truncated = examples.join(', ');
   const maxLength = 35;
   const displayText =
@@ -26,23 +40,37 @@ const NicheCard: FC<NicheCardProps> = ({ image, title, description, tags, exampl
   return (
     <Card className="rounded-xl bg-[#161616] text-white lg:px-5 lg:py-5">
       <div className="relative h-40">
-        <VedioModal
-          trigger={<Image src={image} alt={title} fill className="rounded-xl object-cover" />}
-          title="MrBeast"
-          videoId={'videoId'}
-          subtitle={'“I Bought Everything In A Store”'}
-          youtubeUrl={'youtubeUrl'}
-        />
+        {thumbnailUrl ? (
+          <VedioModal
+            trigger={
+              <Image src={thumbnailUrl} alt={title} fill className="rounded-xl object-cover" />
+            }
+            title={title}
+            videoId={'videoId'}
+            subtitle={description}
+            youtubeUrl={videoUrl}
+            thumbnailUrl={thumbnailUrl}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center rounded-xl bg-[#2a2a2a] text-center text-lg font-semibold text-white">
+            Thumbnail
+          </div>
+        )}
       </div>
+
       <div className="mt-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between text-xs text-gray-300">
           <div className="rounded-md border border-[#BAFF381F] bg-[#2a2a2a] p-2">
-            {tags.map((tag, i) => (
-              <span key={i} className="rounded-md text-white">
-                {tag}
-                {i < tag.length - 1 && ', '}
-              </span>
-            ))}
+            {tags.length > 0 ? (
+              tags.map((tag, i) => (
+                <span key={i} className="text-white">
+                  {tag}
+                  {i < tags.length - 1 && ', '}
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-400">No tags</span>
+            )}
           </div>
           <ExternalLink className="h-5 w-5 cursor-pointer text-white" />
         </div>
@@ -51,19 +79,13 @@ const NicheCard: FC<NicheCardProps> = ({ image, title, description, tags, exampl
         <Text variant="base" className="text-[#AAACA6]">
           {description}
         </Text>
+
         <Text variant="base" className="text-[#AAACA6]">
-          Examples: <span className="text-white">{displayText}</span>
+          Examples:{' '}
+          <span className="text-white">{examples.length > 0 ? displayText : 'No examples'}</span>
         </Text>
 
-        {/* <VedioModal
-          trigger={<Button variant="green">Use this style</Button>}
-          title="MrBeast"
-          videoId={'videoId'}
-          subtitle={'“I Bought Everything In A Store”'}
-          youtubeUrl={'youtubeUrl'}
-        /> */}
-
-        <NicheStyleModal trigger={<Button variant="green">Use this style</Button>} />
+        <NicheStyleModal trigger={<Button variant="green">Use this style</Button>} nicheId={id} />
       </div>
     </Card>
   );

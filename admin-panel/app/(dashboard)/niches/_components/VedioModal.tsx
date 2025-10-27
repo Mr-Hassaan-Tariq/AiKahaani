@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 import { VideoIcon } from './components';
 import Button from 'components/ui/Button';
@@ -12,10 +14,20 @@ interface VedioModalProps {
   subtitle: string;
   videoId: string;
   youtubeUrl: string;
+  thumbnailUrl: string;
 }
 
-export default function VedioModal({ trigger, title, subtitle }: VedioModalProps) {
+export default function VedioModal({
+  trigger,
+  title,
+  subtitle,
+  youtubeUrl,
+  thumbnailUrl,
+}: VedioModalProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  console.log('youtubeUrl............', youtubeUrl);
 
   return (
     <Dialog
@@ -24,20 +36,10 @@ export default function VedioModal({ trigger, title, subtitle }: VedioModalProps
       trigger={trigger}
       title={title}
       description={subtitle}
-      footer={
-        <Button type="submit" variant="green">
-          {VideoIcon} Watch on YouTube
-        </Button>
-      }
+      footer={<Button onClick={() => router.push(youtubeUrl)}>{VideoIcon} Watch on YouTube</Button>}
     >
-      <div className="mt-4 aspect-video w-full overflow-hidden rounded-xl">
-        <iframe
-          src={'https://www.youtube.com/watch?v=uiBIkQlJ3pA&list=RDggNHDf18R1E&index=2'}
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="h-full w-full"
-        />
+      <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-xl">
+        <Image src={thumbnailUrl} alt={title} fill className="rounded-xl" />
       </div>
     </Dialog>
   );

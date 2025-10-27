@@ -241,7 +241,7 @@ export class UserService {
    */
   async getAdminUsers(
     page: number = 1,
-    limit: number = 20,
+    limit: number = 10,
     search?: string,
   ): Promise<AdminUsersResponse> {
     try {

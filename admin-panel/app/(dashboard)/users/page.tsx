@@ -2,10 +2,10 @@
 
 import type { AdminUser } from 'lib/api/user';
 import { useEffect, useState } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { Eye, Trash2, UserCheck, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 
+import Pagination from '../_components/Pagination';
 import { useAdminUsers } from 'lib/api/hooks';
 import Card from 'components/ui/Card';
 import Text from 'components/ui/Text';
@@ -37,36 +37,36 @@ export default function UserManagement() {
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Load users on component mount
   useEffect(() => {
-    getUsers(1, 20);
+    getUsers(1, 10);
   }, [getUsers]);
 
-  // Handle search
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    getUsers(1, 20, term);
+    getUsers(1, pagination.limit, term);
   };
 
-  // Handle pagination
   const handlePageChange = (page: number) => {
     getUsers(page, pagination.limit, searchTerm);
   };
 
-  // Handle user actions
   const handleActivateUser = async (userId: string) => {
     try {
       await activateUser(userId);
+      toast.success('User activated successfully');
     } catch (error) {
       console.error('Failed to activate user:', error);
+      toast.error('Failed to activate user');
     }
   };
 
   const handleDeactivateUser = async (userId: string) => {
     try {
       await deactivateUser(userId);
+      toast.success('User deactivated successfully');
     } catch (error) {
       console.error('Failed to deactivate user:', error);
+      toast.error('Failed to deactivate user');
     }
   };
 
@@ -77,6 +77,7 @@ export default function UserManagement() {
         toast.success('User deleted successfully');
       } catch (error) {
         console.error('Failed to delete user:', error);
+        toast.error('Failed to delete user');
       }
     }
   };
@@ -84,27 +85,30 @@ export default function UserManagement() {
   const handleGrantAdmin = async (userId: string) => {
     try {
       await grantAdminPrivileges(userId);
+      toast.success('Admin privileges granted');
     } catch (error) {
       console.error('Failed to grant admin privileges:', error);
+      toast.error('Failed to grant admin privileges');
     }
   };
 
   const handleRevokeAdmin = async (userId: string) => {
     try {
       await revokeAdminPrivileges(userId);
+      toast.success('Admin privileges revoked');
     } catch (error) {
       console.error('Failed to revoke admin privileges:', error);
+      toast.error('Failed to revoke admin privileges');
     }
   };
 
-  // Format data for table
   const tableData = users.map((user: AdminUser) => ({
     id: user?.id,
     fullname: user?.fullname || 'N/A',
     email: user?.email,
     date_joined: new Date(user?.date_joined).toLocaleDateString(),
     is_active: user?.is_active ? 'Active' : 'Inactive',
-    role: user?.is_admin ? 'Admin' : user?.roles_display?.join(', '),
+    role: user?.is_admin ? 'Admin' : user?.roles_display?.join(', ') || 'User',
     actions: (
       <div className="flex items-center gap-3">
         <button
@@ -186,40 +190,14 @@ export default function UserManagement() {
 
       <CustomTable columns={columns} data={tableData} />
 
-      {pagination.total > pagination.limit && (
-        <div className="mt-4 flex items-center justify-center gap-3">
-          <button
-            onClick={() => handlePageChange(pagination.page - 1)}
-            disabled={pagination.page === 1}
-            className="rounded bg-gray-700 p-2 text-white disabled:opacity-50"
-          >
-            <ChevronLeftIcon className="h-5 w-5" />
-          </button>
-
-          <div className="flex items-center gap-2">
-            {Array.from({ length: Math.ceil(pagination.total / pagination.limit) }, (_, index) => {
-              const page = index + 1;
-              return (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`h-3 w-3 rounded-full ${
-                    pagination.page === page ? 'bg-gray-700' : 'bg-gray-400'
-                  }`}
-                />
-              );
-            })}
-          </div>
-
-          <button
-            onClick={() => handlePageChange(pagination.page + 1)}
-            disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
-            className="rounded bg-gray-700 p-2 text-white disabled:opacity-50"
-          >
-            <ChevronRightIcon className="h-5 w-5" />
-          </button>
-        </div>
-      )}
+      <div className="mt-4">
+        <Pagination
+          currentPage={pagination.page}
+          totalCount={pagination.total}
+          pageSize={pagination.limit}
+          onPageChange={handlePageChange}
+        />
+      </div>
     </Card>
   );
 }

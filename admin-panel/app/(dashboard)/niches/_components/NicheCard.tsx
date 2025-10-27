@@ -30,6 +30,8 @@ const NicheCard: FC<NicheCardProps> = ({
   const tags = [...(tone || []), ...(pacing || [])];
   const examples = topChannels?.map((c) => c.name) || [];
 
+  const videoUrl = topChannels[0]?.link || '';
+
   const truncated = examples.join(', ');
   const maxLength = 35;
   const displayText =
@@ -46,7 +48,8 @@ const NicheCard: FC<NicheCardProps> = ({
             title={title}
             videoId={'videoId'}
             subtitle={description}
-            youtubeUrl={'youtubeUrl'}
+            youtubeUrl={videoUrl}
+            thumbnailUrl={thumbnailUrl}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center rounded-xl bg-[#2a2a2a] text-center text-lg font-semibold text-white">

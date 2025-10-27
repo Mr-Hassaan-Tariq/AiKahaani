@@ -1,76 +1,72 @@
 'use client';
 
-import { useState } from 'react';
-import Image1 from 'public/images/card1.png';
-import Image2 from 'public/images/card2.png';
-import Image3 from 'public/images/card3.png';
-import Image4 from 'public/images/card4.png';
-import Image5 from 'public/images/card5.png';
-import Image6 from 'public/images/card6.png';
+import { SetStateAction, useEffect, useState } from 'react';
 
+import { NichePaginatedResponse } from '../types';
 import NicheCard from './_components/NicheCard';
+import Pagination from './_components/Pagination';
 import SearchHeader from './_components/SearchHeader';
-
-const data = [
-  {
-    image: Image1,
-    title: 'Storytelling',
-    description: 'Narrative-driven scripts built around tension, reveals, and emotion.',
-    tags: ['Engaging', 'Emotional', 'Suspenseful'],
-    examples: ['MrBeast', 'Yes Theory', 'Nas Daily'],
-  },
-  {
-    image: Image2,
-    title: 'Elon Musk-style',
-    description: 'Concise, bold, future-focused scripts that spark curiosity and debate.',
-    tags: ['Bold', 'Futuristic', 'Concise'],
-    examples: ['ColdFusion', 'Tech Vision', 'Moon'],
-  },
-  {
-    image: Image3,
-    title: 'Donald Trump-style',
-    description: 'Confrontational, polarizing, and direct — perfect for viral commentary.',
-    tags: ['Direct', 'Viral', 'Polarizing'],
-    examples: ['The Quartering', 'Tim Pool', 'Valuetainment'],
-  },
-  {
-    image: Image4,
-    title: 'Product Review',
-    description: 'Persuasive structure with pros, cons, and clear verdict.',
-    tags: ['Clear', 'Helpful', 'Persuasive'],
-    examples: ['Marques Brownlee', 'iJustine'],
-  },
-  {
-    image: Image5,
-    title: 'Travel Vlog',
-    description: 'Scripts built for immersive visuals and cinematic storytelling.',
-    tags: ['Immersive', 'Cinematic', 'Warm'],
-    examples: ['Kara and Nate', 'Lost LeBlanc', 'Indigo Traveller'],
-  },
-  {
-    image: Image6,
-    title: 'Listicle / Top 10',
-    description: 'Perfect for countdowns and compilations, with structured delivery.',
-    tags: ['Structured', 'Snappy', 'Fun'],
-    examples: ['WatchMojo', 'TopTenZ', 'Bright Side'],
-  },
-];
+import { getClientDataAction } from 'lib/utils/clientDataActions';
 
 export default function NicheVault() {
   const [searchInput, setSearchInput] = useState('');
+  const [niches, setNiches] = useState<NichePaginatedResponse['results']>([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value);
   };
 
+  const fetchNiches = async (page = 1) => {
+    try {
+      const data = await getClientDataAction<NichePaginatedResponse>(`auth/niches/?page=${page}`);
+      setNiches(data.results || []);
+      setTotalItems(data.count || 0);
+    } catch (error) {
+      console.error('Error fetching niches:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchNiches(currentPage);
+  }, [currentPage]);
+
+  const filteredNiches = niches.filter((niche) =>
+    niche.title.toLowerCase().includes(searchInput.toLowerCase()),
+  );
+
   return (
     <main>
       <SearchHeader searchInput={searchInput} handleSearchChange={handleSearchChange} />
+
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {data.map((style, i) => (
-          <NicheCard key={i} {...style} />
-        ))}
+        {filteredNiches.length > 0 ? (
+          filteredNiches.map((niche) => (
+            <NicheCard
+              id={niche.id}
+              key={niche.id}
+              title={niche.title}
+              description={niche.tagline || 'No description available'}
+              tone={niche.tone || []}
+              pacing={niche.pacing || []}
+              topChannels={niche.top_channels || []}
+              thumbnailUrl={niche.thumbnail_url}
+            />
+          ))
+        ) : (
+          <p className="text-gray-400">No niches found.</p>
+        )}
       </div>
+
+      {totalItems > itemsPerPage && (
+        <Pagination
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={(page: SetStateAction<number>) => setCurrentPage(page)}
+        />
+      )}
     </main>
   );
 }

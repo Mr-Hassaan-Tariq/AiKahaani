@@ -1,7 +1,7 @@
+import Link from 'next/link';
 import { Plus, SlidersHorizontal } from 'lucide-react';
 
 import { SearchIcon } from './components';
-import CreateNicheModal from './CreateNicheModal';
 import FilterNicheModal from './FilterNicheModal';
 import Button from 'components/ui/Button';
 import Text from 'components/ui/Text';
@@ -49,14 +49,13 @@ export default function SearchHeader({ searchInput, handleSearchChange }: Search
           }
           onApply={handleApply}
         />
-        <CreateNicheModal
-          trigger={
-            <Button variant="gray" className="w-[160px]">
-              <Plus />
-              <span className="hidden lg:block">Create</span>
-            </Button>
-          }
-        />
+
+        <Link href={'/niches/create'}>
+          <Button variant="gray" className="w-[160px]">
+            <Plus />
+            <span className="hidden lg:block">Create</span>
+          </Button>
+        </Link>
       </div>
     </section>
   );

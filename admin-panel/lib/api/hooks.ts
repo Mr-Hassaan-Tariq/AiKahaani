@@ -191,12 +191,12 @@ export const useAdminUsers = () => {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: 10,
     total: 0,
   });
 
   // Get all users
-  const getUsers = useCallback(async (page: number = 1, limit: number = 20, search?: string) => {
+  const getUsers = useCallback(async (page: number = 1, limit: number = 10, search?: string) => {
     if (!api.isAuthenticated()) {
       setError('User not authenticated');
       return null;
