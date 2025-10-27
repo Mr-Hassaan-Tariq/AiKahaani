@@ -330,7 +330,21 @@ class UserTitles(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name="user_titles"
     )
+
+    # Stores generated YouTube titles (list of strings)
     titles = models.JSONField(default=list)
+
+    # Optional metadata (common for both APIs)
+    prompt = models.TextField(null=True, blank=True)
+    tones = models.JSONField(default=list, null=True, blank=True)
+    user_title = models.CharField(max_length=255, null=True, blank=True)
+    script = models.ForeignKey(
+        Script,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_generated_titles"
+    )
 
     class Meta:
         verbose_name = "User Title"
@@ -338,4 +352,4 @@ class UserTitles(TimeStampedModel):
         ordering = ["-created"]
 
     def __str__(self):
-        return f"Titles for {self.user}"
+        return f"Titles for {self.user} ({self.prompt[:30]}...)" if self.prompt else f"Titles for {self.user}"

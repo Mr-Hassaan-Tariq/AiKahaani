@@ -4,11 +4,14 @@ import logging
 from drf_spectacular.utils import (
     OpenApiResponse,
     extend_schema,
+    OpenApiParameter
 )
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.pagination import LimitOffsetPagination
+
 
 from api.mixins import MethodSpecificThrottleMixin
 from notifications.helpers import NotificationHelper
@@ -87,7 +90,12 @@ class GenerateTitlesView(APIView, MethodSpecificThrottleMixin):
             )
 
             # ✅ Save in UserTitles model (append unique titles)
-            save_generated_titles(request.user, title_strings)
+            save_generated_titles(
+                user=request.user,
+                titles=title_strings,
+                prompt=prompt,
+                tones=tones
+            )
 
             # Create notification for successful title generation
             try:
@@ -211,7 +219,14 @@ class GenerateTitlesOptimizedView(APIView, MethodSpecificThrottleMixin):
                     )
 
                 # ✅ Save unique titles to UserTitles model
-                save_generated_titles(request.user, title_strings)
+                save_generated_titles(
+                    user=request.user,
+                    titles=title_strings,
+                    prompt=user_prompt,
+                    tones=tones,
+                    user_title=user_title,
+                    script=script
+                )
 
                 # Create notification for successful optimized title generation
                 try:
@@ -271,30 +286,78 @@ class TitleToneListView(generics.ListAPIView, MethodSpecificThrottleMixin):
         return super().get(request, *args, **kwargs)
 
 
-class UserTitlesListView(APIView):
+class UserTitlesListView(APIView, LimitOffsetPagination):
     permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
+    default_limit = 10  # optional default page size
 
     @extend_schema(
-        summary="Get all saved titles for the authenticated user",
+        summary="Get all saved titles, tones, and prompts for the authenticated user (paginated)",
         description=(
-            "Retrieve all unique titles generated or optimized by the authenticated user. "
-            "Combines titles from all UserTitles records belonging to the user."
+            "Retrieve a paginated list of unique titles, tones, and prompts generated or optimized "
+            "by the authenticated user. Each record represents one saved UserTitles entry."
         ),
+        parameters=[
+            OpenApiParameter(
+                name="limit",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Number of results to return per page.",
+                examples=[{"value": 10}],
+            ),
+            OpenApiParameter(
+                name="offset",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="The initial index from which to return results.",
+                examples=[{"value": 0}],
+            ),
+        ],
         responses={
             200: OpenApiResponse(
-                description="Titles retrieved successfully",
+                description="Paginated list of titles, tones, and prompts retrieved successfully",
                 response={
                     "type": "object",
                     "properties": {
-                        "user": {"type": "string", "example": "john_doe"},
-                        "titles": {
+                        "count": {"type": "integer", "example": 23},
+                        "next": {
+                            "type": ["string", "null"],
+                            "example": "https://api.example.com/api/user-titles/?limit=10&offset=10"
+                        },
+                        "previous": {
+                            "type": ["string", "null"],
+                            "example": None
+                        },
+                        "results": {
                             "type": "array",
-                            "items": {"type": "string"},
-                            "example": [
-                                "How to Grow on YouTube Fast",
-                                "10 Tips for Better Thumbnails",
-                                "The Secret Behind Viral Shorts"
-                            ],
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "user": {"type": "string", "example": "john_doe"},
+                                    "titles": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                        "example": [
+                                            "How to Grow on YouTube Fast",
+                                            "10 Tips for Better Thumbnails"
+                                        ],
+                                    },
+                                    "tones": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                        "example": ["Professional", "Funny"],
+                                    },
+                                    "prompts": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                        "example": [
+                                            "Generate a YouTube title for a travel vlog",
+                                            "Optimize my video title for engagement"
+                                        ],
+                                    },
+                                },
+                            },
                         },
                     },
                 },
@@ -304,19 +367,22 @@ class UserTitlesListView(APIView):
     )
     def get(self, request):
         """
-        Retrieve all titles saved for the authenticated user.
-        Returns a combined list of all unique titles across UserTitles records.
+        Retrieve paginated titles, tones, and prompts for the authenticated user.
+        Each result represents one UserTitles record.
         """
         user = request.user
         user_titles_qs = UserTitles.objects.filter(user=user)
 
-        all_titles = []
+        # Transform queryset into serializable list
+        data = []
         for record in user_titles_qs:
-            for title in record.titles:
-                if title not in all_titles:
-                    all_titles.append(title)
+            data.append({
+                "user": user.username,
+                "titles": record.titles or [],
+                "tones": getattr(record, "tones", []) or [],
+                "prompts": getattr(record, "prompts", []) or [],
+            })
 
-        return Response(
-            {"user": user.username, "titles": all_titles},
-            status=status.HTTP_200_OK
-        )
+        # Apply pagination
+        paginated_results = self.paginate_queryset(data, request, view=self)
+        return self.get_paginated_response(paginated_results)
