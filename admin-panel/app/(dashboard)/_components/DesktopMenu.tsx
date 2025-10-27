@@ -37,7 +37,7 @@ export default function DesktopMenu() {
                   key={e.name}
                   href={e.path}
                   aria-current={active ? 'page' : undefined}
-                  className={`group flex w-full cursor-pointer flex-row items-center justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]`}
+                  className='group flex w-full cursor-pointer flex-row items-center justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:"liga"_off,"clig"_off]'
                 >
                   {e.icon}
                   <Text variant="lg" className={`${textClass} group-hover:text-[#20BF0E]/40`}>
@@ -58,7 +58,7 @@ export default function DesktopMenu() {
                   key={e.name}
                   href={e.path}
                   aria-current={active ? 'page' : undefined}
-                  className={`group flex w-full cursor-pointer flex-row items-center justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]`}
+                  className='group flex w-full cursor-pointer flex-row items-center justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:"liga"_off,"clig"_off]'
                 >
                   {e.icon}
                   <Text variant="lg" className={`${textClass} group-hover:text-[#20BF0E]/40`}>
