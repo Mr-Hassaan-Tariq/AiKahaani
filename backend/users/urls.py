@@ -1,4 +1,5 @@
 from django.urls import path
+from rest_framework.routers import DefaultRouter
 
 from users.views import (
     AdminLoginView,
@@ -8,7 +9,11 @@ from users.views import (
     MagicLinkVerifyAPIView,
     RefreshTokenView,
     SignupView,
+    UserNicheViewSet
 )
+
+router = DefaultRouter()
+router.register(r"niches", UserNicheViewSet, basename="user-niches")
 
 urlpatterns = [
     path("signup/", SignupView.as_view(), name="signup"),
@@ -21,3 +26,6 @@ urlpatterns = [
     path("refresh/", RefreshTokenView.as_view(), name="refresh-token"),
     path("logout/", LogoutAPIView.as_view(), name="logout"),
 ]
+
+# Include router URLs
+urlpatterns += router.urls

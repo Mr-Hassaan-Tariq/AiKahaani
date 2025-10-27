@@ -17,10 +17,18 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from api.mixins import MethodSpecificThrottleMixin
 from notifications.choices import NotificationType
 from notifications.helpers import NotificationHelper
+
+from admins.models import Niche
+from admins.serializers import NicheSerializer
+from scripts.pagination import GenerationsLimitOffsetPagination
+from admins.filters import NicheFilter
 
 from .models import BlacklistedAccessToken, EmailVerificationToken, MagicLinkToken
 from .serializers import (
@@ -246,8 +254,8 @@ class GoogleLoginAPIView(MethodSpecificThrottleMixin, APIView):
         email = idinfo["email"]
         defaults = {
             "fullname": f"{idinfo.get('given_name', '')} {idinfo.get('family_name', '')}".strip()[
-                :150
-            ]
+                        :150
+                        ]
         }
 
         user, created = User.objects.get_or_create(
@@ -277,10 +285,10 @@ class MagicLinkLoginAPIView(MethodSpecificThrottleMixin, APIView):
         operation_id="magic_link_login",
         summary="Send Magic Link for Authentication",
         description=(
-            "Sends a magic link to the provided email address for passwordless authentication. "
-            "If the user doesn't exist, a new user account will be created automatically. "
-            "The username is extracted from the email address (part before '@'). "
-            "The magic link expires in 15 minutes."
+                "Sends a magic link to the provided email address for passwordless authentication. "
+                "If the user doesn't exist, a new user account will be created automatically. "
+                "The username is extracted from the email address (part before '@'). "
+                "The magic link expires in 15 minutes."
         ),
         request=MagicLinkLoginSerializer,
         examples=[
@@ -397,8 +405,8 @@ class UserDetailsUpdateAPIView(MethodSpecificThrottleMixin, APIView):
         operation_id="user_details_update",
         summary="Update current user's details",
         description=(
-            "Authenticated endpoint to update the signed-in user's profile fields. "
-            "Allows updating fullName, username, emailAddress, preferredLanguage."
+                "Authenticated endpoint to update the signed-in user's profile fields. "
+                "Allows updating fullName, username, emailAddress, preferredLanguage."
         ),
         request=UserDetailsUpdateSerializer,
         responses={
@@ -488,7 +496,7 @@ class UserDetailsUpdateAPIView(MethodSpecificThrottleMixin, APIView):
         operation_id="user_details_get",
         summary="Get current user's details",
         description=(
-            "Authenticated endpoint to fetch the signed-in user's profile details."
+                "Authenticated endpoint to fetch the signed-in user's profile details."
         ),
         responses={200: UserSerializer},
         tags=["Users"],
@@ -508,8 +516,8 @@ class EmailVerificationAPIView(MethodSpecificThrottleMixin, APIView):
         operation_id="verify_email",
         summary="Verify email change",
         description=(
-            "Verifies a user's email address using a one-time token. "
-            "Marks the user's email as verified upon success."
+                "Verifies a user's email address using a one-time token. "
+                "Marks the user's email as verified upon success."
         ),
         responses={
             200: OpenApiResponse(
@@ -562,9 +570,9 @@ class MagicLinkVerifyAPIView(MethodSpecificThrottleMixin, APIView):
         operation_id="magic_link_verify",
         summary="Verify Magic Link Token",
         description=(
-            "Verifies the magic link token received via email and returns JWT authentication tokens. "
-            "The token is validated for existence and expiration. Upon successful verification, "
-            "the token is immediately invalidated (single-use) and JWT tokens are generated for the user."
+                "Verifies the magic link token received via email and returns JWT authentication tokens. "
+                "The token is validated for existence and expiration. Upon successful verification, "
+                "the token is immediately invalidated (single-use) and JWT tokens are generated for the user."
         ),
         request=MagicLinkVerifySerializer,
         examples=[
@@ -677,8 +685,8 @@ class LogoutAPIView(MethodSpecificThrottleMixin, APIView):
         operation_id="logout",
         summary="Logout user",
         description=(
-            "Logs out the current user by blacklisting both refresh and access tokens. "
-            "Requires a valid refresh token in the request body."
+                "Logs out the current user by blacklisting both refresh and access tokens. "
+                "Requires a valid refresh token in the request body."
         ),
         request=LogoutSerializer,
         responses={
@@ -747,8 +755,8 @@ class UserProfilePictureAPIView(MethodSpecificThrottleMixin, APIView):
         operation_id="user_profile_picture_update",
         summary="Update current user's profile picture",
         description=(
-            "Authenticated endpoint to upload or replace the signed-in user's profile picture. "
-            "Accepts multipart/form-data with field 'profile_picture'."
+                "Authenticated endpoint to upload or replace the signed-in user's profile picture. "
+                "Accepts multipart/form-data with field 'profile_picture'."
         ),
         request=ProfilePictureUploadSerializer,
         responses={
@@ -783,8 +791,8 @@ class UserProfilePictureAPIView(MethodSpecificThrottleMixin, APIView):
         operation_id="user_profile_picture_delete",
         summary="Delete current user's profile picture",
         description=(
-            "Authenticated endpoint to remove the signed-in user's profile picture. "
-            "If no picture exists, the operation is a no-op."
+                "Authenticated endpoint to remove the signed-in user's profile picture. "
+                "If no picture exists, the operation is a no-op."
         ),
         responses={
             200: OpenApiResponse(
@@ -954,3 +962,142 @@ class RefreshTokenView(MethodSpecificThrottleMixin, APIView):
                 {"detail": "Invalid or expired refresh token."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+@extend_schema(tags=["User Niches"])
+class UserNicheViewSet(ReadOnlyModelViewSet):
+    """
+    User API viewset for browsing available niches.
+    Provides read-only access (list and retrieve) for active niches.
+    """
+
+    queryset = Niche.objects.filter(status="active")
+    serializer_class = NicheSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = NicheFilter
+    search_fields = ["title", "tagline"]
+    ordering_fields = ["created", "modified", "title"]
+    ordering = ["-created"]
+    pagination_class = GenerationsLimitOffsetPagination
+
+    def get_queryset(self):
+        """Return only active niches with prefetch optimizations."""
+        return (
+            Niche.objects.filter(status="active")
+            .select_related("admin")
+            .order_by("-created")
+        )
+
+    @extend_schema(
+        summary="List All Active Niches",
+        description=(
+            "Retrieve a paginated list of all **active niches** available to the user.\n\n"
+            "Supports search, filtering, and ordering by fields such as `title`, `tagline`, "
+            "`created`, and `modified`.\n\n"
+            "**Permissions:** Authenticated users only."
+        ),
+        responses={
+            200: OpenApiResponse(
+                response=NicheSerializer,
+                description="A list of all active niches.",
+                examples=[
+                    OpenApiExample(
+                        "Example Response",
+                        value={
+                            "count": 2,
+                            "next": None,
+                            "previous": None,
+                            "results": [
+                                {
+                                    "id": 1,
+                                    "title": "Tech Reviews",
+                                    "tagline": "Latest tech product reviews",
+                                    "thumbnail": "https://example.com/media/niches/thumbnails/tech.jpg",
+                                    "script_structure": {"intro": "Hook", "body": "Review"},
+                                    "tone": ["Educational", "Professional"],
+                                    "pacing": ["Fast", "Dynamic"],
+                                    "top_channels": [
+                                        {
+                                            "name": "TechWorld",
+                                            "link": "https://youtube.com/techworld"
+                                        }
+                                    ],
+                                    "best_for": ["Technology"],
+                                    "status": "active",
+                                    "created": "2025-01-15T10:30:00Z",
+                                    "modified": "2025-01-15T10:30:00Z",
+                                }
+                            ],
+                        },
+                    )
+                ],
+            )
+        },
+    )
+    def list(self, request, *args, **kwargs):
+        """List all active niches with pagination, search, and filtering."""
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {"data": serializer.data, "message": "Niches retrieved successfully"},
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        summary="Retrieve Niche Details",
+        description=(
+            "Retrieve detailed information for a specific **active niche** "
+            "by its ID.\n\n"
+            "Only active niches can be accessed by users.\n\n"
+            "**Permissions:** Authenticated users only."
+        ),
+        responses={
+            200: OpenApiResponse(
+                response=NicheSerializer,
+                description="Niche details retrieved successfully.",
+                examples=[
+                    OpenApiExample(
+                        "Example Response",
+                        value={
+                            "data": {
+                                "id": 1,
+                                "title": "Travel Vlogs",
+                                "tagline": "Explore the world through our lens",
+                                "thumbnail": "https://example.com/media/niches/thumbnails/travel.jpg",
+                                "script_structure": {"intro": "Destination", "body": "Experience"},
+                                "tone": ["Adventurous", "Friendly"],
+                                "pacing": ["Medium"],
+                                "top_channels": [
+                                    {
+                                        "name": "Wanderlust",
+                                        "link": "https://youtube.com/wanderlust"
+                                    }
+                                ],
+                                "best_for": ["Travel", "Lifestyle"],
+                                "status": "active",
+                                "created": "2025-01-20T09:00:00Z",
+                                "modified": "2025-01-20T09:00:00Z",
+                            },
+                            "message": "Niche details retrieved successfully",
+                        },
+                    )
+                ],
+            ),
+            404: OpenApiResponse(description="Niche not found or inactive."),
+        },
+    )
+    def retrieve(self, request, *args, **kwargs):
+        """Retrieve details of a single active niche."""
+        niche = self.get_object()
+        serializer = self.get_serializer(niche)
+        return Response(
+            {"data": serializer.data, "message": "Niche details retrieved successfully"},
+            status=status.HTTP_200_OK,
+        )
