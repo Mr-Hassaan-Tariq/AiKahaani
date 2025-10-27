@@ -1041,10 +1041,10 @@ class UserNicheViewSet(ReadOnlyModelViewSet):
 
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = self.get_serializer(queryset, many=True, context={'request': request})
         return Response(
             {"data": serializer.data, "message": "Niches retrieved successfully"},
             status=status.HTTP_200_OK,
@@ -1096,7 +1096,7 @@ class UserNicheViewSet(ReadOnlyModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         """Retrieve details of a single active niche."""
         niche = self.get_object()
-        serializer = self.get_serializer(niche)
+        serializer = self.get_serializer(niche, context={'request': request})
         return Response(
             {"data": serializer.data, "message": "Niche details retrieved successfully"},
             status=status.HTTP_200_OK,
