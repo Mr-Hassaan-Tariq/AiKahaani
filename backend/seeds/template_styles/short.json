@@ -1,0 +1,7 @@
+{
+  "name": "Short",
+  "min_length": 2600,
+  "max_length": 3000,
+  "duration": 20,
+  "description": "Great for concise explainers or presentations"
+}
