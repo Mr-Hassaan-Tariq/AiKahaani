@@ -5,3 +5,7 @@ class PaymentsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'payments'
     verbose_name = 'Payments'
+
+    def ready(self):
+        # Import webhook signals to register them
+        import payments.webhook_signals
