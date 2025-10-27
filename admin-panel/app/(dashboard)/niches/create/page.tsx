@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Trash2 } from 'lucide-react';
 import { Controller, FormProvider, useFieldArray, useForm } from 'react-hook-form';
-import Select from 'react-select';
 import { toast } from 'sonner';
 
+import NicheSelectWidget from './components/NicheSelectWidgets';
 import { postClientDataAction } from 'lib/utils/clientDataActions';
 import Button from 'components/ui/Button';
 import Card from 'components/ui/Card';
@@ -30,6 +31,7 @@ type CardData = {
     body: string;
     outro: string;
   };
+  thumbnailUrl?: string;
 };
 
 const toneOptions = [
@@ -51,6 +53,7 @@ const pacingOptions = [
 const YOUTUBE_URL_REGEX = /^https?:\/\/(?:www\.)?(?:youtube\.com\/.+|youtu\.be\/.+)$/i;
 
 export default function CreateNicheModal() {
+  const router = useRouter();
   const methods = useForm<CardData>({
     mode: 'onBlur',
     defaultValues: {
@@ -65,6 +68,7 @@ export default function CreateNicheModal() {
         body: '',
         outro: '',
       },
+      thumbnailUrl: undefined,
     },
   });
 
@@ -72,6 +76,7 @@ export default function CreateNicheModal() {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = methods;
 
@@ -82,13 +87,72 @@ export default function CreateNicheModal() {
 
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
 
+  // file selection (deferred upload)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | undefined>(undefined);
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    // cleanup preview URL when component unmounts or file changes
+    return () => {
+      if (thumbnailPreviewUrl) URL.revokeObjectURL(thumbnailPreviewUrl);
+    };
+  }, [thumbnailPreviewUrl]);
+
   const isYouTubeLink = (url: string) => {
     if (!url) return false;
     return YOUTUBE_URL_REGEX.test(url.trim());
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // store selected file locally (no immediate upload)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) {
+      setSelectedFile(null);
+      setThumbnailPreviewUrl(undefined);
+      setValue('thumbnailUrl', undefined);
+      return;
+    }
+
+    // optional: client-side file size/type validation (uncomment if you want)
+    // if (file.size > 5 * 1024 * 1024) {
+    //   toast.error('File too large (max 5MB).');
+    //   if (fileInputRef.current) fileInputRef.current.value = '';
+    //   return;
+    // }
+
+    setSelectedFile(file);
+
+    // generate preview
+    const preview = URL.createObjectURL(file);
+    // revoke previous preview
+    if (thumbnailPreviewUrl) URL.revokeObjectURL(thumbnailPreviewUrl);
+    setThumbnailPreviewUrl(preview);
+
+    // keep form value in sync for possible usage
+    setValue('thumbnailUrl', undefined); // will be set after upload
+  };
+
+  // Remove selected local file
+  const handleRemoveSelectedFile = () => {
+    setSelectedFile(null);
+    if (thumbnailPreviewUrl) {
+      URL.revokeObjectURL(thumbnailPreviewUrl);
+    }
+    setThumbnailPreviewUrl(undefined);
+    setValue('thumbnailUrl', undefined);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    toast('Thumbnail removed');
+  };
+
   const onSubmit = async (data: CardData) => {
     setIsSubmittingLocal(true);
+
     const payload = {
       title: data.title,
       tagline: data.description,
@@ -104,40 +168,78 @@ export default function CreateNicheModal() {
       status: 'active',
     };
 
-    console.log('Sending Payload:', payload);
+    let createdNicheId: number | string | undefined = undefined;
 
     try {
-      const response = await postClientDataAction<any, typeof payload>('v1/admin/niches/', payload);
+      const createResp = await postClientDataAction<any, typeof payload>(
+        'v1/admin/niches/',
+        payload,
+      );
+
+      console.log('createResp', createResp);
+
+      createdNicheId =
+        createResp?.data?.id ?? createResp?.id ?? (createResp && (createResp as any).result?.id);
+
+      if (!createdNicheId) {
+        console.warn('Create response did not include an id:', createResp);
+      }
+
+      // If there's a selected file, upload it against the created niche id
+      if (selectedFile) {
+        if (!createdNicheId) {
+          // can't upload without an id — surface error and stop
+          toast.error(
+            'Niche created but upload cannot proceed because niche id is missing from response.',
+          );
+          // we still redirect to niches
+          router.push('/niches');
+          return;
+        }
+
+        setUploadingThumbnail(true);
+
+        try {
+          const formData = new FormData();
+          formData.append('thumbnail', selectedFile);
+
+          const uploadEndpoint = `v1/admin/niches/${createdNicheId}/upload-thumbnail/`;
+          const uploadResp = await postClientDataAction<
+            {
+              thumbnail_url: string;
+              data: { thumbnail_url: string };
+            },
+            FormData
+          >(uploadEndpoint, formData);
+
+          const uploadedUrl = uploadResp?.data?.thumbnail_url ?? uploadResp?.thumbnail_url;
+          if (uploadedUrl) {
+            // set form & local state
+            setValue('thumbnailUrl', uploadedUrl);
+            // optional: show a success toast
+            toast.success('Thumbnail uploaded successfully!');
+          } else {
+            console.warn('Upload response missing thumbnail_url:', uploadResp);
+            toast.error('Thumbnail uploaded but server did not return a URL.');
+          }
+        } catch (uploadErr) {
+          console.error('Thumbnail upload failed:', uploadErr);
+          toast.error('Thumbnail upload failed. Niche was created though.');
+        } finally {
+          setUploadingThumbnail(false);
+        }
+      }
 
       toast.success('Niche created successfully!');
       reset();
-    } catch (error: any) {
-      console.error('Error creating niche:', error);
+      router.push('/niches');
+    } catch (err: any) {
+      console.error('Error creating niche:', err);
+      // if error response has message(s), you may parse and show them here
       toast.error('Failed to create niche. Please try again.');
     } finally {
       setIsSubmittingLocal(false);
     }
-  };
-
-  const customSelectStyles = {
-    control: (base: any) => ({
-      ...base,
-      backgroundColor: 'rgba(255,255,255,0.03)',
-      border: 'none',
-      borderRadius: '0.6rem',
-      padding: '2px 4px',
-      boxShadow: 'none',
-    }),
-    menu: (base: any) => ({
-      ...base,
-      backgroundColor: '#f9fafb',
-      borderRadius: '0.5rem',
-    }),
-    option: (base: any, state: { isFocused: boolean }) => ({
-      ...base,
-      backgroundColor: state.isFocused ? '#e5e7eb' : '#f9fafb',
-      color: '#000',
-    }),
   };
 
   const FieldError = ({ message }: { message?: string }) => {
@@ -160,6 +262,64 @@ export default function CreateNicheModal() {
             className="grid gap-6 py-5 md:grid-cols-2"
             noValidate
           >
+            {/* Thumbnail uploader (spans full width) */}
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-white">Thumbnail</label>
+
+              <div className="flex items-center gap-4">
+                <div className="w-44">
+                  {thumbnailPreviewUrl ? (
+                    <img
+                      src={thumbnailPreviewUrl}
+                      alt="thumbnail preview"
+                      className="h-28 w-full rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-28 w-full items-center justify-center rounded-lg bg-[#2a2a2a] text-sm text-gray-300">
+                      No thumbnail selected
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      onClick={handleUploadClick}
+                      disabled={uploadingThumbnail || isSubmittingLocal || isSubmitting}
+                    >
+                      {uploadingThumbnail
+                        ? 'Uploading...'
+                        : selectedFile
+                          ? 'Change Thumbnail'
+                          : 'Select Thumbnail'}
+                    </Button>
+
+                    {selectedFile && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveSelectedFile}
+                        className="ml-2 inline-flex items-center gap-2 rounded-md border border-transparent bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-gray-400">Recommended size: 1280x720. PNG or JPEG.</p>
+                </div>
+              </div>
+            </div>
+
             {/* Title */}
             <Controller
               name="title"
@@ -168,7 +328,6 @@ export default function CreateNicheModal() {
               render={({ field }) => (
                 <div>
                   <Input {...field} id="title" placeholder="Tech Reviews" label="Title" />
-                  {/* <FieldError message={errors?.title?.message as string | undefined} /> */}
                 </div>
               )}
             />
@@ -187,7 +346,6 @@ export default function CreateNicheModal() {
                     placeholder="Latest tech product reviews and analysis"
                     label="Tagline / Description"
                   />
-                  {/* <FieldError message={errors?.description?.message as string | undefined} /> */}
                 </div>
               )}
             />
@@ -256,7 +414,6 @@ export default function CreateNicheModal() {
                     placeholder="Technology, Product Reviews, Gadgets"
                     label="Best For (comma separated)"
                   />
-                  {/* <FieldError message={errors?.bestFor?.message as string | undefined} /> */}
                 </div>
               )}
             />
@@ -264,66 +421,40 @@ export default function CreateNicheModal() {
             <div></div>
 
             {/* Tone */}
-            <div className="flex flex-col gap-2">
-              <Text variant="base" className="font-medium text-white">
-                Tone
-              </Text>
-              <Controller
-                name="tone"
-                control={control}
-                rules={{
-                  validate: (val) =>
-                    Array.isArray(val) && val.length > 0 ? true : 'Select at least one tone',
-                }}
-                render={({ field }) => (
-                  <div>
-                    <Select
-                      {...field}
-                      isMulti
-                      options={toneOptions}
-                      placeholder="Select tone(s)"
-                      onChange={(selected) => field.onChange(selected?.map((s) => s.value) || [])}
-                      onBlur={field.onBlur}
-                      value={toneOptions.filter((opt) => field.value.includes(opt.value))}
-                      styles={customSelectStyles}
-                    />
-                    <FieldError message={errors?.tone?.message as string | undefined} />
-                  </div>
-                )}
-              />
-            </div>
+            <Controller
+              name="tone"
+              control={control}
+              rules={{
+                validate: (val) =>
+                  Array.isArray(val) && val.length > 0 ? true : 'Select at least one tone',
+              }}
+              render={({ field }) => (
+                <NicheSelectWidget
+                  options={toneOptions}
+                  name={field.name}
+                  label="Tone"
+                  field={field}
+                />
+              )}
+            />
 
             {/* Pacing */}
-            <div className="flex flex-col gap-2">
-              <Text variant="base" className="font-medium text-white">
-                Pacing
-              </Text>
-              <Controller
-                name="pacing"
-                control={control}
-                rules={{
-                  validate: (val) =>
-                    Array.isArray(val) && val.length > 0
-                      ? true
-                      : 'Select at least one pacing style',
-                }}
-                render={({ field }) => (
-                  <div>
-                    <Select
-                      {...field}
-                      isMulti
-                      options={pacingOptions}
-                      placeholder="Select pacing style(s)"
-                      onChange={(selected) => field.onChange(selected?.map((s) => s.value) || [])}
-                      onBlur={field.onBlur}
-                      value={pacingOptions.filter((opt) => field.value.includes(opt.value))}
-                      styles={customSelectStyles}
-                    />
-                    <FieldError message={errors?.pacing?.message as string | undefined} />
-                  </div>
-                )}
-              />
-            </div>
+            <Controller
+              name="pacing"
+              control={control}
+              rules={{
+                validate: (val) =>
+                  Array.isArray(val) && val.length > 0 ? true : 'Select at least one pacing style',
+              }}
+              render={({ field }) => (
+                <NicheSelectWidget
+                  options={pacingOptions}
+                  name={field.name}
+                  label="Pacing"
+                  field={field}
+                />
+              )}
+            />
 
             {/* Channels */}
             <div className="md:col-span-2">
@@ -416,8 +547,14 @@ export default function CreateNicheModal() {
             </div>
 
             <Row className="w-full pt-4">
-              <Button type="submit" variant="green" disabled={isSubmitting || isSubmittingLocal}>
-                {isSubmitting || isSubmittingLocal ? 'Creating...' : 'Create Niche'}
+              <Button
+                type="submit"
+                variant="green"
+                disabled={isSubmitting || isSubmittingLocal || uploadingThumbnail}
+              >
+                {isSubmitting || isSubmittingLocal || uploadingThumbnail
+                  ? 'Creating...'
+                  : 'Create Niche'}
               </Button>
             </Row>
           </form>

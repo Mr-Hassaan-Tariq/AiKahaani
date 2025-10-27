@@ -13,6 +13,7 @@ export default function NicheVault() {
   const [niches, setNiches] = useState<NichePaginatedResponse['results']>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
   const itemsPerPage = 12;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,6 +27,10 @@ export default function NicheVault() {
       setTotalItems(data.count || 0);
     } catch (error) {
       console.error('Error fetching niches:', error);
+      setNiches([]);
+      setTotalItems(0);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -41,31 +46,44 @@ export default function NicheVault() {
     <main>
       <SearchHeader searchInput={searchInput} handleSearchChange={handleSearchChange} />
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredNiches.length > 0 ? (
-          filteredNiches.map((niche) => (
-            <NicheCard
-              id={niche.id}
-              key={niche.id}
-              title={niche.title}
-              description={niche.tagline || 'No description available'}
-              tone={niche.tone || []}
-              pacing={niche.pacing || []}
-              topChannels={niche.top_channels || []}
-              thumbnailUrl={niche.thumbnail_url}
-            />
-          ))
-        ) : (
-          <p className="text-gray-400">No niches found.</p>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="flex min-h-[200px] items-center justify-center">
+          <div role="status" aria-live="polite" className="flex flex-col items-center gap-4">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-t-transparent" />
+            <span className="text-gray-500">Loading niches...</span>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredNiches.length > 0 ? (
+              filteredNiches.map((niche) => (
+                <NicheCard
+                  id={niche.id}
+                  key={niche.id}
+                  title={niche.title}
+                  description={niche.tagline || 'No description available'}
+                  tone={niche.tone || []}
+                  pacing={niche.pacing || []}
+                  topChannels={niche.top_channels || []}
+                  thumbnailUrl={niche.thumbnail_url}
+                />
+              ))
+            ) : (
+              <div className="col-span-full flex min-h-[200px] items-center justify-center">
+                <p className="text-gray-400">No niches found.</p>
+              </div>
+            )}
+          </div>
 
-      {totalItems > itemsPerPage && (
-        <Pagination
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={(page: SetStateAction<number>) => setCurrentPage(page)}
-        />
+          {totalItems > itemsPerPage && (
+            <Pagination
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={(page: SetStateAction<number>) => setCurrentPage(page)}
+            />
+          )}
+        </>
       )}
     </main>
   );

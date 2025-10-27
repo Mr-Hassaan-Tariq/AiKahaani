@@ -126,14 +126,12 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
             />
             <SliderWidget
               range={configData.length_range}
-              defaultValue={InitialScriptWordCount} // Set initial value from form's default values
+              defaultValue={InitialScriptWordCount}
               disabled={watch('template_style') !== undefined}
               validationSchema={{
                 required: 'Length is required',
                 min: { value: 500, message: 'Length must be at least 500 words' },
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 validate: (_value: number, formValues: any) => {
-                  // If formValues is available, check min_length/max_length difference
                   if (
                     formValues &&
                     typeof formValues.min_length === 'number' &&

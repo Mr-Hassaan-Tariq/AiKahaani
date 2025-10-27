@@ -265,7 +265,6 @@ export const useAdminUsers = () => {
         setUsers((prevUsers) =>
           prevUsers.map((user) => (user?.id === userId ? response?.user : user)),
         );
-        setUsers;
 
         return response;
       } catch (err) {

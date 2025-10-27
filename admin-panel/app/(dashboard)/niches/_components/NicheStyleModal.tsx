@@ -1,15 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Pin } from 'lucide-react';
-import { toast } from 'sonner';
 
 import { MicrophoneIcon, ScriptIcon, TvIcon } from './components';
-import { getClientDataAction, postClientDataAction } from 'lib/utils/clientDataActions';
-import Button from 'components/ui/Button';
+import { getClientDataAction } from 'lib/utils/clientDataActions';
 import Dialog from 'components/ui/Dialog';
-import Row from 'components/ui/Row';
 
 interface FilterModalProps {
   trigger: React.ReactNode;
@@ -36,8 +33,6 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
   const [open, setOpen] = useState(false);
   const [niche, setNiche] = useState<NicheDetailsType | null>(null);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const fetchNiche = async () => {
@@ -57,38 +52,6 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
     fetchNiche();
   }, [open, nicheId]);
 
-  // Upload button click handler
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  // File upload handler
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !niche) return;
-
-    try {
-      setUploading(true);
-      const formData = new FormData();
-      formData.append('thumbnail', file);
-
-      const response = await postClientDataAction<{ data: { thumbnail_url: string } }, FormData>(
-        `v1/admin/niches/${niche.id}/upload-thumbnail/`,
-        formData,
-      );
-
-      const newUrl = response?.data?.thumbnail_url;
-      if (newUrl) {
-        setNiche((prev) => (prev ? { ...prev, thumbnail_url: newUrl } : prev));
-      }
-      toast.success('Thumbnail uploaded successfully!');
-    } catch (error) {
-      console.error('Thumbnail upload failed:', error);
-    } finally {
-      setUploading(false);
-    }
-  };
-
   return (
     <Dialog
       open={open}
@@ -98,13 +61,6 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
       description={
         niche?.tagline ||
         'Engaging, anonymous, and binge-worthy. Narrate without showing your face.'
-      }
-      footer={
-        <Row className="w-full gap-6">
-          <Button type="submit" variant="green">
-            Apply this niche format
-          </Button>
-        </Row>
       }
     >
       {loading ? (
@@ -126,28 +82,6 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
                 Thumbnail
               </div>
             )}
-
-            {/* Hidden File Input */}
-            <input
-              type="file"
-              accept="image/*"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={handleFileChange}
-            />
-
-            {/* Upload Button */}
-            <Button
-              onClick={handleUploadClick}
-              disabled={uploading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {uploading
-                ? 'Uploading...'
-                : niche?.thumbnail_url
-                  ? 'Change Thumbnail'
-                  : 'Upload Thumbnail'}
-            </Button>
           </div>
 
           {/* Script Structure */}

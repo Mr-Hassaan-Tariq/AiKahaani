@@ -85,7 +85,7 @@ const NicheCard: FC<NicheCardProps> = ({
           <span className="text-white">{examples.length > 0 ? displayText : 'No examples'}</span>
         </Text>
 
-        <NicheStyleModal trigger={<Button variant="green">Use this style</Button>} nicheId={id} />
+        <NicheStyleModal trigger={<Button variant="green">View Details</Button>} nicheId={id} />
       </div>
     </Card>
   );

@@ -31,8 +31,8 @@ export default function UserManagement() {
     activateUser,
     deactivateUser,
     deleteUser,
-    grantAdminPrivileges,
-    revokeAdminPrivileges,
+    // grantAdminPrivileges,
+    // revokeAdminPrivileges,
   } = useAdminUsers();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,25 +82,25 @@ export default function UserManagement() {
     }
   };
 
-  const handleGrantAdmin = async (userId: string) => {
-    try {
-      await grantAdminPrivileges(userId);
-      toast.success('Admin privileges granted');
-    } catch (error) {
-      console.error('Failed to grant admin privileges:', error);
-      toast.error('Failed to grant admin privileges');
-    }
-  };
+  // const handleGrantAdmin = async (userId: string) => {
+  //   try {
+  //     await grantAdminPrivileges(userId);
+  //     toast.success('Admin privileges granted');
+  //   } catch (error) {
+  //     console.error('Failed to grant admin privileges:', error);
+  //     toast.error('Failed to grant admin privileges');
+  //   }
+  // };
 
-  const handleRevokeAdmin = async (userId: string) => {
-    try {
-      await revokeAdminPrivileges(userId);
-      toast.success('Admin privileges revoked');
-    } catch (error) {
-      console.error('Failed to revoke admin privileges:', error);
-      toast.error('Failed to revoke admin privileges');
-    }
-  };
+  // const handleRevokeAdmin = async (userId: string) => {
+  //   try {
+  //     await revokeAdminPrivileges(userId);
+  //     toast.success('Admin privileges revoked');
+  //   } catch (error) {
+  //     console.error('Failed to revoke admin privileges:', error);
+  //     toast.error('Failed to revoke admin privileges');
+  //   }
+  // };
 
   const tableData = users.map((user: AdminUser) => ({
     id: user?.id,
