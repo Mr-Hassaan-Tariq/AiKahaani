@@ -2,8 +2,15 @@
 from django.urls import include, path
 
 from . import views
+from . import test_views
 
 urlpatterns = [
+    # Test endpoints for attachment features
+    path("test/image/", test_views.test_image_analysis, name="test-image"),
+    path("test/article/", test_views.test_article_scraping, name="test-article"),
+    path("test/youtube/", test_views.test_youtube_transcript, name="test-youtube"),
+    path("test/combined/", test_views.test_combined_attachments, name="test-combined"),
+    
     # Config endpoint for UI
     path("config/", views.script_generator_config, name="script-config"),
     # Direct outline generation from user input
