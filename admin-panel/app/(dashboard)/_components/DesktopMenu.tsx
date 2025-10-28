@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -18,6 +19,27 @@ export default function DesktopMenu() {
     return pathname === path || pathname.startsWith(path + '/');
   };
 
+  const ACTIVE_COLOR = '#20BF0E';
+  const INACTIVE_COLOR = '#AAACA6';
+
+  const renderIcon = (icon: React.ReactNode, active: boolean) => {
+    if (React.isValidElement(icon)) {
+      const el = icon as React.ReactElement<any, any>;
+      const existing = (el.props as any)?.className ?? '';
+      const className = `h-5 w-5 ${existing}`.trim();
+
+      const color = active ? ACTIVE_COLOR : INACTIVE_COLOR;
+
+      return React.cloneElement(el, {
+        className,
+        color,
+        stroke: color,
+        active,
+      });
+    }
+    return icon;
+  };
+
   return (
     <div className="scrollbar sticky top-0 h-screen max-h-screen w-full overflow-hidden overflow-y-auto rounded-r-3xl border-r border-[#BAFF381F] bg-[#161616] px-7 py-8 text-white">
       <Col className="mx-auto h-full min-w-[170px] gap-12">
@@ -29,37 +51,50 @@ export default function DesktopMenu() {
           <Col className="gap-6">
             {mainMenu.map((e) => {
               const active = isActive(e.path);
-              const textClass = active ? 'text-[#20BF0E]/40' : 'text-white';
 
               return (
                 <Link
                   key={e.name}
                   href={e.path}
                   aria-current={active ? 'page' : undefined}
-                  className='group flex w-full cursor-pointer flex-row items-center justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:"liga"_off,"clig"_off]'
+                  className="group flex w-full cursor-pointer flex-row items-center gap-3 whitespace-nowrap"
                 >
-                  {e.icon}
-                  <Text variant="lg" className={`${textClass} group-hover:text-[#20BF0E]/40`}>
+                  <div className="flex items-center justify-center">
+                    {renderIcon(e.icon, active)}
+                  </div>
+                  <Text
+                    variant="lg"
+                    className={`transition-colors ${
+                      active ? 'font-semibold text-white' : 'text-[#AAACA6]'
+                    } group-hover:text-[#20BF0E]/80`}
+                  >
                     {e.name}
                   </Text>
                 </Link>
               );
             })}
           </Col>
+
           <Col className="gap-6">
             {subMenu.map((e) => {
               const active = isActive(e.path);
-              const textClass = active ? 'text-[#20BF0E]/40' : 'text-[#AAACA6]';
 
               return (
                 <Link
                   key={e.name}
                   href={e.path}
                   aria-current={active ? 'page' : undefined}
-                  className='group flex w-full cursor-pointer flex-row items-center justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:"liga"_off,"clig"_off]'
+                  className="group flex w-full cursor-pointer flex-row items-center gap-3 whitespace-nowrap"
                 >
-                  {e.icon}
-                  <Text variant="lg" className={`${textClass} group-hover:text-[#20BF0E]/40`}>
+                  <div className="flex items-center justify-center">
+                    {renderIcon(e.icon, active)}
+                  </div>
+                  <Text
+                    variant="lg"
+                    className={`transition-colors ${
+                      active ? 'font-semibold text-white' : 'text-[#AAACA6]'
+                    } group-hover:text-[#20BF0E]/80`}
+                  >
                     {e.name}
                   </Text>
                 </Link>

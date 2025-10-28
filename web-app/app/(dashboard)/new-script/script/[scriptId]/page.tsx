@@ -23,19 +23,21 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
           content: e.script,
         })) || [];
 
-  const allContent = sections?.map((e: any) => `${e.content}`).join('\n\n');
+  const allContent = sections?.map((e: any) => `${e.title}\n\n${e.content}`).join('\n\n');
 
   return (
-    <Col className="gap-8">
-      <Col className="w-full">
-        <div className="flex w-full items-center justify-between">
-          <H3 className="text-white">{data?.title || 'Untitled Script'}</H3>
-          <div className="flex justify-end">
-            <CopyAllButton text={allContent} />
-          </div>
-        </div>
-      </Col>
+    <Col className="w-full items-center gap-8 text-center">
+      {/* Title */}
+      <H3 className="text-center text-white">
+        {data?.title ? `Full Script: ${data.title}` : 'Full Script'}
+      </H3>
 
+      {/* Copy Button below title */}
+      <div className="flex justify-center">
+        <CopyAllButton text={allContent} />
+      </div>
+
+      {/* Script Content */}
       {isError ? (
         <div className="text-white">{error.message?.toString()}</div>
       ) : (

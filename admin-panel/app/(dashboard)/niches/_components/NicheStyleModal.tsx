@@ -9,6 +9,7 @@ import { MicrophoneIcon, ScriptIcon, TvIcon } from './components';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
 import Button from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
+import Row from 'components/ui/Row';
 
 interface FilterModalProps {
   trigger: React.ReactNode;

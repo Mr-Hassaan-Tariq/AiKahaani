@@ -1,4 +1,6 @@
-import { FC } from 'react';
+'use client';
+
+import { FC, useState } from 'react';
 import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
 
@@ -18,6 +20,9 @@ interface NicheCardProps {
   thumbnailUrl?: string | null;
 }
 
+const PLACEHOLDER_IMAGE =
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
+
 const NicheCard: FC<NicheCardProps> = ({
   id,
   title,
@@ -27,6 +32,8 @@ const NicheCard: FC<NicheCardProps> = ({
   topChannels,
   thumbnailUrl,
 }) => {
+  const [imgSrc, setImgSrc] = useState(thumbnailUrl || PLACEHOLDER_IMAGE);
+
   const tags = [...(tone || []), ...(pacing || [])];
   const examples = topChannels?.map((c) => c.name) || [];
 
@@ -43,18 +50,29 @@ const NicheCard: FC<NicheCardProps> = ({
         {thumbnailUrl ? (
           <VedioModal
             trigger={
-              <Image src={thumbnailUrl} alt={title} fill className="rounded-xl object-cover" />
+              <Image
+                src={imgSrc}
+                alt={title}
+                fill
+                className="rounded-xl object-cover"
+                sizes="(max-width: 768px) 100vw, 33vw"
+                onError={() => setImgSrc(PLACEHOLDER_IMAGE)}
+              />
             }
             title={title}
             videoId={'videoId'}
             subtitle={description}
             youtubeUrl={videoUrl}
-            thumbnailUrl={thumbnailUrl}
+            thumbnailUrl={imgSrc}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center rounded-xl bg-[#2a2a2a] text-center text-lg font-semibold text-white">
-            Thumbnail
-          </div>
+          <Image
+            src={PLACEHOLDER_IMAGE}
+            alt="placeholder"
+            fill
+            className="rounded-xl object-cover"
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
         )}
       </div>
 

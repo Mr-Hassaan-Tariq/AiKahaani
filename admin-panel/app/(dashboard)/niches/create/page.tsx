@@ -224,10 +224,7 @@ export default function CreateNicheModal() {
       let targetId: string | number | undefined = undefined;
 
       if (isEdit && nicheIdParam) {
-        const putResp = await putClientDataAction<any, typeof payload>(
-          `v1/admin/niches/${nicheIdParam}/`,
-          payload,
-        );
+        await putClientDataAction<any, typeof payload>(`v1/admin/niches/${nicheIdParam}/`, payload);
 
         toast.success('Niche updated successfully!');
       } else {

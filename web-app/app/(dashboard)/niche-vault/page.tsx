@@ -47,11 +47,12 @@ export default function NicheVault() {
       <SearchHeader searchInput={searchInput} handleSearchChange={handleSearchChange} />
 
       {isLoading ? (
-        <div className="flex min-h-[200px] items-center justify-center">
-          <div role="status" aria-live="polite" className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-t-transparent" />
-            <span className="text-gray-500">Loading niches...</span>
-          </div>
+        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="animate-pulse">
+              <div className="h-64 rounded-lg bg-white/10"></div>
+            </div>
+          ))}
         </div>
       ) : (
         <>
