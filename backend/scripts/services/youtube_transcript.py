@@ -159,16 +159,17 @@ class YouTubeTranscriptService:
             Exception: If transcript fetch fails
         """
         # Get proxy credentials from settings
-        proxy_username = getattr(settings, 'TRANSCRIPT_PROXY_USERNAME', 'lvzvdcev')
+        proxy_username = getattr(settings, 'TRANSCRIPT_PROXY_USERNAME', 'hmxiyuge')
         proxy_password = getattr(settings, 'TRANSCRIPT_PROXY_PASSWORD', None)
         
         if not proxy_password:
             logger.warning(
                 "[YOUTUBE_TRANSCRIPT] Proxy not configured, trying without proxy..."
             )
-            # Try without proxy
+            # Try without proxy - YouTubeTranscriptApi is used directly as a static class
             try:
-                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
+                from youtube_transcript_api import YouTubeTranscriptApi as YTAPI
+                transcript = YTAPI.get_transcript(video_id, languages=['en'])
                 return cls._format_transcript(transcript)
             except Exception as e:
                 raise Exception(
@@ -179,16 +180,17 @@ class YouTubeTranscriptService:
         # Initialize with proxy configuration
         try:
             logger.info("[YOUTUBE_TRANSCRIPT] Using Webshare proxy configuration")
-            ytt_api = YouTubeTranscriptApi(
-                proxy_config=WebshareProxyConfig(
-                    proxy_username=proxy_username,
-                    proxy_password=proxy_password,
-                    filter_ip_locations=["us", "ca", "de", "gb"],  # US, Canada, Germany, UK
-                )
+            from youtube_transcript_api import YouTubeTranscriptApi as YTAPI
+            
+            # Create proxy config
+            proxy_config = WebshareProxyConfig(
+                proxy_username=proxy_username,
+                proxy_password=proxy_password,
+                filter_ip_locations=["us", "ca", "de", "gb"],  # US, Canada, Germany, UK
             )
             
-            # Fetch transcript
-            transcript = ytt_api.fetch(video_id, languages=['en'])
+            # Fetch transcript with proxy
+            transcript = YTAPI.get_transcript(video_id, languages=['en'], proxies=proxy_config.get_proxy_dict())
             return cls._format_transcript(transcript)
             
         except Exception as e:

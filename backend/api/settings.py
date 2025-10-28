@@ -381,7 +381,7 @@ TITLE_GENERATION_MODEL = environ.get("TITLE_GENERATION_MODEL", "gpt-4.1")
 # YouTube Transcript Configuration
 ######################################################################
 # Webshare proxy configuration for YouTube transcript fetching
-TRANSCRIPT_PROXY_USERNAME = environ.get("TRANSCRIPT_PROXY_USERNAME", "lvzvdcev")
+TRANSCRIPT_PROXY_USERNAME = environ.get("TRANSCRIPT_PROXY_USERNAME", "hmxiyuge")
 TRANSCRIPT_PROXY_PASSWORD = environ.get("TRANSCRIPT_PROXY_PASSWORD")
 
 ######################################################################
