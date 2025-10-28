@@ -172,29 +172,36 @@ class GenerateOutlineRequestSerializer(serializers.Serializer):
         allow_blank=True,
         help_text="Image URL to analyze for generating title/description",
     )
+    article_url = serializers.URLField(
+        required=False,
+        allow_blank=True,
+        help_text="Article URL to scrape content from for additional context (optional)",
+    )
+    youtube_url = serializers.URLField(
+        required=False,
+        allow_blank=True,
+        help_text="YouTube video URL to fetch transcript from for additional context (optional)",
+    )
 
     def validate(self, data):
-        """Ensure either description, image file, or image URL is provided"""
+        """Ensure description is provided; attachments are optional context"""
         description = data.get("description", "").strip()
         image = data.get("image")
         image_url = data.get("image_url", "").strip()
 
-        if not description and not image and not image_url:
+        # Description is required
+        if not description:
             raise serializers.ValidationError(
-                "Either 'description', 'image' file, or 'image_url' must be provided."
+                "The 'description' field is required. Attachments (image, article_url, youtube_url) are optional and will be used as additional context."
             )
 
-        # Ensure only one image input method is used
+        # Image file and image URL cannot both be provided
         if image and image_url:
             raise serializers.ValidationError(
                 "Please provide either an image file or image URL, not both."
             )
 
-        # If image (file or URL) is provided, description and title are not needed
-        if image or image_url:
-            data["description"] = ""  # Clear description if image is provided
-            data["title"] = ""  # Clear title if image is provided
-
+        # All other combinations are allowed (description + any attachments)
         return data
 
 

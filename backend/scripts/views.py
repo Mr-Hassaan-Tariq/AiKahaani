@@ -74,19 +74,64 @@ def script_generator_config(request):
 
 @extend_schema(
     summary="Generate script outline",
-    description="""Generate a detailed script outline using multiple tones.
+    description="""Generate a detailed script outline using multiple tones and optional context attachments.
 
-**Three input methods supported:**
-1. **Text Description (JSON)**: Provide a text description in JSON format
-2. **Image Upload (Form Data)**: Upload an image file using multipart/form-data
-3. **Image URL**: Provide an image URL that will be analyzed
+## 📝 Input Requirements
 
-**Usage:**
-- For text input: Use `Content-Type: application/json` with `description` field
-- For image file: Use `Content-Type: multipart/form-data` with `image` file
-- For image URL: Use either JSON or form data with `image_url` field
-- Either `description`, `image` file, or `image_url` must be provided (only one)
-- **When providing an image**: No need to provide title or description - they will be automatically generated from the image content using OpenAI Vision""",
+### Required
+- **`description`** (string): The main content/topic for your video script
+
+### Optional - Enhance with Context Attachments
+You can provide **multiple attachments** to enrich your script with additional context:
+
+1. 🖼️ **Image Context** (choose one):
+   - `image` (file): Upload an image file (JPEG, PNG, etc.)
+   - `image_url` (URL): Provide an image URL
+   - *AI analyzes the image and adds visual context to your script*
+
+2. 📰 **Article Context**:
+   - `article_url` (URL): Provide an article URL
+   - *Scrapes article content to add expert knowledge and details*
+
+3. 🎥 **Video Context**:
+   - `youtube_url` (URL): Provide a YouTube video URL
+   - *Fetches video transcript to reference existing content*
+
+### Configuration
+- `tones` (array): List of tone IDs (defaults to "Informative")
+- `template_style` (integer): Template style ID (optional)
+- `min_length` / `max_length`: Word count range
+- `title` (string): Custom title (optional)
+
+## 🎯 How Context Combination Works
+
+All provided contexts are intelligently combined:
+
+```
+[Your Description]
+
+[IMAGE CONTEXT]: AI-generated description of the image
+
+[ARTICLE CONTEXT - Article Title]: Scraped article content
+
+[YOUTUBE TRANSCRIPT - Video Title]: Video transcript text
+```
+
+This enriched context is used to generate a comprehensive script outline!
+
+## 💡 Usage Patterns
+
+**Basic** - Description only (classic approach)
+**Enhanced** - Description + 1 attachment (add depth)
+**Advanced** - Description + 2-3 attachments (maximum context)
+
+## ⚠️ Important Notes
+
+- **Description is always required** - attachments supplement, not replace
+- **Only one image input method** - use either file OR URL, not both
+- **All other combinations allowed** - mix and match freely
+- **Context truncation** - Very long content is automatically truncated
+- **Rich results** - More context = more comprehensive outlines""",
     request={
         "multipart/form-data": GenerateOutlineRequestSerializer,
         "application/json": GenerateOutlineRequestSerializer,
@@ -97,16 +142,17 @@ def script_generator_config(request):
             description="Script outline generated successfully",
         ),
         400: OpenApiResponse(
-            description="Invalid input data - either description or image must be provided"
+            description="Invalid input data"
         ),
         403: OpenApiResponse(description="Active subscription required"),
-        500: OpenApiResponse(description="Outline generation or image analysis failed"),
+        500: OpenApiResponse(description="Generation failed"),
     },
     examples=[
         OpenApiExample(
-            "Text Description (JSON)",
+            "1️⃣ Basic - Description Only",
+            description="Generate outline from description alone (classic approach)",
             value={
-                "description": "How to learn Python programming from scratch",
+                "description": "How to learn Python programming from scratch for complete beginners",
                 "tones": [1],
                 "template_style": 2,
                 "min_length": 200,
@@ -116,24 +162,83 @@ def script_generator_config(request):
             media_type="application/json",
         ),
         OpenApiExample(
-            "Image Upload (Form Data)",
+            "2️⃣ Image Context - Upload File",
+            description="Add visual context by uploading an image file",
             value={
+                "description": "A complete guide to Italian pasta cooking techniques with traditional methods",
                 "tones": [1, 3],
                 "template_style": 1,
                 "min_length": 300,
                 "max_length": 1000,
-                "image": "[Upload image file here]",
+                "image": "[Upload image file showing pasta preparation]",
             },
             media_type="multipart/form-data",
         ),
         OpenApiExample(
-            "Image URL (JSON)",
+            "3️⃣ Image Context - URL",
+            description="Add visual context using an image URL",
             value={
+                "description": "Professional photography tips for beginners - camera setup and lighting",
                 "tones": [1, 2],
                 "template_style": 2,
                 "min_length": 200,
                 "max_length": 800,
-                "image_url": "https://example.com/path/to/image.jpg",
+                "image_url": "https://example.com/camera-setup.jpg",
+            },
+            media_type="application/json",
+        ),
+        OpenApiExample(
+            "4️⃣ Article Context",
+            description="Enrich with expert knowledge from an article",
+            value={
+                "description": "Understanding AI and machine learning fundamentals for developers",
+                "tones": [1],
+                "template_style": 1,
+                "min_length": 300,
+                "max_length": 1000,
+                "article_url": "https://www.bbc.com/news/technology/ai-basics",
+            },
+            media_type="application/json",
+        ),
+        OpenApiExample(
+            "5️⃣ YouTube Context",
+            description="Reference existing video content with transcript",
+            value={
+                "description": "Workout routine inspired by professional fitness trainers",
+                "tones": [2, 3],
+                "template_style": 2,
+                "min_length": 200,
+                "max_length": 800,
+                "youtube_url": "https://www.youtube.com/watch?v=professional-workout",
+            },
+            media_type="application/json",
+        ),
+        OpenApiExample(
+            "6️⃣ Image + Article (Combined)",
+            description="Combine visual and written context",
+            value={
+                "description": "Mediterranean diet guide for healthy living",
+                "tones": [1],
+                "template_style": 1,
+                "min_length": 400,
+                "max_length": 1000,
+                "image_url": "https://example.com/mediterranean-food.jpg",
+                "article_url": "https://health.com/mediterranean-diet-benefits",
+            },
+            media_type="application/json",
+        ),
+        OpenApiExample(
+            "7️⃣ All Contexts Combined (Maximum)",
+            description="Combine all three context types for comprehensive outline",
+            value={
+                "description": "Complete home workout guide for beginners - no equipment needed",
+                "tones": [1, 2],
+                "template_style": 1,
+                "min_length": 400,
+                "max_length": 1200,
+                "image_url": "https://example.com/home-workout-setup.jpg",
+                "article_url": "https://fitness.com/no-equipment-workouts",
+                "youtube_url": "https://www.youtube.com/watch?v=beginner-workout",
             },
             media_type="application/json",
         ),
@@ -158,6 +263,8 @@ def generate_script_outline(request):
     description = validated_data.get("description", "")
     image = validated_data.get("image")
     image_url = validated_data.get("image_url", "")
+    article_url = validated_data.get("article_url", "")
+    youtube_url = validated_data.get("youtube_url", "")
     tone_ids = validated_data.get("tones", [])
     template_style_id = validated_data.get("template_style")
     min_length = validated_data.get("min_length", 0)
@@ -166,13 +273,18 @@ def generate_script_outline(request):
     
     logger.info(
         f"[OUTLINE_GENERATION] Parameters - User: {request.user.id}, Description length: {len(description)}, "
-                f"Tone IDs: {tone_ids}, Template style: {template_style_id}, Length: {min_length}-{max_length}, "
-        f"Has image: {bool(image)}, Has image URL: {bool(image_url)}, Has title: {bool(title)}"
+        f"Tone IDs: {tone_ids}, Template style: {template_style_id}, Length: {min_length}-{max_length}, "
+        f"Has image: {bool(image)}, Has image URL: {bool(image_url)}, "
+        f"Has article URL: {bool(article_url)}, Has YouTube URL: {bool(youtube_url)}, Has title: {bool(title)}"
     )
 
+    # Initialize context list to combine all attachments
+    additional_contexts = []
+    
+    # Handle Image attachment (as additional context)
     if image or image_url:
         logger.info(
-            f"[OUTLINE_GENERATION] Starting image analysis for user {request.user.id}"
+            f"[OUTLINE_GENERATION] Processing image attachment for user {request.user.id}"
         )
         try:
             if image:
@@ -203,11 +315,11 @@ def generate_script_outline(request):
                     )
                 )
 
-            title = image_title
-            description = image_description
+            # Add image context
+            additional_contexts.append(f"[IMAGE CONTEXT]: {image_description}")
             logger.info(
                 f"[OUTLINE_GENERATION] Image analysis completed for user {request.user.id} - "
-                f"Generated title: '{title[:50]}...', Description length: {len(description)}"
+                f"Context added: '{image_description[:100]}...'"
             )
 
         except Exception as e:
@@ -216,9 +328,80 @@ def generate_script_outline(request):
                 exc_info=True,
             )
             return Response(
-                {"error": "Failed to analyze the provided image."},
+                {"error": f"Failed to analyze the provided image: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+    
+    # Handle Article URL attachment (as additional context)
+    if article_url:
+        logger.info(
+            f"[OUTLINE_GENERATION] Processing article URL for user {request.user.id}: {article_url}"
+        )
+        try:
+            article_title, article_content = (
+                OpenAIScriptService.analyze_article_content(
+                    article_url=article_url, user=request.user
+                )
+            )
+            
+            # Add article context
+            additional_contexts.append(f"[ARTICLE CONTEXT - {article_title}]: {article_content}")
+            logger.info(
+                f"[OUTLINE_GENERATION] Article scraping completed for user {request.user.id} - "
+                f"Context added from '{article_title[:50]}...'"
+            )
+            
+        except Exception as e:
+            logger.error(
+                f"[OUTLINE_GENERATION] Article scraping failed for user {request.user.id}: {str(e)}",
+                exc_info=True,
+            )
+            return Response(
+                {"error": f"Article scraping failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+    
+    # Handle YouTube transcript attachment (as additional context)
+    if youtube_url:
+        logger.info(
+            f"[OUTLINE_GENERATION] Processing YouTube URL for user {request.user.id}: {youtube_url}"
+        )
+        try:
+            video_title, transcript_text = (
+                OpenAIScriptService.analyze_youtube_transcript(
+                    youtube_url=youtube_url, user=request.user
+                )
+            )
+            
+            # Add YouTube context
+            additional_contexts.append(f"[YOUTUBE TRANSCRIPT - {video_title}]: {transcript_text}")
+            logger.info(
+                f"[OUTLINE_GENERATION] YouTube transcript fetch completed for user {request.user.id} - "
+                f"Context added from '{video_title[:50]}...'"
+            )
+            
+        except Exception as e:
+            logger.error(
+                f"[OUTLINE_GENERATION] YouTube transcript fetch failed for user {request.user.id}: {str(e)}",
+                exc_info=True,
+            )
+            return Response(
+                {"error": f"YouTube transcript fetch failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    # Combine description with all additional contexts
+    if additional_contexts:
+        combined_description = f"{description}\n\n{''.join([f'{ctx}\n\n' for ctx in additional_contexts])}"
+        logger.info(
+            f"[OUTLINE_GENERATION] Combined description with {len(additional_contexts)} attachment(s) "
+            f"for user {request.user.id}. Total length: {len(combined_description)}"
+        )
+    else:
+        combined_description = description
+        logger.info(
+            f"[OUTLINE_GENERATION] Using description without attachments for user {request.user.id}"
+        )
 
     try:
         # Handle optional tones - if no tones provided, use default "Informative" tone
@@ -277,7 +460,7 @@ def generate_script_outline(request):
         )
 
         script_data = {
-            "description": description,
+            "description": combined_description,
             "tones": outline_tones,
             "template_style": template_style.name if template_style else "medium",
             "template_style_id": template_style.id if template_style else None,
@@ -287,8 +470,10 @@ def generate_script_outline(request):
         
         logger.info(
             f"[OUTLINE_GENERATION] Prepared script data for user {request.user.id}: "
-                   f"Description length: {len(description)}, Tones: {outline_tones}, "
-                   f"Template: {template_style.name if template_style else 'medium'}, "
+            f"Combined description length: {len(combined_description)}, "
+            f"Original description: {len(description)}, Attachments: {len(additional_contexts)}, "
+            f"Tones: {outline_tones}, "
+            f"Template: {template_style.name if template_style else 'medium'}, "
             f"Length range: {min_length}-{max_length}"
         )
 

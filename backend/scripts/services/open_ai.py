@@ -16,6 +16,10 @@ from .prompt import prompt as storytelling_manual
 # Import word count strategy
 from .word_count_strategy import WordCountStrategy
 
+# Import new attachment services
+from .article_scraper import ArticleScraperService
+from .youtube_transcript import YouTubeTranscriptService
+
 logger = logging.getLogger(__name__)
 
 # Lazy client initialization to avoid import-time errors in tests
@@ -3701,6 +3705,128 @@ Note: Please provide your response in a clear, structured format (not JSON)."""
         except Exception as e:
             logger.error(f"Chat completions image analysis failed: {str(e)}")
             return "Image Analysis", "An image was provided for analysis."
+    
+    @staticmethod
+    def analyze_article_content(
+        article_url: str,
+        user=None,
+        save_log: bool = True,
+    ) -> Tuple[str, str]:
+        """
+        Scrape and analyze article content from URL
+        
+        This is a wrapper around ArticleScraperService that provides
+        integration with the OpenAI service and logging.
+        
+        Args:
+            article_url: URL of the article to scrape
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
+        
+        Returns:
+            Tuple of (title, content)
+        """
+        try:
+            start_time = time.time()
+            logger.info(f"[ARTICLE_CONTENT] Starting article scraping for URL: {article_url}")
+            
+            # Use the ArticleScraperService to fetch content
+            title, content = ArticleScraperService.scrape_article(article_url)
+            
+            generation_time = time.time() - start_time
+            word_count = len(content.split())
+            
+            logger.info(
+                f"[ARTICLE_CONTENT] Successfully scraped article - "
+                f"Title: '{title[:50]}...', Content length: {len(content)} chars, "
+                f"Words: {word_count}, Time: {generation_time:.2f}s"
+            )
+            
+            # Save run log to database
+            if save_log:
+                thread_id = f"article_{int(time.time())}"
+                run_id = f"run_{int(time.time())}"
+                
+                OpenAIScriptService._save_run_log(
+                    user=user,
+                    thread_id=thread_id,
+                    run_id=run_id,
+                    assistant_id="article-scraper",
+                    tokens_used=0,  # No tokens used for scraping
+                    word_count=word_count,
+                    file_search_used=False,
+                    file_search_snippets=[],
+                    run_type="article_content",
+                    generation_time=generation_time,
+                    model="article-scraper",
+                )
+            
+            return title, content
+            
+        except Exception as e:
+            logger.error(f"[ARTICLE_CONTENT] Article scraping failed: {str(e)}")
+            raise Exception(f"Article scraping failed: {str(e)}")
+    
+    @staticmethod
+    def analyze_youtube_transcript(
+        youtube_url: str,
+        user=None,
+        save_log: bool = True,
+    ) -> Tuple[str, str]:
+        """
+        Fetch YouTube video transcript
+        
+        This is a wrapper around YouTubeTranscriptService that provides
+        integration with the OpenAI service and logging.
+        
+        Args:
+            youtube_url: URL of the YouTube video
+            user: User object for logging (optional)
+            save_log: Whether to save run log to database (default: True)
+        
+        Returns:
+            Tuple of (video_title, transcript_text)
+        """
+        try:
+            start_time = time.time()
+            logger.info(f"[YOUTUBE_TRANSCRIPT] Starting transcript fetch for URL: {youtube_url}")
+            
+            # Use the YouTubeTranscriptService to fetch transcript
+            video_title, transcript_text = YouTubeTranscriptService.fetch_transcript(youtube_url)
+            
+            generation_time = time.time() - start_time
+            word_count = len(transcript_text.split())
+            
+            logger.info(
+                f"[YOUTUBE_TRANSCRIPT] Successfully fetched transcript - "
+                f"Title: '{video_title[:50]}...', Transcript length: {len(transcript_text)} chars, "
+                f"Words: {word_count}, Time: {generation_time:.2f}s"
+            )
+            
+            # Save run log to database
+            if save_log:
+                thread_id = f"youtube_{int(time.time())}"
+                run_id = f"run_{int(time.time())}"
+                
+                OpenAIScriptService._save_run_log(
+                    user=user,
+                    thread_id=thread_id,
+                    run_id=run_id,
+                    assistant_id="youtube-transcript",
+                    tokens_used=0,  # No tokens used for transcript fetching
+                    word_count=word_count,
+                    file_search_used=False,
+                    file_search_snippets=[],
+                    run_type="youtube_transcript",
+                    generation_time=generation_time,
+                    model="youtube-transcript",
+                )
+            
+            return video_title, transcript_text
+            
+        except Exception as e:
+            logger.error(f"[YOUTUBE_TRANSCRIPT] Transcript fetch failed: {str(e)}")
+            raise Exception(f"YouTube transcript fetch failed: {str(e)}")
     
     @staticmethod
     def _save_run_log(
