@@ -4,6 +4,7 @@ import { FC, useState } from 'react';
 import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
 
+import ThumbnailImage from '../../../../public/images/card6.png';
 import NicheStyleModal from './NicheStyleModal';
 import VedioModal from './VedioModal';
 import Button from 'components/ui/Button';
@@ -20,8 +21,7 @@ interface NicheCardProps {
   thumbnailUrl?: string | null;
 }
 
-const PLACEHOLDER_IMAGE =
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
+// 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
 
 const NicheCard: FC<NicheCardProps> = ({
   id,
@@ -32,7 +32,7 @@ const NicheCard: FC<NicheCardProps> = ({
   topChannels,
   thumbnailUrl,
 }) => {
-  const [imgSrc, setImgSrc] = useState(thumbnailUrl || PLACEHOLDER_IMAGE);
+  const [imagePresent, setImagePresent] = useState(thumbnailUrl || false);
 
   const tags = [...(tone || []), ...(pacing || [])];
   const examples = topChannels?.map((c) => c.name) || [];
@@ -47,27 +47,27 @@ const NicheCard: FC<NicheCardProps> = ({
   return (
     <Card className="rounded-xl bg-[#161616] text-white lg:px-5 lg:py-5">
       <div className="relative h-40">
-        {thumbnailUrl ? (
+        {imagePresent ? (
           <VedioModal
             trigger={
               <Image
-                src={imgSrc}
+                src={thumbnailUrl || ''}
                 alt={title}
                 fill
                 className="rounded-xl object-cover"
                 sizes="(max-width: 768px) 100vw, 33vw"
-                onError={() => setImgSrc(PLACEHOLDER_IMAGE)}
+                onError={() => setImagePresent(false)}
               />
             }
             title={title}
             videoId={'videoId'}
             subtitle={description}
             youtubeUrl={videoUrl}
-            thumbnailUrl={imgSrc}
+            thumbnailUrl={thumbnailUrl || ''}
           />
         ) : (
           <Image
-            src={PLACEHOLDER_IMAGE}
+            src={ThumbnailImage}
             alt="placeholder"
             fill
             className="rounded-xl object-cover"

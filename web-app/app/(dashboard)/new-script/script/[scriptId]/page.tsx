@@ -23,10 +23,10 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
           content: e.script,
         })) || [];
 
-  const allContent = sections?.map((e: any) => `${e.title}\n\n${e.content}`).join('\n\n');
+  const allContent = data?.title + '\n\n' + sections?.map((e: any) => `${e.content}`).join('\n\n');
 
   return (
-    <Col className="w-full items-center gap-8 text-center">
+    <Col className="w-full items-center gap-8">
       {/* Title */}
       <H3 className="text-center text-white">
         {data?.title ? `Full Script: ${data.title}` : 'Full Script'}
