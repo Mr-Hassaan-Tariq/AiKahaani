@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import mainLogo from '@assets/sidebar/mainLogo.png';
 
 import LogoutModal from './LogoutModal';
@@ -15,6 +16,12 @@ import SubTitleIcon from 'components/icons/SubTitleIcon';
 import UsersIcon from 'components/icons/UsersIcon';
 
 export default function DesktopMenu() {
+  const pathname = usePathname() || '/';
+
+  const isActive = (path: string) => {
+    if (path === '/') return pathname === '/';
+    return pathname === path || pathname.startsWith(path + '/');
+  };
   return (
     <div className="scrollbar sticky top-0 h-screen max-h-screen w-full overflow-hidden overflow-y-auto rounded-r-3xl border-r border-[#BAFF381F] bg-[#161616] px-7 py-8 text-white">
       <Col className="mx-auto h-full min-w-[170px] gap-12">
@@ -24,32 +31,46 @@ export default function DesktopMenu() {
 
         <Col className="h-full justify-between">
           <Col className="gap-6">
-            {mainMenu.map((e) => (
-              <Link
-                key={e.name}
-                href={e.path}
-                className="group flex w-full cursor-pointer flex-row items-center justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]"
-              >
-                {e.icon}
-                <Text variant="lg" className="text-white group-hover:text-[#20BF0E]/40">
-                  {e.name}
-                </Text>
-              </Link>
-            ))}
+            {mainMenu.map((e) => {
+              const active = isActive(e.path);
+              const textClass = active ? 'text-[#20BF0E]/40' : 'text-white';
+              // const iconClass = active ? 'text-[#20BF0E]/40' : 'text-white';
+
+              return (
+                <Link
+                  key={e.name}
+                  href={e.path}
+                  aria-current={active ? 'page' : undefined}
+                  className='group flex w-full cursor-pointer flex-row items-center justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:"liga"_off,"clig"_off]'
+                >
+                  {e.icon}
+                  <Text variant="lg" className={`${textClass} group-hover:text-[#20BF0E]/40`}>
+                    {e.name}
+                  </Text>
+                </Link>
+              );
+            })}
           </Col>
           <Col className="gap-6">
-            {subMenu.map((e) => (
-              <Link
-                key={e.name}
-                href={e.path}
-                className="group flex w-full cursor-pointer flex-row items-center justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]"
-              >
-                {e.icon}
-                <Text variant="lg" className="text-[#AAACA6] group-hover:text-[#20BF0E]/40">
-                  {e.name}
-                </Text>
-              </Link>
-            ))}
+            {subMenu.map((e) => {
+              const active = isActive(e.path);
+              const textClass = active ? 'text-[#20BF0E]/40' : 'text-[#AAACA6]';
+              // const iconClass = active ? 'text-[#20BF0E]/40' : 'text-[#AAACA6]';
+
+              return (
+                <Link
+                  key={e.name}
+                  href={e.path}
+                  aria-current={active ? 'page' : undefined}
+                  className='group flex w-full cursor-pointer flex-row items-center justify-normal gap-2.5 whitespace-nowrap [font-feature-settings:"liga"_off,"clig"_off]'
+                >
+                  {e.icon}
+                  <Text variant="lg" className={`${textClass} group-hover:text-[#20BF0E]/40`}>
+                    {e.name}
+                  </Text>
+                </Link>
+              );
+            })}
 
             <LogoutModal />
           </Col>
@@ -63,7 +84,7 @@ export const mainMenu = [
   {
     name: 'Script Generator',
     icon: <ScriptGeneratorIcon />,
-    path: '/new-script',
+    path: '/',
   },
   {
     name: 'My Scripts',

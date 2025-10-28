@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Pin } from 'lucide-react';
 
 import { MicrophoneIcon, ScriptIcon, TvIcon } from './components';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
+import Button from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
 
 interface FilterModalProps {
@@ -30,6 +32,7 @@ interface NicheDetailsType {
 }
 
 export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [niche, setNiche] = useState<NicheDetailsType | null>(null);
   const [loading, setLoading] = useState(false);
@@ -61,6 +64,20 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
       description={
         niche?.tagline ||
         'Engaging, anonymous, and binge-worthy. Narrate without showing your face.'
+      }
+      footer={
+        <Row className="w-full gap-6">
+          <Button
+            type="button"
+            variant="green"
+            onClick={() => {
+              setOpen(false);
+              router.push(`/niches/create?nicheId=${nicheId}`);
+            }}
+          >
+            Update this niche format
+          </Button>
+        </Row>
       }
     >
       {loading ? (

@@ -1,17 +1,20 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Trash2 } from 'lucide-react';
 import { Controller, FormProvider, useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import NicheSelectWidget from './components/NicheSelectWidgets';
-import { postClientDataAction } from 'lib/utils/clientDataActions';
+import {
+  getClientDataAction,
+  postClientDataAction,
+  putClientDataAction,
+} from 'lib/utils/clientDataActions';
 import Button from 'components/ui/Button';
 import Card from 'components/ui/Card';
 import Input from 'components/ui/FormInput';
-import Row from 'components/ui/Row';
 import Text from 'components/ui/Text';
 
 type Channel = {
@@ -54,6 +57,10 @@ const YOUTUBE_URL_REGEX = /^https?:\/\/(?:www\.)?(?:youtube\.com\/.+|youtu\.be\/
 
 export default function CreateNicheModal() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nicheIdParam = searchParams?.get('nicheId') ?? undefined;
+  const isEdit = Boolean(nicheIdParam);
+
   const methods = useForm<CardData>({
     mode: 'onBlur',
     defaultValues: {
@@ -119,13 +126,6 @@ export default function CreateNicheModal() {
       return;
     }
 
-    // optional: client-side file size/type validation (uncomment if you want)
-    // if (file.size > 5 * 1024 * 1024) {
-    //   toast.error('File too large (max 5MB).');
-    //   if (fileInputRef.current) fileInputRef.current.value = '';
-    //   return;
-    // }
-
     setSelectedFile(file);
 
     // generate preview
@@ -150,6 +150,58 @@ export default function CreateNicheModal() {
     toast('Thumbnail removed');
   };
 
+  // --- Fetch existing niche when editing and prefill the form ---
+  const fetchAndPrefill = useCallback(
+    async (id: string) => {
+      try {
+        const res = await getClientDataAction<{ data: any }>(`v1/admin/niches/${id}/`);
+        const data = res?.data ?? res;
+        if (!data) {
+          toast.error('Failed to fetch niche for editing');
+          return;
+        }
+
+        // Map server shape to form fields
+        reset({
+          title: data.title ?? '',
+          description: data.tagline ?? '',
+          tone: Array.isArray(data.tone) ? data.tone : (data.tone ?? []),
+          pacing: Array.isArray(data.pacing) ? data.pacing : (data.pacing ?? []),
+          channels:
+            Array.isArray(data.top_channels) && data.top_channels.length > 0
+              ? data.top_channels.map((c: any) => ({ name: c.name ?? '', link: c.link ?? '' }))
+              : [{ name: '', link: '' }],
+          bestFor: Array.isArray(data.best_for)
+            ? (data.best_for as string[]).join(', ')
+            : (data.best_for ?? []).join
+              ? (data.best_for as string[]).join(', ')
+              : '',
+          structure: {
+            intro: data.script_structure?.intro ?? '',
+            body: data.script_structure?.body ?? '',
+            outro: data.script_structure?.conclusion ?? '',
+          },
+          thumbnailUrl: data.thumbnail_url ?? undefined,
+        });
+
+        // show thumbnail preview if the server returned a thumbnail url
+        if (data.thumbnail_url) {
+          setThumbnailPreviewUrl(data.thumbnail_url);
+        }
+      } catch (err: any) {
+        console.error('Error fetching niche for edit:', err);
+        toast.error('Failed to load niche for editing');
+      }
+    },
+    [reset],
+  );
+
+  useEffect(() => {
+    if (isEdit && nicheIdParam) {
+      fetchAndPrefill(nicheIdParam);
+    }
+  }, [isEdit, nicheIdParam, fetchAndPrefill]);
+
   const onSubmit = async (data: CardData) => {
     setIsSubmittingLocal(true);
 
@@ -168,55 +220,44 @@ export default function CreateNicheModal() {
       status: 'active',
     };
 
-    let createdNicheId: number | string | undefined = undefined;
-
     try {
-      const createResp = await postClientDataAction<any, typeof payload>(
-        'v1/admin/niches/',
-        payload,
-      );
+      let targetId: string | number | undefined = undefined;
 
-      console.log('createResp', createResp);
+      if (isEdit && nicheIdParam) {
+        const putResp = await putClientDataAction<any, typeof payload>(
+          `v1/admin/niches/${nicheIdParam}/`,
+          payload,
+        );
 
-      createdNicheId =
-        createResp?.data?.id ?? createResp?.id ?? (createResp && (createResp as any).result?.id);
-
-      if (!createdNicheId) {
-        console.warn('Create response did not include an id:', createResp);
+        toast.success('Niche updated successfully!');
+      } else {
+        const createResp = await postClientDataAction<any, typeof payload>(
+          'v1/admin/niches/',
+          payload,
+        );
+        targetId =
+          createResp?.data?.id ?? createResp?.id ?? (createResp && (createResp as any).result?.id);
+        if (!targetId) {
+          console.warn('Create response did not include an id:', createResp);
+        }
+        toast.success('Niche created successfully!');
       }
 
-      // If there's a selected file, upload it against the created niche id
-      if (selectedFile) {
-        if (!createdNicheId) {
-          // can't upload without an id — surface error and stop
-          toast.error(
-            'Niche created but upload cannot proceed because niche id is missing from response.',
-          );
-          // we still redirect to niches
-          router.push('/niches');
-          return;
-        }
-
+      if (selectedFile && targetId) {
         setUploadingThumbnail(true);
-
         try {
           const formData = new FormData();
           formData.append('thumbnail', selectedFile);
 
-          const uploadEndpoint = `v1/admin/niches/${createdNicheId}/upload-thumbnail/`;
+          const uploadEndpoint = `v1/admin/niches/${targetId}/upload-thumbnail/`;
           const uploadResp = await postClientDataAction<
-            {
-              thumbnail_url: string;
-              data: { thumbnail_url: string };
-            },
+            { thumbnail_url: string; data: { thumbnail_url: string } },
             FormData
           >(uploadEndpoint, formData);
 
           const uploadedUrl = uploadResp?.data?.thumbnail_url ?? uploadResp?.thumbnail_url;
           if (uploadedUrl) {
-            // set form & local state
             setValue('thumbnailUrl', uploadedUrl);
-            // optional: show a success toast
             toast.success('Thumbnail uploaded successfully!');
           } else {
             console.warn('Upload response missing thumbnail_url:', uploadResp);
@@ -224,19 +265,17 @@ export default function CreateNicheModal() {
           }
         } catch (uploadErr) {
           console.error('Thumbnail upload failed:', uploadErr);
-          toast.error('Thumbnail upload failed. Niche was created though.');
+          toast.error('Thumbnail upload failed. Your niche was saved though.');
         } finally {
           setUploadingThumbnail(false);
         }
       }
 
-      toast.success('Niche created successfully!');
       reset();
       router.push('/niches');
     } catch (err: any) {
-      console.error('Error creating niche:', err);
-      // if error response has message(s), you may parse and show them here
-      toast.error('Failed to create niche. Please try again.');
+      console.error('Error saving niche:', err);
+      toast.error(err?.message ?? 'Failed to save niche');
     } finally {
       setIsSubmittingLocal(false);
     }
@@ -249,8 +288,10 @@ export default function CreateNicheModal() {
 
   return (
     <main className="min-h-screen p-4 sm:p-6 lg:p-8">
-      <Card className="mx-auto max-w-4xl border border-[#3C3C3C] bg-[#262724] p-6 lg:p-10">
-        <h1 className="mb-2 text-3xl font-bold text-white">Create New Niche</h1>
+      <Card className="mx-auto max-w-7xl border border-[#3C3C3C] bg-[#262724] p-6 lg:p-10">
+        <h1 className="mb-2 text-3xl font-bold text-white">
+          {isEdit ? 'Edit Niche' : 'Create New Niche'}
+        </h1>
         <Text className="mb-8 text-[#AAACA6]">
           Define the style, tone, and competitive channels for your new YouTube niche.
         </Text>
@@ -262,7 +303,6 @@ export default function CreateNicheModal() {
             className="grid gap-6 py-5 md:grid-cols-2"
             noValidate
           >
-            {/* Thumbnail uploader (spans full width) */}
             <div className="md:col-span-2">
               <label className="mb-2 block text-sm font-medium text-white">Thumbnail</label>
 
@@ -307,7 +347,7 @@ export default function CreateNicheModal() {
                       <button
                         type="button"
                         onClick={handleRemoveSelectedFile}
-                        className="ml-2 inline-flex items-center gap-2 rounded-md border border-transparent bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                        className="ml-2 inline-flex items-center gap-2 rounded-2xl border border-transparent bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
                         Remove
@@ -546,17 +586,24 @@ export default function CreateNicheModal() {
               })}
             </div>
 
-            <Row className="w-full pt-4">
-              <Button
-                type="submit"
-                variant="green"
-                disabled={isSubmitting || isSubmittingLocal || uploadingThumbnail}
-              >
-                {isSubmitting || isSubmittingLocal || uploadingThumbnail
-                  ? 'Creating...'
-                  : 'Create Niche'}
-              </Button>
-            </Row>
+            <div className="flex w-full justify-center pt-4 md:col-span-2">
+              <div className="w-full max-w-md">
+                <Button
+                  type="submit"
+                  variant="green"
+                  className="w-full"
+                  disabled={isSubmitting || isSubmittingLocal || uploadingThumbnail}
+                >
+                  {isSubmitting || isSubmittingLocal || uploadingThumbnail
+                    ? isEdit
+                      ? 'Updating...'
+                      : 'Creating...'
+                    : isEdit
+                      ? 'Update Niche'
+                      : 'Create Niche'}
+                </Button>
+              </div>
+            </div>
           </form>
         </FormProvider>
       </Card>

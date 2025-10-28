@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import mainLogo from '@assets/sidebar/mainLogo.png';
-import { Crown, Settings, Users } from 'lucide-react';
+import { Crown, LayoutDashboard, Settings, Users } from 'lucide-react';
 
 import LogoutModal from './LogoutModal';
 import Col from 'components/ui/Col';
@@ -30,7 +30,6 @@ export default function DesktopMenu() {
             {mainMenu.map((e) => {
               const active = isActive(e.path);
               const textClass = active ? 'text-[#20BF0E]/40' : 'text-white';
-              // const iconClass = active ? 'text-[#20BF0E]/40' : 'text-white';
 
               return (
                 <Link
@@ -51,7 +50,6 @@ export default function DesktopMenu() {
             {subMenu.map((e) => {
               const active = isActive(e.path);
               const textClass = active ? 'text-[#20BF0E]/40' : 'text-[#AAACA6]';
-              // const iconClass = active ? 'text-[#20BF0E]/40' : 'text-[#AAACA6]';
 
               return (
                 <Link
@@ -77,6 +75,11 @@ export default function DesktopMenu() {
 }
 
 export const mainMenu = [
+  {
+    name: 'Dashboard',
+    icon: <LayoutDashboard />,
+    path: '/',
+  },
   {
     name: 'User Management',
     icon: <Users />,
