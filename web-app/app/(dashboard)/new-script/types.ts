@@ -48,6 +48,11 @@ interface OutlineDataType {
 }
 
 export interface OutlineType {
+  description: string;
+  tones: any;
+  template_style: undefined;
+  min_length: number;
+  max_length: number;
   uuid: string;
   title: string;
   outline_text: string;
