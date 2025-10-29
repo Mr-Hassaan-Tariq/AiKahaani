@@ -162,30 +162,45 @@ class YouTubeTranscriptService:
         proxy_username = getattr(settings, 'TRANSCRIPT_PROXY_USERNAME', 'hmxiyuge')
         proxy_password = getattr(settings, 'TRANSCRIPT_PROXY_PASSWORD', None)
         
+        # Initialize YouTubeTranscriptApi
+        from youtube_transcript_api import YouTubeTranscriptApi as YTAPI
+        
         if not proxy_password:
             logger.warning(
                 "[YOUTUBE_TRANSCRIPT] Proxy not configured, trying without proxy..."
             )
-            # Try without proxy - YouTubeTranscriptApi is used directly as a static class
+            # Try without proxy
             try:
-                from youtube_transcript_api import YouTubeTranscriptApi as YTAPI
-                transcript = YTAPI.get_transcript(video_id, languages=['en'])
-                return cls._format_transcript(transcript)
+                api_instance = YTAPI()
+                
+                # Try English first
+                try:
+                    transcript = api_instance.fetch(video_id, languages=['en'])
+                    return cls._format_transcript(transcript)
+                except Exception:
+                    # If English not available, get any available transcript
+                    transcript_list = api_instance.list(video_id)
+                    # Get the first available transcript
+                    for transcript_info in transcript_list:
+                        transcript = transcript_info.fetch()
+                        logger.info(f"Using transcript in language: {transcript_info.language}")
+                        return cls._format_transcript(transcript)
+                    
+                    raise Exception("No transcripts available for this video")
+                    
             except Exception as e:
                 raise Exception(
-                    f"Failed to fetch transcript without proxy. "
-                    f"Please configure TRANSCRIPT_PROXY_PASSWORD. Error: {str(e)}"
+                    f"Failed to fetch transcript. The video may not have captions enabled. Error: {str(e)}"
                 )
         
         # Initialize with proxy configuration
         try:
             logger.info("[YOUTUBE_TRANSCRIPT] Using Webshare proxy configuration")
-            from youtube_transcript_api import YouTubeTranscriptApi as YTAPI
             
             # Build proxy URL for Webshare
             proxy_url = f"http://{proxy_username}:{proxy_password}@p.webshare.io:80"
             
-            # Fetch transcript with proxy using session with proxies
+            # Create session with proxies
             import requests
             session = requests.Session()
             session.proxies = {
@@ -193,9 +208,23 @@ class YouTubeTranscriptService:
                 'https': proxy_url
             }
             
-            # Use the session to fetch transcript
-            transcript = YTAPI.get_transcript(video_id, languages=['en'], session=session)
-            return cls._format_transcript(transcript)
+            # Initialize API instance with session
+            api_instance = YTAPI(session=session)
+            
+            # Fetch transcript - try English first, then fallback
+            try:
+                transcript = api_instance.fetch(video_id, languages=['en'])
+                return cls._format_transcript(transcript)
+            except Exception:
+                # If English not available, get any available transcript
+                transcript_list = api_instance.list(video_id)
+                # Get the first available transcript
+                for transcript_info in transcript_list:
+                    transcript = transcript_info.fetch()
+                    logger.info(f"Using transcript in language: {transcript_info.language}")
+                    return cls._format_transcript(transcript)
+                
+                raise Exception("No transcripts available for this video")
             
         except Exception as e:
             error_message = str(e)
