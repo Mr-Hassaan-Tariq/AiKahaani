@@ -101,6 +101,16 @@ class ScriptOutline(TimeStampedModel):
         Tone, related_name="outlines", help_text="The tones/vibes for this outline"
     )
 
+    # Optional niche style applied to this outline
+    niche = models.ForeignKey(
+        "admins.Niche",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="script_outlines",
+        help_text="Optional niche style applied during generation",
+    )
+
     # Outline structure as JSON for flexibility
     outline_data = models.JSONField(
         default=dict, help_text="Structured outline data from OpenAI"

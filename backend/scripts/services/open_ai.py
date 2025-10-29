@@ -1249,7 +1249,8 @@ Follow TubeGenius principles:
             print(f"[OUTLINE_CHUNKED_STEP1] Generating basic structure...")
             
             structure_user_prompt, suggested_sections = OpenAIScriptService._build_structure_user_prompt(script_data)
-            structure_prompt = OpenAIScriptService._build_structure_system_prompt(suggested_sections)
+            niche_context = script_data.get("niche_context", {})
+            structure_prompt = OpenAIScriptService._build_structure_system_prompt(suggested_sections, niche_context)
             
             print(f"[OUTLINE_CHUNKED_STEP1] Template requires {suggested_sections} sections")
             
@@ -1389,7 +1390,8 @@ Follow TubeGenius principles:
             max_length = script_data.get("max_length", 5000)
 
             # Build message content with enhanced prompts for Chat Completions
-            system_prompt = OpenAIScriptService._build_outline_system_prompt()
+            niche_context = script_data.get("niche_context", {})
+            system_prompt = OpenAIScriptService._build_outline_system_prompt(niche_context=niche_context)
             user_prompt = OpenAIScriptService._build_outline_user_prompt(script_data)
 
             # Check if this is a Flexible Outline template (ID 4)
@@ -4175,11 +4177,13 @@ Key principles:
 RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, no explanations, no additional text."""
 
     @staticmethod
-    def _build_outline_system_prompt() -> str:
+    def _build_outline_system_prompt(niche_context: Dict[str, Any] = None) -> str:
         """Build system prompt for outline generation using Chat Completions"""
+        from .niche_context import NicheContextBuilder
+        
         storytelling_manual = format_storytelling_manual_for_prompt()
         
-        return f"""You are an expert YouTube script writer and content strategist. Your task is to create detailed, actionable outlines that serve as blueprints for engaging YouTube videos.
+        base_prompt = f"""You are an expert YouTube script writer and content strategist. Your task is to create detailed, actionable outlines that serve as blueprints for engaging YouTube videos.
 
  CRITICAL: You MUST respond with valid JSON only. The API is configured to enforce JSON output format.
 
@@ -4290,6 +4294,13 @@ Use these proven storytelling principles to create outlines that will generate h
 CRITICAL: Every outline MUST pass ALL validators. If you cannot create a compliant outline, explain why in the validator_compliance_check section.
 
 RESPONSE FORMAT: Return ONLY valid JSON matching the schema above. No markdown, no explanations, no additional text."""
+        
+        # Inject niche context if provided
+        final_prompt = NicheContextBuilder.inject_niche_into_system_prompt(
+            base_prompt, niche_context or {}
+        )
+        
+        return final_prompt
 
     @staticmethod
     def _build_basic_outline_user_prompt(script_data: Dict[str, Any]) -> str:
@@ -6218,9 +6229,11 @@ REMEMBER: Generate the COMPLETE script in ONE response. Make it conversational, 
         return "\n".join(prompt_parts)
 
     @staticmethod
-    def _build_structure_system_prompt(suggested_sections: int) -> str:
+    def _build_structure_system_prompt(suggested_sections: int, niche_context: Dict[str, Any] = None) -> str:
         """Build minimal system prompt for basic structure generation"""
-        return f"""You are an expert YouTube script writer. Create a basic outline structure with minimal details.
+        from .niche_context import NicheContextBuilder
+        
+        base_prompt = f"""You are an expert YouTube script writer. Create a basic outline structure with minimal details.
 
 CRITICAL: You MUST respond with valid JSON only.
 
@@ -6242,6 +6255,11 @@ REQUIREMENTS:
 - No detailed validators or complex rules
 
 RESPONSE FORMAT: Return ONLY valid JSON matching the schema above."""
+        
+        # Inject niche context if provided
+        return NicheContextBuilder.inject_niche_into_system_prompt(
+            base_prompt, niche_context or {}
+        )
 
     @staticmethod
     def _build_structure_user_prompt(script_data: Dict[str, Any]) -> Tuple[str, int]:
