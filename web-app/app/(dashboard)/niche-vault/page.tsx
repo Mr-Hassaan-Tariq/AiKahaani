@@ -1,6 +1,6 @@
 'use client';
 
-import { SetStateAction, useEffect, useState } from 'react';
+import { SetStateAction, useEffect, useMemo, useState } from 'react';
 
 import { NichePaginatedResponse } from '../types';
 import NicheCard from './_components/NicheCard';
@@ -16,13 +16,48 @@ export default function NicheVault() {
   const [isLoading, setIsLoading] = useState(true);
   const itemsPerPage = 12;
 
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
+
+  const availableFilters = useMemo(
+    () => ({
+      Tone: ['Educational', 'Casual', 'Emotional', 'Satirical'],
+      Format: ['Storytelling', 'Review', 'Explainer', 'Interview'],
+      Popularity: ['Hype', 'Classic', 'Trending', 'New'],
+    }),
+    [],
+  );
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleApplyFilters = (filters: Record<string, string[]>) => {
+    setActiveFilters(filters);
+    setCurrentPage(1);
+  };
+
+  const toQueryKey = (displayName: string) => displayName.toLowerCase().replace(/\s+/g, '_');
+
+  const buildQuery = (page = 1, search = '', filters: Record<string, string[]>) => {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    if (search) params.append('search', search);
+
+    Object.entries(filters).forEach(([displayKey, values]) => {
+      if (!values || values.length === 0) return;
+      const key = toQueryKey(displayKey);
+      params.append(key, values.join(','));
+    });
+
+    return `auth/niches/?${params.toString()}`;
   };
 
   const fetchNiches = async (page = 1) => {
+    setIsLoading(true);
     try {
-      const data = await getClientDataAction<NichePaginatedResponse>(`auth/niches/?page=${page}`);
+      const url = buildQuery(page, searchInput, activeFilters);
+      const data = await getClientDataAction<NichePaginatedResponse>(url);
       setNiches(data.results || []);
       setTotalItems(data.count || 0);
     } catch (error) {
@@ -36,7 +71,7 @@ export default function NicheVault() {
 
   useEffect(() => {
     fetchNiches(currentPage);
-  }, [currentPage]);
+  }, [currentPage, searchInput, activeFilters]);
 
   const filteredNiches = niches.filter((niche) =>
     niche.title.toLowerCase().includes(searchInput.toLowerCase()),
@@ -44,7 +79,12 @@ export default function NicheVault() {
 
   return (
     <main>
-      <SearchHeader searchInput={searchInput} handleSearchChange={handleSearchChange} />
+      <SearchHeader
+        searchInput={searchInput}
+        handleSearchChange={handleSearchChange}
+        availableFilters={availableFilters}
+        onApplyFilters={handleApplyFilters}
+      />
 
       {isLoading ? (
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

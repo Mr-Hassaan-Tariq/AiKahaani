@@ -1,7 +1,8 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
 
+import ThumbnailImage from '../../../../public/images/no-niche.png';
 import NicheStyleModal from './NicheStyleModal';
 import VedioModal from './VedioModal';
 import Button from 'components/ui/Button';
@@ -27,6 +28,8 @@ const NicheCard: FC<NicheCardProps> = ({
   topChannels,
   thumbnailUrl,
 }) => {
+  const [imagePresent, setImagePresent] = useState(thumbnailUrl || false);
+
   const tags = [...(tone || []), ...(pacing || [])];
   const examples = topChannels?.map((c) => c.name) || [];
 
@@ -40,21 +43,32 @@ const NicheCard: FC<NicheCardProps> = ({
   return (
     <Card className="rounded-xl bg-[#161616] text-white lg:px-5 lg:py-5">
       <div className="relative h-40">
-        {thumbnailUrl ? (
+        {imagePresent ? (
           <VedioModal
             trigger={
-              <Image src={thumbnailUrl} alt={title} fill className="rounded-xl object-cover" />
+              <Image
+                src={thumbnailUrl || ''}
+                alt={title}
+                fill
+                className="rounded-xl object-cover"
+                sizes="(max-width: 768px) 100vw, 33vw"
+                onError={() => setImagePresent(false)}
+              />
             }
             title={title}
             videoId={'videoId'}
             subtitle={description}
             youtubeUrl={videoUrl}
-            thumbnailUrl={thumbnailUrl}
+            thumbnailUrl={thumbnailUrl || ''}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center rounded-xl bg-[#2a2a2a] text-center text-lg font-semibold text-white">
-            Thumbnail
-          </div>
+          <Image
+            src={ThumbnailImage}
+            alt="placeholder"
+            fill
+            className="rounded-xl object-cover"
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
         )}
       </div>
 
@@ -62,7 +76,7 @@ const NicheCard: FC<NicheCardProps> = ({
         <div className="flex flex-wrap items-center justify-between text-xs text-gray-300">
           <div className="rounded-md border border-[#BAFF381F] bg-[#2a2a2a] p-2">
             {tags.length > 0 ? (
-              tags.map((tag, i) => (
+              tags.slice(0, 4).map((tag, i) => (
                 <span key={i} className="text-white">
                   {tag}
                   {i < tags.length - 1 && ', '}

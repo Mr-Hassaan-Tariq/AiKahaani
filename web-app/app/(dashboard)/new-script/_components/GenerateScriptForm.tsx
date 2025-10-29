@@ -1,7 +1,7 @@
 'use client';
 
-import { Dispatch, SetStateAction, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { InitialScriptWordCount } from 'defaultValues';
 import { LinkIcon, MonitorPlayIcon, NewspaperIcon, Pencil, PlusIcon, X } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -14,22 +14,62 @@ import TemplatesWidget from './TemplatesWidget';
 import VibeToneWidget from './VibeToneWidget';
 import useGenerateOutline from 'lib/hooks/useGenerateOutline';
 import { logger } from 'lib/logger';
+import { getClientDataAction } from 'lib/utils/clientDataActions';
 import useToast from 'lib/utils/useToast';
 import Button from 'components/ui/Button';
 import Col from 'components/ui/Col';
 import FormTextarea from 'components/ui/FormTextarea';
 import H5 from 'components/ui/H5';
 import Row from 'components/ui/Row';
+import SuggestedTopicsPopover from 'components/ui/SuggestedTopicsPopover';
 import Text from 'components/ui/Text';
 import ExportIcon from 'components/icons/ExportIcon';
 import FolderCloudIcon from 'components/icons/FolderCloudIcon';
 import { Popover, PopoverContent, PopoverTrigger } from 'components/shadcn_ui/popover';
 
+interface NicheDetailsType {
+  id: number;
+  title: string;
+  tagline?: string;
+  thumbnail_url?: string | null;
+  script_structure?: {
+    intro?: string;
+    body?: string;
+    conclusion?: string;
+  };
+  tone?: string[];
+  pacing?: string[];
+  top_channels?: { name: string; link: string }[];
+  best_for?: string[];
+}
+
 export default function GenerateScriptForm({ configData }: { configData: GenerationPromptType }) {
   const toast = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [files, setFiles] = useState<Array<FileType>>([]);
   const { mutate: generateOutline, isPending } = useGenerateOutline();
+  const [niche, setNiche] = useState<NicheDetailsType | null>(null);
+  const nicheId = searchParams ? searchParams.get('nicheId') : null;
+
+  useEffect(() => {
+    if (!nicheId) return;
+
+    const fetchNiche = async () => {
+      try {
+        const res = await getClientDataAction<{ data: NicheDetailsType }>(
+          `auth/niches/${nicheId}/`,
+        );
+        setNiche(res.data);
+        console.log('Fetched niche data:', res.data);
+      } catch (err: any) {
+        console.error('Error fetching niche details:', err?.response || err);
+        setNiche(null);
+      }
+    };
+
+    fetchNiche();
+  }, [searchParams]);
 
   const methods = useForm<FormType>({
     defaultValues: {
@@ -42,15 +82,45 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
     },
   });
 
+  useEffect(() => {
+    if (!niche) return;
+
+    const availableTones = configData && Array.isArray(configData.tones) ? configData.tones : [];
+
+    const preselectedToneIds: number[] = (niche.tone || [])
+      .map((toneName) => {
+        const found = availableTones.find(
+          (t: any) => String(t.name).toLowerCase() === String(toneName).toLowerCase(),
+        );
+        return found ? Number(found.id) : null;
+      })
+      .filter((id): id is number => typeof id === 'number' && !Number.isNaN(id));
+
+    if (preselectedToneIds.length > 0) {
+      methods.setValue('tones', preselectedToneIds, { shouldDirty: true, shouldTouch: true });
+      console.log('Prefilled tone IDs from niche:', preselectedToneIds);
+    }
+  }, [niche, configData, methods]);
+
   const { watch } = methods;
 
   const onSubmit = (_formData: FormType) => {
     const formValue = new FormData();
     const payload: Partial<FormType> = {};
 
+    const normalizeTones = (tones: any): number[] => {
+      if (!tones) return [];
+      if (!Array.isArray(tones)) return [];
+      return tones
+        .map((t: any) => (typeof t === 'object' && t !== null ? Number(t.id) : Number(t)))
+        .filter(Boolean);
+    };
+
+    const toneIds = normalizeTones(_formData.tones);
+
     if (!files.length) {
       payload.description = _formData.description;
-      payload.tones = _formData.tones;
+      payload.tones = toneIds;
       if (_formData.template_style) {
         payload.template_style = _formData.template_style;
       } else {
@@ -58,40 +128,58 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
         payload.max_length = _formData.max_length;
       }
       payload.title = _formData.title;
-      logger.info(payload);
+      logger.info('Sending JSON payload:', payload);
     } else {
-      formValue.append('description', _formData.description);
-      formValue.append('tones', JSON.stringify(_formData.tones));
+      formValue.append('description', _formData.description ?? '');
+      toneIds.forEach((id) => formValue.append('tones', id.toString()));
+
       if (_formData.template_style) {
         formValue.append('template_style', _formData.template_style.toString());
       } else {
-        formValue.append('min_length', _formData.min_length.toString());
-        formValue.append('max_length', _formData.max_length.toString());
+        formValue.append('min_length', String(_formData.min_length ?? 0));
+        formValue.append('max_length', String(_formData.max_length ?? 500));
       }
-      formValue.append('title', _formData.title);
-      files.forEach((file, index) => {
-        if (file.type === 'file' && file.value instanceof File) {
-          formValue.append('image', file.value);
-        } else if (file.type === 'link' && typeof file.value === 'string') {
-          formValue.append(`link_${index}`, file.value);
-        } else if (file.type === 'article' && typeof file.value === 'string') {
-          formValue.append(`article_${index}`, file.value);
+      formValue.append('title', _formData.title ?? '');
+
+      files.forEach((fileItem) => {
+        if (fileItem.type === 'file' && fileItem.value instanceof File) {
+          formValue.append('image', fileItem.value);
+        } else if (fileItem.type === 'link' && typeof fileItem.value === 'string') {
+          formValue.append('youtube_url', fileItem.value);
+        } else if (fileItem.type === 'article' && typeof fileItem.value === 'string') {
+          formValue.append('article_url', fileItem.value);
         }
       });
+
+      logger.info('Sending FormData with files/links');
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const descToSave = files.length
+          ? String(formValue.get('description') ?? '')
+          : String(payload.description ?? '');
+        console.log('descToSave', descToSave);
+        localStorage.setItem('draft_description', descToSave);
+      } catch (e) {
+        logger.warn('Could not save draft_description to localStorage', e);
+      }
     }
 
     generateOutline(files.length ? formValue : payload, {
       onSuccess: (data) => {
-        logger.info(data);
+        logger.info('Outline generated:', data);
         toast.success('Success', 'Script outline generated successfully');
         router.push(`/new-script/${data.outline.uuid}`);
       },
       onError: (error) => {
-        logger.error(error);
+        logger.error('Generate outline error:', error);
         toast.error('Something went wrong', 'Failed to generate script outline');
       },
     });
   };
+
+  console.log('niche', niche);
 
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading
@@ -110,9 +198,21 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
                   minLength: { value: 50, message: 'Description must be at least 50 characters' },
                 }}
                 label={
-                  <Row className="justify-normal gap-2">
-                    <span> What&apos;s your video about?</span>
-                    <InfoModal description="Be specific about your topic, audience, and key points you want to cover" />
+                  <Row className="items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span> What&apos;s your video about?</span>
+                      <InfoModal description="Be specific about your topic, audience, and key points you want to cover" />
+                    </div>
+
+                    {nicheId && (
+                      <SuggestedTopicsPopover
+                        suggestions={[
+                          'Why people fake their own death',
+                          'The man who disappeared... twice',
+                          'A genius who changed the world, but no one knows their name',
+                        ]}
+                      />
+                    )}
                   </Row>
                 }
               />

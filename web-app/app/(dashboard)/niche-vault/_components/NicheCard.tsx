@@ -4,7 +4,7 @@ import { FC, useState } from 'react';
 import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
 
-import ThumbnailImage from '../../../../public/images/card6.png';
+import ThumbnailImage from '../../../../public/images/no-niche.png';
 import NicheStyleModal from './NicheStyleModal';
 import VedioModal from './VedioModal';
 import Button from 'components/ui/Button';
@@ -80,7 +80,7 @@ const NicheCard: FC<NicheCardProps> = ({
         <div className="flex flex-wrap items-center justify-between text-xs text-gray-300">
           <div className="rounded-md border border-[#BAFF381F] bg-[#2a2a2a] p-2">
             {tags.length > 0 ? (
-              tags.map((tag, i) => (
+              tags.slice(0, 4).map((tag, i) => (
                 <span key={i} className="text-white">
                   {tag}
                   {i < tags.length - 1 && ', '}

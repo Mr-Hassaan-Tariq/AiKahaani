@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Edit2, PlusCircle, RefreshCcw } from 'lucide-react';
 
 import { LoadingScreen } from '../_components/components';
-import { OutlineType } from '../types';
+import { FormType, OutlineType } from '../types';
 import { CardView } from './_components/CardView';
 import { directFileIcon } from './_components/components';
 import { SortableCard } from './_components/SortableCard';
 import { useCardManager } from './_components/useCardManager';
 import { useDragAndDrop } from './_components/useDragAndDrop';
+import useGenerateOutline from 'lib/hooks/useGenerateOutline';
 import useGenerateScript from 'lib/hooks/useGenerateScript';
 import useUpdateOutline from 'lib/hooks/useUpdateOutline';
 import useUpdateOutlineOrder from 'lib/hooks/useUpdateOutlineOrder';
@@ -75,6 +76,7 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
   const { isPending, mutate: updateOutline } = useUpdateOutline();
   const { isPending: isUpdatingOrder, mutate: updateOutlineOrder } = useUpdateOutlineOrder();
   const { isPending: isGeneratingScript, mutate: generateScript } = useGenerateScript();
+  const { isPending: isRegeneratingOutline, mutate: generateOutline } = useGenerateOutline();
 
   // Convert outline to cards format with fallback
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -216,14 +218,37 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
   const handleRegenerate = () => {
     if (!outline) return;
 
-    generateScript(outline.uuid, {
+    const payload: Partial<FormType> = {
+      description: outline.description || '',
+      tones: outline.tones ? outline.tones.map((tone: any) => tone.id) : [],
+      template_style: outline.template_style ?? undefined,
+      min_length: outline.min_length || 0,
+      max_length: outline.max_length || 500,
+      title: outline.title || '',
+    };
+
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('draft_description');
+        console.log('saved', saved);
+        if (saved && saved.trim().length > 0) {
+          payload.description = saved;
+        }
+      } catch (e) {
+        logger.warn('Could not read draft_description from localStorage', e);
+      }
+    }
+
+    console.log('payload', payload, localStorage.getItem('draft_description'));
+
+    generateOutline(payload, {
       onSuccess: (data) => {
-        toast.success('Success', 'Script regenerated successfully');
-        router.replace(`/new-script/script/${data.script.uuid}`);
+        toast.success('Success', 'Outline regenerated successfully');
+        router.replace(`/new-script/${data.outline.uuid}`);
       },
       onError: (error) => {
         logger.error(error);
-        toast.error('Something went wrong', 'Error regenerating script');
+        toast.error('Something went wrong', 'Error regenerating outline');
       },
     });
   };
@@ -256,7 +281,7 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
     <>
       {isPending || (isUpdatingOrder && <PageLoader size="lg" color="white" />)}
       <Col className="scrollbar max-h-[calc(100vh-200px)] w-full space-y-3 overflow-hidden overflow-y-auto">
-        {isGeneratingScript ? (
+        {isRegeneratingOutline || isGeneratingScript ? (
           <LoadingScreen />
         ) : (
           // eslint-disable-next-line react/jsx-no-useless-fragment
@@ -303,7 +328,7 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
         )}
       </Col>
 
-      {!isGeneratingScript &&
+      {!isRegeneratingOutline &&
         (edit ? (
           <Row className="mt-6">
             <Row className="space-x-3">

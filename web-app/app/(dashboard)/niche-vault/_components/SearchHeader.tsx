@@ -8,11 +8,18 @@ import Text from 'components/ui/Text';
 interface SearchHeaderProps {
   searchInput: string;
   handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  availableFilters?: Record<string, string[]>;
+  onApplyFilters?: (filters: Record<string, string[]>) => void;
 }
 
-export default function SearchHeader({ searchInput, handleSearchChange }: SearchHeaderProps) {
+export default function SearchHeader({
+  searchInput,
+  handleSearchChange,
+  availableFilters,
+  onApplyFilters,
+}: SearchHeaderProps) {
   const handleApply = (filters: Record<string, string[]>) => {
-    console.log('Applied filters:', filters);
+    if (onApplyFilters) onApplyFilters(filters);
   };
 
   return (
@@ -46,6 +53,7 @@ export default function SearchHeader({ searchInput, handleSearchChange }: Search
               <span className="hidden lg:block">Filters</span>
             </Button>
           }
+          availableFilters={availableFilters}
           onApply={handleApply}
         />
       </div>

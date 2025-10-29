@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Pin } from 'lucide-react';
 
 import ThumbnailImage from '../../../../public/images/card6.png';
@@ -33,11 +34,18 @@ interface NicheDetailsType {
 }
 
 export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [niche, setNiche] = useState<NicheDetailsType | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [image, setImage] = useState(niche?.thumbnail_url || ThumbnailImage);
+  const [image, setImage] = useState<string | typeof ThumbnailImage | null>(null);
+
+  useEffect(() => {
+    // reset image when niche changes
+    setImage(niche?.thumbnail_url ?? (ThumbnailImage as unknown as string));
+  }, [niche]);
+
   useEffect(() => {
     const fetchNiche = async () => {
       if (!open || !nicheId) return;
@@ -49,12 +57,19 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
         setNiche(res.data);
       } catch (err: any) {
         console.error('Error fetching niche details:', err?.response || err);
+        setNiche(null);
       } finally {
         setLoading(false);
       }
     };
     fetchNiche();
   }, [open, nicheId]);
+
+  const handleApply = () => {
+    if (!niche?.id) return;
+    setOpen(false);
+    router.push(`/new-script?nicheId=${niche.id}`);
+  };
 
   return (
     <Dialog
@@ -68,7 +83,12 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
       }
       footer={
         <Row className="w-full gap-6">
-          <Button type="submit" variant="green">
+          <Button
+            type="button"
+            variant="green"
+            onClick={handleApply}
+            disabled={loading || !niche?.id}
+          >
             Apply this niche format
           </Button>
         </Row>

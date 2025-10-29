@@ -9,11 +9,18 @@ import Text from 'components/ui/Text';
 interface SearchHeaderProps {
   searchInput: string;
   handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  availableFilters?: Record<string, string[]>;
+  onApplyFilters?: (filters: Record<string, string[]>) => void;
 }
 
-export default function SearchHeader({ searchInput, handleSearchChange }: SearchHeaderProps) {
+export default function SearchHeader({
+  searchInput,
+  handleSearchChange,
+  availableFilters,
+  onApplyFilters,
+}: SearchHeaderProps) {
   const handleApply = (filters: Record<string, string[]>) => {
-    console.log('Applied filters:', filters);
+    if (onApplyFilters) onApplyFilters(filters);
   };
 
   return (
@@ -48,6 +55,7 @@ export default function SearchHeader({ searchInput, handleSearchChange }: Search
             </Button>
           }
           onApply={handleApply}
+          availableFilters={availableFilters}
         />
 
         <Link href={'/niches/create'}>
