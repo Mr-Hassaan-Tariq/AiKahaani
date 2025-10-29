@@ -182,6 +182,11 @@ class GenerateOutlineRequestSerializer(serializers.Serializer):
         allow_blank=True,
         help_text="YouTube video URL to fetch transcript from for additional context (optional)",
     )
+    niche_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text="Optional: ID of niche style to apply (injects niche-specific tone, pacing, and style into AI prompt)",
+    )
 
     def validate(self, data):
         """Ensure description is provided; attachments are optional context"""

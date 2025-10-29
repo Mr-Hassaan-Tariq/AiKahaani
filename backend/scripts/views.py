@@ -45,6 +45,7 @@ from .serializers import (
     UnifiedGenerationSerializer,
 )
 from .services.open_ai import OpenAIScriptService
+from .services.niche_context import NicheContextBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +103,7 @@ You can provide **multiple attachments** to enrich your script with additional c
 - `template_style` (integer): Template style ID (optional)
 - `min_length` / `max_length`: Word count range
 - `title` (string): Custom title (optional)
+- `niche_id` (integer): **NEW** - Optional niche style ID to inject niche-specific tone, pacing, and style into AI generation
 
 ## 🎯 How Context Combination Works
 
@@ -119,11 +121,29 @@ All provided contexts are intelligently combined:
 
 This enriched context is used to generate a comprehensive script outline!
 
+## 🎨 Niche Style Injection (NEW)
+
+When you provide a `niche_id`, the AI will:
+
+- **Maintain TubeGenius structure**: Keeps proven storytelling principles, hooks, chapters, pacing rules
+- **Adapt tone & style**: Injects niche-specific word choice, phrasing, rhythm, and voice
+- **Create "channel clone" effect**: Output feels like content from that niche's top channels
+
+**Behind the scenes:**
+```
+BasePrompt = TubeGenius storytelling manual + core logic
+NicheLayer = Tone + Pacing + Structure + Channel references
+FinalPrompt = BasePrompt + NicheLayer
+```
+
+Result: AI writes with **TubeGenius structure** but **niche-specific style**
+
 ## 💡 Usage Patterns
 
 **Basic** - Description only (classic approach)
 **Enhanced** - Description + 1 attachment (add depth)
 **Advanced** - Description + 2-3 attachments (maximum context)
+**Niche Style** - Add niche_id to match specific content style (NEW)
 
 ## ⚠️ Important Notes
 
@@ -242,6 +262,20 @@ This enriched context is used to generate a comprehensive script outline!
             },
             media_type="application/json",
         ),
+        OpenApiExample(
+            "8️⃣ With Niche Style (NEW)",
+            description="Apply a specific niche style to match top channel formats",
+            value={
+                "description": "History of ancient civilizations - Egypt, Rome, and Greece",
+                "tones": [1, 3],
+                "template_style": 2,
+                "min_length": 500,
+                "max_length": 1500,
+                "niche_id": 5,  # Example niche ID for history documentaries
+                "article_url": "https://history.com/ancient-civilizations",
+            },
+            media_type="application/json",
+        ),
     ],
 )
 @api_view(["POST"])
@@ -270,6 +304,7 @@ def generate_script_outline(request):
     min_length = validated_data.get("min_length", 0)
     max_length = validated_data.get("max_length", 1000)
     title = validated_data.get("title", "")
+    niche_id = validated_data.get("niche_id")  # NEW: Extract niche_id
     
     logger.info(
         f"[OUTLINE_GENERATION] Parameters - User: {request.user.id}, Description length: {len(description)}, "
@@ -470,6 +505,13 @@ def generate_script_outline(request):
             f"[OUTLINE_GENERATION] Final tone names for user {request.user.id}: {outline_tones}"
         )
 
+        # Build niche context if niche_id is provided
+        niche_context = NicheContextBuilder.build_niche_context(niche_id) if niche_id else {}
+        if niche_context:
+            logger.info(
+                f"[OUTLINE_GENERATION] Applying niche context '{niche_context.get('niche_name', 'unknown')}' for user {request.user.id}"
+            )
+        
         script_data = {
             "description": combined_description,
             "tones": outline_tones,
@@ -477,6 +519,7 @@ def generate_script_outline(request):
             "template_style_id": template_style.id if template_style else None,
             "min_length": min_length,
             "max_length": max_length,
+            "niche_context": niche_context,  # NEW: Pass niche context
         }
         
         logger.info(
@@ -485,7 +528,8 @@ def generate_script_outline(request):
             f"Original description: {len(description)}, Attachments: {len(additional_contexts)}, "
             f"Tones: {outline_tones}, "
             f"Template: {template_style.name if template_style else 'medium'}, "
-            f"Length range: {min_length}-{max_length}"
+            f"Length range: {min_length}-{max_length}, "
+            f"Niche: {niche_context.get('niche_name', 'none')}"
         )
 
         # Use assistant for outline generation with knowledge base
@@ -626,6 +670,7 @@ def generate_script_outline(request):
             openai_model=metadata.get("model_used", metadata.get("model", "unknown")),
             tokens_used=metadata["tokens_used"],
             generation_time=metadata["generation_time"],
+            niche_id=niche_id if niche_id else None,  # NEW: Save niche reference
         )
         outline.tones.set(tones)
         
