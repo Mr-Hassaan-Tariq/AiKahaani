@@ -119,7 +119,7 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
 
     const toneIds = normalizeTones(_formData.tones);
 
-    // separate files into categories
+    // classify files
     const linkItems = files
       .filter((f) => f.type === 'link' && typeof f.value === 'string')
       .map((f) => f.value as string);
@@ -130,29 +130,47 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       .filter((f) => f.type === 'file' && f.value instanceof File)
       .map((f) => f.value as File);
 
-    const hasImageFile = imageItems.length > 0;
+    // STRICT check: only treat as image-present if there's at least one real File with size>0
+    const hasImageFile = imageItems.some(
+      (file) => file && typeof file.size === 'number' && file.size > 0,
+    );
+
+    // DEBUG (remove if not needed)
+    console.log('files state:', files);
+    console.log('linkItems:', linkItems, 'articleItems:', articleItems, 'imageItems:', imageItems);
+    console.log('hasImageFile (strict):', hasImageFile);
 
     if (!hasImageFile) {
-      payload.description = _formData.description;
+      // JSON payload path (no real uploaded image)
+      payload.description = _formData.description ?? '';
       payload.tones = toneIds;
-      if (_formData.template_style) {
-        payload.template_style = _formData.template_style;
-      } else {
+      if (_formData.template_style) payload.template_style = _formData.template_style;
+      else {
         payload.min_length = _formData.min_length;
         payload.max_length = _formData.max_length;
       }
-      payload.title = _formData.title;
+      payload.title = _formData.title ?? '';
 
-      if (linkItems.length === 1) payload.youtube_url = linkItems[0];
-      else if (linkItems.length > 1) payload.youtube_url = linkItems;
+      // --- here we serialize youtube/article exactly as you want ---
+      if (linkItems.length === 1) {
+        payload.youtube_url = linkItems[0]; // single string
+      } else if (linkItems.length > 1) {
+        payload.youtube_url = linkItems; // array
+      }
 
-      if (articleItems.length === 1) payload.article_url = articleItems[0];
-      else if (articleItems.length > 1) payload.article_url = articleItems;
+      if (articleItems.length === 1) {
+        payload.article_url = articleItems[0]; // single string
+      } else if (articleItems.length > 1) {
+        payload.article_url = articleItems; // array
+      }
+      // --- end serialization ---
 
       logger.info('Sending JSON payload:', payload);
     } else {
+      // Multipart path
       formValue.append('description', _formData.description ?? '');
 
+      // append tones as multiple entries (backend expects multiple fields)
       toneIds.forEach((id) => formValue.append('tones', String(id)));
 
       if (_formData.template_style) {
@@ -163,10 +181,10 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       }
       formValue.append('title', String(_formData.title ?? ''));
 
-      // append images under 'image' (multiple allowed)
+      // append actual images
       imageItems.forEach((file) => formValue.append('image', file));
 
-      // append links (youtube/article) as separate fields (multiple allowed)
+      // append links as separate fields (multipart uses repeated field names)
       linkItems.forEach((l) => formValue.append('youtube_url', l));
       articleItems.forEach((a) => formValue.append('article_url', a));
 
@@ -185,8 +203,7 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       }
     }
 
-    // IMPORTANT: Do not set Content-Type header manually for FormData in your network layer.
-    // Let the browser set the boundary. If generateOutline/axios wrapper sets headers, ensure it doesn't override Content-Type.
+    // call mutation - IMPORTANT: ensure your network layer does NOT set Content-Type manually for FormData
     generateOutline(hasImageFile ? formValue : payload, {
       onSuccess: (data) => {
         logger.info('Outline generated:', data);
