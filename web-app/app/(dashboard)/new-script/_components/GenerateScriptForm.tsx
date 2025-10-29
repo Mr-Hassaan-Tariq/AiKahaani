@@ -108,17 +108,31 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
     const formValue = new FormData();
     const payload: Partial<FormType> = {};
 
+    // normalize tones to numeric ids
     const normalizeTones = (tones: any): number[] => {
       if (!tones) return [];
       if (!Array.isArray(tones)) return [];
       return tones
         .map((t: any) => (typeof t === 'object' && t !== null ? Number(t.id) : Number(t)))
-        .filter(Boolean);
+        .filter((n) => Number.isFinite(n) && n !== 0);
     };
 
     const toneIds = normalizeTones(_formData.tones);
 
-    if (!files.length) {
+    // separate files into categories
+    const linkItems = files
+      .filter((f) => f.type === 'link' && typeof f.value === 'string')
+      .map((f) => f.value as string);
+    const articleItems = files
+      .filter((f) => f.type === 'article' && typeof f.value === 'string')
+      .map((f) => f.value as string);
+    const imageItems = files
+      .filter((f) => f.type === 'file' && f.value instanceof File)
+      .map((f) => f.value as File);
+
+    const hasImageFile = imageItems.length > 0;
+
+    if (!hasImageFile) {
       payload.description = _formData.description;
       payload.tones = toneIds;
       if (_formData.template_style) {
@@ -128,45 +142,52 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
         payload.max_length = _formData.max_length;
       }
       payload.title = _formData.title;
+
+      if (linkItems.length === 1) payload.youtube_url = linkItems[0];
+      else if (linkItems.length > 1) payload.youtube_url = linkItems;
+
+      if (articleItems.length === 1) payload.article_url = articleItems[0];
+      else if (articleItems.length > 1) payload.article_url = articleItems;
+
       logger.info('Sending JSON payload:', payload);
     } else {
       formValue.append('description', _formData.description ?? '');
-      toneIds.forEach((id) => formValue.append('tones', id.toString()));
+
+      toneIds.forEach((id) => formValue.append('tones', String(id)));
 
       if (_formData.template_style) {
-        formValue.append('template_style', _formData.template_style.toString());
+        formValue.append('template_style', String(_formData.template_style));
       } else {
         formValue.append('min_length', String(_formData.min_length ?? 0));
         formValue.append('max_length', String(_formData.max_length ?? 500));
       }
-      formValue.append('title', _formData.title ?? '');
+      formValue.append('title', String(_formData.title ?? ''));
 
-      files.forEach((fileItem) => {
-        if (fileItem.type === 'file' && fileItem.value instanceof File) {
-          formValue.append('image', fileItem.value);
-        } else if (fileItem.type === 'link' && typeof fileItem.value === 'string') {
-          formValue.append('youtube_url', fileItem.value);
-        } else if (fileItem.type === 'article' && typeof fileItem.value === 'string') {
-          formValue.append('article_url', fileItem.value);
-        }
-      });
+      // append images under 'image' (multiple allowed)
+      imageItems.forEach((file) => formValue.append('image', file));
+
+      // append links (youtube/article) as separate fields (multiple allowed)
+      linkItems.forEach((l) => formValue.append('youtube_url', l));
+      articleItems.forEach((a) => formValue.append('article_url', a));
 
       logger.info('Sending FormData with files/links');
     }
 
+    // save draft description locally (works with both payloads)
     if (typeof window !== 'undefined') {
       try {
-        const descToSave = files.length
+        const descToSave = hasImageFile
           ? String(formValue.get('description') ?? '')
           : String(payload.description ?? '');
-        console.log('descToSave', descToSave);
         localStorage.setItem('draft_description', descToSave);
       } catch (e) {
         logger.warn('Could not save draft_description to localStorage', e);
       }
     }
 
-    generateOutline(files.length ? formValue : payload, {
+    // IMPORTANT: Do not set Content-Type header manually for FormData in your network layer.
+    // Let the browser set the boundary. If generateOutline/axios wrapper sets headers, ensure it doesn't override Content-Type.
+    generateOutline(hasImageFile ? formValue : payload, {
       onSuccess: (data) => {
         logger.info('Outline generated:', data);
         toast.success('Success', 'Script outline generated successfully');

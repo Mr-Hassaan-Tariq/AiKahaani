@@ -24,16 +24,17 @@ export interface GenerationPromptType {
   template_styles: TemplateStyleType[];
   length_range: LengthRangeType;
 }
-
 export interface FormType {
   description: string;
   tones: number[];
-  template_style: number;
+  template_style?: number;
   min_length: number;
   max_length: number;
   title: string;
+  youtube_url?: string | string[];
+  article_url?: string | string[];
+  image?: File | File[];
 }
-
 export interface OutlineSectionType {
   title: string;
   description: string;
@@ -47,11 +48,6 @@ interface OutlineDataType {
 }
 
 export interface OutlineType {
-  description: string;
-  tones: never[];
-  template_style: null;
-  min_length: number;
-  max_length: number;
   uuid: string;
   title: string;
   outline_text: string;
