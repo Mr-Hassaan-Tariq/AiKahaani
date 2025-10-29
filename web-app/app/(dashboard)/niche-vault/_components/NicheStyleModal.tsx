@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Pin } from 'lucide-react';
 
-import ThumbnailImage from '../../../../public/images/card6.png';
+import ThumbnailImage from '../../../../public/images/no-niche.png';
 import { MicrophoneIcon, ScriptIcon, TvIcon } from './components';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
 import Button from 'components/ui/Button';
@@ -42,7 +42,6 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
   const [image, setImage] = useState<string | typeof ThumbnailImage | null>(null);
 
   useEffect(() => {
-    // reset image when niche changes
     setImage(niche?.thumbnail_url ?? (ThumbnailImage as unknown as string));
   }, [niche]);
 
