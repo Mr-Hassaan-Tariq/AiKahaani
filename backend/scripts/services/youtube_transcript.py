@@ -182,15 +182,19 @@ class YouTubeTranscriptService:
             logger.info("[YOUTUBE_TRANSCRIPT] Using Webshare proxy configuration")
             from youtube_transcript_api import YouTubeTranscriptApi as YTAPI
             
-            # Create proxy config
-            proxy_config = WebshareProxyConfig(
-                proxy_username=proxy_username,
-                proxy_password=proxy_password,
-                filter_ip_locations=["us", "ca", "de", "gb"],  # US, Canada, Germany, UK
-            )
+            # Build proxy URL for Webshare
+            proxy_url = f"http://{proxy_username}:{proxy_password}@p.webshare.io:80"
             
-            # Fetch transcript with proxy
-            transcript = YTAPI.get_transcript(video_id, languages=['en'], proxies=proxy_config.get_proxy_dict())
+            # Fetch transcript with proxy using session with proxies
+            import requests
+            session = requests.Session()
+            session.proxies = {
+                'http': proxy_url,
+                'https': proxy_url
+            }
+            
+            # Use the session to fetch transcript
+            transcript = YTAPI.get_transcript(video_id, languages=['en'], session=session)
             return cls._format_transcript(transcript)
             
         except Exception as e:
