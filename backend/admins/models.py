@@ -33,6 +33,7 @@ class Niche(TimeStampedModel):
     admin = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     title = models.CharField(max_length=200)
     tagline = models.CharField(max_length=280)
+    prompt = models.TextField(null=True, blank=True)
     thumbnail = models.ImageField(upload_to="niches/thumbnails/", blank=True, null=True)
 
     # JSON payloads

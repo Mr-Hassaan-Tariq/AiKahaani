@@ -219,6 +219,7 @@ class NicheSerializer(serializers.ModelSerializer):
             "id",
             "admin",
             "title",
+            "prompt",
             "tagline",
             "thumbnail",
             "thumbnail_url",

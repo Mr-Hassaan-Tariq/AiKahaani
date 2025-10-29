@@ -10,6 +10,10 @@ class NicheFilter(django_filters.FilterSet):
     """
 
     search = django_filters.CharFilter(method="filter_search")
+    tone = django_filters.CharFilter(method="filter_tone")
+    pacing = django_filters.CharFilter(method="filter_pacing")
+    script_structure = django_filters.CharFilter(method="filter_script_structure")
+    best_for = django_filters.CharFilter(method="filter_best_for")
     status = django_filters.ChoiceFilter(
         choices=[
             ("active", "Active"),
@@ -19,16 +23,33 @@ class NicheFilter(django_filters.FilterSet):
 
     class Meta:
         model = Niche
-        fields = ["status"]
+        fields = ["status", "tone", "pacing", "script_structure", "best_for"]
 
     def filter_search(self, queryset, name, value):
-        """
-        Search by title or tagline
-        """
         if value:
             return queryset.filter(
                 Q(title__icontains=value) | Q(tagline__icontains=value)
             )
+        return queryset
+
+    def filter_tone(self, queryset, name, value):
+        if value:
+            return queryset.filter(tone__icontains=value)
+        return queryset
+
+    def filter_pacing(self, queryset, name, value):
+        if value:
+            return queryset.filter(pacing__icontains=value)
+        return queryset
+
+    def filter_script_structure(self, queryset, name, value):
+        if value:
+            return queryset.filter(script_structure__icontains=value)
+        return queryset
+
+    def filter_best_for(self, queryset, name, value):
+        if value:
+            return queryset.filter(best_for__icontains=value)
         return queryset
 
 

@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils import timezone
-from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema, OpenApiParameter
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
 from rest_framework import status
@@ -992,15 +992,82 @@ class UserNicheViewSet(ReadOnlyModelViewSet):
     @extend_schema(
         summary="List All Active Niches",
         description=(
-            "Retrieve a paginated list of all **active niches** available to the user.\n\n"
-            "Supports search, filtering, and ordering by fields such as `title`, `tagline`, "
-            "`created`, and `modified`.\n\n"
-            "**Permissions:** Authenticated users only."
+                "Retrieve a paginated list of all **active niches** available to the user.\n\n"
+                "Supports search, filtering, and ordering by fields such as `title`, `tagline`, "
+                "`created`, and `modified`.\n\n"
+                "**Query Parameters:**\n"
+                "- `limit`: Number of items to return (default: 20, max: 100)\n"
+                "- `offset`: Number of items to skip (default: 0)\n"
+                "- `search`: Search by title or tagline (custom search filter)\n"
+                "- `status`: Filter by status (active/inactive)\n"
+                "- `tone`: Filter niches containing a specific tone (e.g., `Educational`)\n"
+                "- `pacing`: Filter niches containing a specific pacing (e.g., `Fast`)\n"
+                "- `script_structure`: Filter niches containing a specific keyword in script structure keys or values "
+                "(e.g., `intro`, `body`)\n"
+                "- `best_for`: Filter niches containing a specific best-for category (e.g., `Technology`)\n"
+                "- `ordering`: Order by field (e.g., `created`, `-created`, `title`, `-title`)\n\n"
+                "**Permissions:** Authenticated users only."
         ),
+        parameters=[
+            OpenApiParameter(
+                name="limit",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of items to return (default: 20, max: 100)",
+            ),
+            OpenApiParameter(
+                name="offset",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of items to skip (default: 0)",
+            ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search by title or tagline",
+            ),
+            OpenApiParameter(
+                name="status",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by status (active/inactive)",
+            ),
+            OpenApiParameter(
+                name="tone",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by tone name (e.g., 'Educational', 'Casual')",
+            ),
+            OpenApiParameter(
+                name="pacing",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by pacing name (e.g., 'Fast', 'Slow')",
+            ),
+            OpenApiParameter(
+                name="script_structure",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by script structure keyword (e.g., 'intro', 'body')",
+            ),
+            OpenApiParameter(
+                name="best_for",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by category (e.g., 'Technology', 'Education')",
+            ),
+            OpenApiParameter(
+                name="ordering",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Ordering field (e.g., 'created', '-created', 'title')",
+            ),
+        ],
         responses={
             200: OpenApiResponse(
                 response=NicheSerializer,
-                description="A list of all active niches.",
+                description="A list of all active niches with filtering, search, and pagination.",
                 examples=[
                     OpenApiExample(
                         "Example Response",

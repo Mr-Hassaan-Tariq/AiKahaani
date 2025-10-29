@@ -392,7 +392,9 @@ def generate_script_outline(request):
 
     # Combine description with all additional contexts
     if additional_contexts:
-        combined_description = f"{description}\n\n{''.join([f'{ctx}\n\n' for ctx in additional_contexts])}"
+        combined_description = (
+                f"{description.strip()}\n\n" + "\n\n".join(ctx.strip() for ctx in additional_contexts)
+        )
         logger.info(
             f"[OUTLINE_GENERATION] Combined description with {len(additional_contexts)} attachment(s) "
             f"for user {request.user.id}. Total length: {len(combined_description)}"

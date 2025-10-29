@@ -404,8 +404,13 @@ class UserStatsView(APIView):
             "- `offset`: Number of items to skip (default: 0)\n"
             "- `search`: Search by title or tagline (custom search filter)\n"
             "- `status`: Filter by status (active/inactive)\n"
+            "- `tone`: Filter niches by tone (e.g., 'Educational', 'Professional')\n"
+            "- `pacing`: Filter niches by pacing (e.g., 'Fast', 'Slow')\n"
+            "- `script_structure`: Filter niches by script structure keys or values (e.g., 'intro', 'body')\n"
+            "- `best_for`: Filter niches by categories they are best suited for (e.g., 'Education', 'Gaming')\n"
             "- `ordering`: Order by field (e.g., 'created', '-created', 'title', '-title')\n\n"
-            "**Note:** The `search` parameter uses a custom filter that searches in both title and tagline fields."
+            "**Note:** Each filter supports partial and case-insensitive matches. "
+            "For example, `?tone=educ` will match both 'Educational' and 'Educative'."
         ),
         parameters=[
             OpenApiParameter(
@@ -431,6 +436,30 @@ class UserStatsView(APIView):
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="Filter by status (active/inactive)",
+            ),
+            OpenApiParameter(
+                name="tone",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by tone (e.g., 'Educational', 'Neutral', 'Professional')",
+            ),
+            OpenApiParameter(
+                name="pacing",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by pacing (e.g., 'Fast', 'Slow', 'Dynamic')",
+            ),
+            OpenApiParameter(
+                name="script_structure",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by script structure content (e.g., 'intro', 'body', 'conclusion')",
+            ),
+            OpenApiParameter(
+                name="best_for",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by niche category (e.g., 'Education', 'Gaming', 'Technology')",
             ),
             OpenApiParameter(
                 name="ordering",
@@ -531,94 +560,7 @@ class UserStatsView(APIView):
                 },
                 request_only=True,
             ),
-            OpenApiExample(
-                name="Minimal Create Example",
-                description="Minimal example with only required fields",
-                value={
-                    "title": "Gaming News",
-                    "tagline": "Latest gaming industry news and updates",
-                },
-                request_only=True,
-            ),
         ],
-    ),
-    retrieve=extend_schema(
-        tags=["Admin Niches"],
-        summary="Get Niche Details",
-        description="Retrieve detailed information about a specific niche by ID.",
-        examples=[
-            OpenApiExample(
-                name="Niche Response Example",
-                description="Example response showing niche details",
-                value={
-                    "data": {
-                        "id": 1,
-                        "admin": 1,
-                        "title": "Tech Reviews",
-                        "tagline": "Latest tech product reviews and analysis",
-                        "thumbnail": None,
-                        "script_structure": {
-                            "intro": "Hook with latest tech trend",
-                            "body": "Detailed review",
-                            "conclusion": "Recommendation",
-                        },
-                        "tone": ["Educational", "Professional", "Engaging"],
-                        "pacing": ["Fast", "Dynamic"],
-                        "top_channels": [
-                            {"name": "MKBHD", "link": "https://youtube.com/@mkbhd"}
-                        ],
-                        "best_for": ["Technology", "Product Reviews"],
-                        "status": "active",
-                        "created": "2025-01-15T10:30:00Z",
-                        "modified": "2025-01-15T10:30:00Z",
-                    },
-                    "message": "Niche details retrieved successfully",
-                },
-                response_only=True,
-            ),
-        ],
-    ),
-    update=extend_schema(
-        tags=["Admin Niches"],
-        summary="Update Niche",
-        description=(
-            "Update niche information. All fields from the create endpoint apply.\n\n"
-            "**Important:**\n"
-            "- Tones/pacings that don't exist will be created automatically\n"
-            '- `top_channels` must follow the format: `[{"name": "...", "link": "..."}]`\n'
-            "- All validations from the create endpoint apply"
-        ),
-        examples=[
-            OpenApiExample(
-                name="Update Niche Example",
-                description="Example of updating a niche",
-                value={
-                    "title": "Tech Reviews - Updated",
-                    "tagline": "Latest tech product reviews, analysis and comparisons",
-                    "tone": ["Educational", "Professional", "Engaging", "Informative"],
-                    "status": "active",
-                },
-                request_only=True,
-            ),
-        ],
-    ),
-    partial_update=extend_schema(
-        tags=["Admin Niches"],
-        summary="Partial Update Niche",
-        description="Partially update niche information. Only provided fields will be updated.",
-        examples=[
-            OpenApiExample(
-                name="Partial Update Example",
-                description="Example of partially updating just the status",
-                value={"status": "inactive"},
-                request_only=True,
-            ),
-        ],
-    ),
-    destroy=extend_schema(
-        tags=["Admin Niches"],
-        summary="Delete Niche",
-        description="Delete a niche.",
     ),
 )
 class NicheViewSet(ModelViewSet):
