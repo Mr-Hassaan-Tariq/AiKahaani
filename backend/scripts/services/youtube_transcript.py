@@ -188,20 +188,26 @@ class YouTubeTranscriptService:
         except Exception as e:
             error_message = str(e)
             
-            # Provide user-friendly error messages
+            # Log technical details for debugging
+            logger.error(
+                f"[YOUTUBE_TRANSCRIPT] Technical error: {error_message}",
+                exc_info=True
+            )
+            
+            # Provide user-friendly error messages (don't expose technical details)
             if "No transcript" in error_message or "Subtitles" in error_message:
                 raise Exception(
-                    "No transcript available for this video. "
-                    "The video may not have captions enabled."
+                    "Unable to fetch video transcript. The video may not have captions enabled."
                 )
             elif "Video unavailable" in error_message:
-                raise Exception("Video is unavailable or private.")
+                raise Exception("Unable to access this video. It may be unavailable or private.")
             elif "TranscriptsDisabled" in error_message:
                 raise Exception(
-                    "Transcripts are disabled for this video by the uploader."
+                    "Captions are not available for this video."
                 )
             else:
-                raise Exception(f"Error fetching transcript: {error_message}")
+                # Generic error - don't expose technical details
+                raise Exception("Unable to fetch video transcript. Please try a different video or use text description.")
     
     @classmethod
     def _format_transcript(cls, transcript: list) -> str:
