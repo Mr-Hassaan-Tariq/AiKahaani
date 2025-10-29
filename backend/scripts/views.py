@@ -352,14 +352,13 @@ def generate_script_outline(request):
             )
             
         except Exception as e:
-            logger.error(
-                f"[OUTLINE_GENERATION] Article scraping failed for user {request.user.id}: {str(e)}",
+            # Log technical details for debugging
+            logger.warning(
+                f"[OUTLINE_GENERATION] Article scraping failed for user {request.user.id}, "
+                f"continuing without article context. Error: {str(e)}",
                 exc_info=True,
             )
-            return Response(
-                {"error": f"Article scraping failed: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            # Continue generation without article context - don't return error
     
     # Handle YouTube transcript attachment (as additional context)
     if youtube_url:
@@ -381,14 +380,13 @@ def generate_script_outline(request):
             )
             
         except Exception as e:
-            logger.error(
-                f"[OUTLINE_GENERATION] YouTube transcript fetch failed for user {request.user.id}: {str(e)}",
+            # Log technical details for debugging
+            logger.warning(
+                f"[OUTLINE_GENERATION] YouTube transcript fetch failed for user {request.user.id}, "
+                f"continuing without YouTube context. Error: {str(e)}",
                 exc_info=True,
             )
-            return Response(
-                {"error": f"YouTube transcript fetch failed: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            # Continue generation without YouTube context - don't return error
 
     # Combine description with all additional contexts
     if additional_contexts:
@@ -402,7 +400,18 @@ def generate_script_outline(request):
     else:
         combined_description = description
         logger.info(
-            f"[OUTLINE_GENERATION] Using description without attachments for user {request.user.id}"
+            f"[OUTLINE_GENERATION] Using description only (no additional contexts) for user {request.user.id}"
+        )
+    
+    # Log any attachments that were attempted but failed (for monitoring)
+    attempted_attachments = sum([
+        bool(article_url),
+        bool(youtube_url)
+    ])
+    if attempted_attachments > len(additional_contexts):
+        failed_count = attempted_attachments - len(additional_contexts)
+        logger.info(
+            f"[OUTLINE_GENERATION] {failed_count} attachment(s) failed but outline generation will continue"
         )
 
     try:

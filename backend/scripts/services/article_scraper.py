@@ -77,10 +77,10 @@ class ArticleScraperService:
             else:
                 raise Exception("Insufficient content extracted")
         except Exception as e:
-            logger.error(f"[ARTICLE_SCRAPER] ❌ All methods failed: {str(e)}")
+            # Log technical details for debugging but don't expose to users
+            logger.error(f"[ARTICLE_SCRAPER] ❌ All methods failed: {str(e)}", exc_info=True)
             raise Exception(
-                f"Unable to scrape article content. The site may be protected, "
-                f"require JavaScript, or the URL may be invalid. Error: {str(e)}"
+                "Unable to fetch article content. Please try a different article URL or use text description instead."
             )
     
     @classmethod
