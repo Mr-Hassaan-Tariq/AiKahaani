@@ -14,6 +14,7 @@ from google.oauth2 import id_token as google_id_token
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from payments.permissions import HasPaidSubscriptionPermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -399,7 +400,7 @@ class MagicLinkLoginAPIView(MethodSpecificThrottleMixin, APIView):
 
 
 class UserDetailsUpdateAPIView(MethodSpecificThrottleMixin, APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasPaidSubscriptionPermission]
 
     @extend_schema(
         operation_id="user_details_update",

@@ -3,9 +3,11 @@ Permission classes for the payments app.
 """
 
 import logging
+from django.conf import settings
 
 from djstripe.models import Subscription
 from rest_framework.permissions import BasePermission
+from djstripe.enums import SubscriptionStatus
 
 from .utils import VALID_SUB_STATUSES, get_or_create_customer
 
@@ -88,4 +90,89 @@ class HasActiveSubscriptionPermission(BasePermission):
         Returns:
             bool: True if user has active subscription, False otherwise
         """
+        return self.has_permission(request, view)
+
+
+class HasPaidSubscriptionPermission(BasePermission):
+    """
+    Permission that allows access only to users with a paid (non-trial) active subscription.
+
+    Trialing users are denied. This is intended for features not available on free trial.
+
+    Usage:
+        permission_classes = [IsAuthenticated, HasPaidSubscriptionPermission]
+    """
+
+    message = "Niches are not available on free trial. Please upgrade your plan."
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        try:
+            customer = get_or_create_customer(request.user)
+            subscription = (
+                Subscription.objects.filter(customer=customer)
+                .order_by("-created")
+                .first()
+            )
+
+            if not subscription:
+                return False
+
+            # Deny explicitly if the user is on trial
+            if subscription.status == SubscriptionStatus.trialing:
+                return False
+
+            # Allow for other valid statuses while excluding trialing
+            return subscription.status in VALID_SUB_STATUSES and subscription.status != SubscriptionStatus.trialing
+
+        except Exception:
+            return False
+
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
+
+
+class TrialOutlineLimitPermission(BasePermission):
+    """
+    Allow trial users to generate outlines up to a limit; paid users unaffected.
+
+    Denies access when the authenticated user's current subscription is trialing
+    AND they have already generated 10 or more outlines. Otherwise allows.
+    """
+
+    message = "Trial limit reached for outlines on trial. Please upgrade."
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        try:
+            customer = get_or_create_customer(request.user)
+            subscription = (
+                Subscription.objects.filter(customer=customer)
+                .order_by("-created")
+                .first()
+            )
+
+            # If not on trial, no limit enforced by this permission
+            if not subscription or subscription.status != SubscriptionStatus.trialing:
+                return True
+
+            # Lazy import to avoid circulars
+            from scripts.models import ScriptOutline  # noqa: WPS433
+
+            outlines_count = ScriptOutline.objects.filter(user=request.user).count()
+            limit = getattr(settings, "TRIAL_OUTLINE_LIMIT", 10)
+            allowed = outlines_count < limit
+            if not allowed:
+                self.message = f"Trial limit reached: You can generate up to {limit} outlines on trial."
+            return allowed
+
+        except Exception:
+            # Fail closed for safety
+            return False
+
+    def has_object_permission(self, request, view, obj):
         return self.has_permission(request, view)

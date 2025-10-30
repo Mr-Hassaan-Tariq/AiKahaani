@@ -359,6 +359,35 @@ SPECTACULAR_SETTINGS = {
     "AUTHENTICATION_EXTENSIONS": [
         "users.spectacular_extensions.JWTAuthenticationWithAccessTokenBlacklistExtension",
     ],
+    # Explicitly define JWT Bearer so Swagger shows the Authorize button
+    "SECURITY_SCHEMES": {
+        "bearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    },
+    # Apply JWT globally; endpoints can still override with `security: - {}`
+    "SECURITY": [{"bearerAuth": []}],
+    # Force-inject components for older spectacular versions that ignore SECURITY_SCHEMES
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+    # Ensure extension class is imported/registered
+    "EXTENSIONS": [
+        "users.spectacular_extensions.JWTAuthenticationWithAccessTokenBlacklistExtension",
+    ],
+    # Swagger UI tweaks
+    "SWAGGER_UI_SETTINGS": {
+        # Keep token in the UI between reloads
+        "persistAuthorization": True,
+    },
 }
 
 ######################################################################
@@ -369,6 +398,12 @@ OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
 # OpenAI Chat Completions API Configuration
 # Using GPT-5 model for all generation tasks
 OPENAI_MODEL = environ.get("OPENAI_MODEL", "gpt-4.1")
+
+######################################################################
+# Trial Limits Configuration
+######################################################################
+# Maximum number of outlines a trial user can generate
+TRIAL_OUTLINE_LIMIT = int(environ.get("TRIAL_OUTLINE_LIMIT", "10"))
 
 ######################################################################
 # Title Generation Configuration
