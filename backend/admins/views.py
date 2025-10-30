@@ -12,6 +12,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from django.db.models import Count
+from django.utils.timezone import now, timedelta
+from djstripe.models import Subscription
+
 from admins.serializers import (
     AdminUserDetailSerializer,
     AdminUserListSerializer,
@@ -20,12 +24,15 @@ from admins.serializers import (
     NicheSerializer,
     NicheToneSerializer,
     UserStatsResponseSerializer,
+    FeatureUsageSerializer,
+    StatsResponseSerializer
 )
 from notifications.choices import NotificationType
 from notifications.helpers import NotificationHelper
 from scripts.pagination import GenerationsLimitOffsetPagination
 from users.models import Role
 from users.permissions import IsAdminPermission
+from scripts.models import *
 
 from .filters import NicheFilter, NichePacingFilter, NicheToneFilter
 from .models import Niche, NichePacing, NicheTone
@@ -398,19 +405,19 @@ class UserStatsView(APIView):
         tags=["Admin Niches"],
         summary="List Niches",
         description=(
-            "Retrieve a paginated list of niches with filtering and search capabilities.\n\n"
-            "**Query Parameters:**\n"
-            "- `limit`: Number of items to return (default: 20, max: 100)\n"
-            "- `offset`: Number of items to skip (default: 0)\n"
-            "- `search`: Search by title or tagline (custom search filter)\n"
-            "- `status`: Filter by status (active/inactive)\n"
-            "- `tone`: Filter niches by tone (e.g., 'Educational', 'Professional')\n"
-            "- `pacing`: Filter niches by pacing (e.g., 'Fast', 'Slow')\n"
-            "- `script_structure`: Filter niches by script structure keys or values (e.g., 'intro', 'body')\n"
-            "- `best_for`: Filter niches by categories they are best suited for (e.g., 'Education', 'Gaming')\n"
-            "- `ordering`: Order by field (e.g., 'created', '-created', 'title', '-title')\n\n"
-            "**Note:** Each filter supports partial and case-insensitive matches. "
-            "For example, `?tone=educ` will match both 'Educational' and 'Educative'."
+                "Retrieve a paginated list of niches with filtering and search capabilities.\n\n"
+                "**Query Parameters:**\n"
+                "- `limit`: Number of items to return (default: 20, max: 100)\n"
+                "- `offset`: Number of items to skip (default: 0)\n"
+                "- `search`: Search by title or tagline (custom search filter)\n"
+                "- `status`: Filter by status (active/inactive)\n"
+                "- `tone`: Filter niches by tone (e.g., 'Educational', 'Professional')\n"
+                "- `pacing`: Filter niches by pacing (e.g., 'Fast', 'Slow')\n"
+                "- `script_structure`: Filter niches by script structure keys or values (e.g., 'intro', 'body')\n"
+                "- `best_for`: Filter niches by categories they are best suited for (e.g., 'Education', 'Gaming')\n"
+                "- `ordering`: Order by field (e.g., 'created', '-created', 'title', '-title')\n\n"
+                "**Note:** Each filter supports partial and case-insensitive matches. "
+                "For example, `?tone=educ` will match both 'Educational' and 'Educative'."
         ),
         parameters=[
             OpenApiParameter(
@@ -519,20 +526,20 @@ class UserStatsView(APIView):
         tags=["Admin Niches"],
         summary="Create Niche",
         description=(
-            "Create a new niche with detailed content structure.\n\n"
-            "**Required Fields:**\n"
-            "- `title` (string): The title of the niche\n"
-            "- `tagline` (string): A brief tagline for the niche\n\n"
-            "**Optional Fields:**\n"
-            "- `thumbnail` (file): Image file for the niche thumbnail\n"
-            "- `script_structure` (JSON object): Custom script structure configuration\n"
-            "- `tone` (list of strings): List of tone names. Non-existent tones will be created automatically\n"
-            "- `pacing` (list of strings): List of pacing names. Non-existent pacings will be created automatically\n"
-            "- `top_channels` (list of objects): YouTube channels with name and link\n"
-            "  - Each object must have: `name` (string) and `link` (string)\n"
-            "- `best_for` (list of strings): Categories this niche is best suited for\n"
-            "- `status` (string): Either 'active' or 'inactive' (default: 'active')\n\n"
-            "**Note:** The `admin` field is automatically set to the authenticated user."
+                "Create a new niche with detailed content structure.\n\n"
+                "**Required Fields:**\n"
+                "- `title` (string): The title of the niche\n"
+                "- `tagline` (string): A brief tagline for the niche\n\n"
+                "**Optional Fields:**\n"
+                "- `thumbnail` (file): Image file for the niche thumbnail\n"
+                "- `script_structure` (JSON object): Custom script structure configuration\n"
+                "- `tone` (list of strings): List of tone names. Non-existent tones will be created automatically\n"
+                "- `pacing` (list of strings): List of pacing names. Non-existent pacings will be created automatically\n"
+                "- `top_channels` (list of objects): YouTube channels with name and link\n"
+                "  - Each object must have: `name` (string) and `link` (string)\n"
+                "- `best_for` (list of strings): Categories this niche is best suited for\n"
+                "- `status` (string): Either 'active' or 'inactive' (default: 'active')\n\n"
+                "**Note:** The `admin` field is automatically set to the authenticated user."
         ),
         examples=[
             OpenApiExample(
@@ -717,13 +724,13 @@ class NicheViewSet(ModelViewSet):
         tags=["Admin Niches"],
         summary="Upload Niche Thumbnail",
         description=(
-            "Upload a thumbnail image for a specific niche.\n\n"
-            "**Parameters:**\n"
-            "- `id`: The ID of the niche to update\n\n"
-            "**Request Body:**\n"
-            "- `thumbnail`: Image file (JPEG, PNG, GIF, WebP supported)\n\n"
-            "**Response:**\n"
-            "- Returns the updated niche data with the new thumbnail URL"
+                "Upload a thumbnail image for a specific niche.\n\n"
+                "**Parameters:**\n"
+                "- `id`: The ID of the niche to update\n\n"
+                "**Request Body:**\n"
+                "- `thumbnail`: Image file (JPEG, PNG, GIF, WebP supported)\n\n"
+                "**Response:**\n"
+                "- Returns the updated niche data with the new thumbnail URL"
         ),
         request={
             "multipart/form-data": {
@@ -919,3 +926,44 @@ class NichePacingViewSet(ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+
+@extend_schema(
+    summary="Get platform statistics",
+    description="Returns metrics: total users, new users this week, subscriber breakdown, and feature usage counts.",
+    responses={200: StatsResponseSerializer},
+    tags=["Admin"],
+)
+class StatisticsAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminPermission]
+
+    def get(self, request):
+        total_users = User.objects.count()
+        new_users_this_week = User.objects.filter(created__gte=now() - timedelta(days=7)).count()
+
+        # dj-stripe: Group active subscriptions by plan/price Nickname
+        active_subs_query = (
+            Subscription.objects
+                .filter(status="active")
+                .values("items__price__nickname", "items__price__product__name")  # Both nickname and product name
+                .annotate(count=Count("id"))
+        )
+        subs_by_tier = {}
+        for entry in active_subs_query:
+            name = entry["items__price__nickname"] or entry["items__price__product__name"] or "Unnamed Plan"
+            subs_by_tier[name] = entry["count"]
+
+        script_count = FullScript.objects.count()
+        title_count = UserTitles.objects.count()
+        niche_count = Niche.objects.filter(status="active").count()
+
+        return Response({
+            "total_users": total_users,
+            "new_users_this_week": new_users_this_week,
+            "active_subscribers_by_plan": subs_by_tier,
+            "feature_usage": {
+                "script_generator": script_count,
+                "title_generator": title_count,
+                "niche_vault": niche_count
+            }
+        })

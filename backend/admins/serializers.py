@@ -362,3 +362,15 @@ class NicheSerializer(serializers.ModelSerializer):
         """Create NichePacing instances for pacings that don't exist."""
         for pacing_name in pacing_list:
             NichePacing.objects.get_or_create(name=pacing_name)
+
+
+class FeatureUsageSerializer(serializers.Serializer):
+    script_generator = serializers.IntegerField()
+    title_generator = serializers.IntegerField()
+    niche_vault = serializers.IntegerField()
+
+class StatsResponseSerializer(serializers.Serializer):
+    total_users = serializers.IntegerField()
+    new_users_this_week = serializers.IntegerField()
+    active_subscribers_by_plan = serializers.DictField(child=serializers.IntegerField())
+    feature_usage = FeatureUsageSerializer()

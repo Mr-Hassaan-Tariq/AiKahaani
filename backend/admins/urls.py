@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from . import views
+from .views import *
 
 # Create router for viewset routes
 router = DefaultRouter()
@@ -15,6 +16,8 @@ router.register(
 urlpatterns = [
     # Statistics endpoint
     path("user-stats/", views.UserStatsView.as_view(), name="user-stats"),
+    path("admin-stats/", StatisticsAPIView.as_view(), name="statistics-api"),
+
 ]
 
 # Include router URLs
