@@ -7,7 +7,7 @@ from admins.choices import NicheStatus
 from admins.models import Niche
 from admins.serializers import UserNicheListSerializer
 from api.mixins import MethodSpecificThrottleMixin
-from payments.permissions import HasActiveSubscriptionPermission
+from payments.permissions import HasPaidSubscriptionPermission
 from scripts.pagination import GenerationsLimitOffsetPagination
 
 
@@ -72,7 +72,7 @@ class UserNicheListView(MethodSpecificThrottleMixin, generics.ListAPIView):
     """
 
     serializer_class = UserNicheListSerializer
-    permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
+    permission_classes = [IsAuthenticated, HasPaidSubscriptionPermission]
     pagination_class = GenerationsLimitOffsetPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "tagline"]
@@ -112,7 +112,7 @@ class UserNicheDetailView(MethodSpecificThrottleMixin, generics.RetrieveAPIView)
     """
 
     serializer_class = UserNicheListSerializer
-    permission_classes = [IsAuthenticated, HasActiveSubscriptionPermission]
+    permission_classes = [IsAuthenticated, HasPaidSubscriptionPermission]
     lookup_field = "pk"
 
     def get_queryset(self):
