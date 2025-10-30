@@ -400,6 +400,12 @@ OPENAI_API_KEY = environ.get("OPENAI_API_KEY")
 OPENAI_MODEL = environ.get("OPENAI_MODEL", "gpt-4.1")
 
 ######################################################################
+# Trial Limits Configuration
+######################################################################
+# Maximum number of outlines a trial user can generate
+TRIAL_OUTLINE_LIMIT = int(environ.get("TRIAL_OUTLINE_LIMIT", "10"))
+
+######################################################################
 # Title Generation Configuration
 ######################################################################
 # Separate OpenAI configuration for title generation

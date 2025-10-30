@@ -24,7 +24,7 @@ from rest_framework.views import APIView
 from api.mixins import MethodSpecificThrottleMixin
 from notifications.choices import NotificationType
 from notifications.helpers import NotificationHelper
-from payments.permissions import HasActiveSubscriptionPermission
+from payments.permissions import HasActiveSubscriptionPermission, TrialOutlineLimitPermission
 
 from .filters import FullScriptFilter, ScriptOutlineFilter, generation_filters
 from .models import FullScript, ScriptOutline, TemplateStyle, Tone
@@ -280,7 +280,7 @@ Result: AI writes with **TubeGenius structure** but **niche-specific style**
 )
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
-@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
+@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission, TrialOutlineLimitPermission])
 def generate_script_outline(request):
     logger.info(
         f"[OUTLINE_GENERATION] Starting outline generation for user: {request.user.id}"
@@ -772,7 +772,7 @@ def generate_script_outline(request):
     },
 )
 @api_view(["POST"])
-@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission])
+@permission_classes([IsAuthenticated, HasActiveSubscriptionPermission, TrialOutlineLimitPermission])
 def recreate_script_outline(request, uuid):
     """
     Recreate a script outline using the same parameters as an existing outline.

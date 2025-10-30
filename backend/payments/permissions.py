@@ -3,6 +3,7 @@ Permission classes for the payments app.
 """
 
 import logging
+from django.conf import settings
 
 from djstripe.models import Subscription
 from rest_framework.permissions import BasePermission
@@ -127,6 +128,50 @@ class HasPaidSubscriptionPermission(BasePermission):
             return subscription.status in VALID_SUB_STATUSES and subscription.status != SubscriptionStatus.trialing
 
         except Exception:
+            return False
+
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
+
+
+class TrialOutlineLimitPermission(BasePermission):
+    """
+    Allow trial users to generate outlines up to a limit; paid users unaffected.
+
+    Denies access when the authenticated user's current subscription is trialing
+    AND they have already generated 10 or more outlines. Otherwise allows.
+    """
+
+    message = "Trial limit reached for outlines on trial. Please upgrade."
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        try:
+            customer = get_or_create_customer(request.user)
+            subscription = (
+                Subscription.objects.filter(customer=customer)
+                .order_by("-created")
+                .first()
+            )
+
+            # If not on trial, no limit enforced by this permission
+            if not subscription or subscription.status != SubscriptionStatus.trialing:
+                return True
+
+            # Lazy import to avoid circulars
+            from scripts.models import ScriptOutline  # noqa: WPS433
+
+            outlines_count = ScriptOutline.objects.filter(user=request.user).count()
+            limit = getattr(settings, "TRIAL_OUTLINE_LIMIT", 10)
+            allowed = outlines_count < limit
+            if not allowed:
+                self.message = f"Trial limit reached: You can generate up to {limit} outlines on trial."
+            return allowed
+
+        except Exception:
+            # Fail closed for safety
             return False
 
     def has_object_permission(self, request, view, obj):
