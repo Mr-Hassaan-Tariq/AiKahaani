@@ -106,9 +106,8 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
 
   const onSubmit = (_formData: FormType) => {
     const formValue = new FormData();
-    const payload: Partial<FormType> = {};
+    const payload: Partial<FormType & { niche_id?: string }> = {};
 
-    // normalize tones to numeric ids
     const normalizeTones = (tones: any): number[] => {
       if (!tones) return [];
       if (!Array.isArray(tones)) return [];
@@ -119,7 +118,6 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
 
     const toneIds = normalizeTones(_formData.tones);
 
-    // classify files
     const linkItems = files
       .filter((f) => f.type === 'link' && typeof f.value === 'string')
       .map((f) => f.value as string);
@@ -130,18 +128,17 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       .filter((f) => f.type === 'file' && f.value instanceof File)
       .map((f) => f.value as File);
 
-    // STRICT check: only treat as image-present if there's at least one real File with size>0
     const hasImageFile = imageItems.some(
       (file) => file && typeof file.size === 'number' && file.size > 0,
     );
 
-    // DEBUG (remove if not needed)
     console.log('files state:', files);
     console.log('linkItems:', linkItems, 'articleItems:', articleItems, 'imageItems:', imageItems);
     console.log('hasImageFile (strict):', hasImageFile);
 
+    const nicheParam = nicheId ? nicheId : undefined;
+
     if (!hasImageFile) {
-      // JSON payload path (no real uploaded image)
       payload.description = _formData.description ?? '';
       payload.tones = toneIds;
       if (_formData.template_style) payload.template_style = _formData.template_style;
@@ -151,26 +148,26 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       }
       payload.title = _formData.title ?? '';
 
-      // --- here we serialize youtube/article exactly as you want ---
+      if (nicheParam) {
+        payload.niche_id = nicheParam;
+      }
+
       if (linkItems.length === 1) {
-        payload.youtube_url = linkItems[0]; // single string
+        payload.youtube_url = linkItems[0];
       } else if (linkItems.length > 1) {
-        payload.youtube_url = linkItems; // array
+        payload.youtube_url = linkItems;
       }
 
       if (articleItems.length === 1) {
-        payload.article_url = articleItems[0]; // single string
+        payload.article_url = articleItems[0];
       } else if (articleItems.length > 1) {
-        payload.article_url = articleItems; // array
+        payload.article_url = articleItems;
       }
-      // --- end serialization ---
 
       logger.info('Sending JSON payload:', payload);
     } else {
-      // Multipart path
       formValue.append('description', _formData.description ?? '');
 
-      // append tones as multiple entries (backend expects multiple fields)
       toneIds.forEach((id) => formValue.append('tones', String(id)));
 
       if (_formData.template_style) {
@@ -181,17 +178,18 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       }
       formValue.append('title', String(_formData.title ?? ''));
 
-      // append actual images
-      imageItems.forEach((file) => formValue.append('image', file));
+      if (nicheParam) {
+        formValue.append('niche_id', nicheParam);
+        console.log('Including niche_id in FormData:', nicheParam);
+      }
 
-      // append links as separate fields (multipart uses repeated field names)
+      imageItems.forEach((file) => formValue.append('image', file));
       linkItems.forEach((l) => formValue.append('youtube_url', l));
       articleItems.forEach((a) => formValue.append('article_url', a));
 
       logger.info('Sending FormData with files/links');
     }
 
-    // save draft description locally (works with both payloads)
     if (typeof window !== 'undefined') {
       try {
         const descToSave = hasImageFile
@@ -203,7 +201,6 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       }
     }
 
-    // call mutation - IMPORTANT: ensure your network layer does NOT set Content-Type manually for FormData
     generateOutline(hasImageFile ? formValue : payload, {
       onSuccess: (data) => {
         logger.info('Outline generated:', data);

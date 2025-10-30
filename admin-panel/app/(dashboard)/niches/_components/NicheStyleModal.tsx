@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Pin } from 'lucide-react';
 
+import ThumbnailImage from '../../../../public/images/no-niche.png';
 import { MicrophoneIcon, ScriptIcon, TvIcon } from './components';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
 import Button from 'components/ui/Button';
@@ -37,6 +38,7 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
   const [open, setOpen] = useState(false);
   const [niche, setNiche] = useState<NicheDetailsType | null>(null);
   const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState<string | typeof ThumbnailImage | null>(null);
 
   useEffect(() => {
     const fetchNiche = async () => {
@@ -87,12 +89,13 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
         <div className="space-y-6 text-white">
           {/* Thumbnail Section */}
           <div className="flex flex-col items-center gap-3">
-            {niche?.thumbnail_url ? (
+            {image ? (
               <Image
-                src={niche.thumbnail_url}
+                src={image}
                 alt={niche.title}
-                className="w-full rounded-xl object-cover"
+                className="h-48 w-full rounded-xl object-contain"
                 height={150}
+                onError={() => setImage(ThumbnailImage ?? '')}
                 width={400}
               />
             ) : (

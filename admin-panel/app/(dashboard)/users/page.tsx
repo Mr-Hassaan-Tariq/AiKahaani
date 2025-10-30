@@ -2,6 +2,7 @@
 
 import type { AdminUser } from 'lib/api/user';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Eye, Trash2, UserCheck, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -36,6 +37,8 @@ export default function UserManagement() {
   } = useAdminUsers();
 
   const [searchTerm, setSearchTerm] = useState('');
+
+  const router = useRouter();
 
   useEffect(() => {
     getUsers(1, 10);
@@ -113,7 +116,7 @@ export default function UserManagement() {
       <div className="flex items-center gap-3">
         <button
           className="text-blue-500 hover:text-blue-400"
-          onClick={() => console.log('View user:', user?.id)}
+          onClick={() => router.push(`/users/${user?.id}`)}
           title="View"
         >
           <Eye size={18} />

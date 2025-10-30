@@ -102,7 +102,7 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
               <Image
                 src={image}
                 alt={niche.title}
-                className="w-full rounded-xl object-cover"
+                className="h-48 w-full rounded-xl object-contain"
                 height={150}
                 onError={() => setImage(ThumbnailImage ?? '')}
                 width={400}
