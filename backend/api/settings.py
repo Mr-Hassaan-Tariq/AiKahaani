@@ -359,6 +359,35 @@ SPECTACULAR_SETTINGS = {
     "AUTHENTICATION_EXTENSIONS": [
         "users.spectacular_extensions.JWTAuthenticationWithAccessTokenBlacklistExtension",
     ],
+    # Explicitly define JWT Bearer so Swagger shows the Authorize button
+    "SECURITY_SCHEMES": {
+        "bearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    },
+    # Apply JWT globally; endpoints can still override with `security: - {}`
+    "SECURITY": [{"bearerAuth": []}],
+    # Force-inject components for older spectacular versions that ignore SECURITY_SCHEMES
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+    # Ensure extension class is imported/registered
+    "EXTENSIONS": [
+        "users.spectacular_extensions.JWTAuthenticationWithAccessTokenBlacklistExtension",
+    ],
+    # Swagger UI tweaks
+    "SWAGGER_UI_SETTINGS": {
+        # Keep token in the UI between reloads
+        "persistAuthorization": True,
+    },
 }
 
 ######################################################################
