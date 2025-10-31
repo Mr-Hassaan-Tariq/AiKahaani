@@ -93,13 +93,20 @@ export default function NicheDetailsPage() {
             </header>
 
             <div className="relative h-64 w-full">
-              <Image
-                src={niche.thumbnail_url || ThumbnailImage}
-                alt={niche.title}
-                fill
-                className="rounded-xl object-cover"
-                onError={() => setImage(ThumbnailImage ?? '')}
-              />
+              {image ? (
+                <Image
+                  src={image}
+                  alt={niche.title}
+                  className="h-48 w-full rounded-xl object-contain"
+                  height={150}
+                  onError={() => setImage(ThumbnailImage ?? '')}
+                  width={400}
+                />
+              ) : (
+                <div className="flex h-48 w-full items-center justify-center rounded-xl bg-[#2a2a2a] text-lg font-semibold">
+                  Thumbnail
+                </div>
+              )}
             </div>
 
             {niche.prompt && (
