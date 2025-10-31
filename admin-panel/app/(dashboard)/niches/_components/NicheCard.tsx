@@ -1,9 +1,9 @@
 import { FC, useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { ExternalLink } from 'lucide-react';
 
 import ThumbnailImage from '../../../../public/images/no-niche.png';
-import NicheStyleModal from './NicheStyleModal';
 import VedioModal from './VedioModal';
 import Button from 'components/ui/Button';
 import Card from 'components/ui/Card';
@@ -28,6 +28,7 @@ const NicheCard: FC<NicheCardProps> = ({
   topChannels,
   thumbnailUrl,
 }) => {
+  const router = useRouter();
   const [imagePresent, setImagePresent] = useState(thumbnailUrl || false);
 
   const tags = [...(tone || []), ...(pacing || [])];
@@ -41,7 +42,7 @@ const NicheCard: FC<NicheCardProps> = ({
     truncated.length > maxLength ? truncated.substring(0, maxLength) + '...' : truncated;
 
   return (
-    <Card className="rounded-xl bg-[#161616] text-white lg:px-5 lg:py-5">
+    <Card className="flex h-full flex-col rounded-xl bg-[#161616] text-white lg:px-5 lg:py-5">
       <div className="relative h-40">
         {imagePresent ? (
           <VedioModal
@@ -72,8 +73,8 @@ const NicheCard: FC<NicheCardProps> = ({
         )}
       </div>
 
-      <div className="mt-4 space-y-3">
-        <div className="flex flex-wrap items-center justify-between text-xs text-gray-300">
+      <div className="mt-4 flex flex-1 flex-col justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between text-xs text-gray-300">
           <div className="rounded-md border border-[#BAFF381F] bg-[#2a2a2a] p-2">
             {tags.length > 0 ? (
               tags.slice(0, 4).map((tag, i) => (
@@ -89,17 +90,24 @@ const NicheCard: FC<NicheCardProps> = ({
           <ExternalLink className="h-5 w-5 cursor-pointer text-white" />
         </div>
 
-        <Text className="text-xl font-semibold">{title}</Text>
-        <Text variant="base" className="text-[#AAACA6]">
-          {description}
-        </Text>
+        <div className="flex-1">
+          <Text className="text-xl font-semibold">{title}</Text>
+          <Text variant="base" className="mt-1 text-[#AAACA6]">
+            {description.slice(0, 50)}
+            {description.length > 50 && '...'}
+          </Text>
 
-        <Text variant="base" className="text-[#AAACA6]">
-          Examples:{' '}
-          <span className="text-white">{examples.length > 0 ? displayText : 'No examples'}</span>
-        </Text>
+          <Text variant="base" className="mt-1 text-[#AAACA6]">
+            Examples:{' '}
+            <span className="text-white">{examples.length > 0 ? displayText : 'No examples'}</span>
+          </Text>
+        </div>
 
-        <NicheStyleModal trigger={<Button variant="green">View Details</Button>} nicheId={id} />
+        <div className="mt-4">
+          <Button variant="green" onClick={() => router.push(`/niches/${id}`)}>
+            View Details
+          </Button>
+        </div>
       </div>
     </Card>
   );

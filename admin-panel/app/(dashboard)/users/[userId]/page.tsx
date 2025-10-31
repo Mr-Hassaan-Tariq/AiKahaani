@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CheckCircle, Trash2, User as UserIcon, XCircle } from 'lucide-react';
+import { CheckCircle, Eye, Trash2, User as UserIcon, XCircle } from 'lucide-react';
 
 import { getClientDataAction } from 'lib/utils/clientDataActions';
+
+type ScriptRow = {
+  id: string | number;
+  content: string;
+};
 
 type UserDetail = {
   id: number | string;
@@ -15,8 +20,8 @@ type UserDetail = {
   is_admin?: boolean;
   roles_display?: string[];
   last_login?: string | null;
-  title_generation?: string;
-  script?: string;
+  titles?: string[];
+  scripts?: ScriptRow[];
 };
 
 export default function UserDetailPageClient() {
@@ -28,6 +33,9 @@ export default function UserDetailPageClient() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // UI state for viewing a script
+  const [selectedScript, setSelectedScript] = useState<ScriptRow | null>(null);
+
   useEffect(() => {
     if (!userId) return;
 
@@ -35,12 +43,27 @@ export default function UserDetailPageClient() {
       setLoading(true);
       setError(null);
       try {
+        // fetch user; we're adding static arrays for titles and scripts for now
         const res = await getClientDataAction<{ data: UserDetail }>(`v1/admin/users/${userId}/`);
-        const staticUser = {
+        const staticUser: UserDetail = {
           ...res?.data,
-          title_generation: 'Top 10 AI Tools That Will Change Your Life',
-          script:
-            'This video explores the top 10 AI tools that are revolutionizing productivity and creativity. From design automation to writing assistants — discover how AI is shaping the future of work.',
+          titles: [
+            'Top 10 AI Tools That Will Change Your Life',
+            'How To Use AI To Double Your Productivity',
+            'The Future of Creative Work with AI',
+          ],
+          scripts: [
+            {
+              id: 1,
+              content:
+                'This video explores the top 10 AI tools that are revolutionizing productivity and creativity. From design automation to writing assistants — discover how AI is shaping the future of work.',
+            },
+            {
+              id: 2,
+              content:
+                "In this short guide we'll walk through practical workflows to integrate AI into your daily tasks so you can save time and focus on higher-value work.",
+            },
+          ],
         };
         setUser(staticUser);
       } catch (err: any) {
@@ -55,6 +78,18 @@ export default function UserDetailPageClient() {
   }, [userId]);
 
   const formatDate = (d?: string | null) => (d ? new Date(d).toLocaleString() : '—');
+
+  const copyText = async (text: string | undefined) => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      // subtle feedback — you can replace with toast if you have one
+      // For now we'll just use console.log (or you can import your toast util)
+      console.log('Copied to clipboard');
+    } catch {
+      console.warn('Clipboard write failed');
+    }
+  };
 
   return (
     <div className="p-6">
@@ -121,8 +156,8 @@ export default function UserDetailPageClient() {
                 </div>
               </div>
 
-              {/* Right: details + static fields */}
-              <div className="md:col-span-2">
+              {/* Right: details + tables */}
+              <div className="space-y-6 md:col-span-2">
                 <div className="border-white/6 bg-white/3 rounded-xl border p-6">
                   <div className="mb-4">
                     <h2 className="text-2xl font-bold text-white">User details</h2>
@@ -135,35 +170,128 @@ export default function UserDetailPageClient() {
                     <DetailRow label="Last login" value={formatDate(user.last_login)} />
                     <DetailRow label="Email" value={user.email || '—'} />
                   </div>
+                </div>
 
-                  <div className="mt-6">
-                    <h3 className="mb-2 text-lg font-semibold text-white">Recent activity</h3>
-                    <div className="border-white/6 rounded-lg border bg-black/10 p-4 text-sm text-gray-300">
-                      No recent activity available.
-                    </div>
+                {/* Titles table */}
+                <div className="border-white/6 bg-white/3 rounded-xl border p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-white">Titles</h3>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-auto text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-gray-400">
+                          <th className="px-3 py-2">#</th>
+                          <th className="px-3 py-2">Title</th>
+                          <th className="px-3 py-2">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(user.titles ?? []).map((t, i) => (
+                          <tr key={i} className="border-white/6 border-t">
+                            <td className="px-3 py-3 text-gray-300">{i + 1}</td>
+                            <td className="px-3 py-3 text-white">{t}</td>
+                            <td className="px-3 py-3">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => copyText(t)}
+                                  className="bg-white/6 rounded-md px-2 py-1 text-xs text-white hover:bg-white/10"
+                                >
+                                  Copy
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {(user.titles ?? []).length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="px-3 py-6 text-center text-sm text-gray-400">
+                              No titles available.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
-                {/* Title Generation + Script (static text) */}
-                <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <div className="border-white/6 bg-white/3 rounded-xl border p-4">
-                    <div className="text-sm text-gray-400">Title generation</div>
-                    <div className="mt-3 rounded-md bg-black/20 p-3 text-sm text-white">
-                      {user.title_generation || 'No title available'}
-                    </div>
+                {/* Scripts table */}
+                <div className="border-white/6 bg-white/3 rounded-xl border p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-white">Scripts</h3>
                   </div>
 
-                  <div className="border-white/6 bg-white/3 rounded-xl border p-4 md:col-span-2">
-                    <div className="text-sm text-gray-400">Script</div>
-                    <div className="mt-3 rounded-md bg-black/20 p-3 text-sm leading-relaxed text-gray-200">
-                      {user.script ||
-                        'No script data available. This will later show generated script text from API.'}
-                    </div>
+                  <div className="overflow-hidden">
+                    {' '}
+                    <table className="w-full table-auto text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-gray-400">
+                          <th className="w-10 px-3 py-2">#</th>
+                          <th className="px-3 py-2">Preview</th>
+                          <th className="w-32 px-3 py-2">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(user.scripts ?? []).map((s, i) => (
+                          <tr key={s.id} className="border-white/6 border-t align-top">
+                            <td className="px-3 py-3 text-gray-300">{i + 1}</td>
+                            <td className="px-3 py-3 text-white">
+                              <div className="whitespace-normal break-words">{s.content}</div>
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setSelectedScript(s)}
+                                  className="bg-white/6 inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs text-white hover:bg-white/10"
+                                >
+                                  <Eye size={14} /> View
+                                </button>
+                                <button
+                                  onClick={() => copyText(s.content)}
+                                  className="bg-white/6 rounded-md px-2 py-1 text-xs text-white hover:bg-white/10"
+                                >
+                                  Copy
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+
+                        {(user.scripts ?? []).length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="px-3 py-6 text-center text-sm text-gray-400">
+                              No scripts available.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
+
+                  {/* Inline script viewer */}
+                  {selectedScript && (
+                    <div className="border-white/6 mt-4 rounded-md border bg-black/10 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="text-sm font-semibold text-white">
+                          Script #{selectedScript.id}
+                        </div>
+                        <button
+                          onClick={() => setSelectedScript(null)}
+                          className="text-sm text-gray-400 hover:text-white"
+                        >
+                          Close
+                        </button>
+                      </div>
+                      <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-gray-200">
+                        {selectedScript.content}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}
-                <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-3">
                   <div className="border-white/6 bg-white/3 rounded-xl border p-4">
                     <div className="text-sm text-gray-400">Metadata</div>
                     <div className="mt-2 text-sm text-white">

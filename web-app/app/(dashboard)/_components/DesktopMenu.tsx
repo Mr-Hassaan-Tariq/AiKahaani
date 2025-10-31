@@ -14,7 +14,6 @@ import MyScriptsIcon from 'components/icons/MyScriptsIcon';
 import ScriptGeneratorIcon from 'components/icons/ScriptGeneratorIcon';
 import SettingsIcon from 'components/icons/SettingsIcon';
 import SubTitleIcon from 'components/icons/SubTitleIcon';
-import UsersIcon from 'components/icons/UsersIcon';
 
 export default function DesktopMenu() {
   const pathname = usePathname() || '/';
@@ -137,11 +136,11 @@ export const mainMenu = [
 ];
 
 export const subMenu = [
-  {
-    name: 'Affiliate Program',
-    icon: <UsersIcon />,
-    path: '/script-generator',
-  },
+  // {
+  //   name: 'Affiliate Program',
+  //   icon: <UsersIcon />,
+  //   path: '/script-generator',
+  // },
   {
     name: 'Settings',
     icon: <SettingsIcon />,

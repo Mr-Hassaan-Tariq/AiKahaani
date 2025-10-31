@@ -25,6 +25,7 @@ type Channel = {
 type CardData = {
   title: string;
   description: string;
+  prompt?: string; // NEW
   tone: string[];
   pacing: string[];
   channels: Channel[];
@@ -66,6 +67,7 @@ export default function CreateNicheModal() {
     defaultValues: {
       title: '',
       description: '',
+      prompt: '', // NEW default
       tone: [],
       pacing: [],
       channels: [{ name: '', link: '' }],
@@ -165,6 +167,7 @@ export default function CreateNicheModal() {
         reset({
           title: data.title ?? '',
           description: data.tagline ?? '',
+          prompt: data.prompt ?? '', // NEW prefill
           tone: Array.isArray(data.tone) ? data.tone : (data.tone ?? []),
           pacing: Array.isArray(data.pacing) ? data.pacing : (data.pacing ?? []),
           channels:
@@ -208,6 +211,7 @@ export default function CreateNicheModal() {
     const payload = {
       title: data.title,
       tagline: data.description,
+      prompt: data.prompt ?? '',
       tone: data.tone,
       pacing: data.pacing,
       top_channels: data.channels.filter((ch) => ch.name && ch.link),
@@ -225,18 +229,21 @@ export default function CreateNicheModal() {
 
       if (isEdit && nicheIdParam) {
         await putClientDataAction<any, typeof payload>(`v1/admin/niches/${nicheIdParam}/`, payload);
-
         toast.success('Niche updated successfully!');
+        targetId = nicheIdParam;
       } else {
         const createResp = await postClientDataAction<any, typeof payload>(
           'v1/admin/niches/',
           payload,
         );
+
         targetId =
           createResp?.data?.id ?? createResp?.id ?? (createResp && (createResp as any).result?.id);
+
         if (!targetId) {
           console.warn('Create response did not include an id:', createResp);
         }
+
         toast.success('Niche created successfully!');
       }
 
@@ -253,6 +260,7 @@ export default function CreateNicheModal() {
           >(uploadEndpoint, formData);
 
           const uploadedUrl = uploadResp?.data?.thumbnail_url ?? uploadResp?.thumbnail_url;
+
           if (uploadedUrl) {
             setValue('thumbnailUrl', uploadedUrl);
             toast.success('Thumbnail uploaded successfully!');
@@ -322,7 +330,7 @@ export default function CreateNicheModal() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/png, image/jpeg, image/jpg, image/webp"
                     className="hidden"
                     onChange={handleFileChange}
                   />
@@ -352,7 +360,9 @@ export default function CreateNicheModal() {
                     )}
                   </div>
 
-                  <p className="text-xs text-gray-400">Recommended size: 1280x720. PNG or JPEG.</p>
+                  <p className="text-xs text-gray-400">
+                    Recommended size: 1280x720. PNG, JPEG, or WEBP formats supported.
+                  </p>
                 </div>
               </div>
             </div>
@@ -379,10 +389,28 @@ export default function CreateNicheModal() {
                   <Input
                     {...field}
                     id="description"
-                    type="textarea"
                     placeholder="Latest tech product reviews and analysis"
                     label="Tagline / Description"
                   />
+                </div>
+              )}
+            />
+
+            <Controller
+              name="prompt"
+              control={control}
+              render={({ field }) => (
+                <div className="md:col-span-2">
+                  <Input
+                    {...field}
+                    id="prompt"
+                    type="textarea"
+                    placeholder="Enter generation prompt"
+                    label="Prompt"
+                    rows={8}
+                    textareaProps={{ wrap: 'soft' }}
+                  />
+                  <FieldError message={errors.prompt?.message as string | undefined} />
                 </div>
               )}
             />
