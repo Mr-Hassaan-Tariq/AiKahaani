@@ -94,8 +94,9 @@ const NicheCard: FC<NicheCardProps> = ({
         </div>
 
         <Text className="text-xl font-semibold">{title}</Text>
-        <Text variant="base" className="text-[#AAACA6]">
-          {description}
+        <Text variant="base" className="mt-1 text-[#AAACA6]">
+          {description.slice(0, 50)}
+          {description.length > 50 && '...'}
         </Text>
 
         <Text variant="base" className="text-[#AAACA6]">
