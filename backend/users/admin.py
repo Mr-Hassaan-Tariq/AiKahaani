@@ -141,6 +141,7 @@ class UserAdmin(BaseUserAdmin):
     add_form = UserCreationFormWithPassword
 
     list_display = (
+        'id',
         "email",
         "username",
         "fullname",

@@ -13,6 +13,7 @@ from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from payments.permissions import HasPaidSubscriptionPermission
 from rest_framework.response import Response
@@ -21,6 +22,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.exceptions import NotFound
+from djstripe.models import Subscription, Customer
+from django.utils.timezone import now
 
 from api.mixins import MethodSpecificThrottleMixin
 from notifications.choices import NotificationType
@@ -48,11 +52,23 @@ from .serializers import (
     UserDetailsUpdateSerializer,
     UserSerializer,
     UserSignupSerializer,
+    UserDetailSerializer,
+
 )
 
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
+
+ROLE_ADMIN = "admin"
+ROLE_USER = "user"
+
+def get_user_role(user):
+    # Checks if user has the admin role (case-insensitive)
+    # Otherwise returns "user"
+    if user.roles.filter(name__iexact=ROLE_ADMIN).exists():
+        return ROLE_ADMIN
+    return ROLE_USER
 
 
 class SignupView(MethodSpecificThrottleMixin, APIView):
@@ -986,8 +1002,8 @@ class UserNicheViewSet(ReadOnlyModelViewSet):
         """Return only active niches with prefetch optimizations."""
         return (
             Niche.objects.filter(status="active")
-            .select_related("admin")
-            .order_by("-created")
+                .select_related("admin")
+                .order_by("-created")
         )
 
     @extend_schema(
@@ -1121,10 +1137,10 @@ class UserNicheViewSet(ReadOnlyModelViewSet):
     @extend_schema(
         summary="Retrieve Niche Details",
         description=(
-            "Retrieve detailed information for a specific **active niche** "
-            "by its ID.\n\n"
-            "Only active niches can be accessed by users.\n\n"
-            "**Permissions:** Authenticated users only."
+                "Retrieve detailed information for a specific **active niche** "
+                "by its ID.\n\n"
+                "Only active niches can be accessed by users.\n\n"
+                "**Permissions:** Authenticated users only."
         ),
         responses={
             200: OpenApiResponse(
@@ -1169,3 +1185,56 @@ class UserNicheViewSet(ReadOnlyModelViewSet):
             {"data": serializer.data, "message": "Niche details retrieved successfully"},
             status=status.HTTP_200_OK,
         )
+
+
+@extend_schema(
+    summary="Get user details",
+    description="Retrieve user info with current subscription details by user id.",
+    responses={200: UserDetailSerializer},
+    tags=["Users"],
+)
+class UserDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request, user_id):
+        # Validate and fetch user
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            raise NotFound("User with this ID does not exist.")
+
+        # Fetch Stripe/dj-stripe Customer
+        customer = Customer.objects.filter(email=user.email).first()
+        plan_name = None
+        renewal_date = None
+        is_active = False
+
+        if customer:
+            # Fetch most recent subscription
+            sub = (Subscription.objects
+                   .filter(customer=customer)
+                   .order_by("-current_period_end")
+                   .first())
+            if sub:
+                is_active = sub.status == "active"
+                # Get the plan name from the first price's nickname
+                plan_name = (
+                    sub.items.first().price.product.name
+                    if sub and sub.items.exists()
+                    else None
+                )
+                renewal_date = sub.current_period_end
+
+        data = {
+            "fullname": user.fullname or user.get_full_name(),
+            "email": user.email,
+            "role": get_user_role(user),
+            "profile_picture": user.profile_picture if user.profile_picture else None,
+            "subscription": {
+                "plan_name": plan_name,
+                "renewal_date": renewal_date,
+                "is_active": is_active,
+            }
+        }
+        serializer = UserDetailSerializer(data, context={"request": request})
+        return Response(serializer.data)
