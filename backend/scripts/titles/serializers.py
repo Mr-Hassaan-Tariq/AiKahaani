@@ -1,7 +1,7 @@
 # titles/serializers.py
 from rest_framework import serializers
 
-from scripts.models import TitleTone
+from scripts.models import TitleTone, UserTitles
 
 
 class TitleToneSerializer(serializers.ModelSerializer):
@@ -294,3 +294,18 @@ class GenerateTitlesResponseSerializer(serializers.Serializer):
         help_text="Generation metadata including token usage and timing"
     )
     message = serializers.CharField(help_text="Success message")
+
+
+class UserTitlesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserTitles
+        fields = [
+            "uuid",
+            "user",
+            "prompt",
+            "titles",
+            "tones",
+            "user_title",
+            "script",
+            "created",
+        ]

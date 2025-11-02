@@ -769,6 +769,7 @@ class NicheViewSet(ModelViewSet):
                         "id": 1,
                         "admin": 1,
                         "title": "Tech Reviews",
+                        "prompt": "Enter your desired prompt for niche",
                         "tagline": "Latest tech product reviews",
                         "thumbnail": "http://127.0.0.1:8000/media/niches/thumbnails/tech_review_thumb.jpg",
                         "script_structure": {"intro": "Hook", "body": "Review"},

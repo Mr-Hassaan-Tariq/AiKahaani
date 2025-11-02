@@ -5,13 +5,18 @@ from drf_spectacular.utils import (
     OpenApiResponse,
     extend_schema,
     OpenApiParameter,
-    OpenApiExample
+    OpenApiExample,
+    extend_schema_view
 )
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.permissions import IsAdminUser
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 from api.mixins import MethodSpecificThrottleMixin
@@ -19,6 +24,8 @@ from notifications.helpers import NotificationHelper
 from payments.permissions import HasActiveSubscriptionPermission
 from scripts.models import ScriptTitle, TitleTone, UserTitles
 from scripts.services.open_ai import OpenAIScriptService
+from scripts.titles.serializers import UserTitlesSerializer
+from scripts.pagination import GenerationsLimitOffsetPagination
 
 from .serializers import (
     GenerateTitlesOptimizedRequestSerializer,
@@ -397,3 +404,118 @@ class UserTitlesListView(APIView, LimitOffsetPagination):
         # Apply pagination
         paginated_results = self.paginate_queryset(data, request, view=self)
         return self.get_paginated_response(paginated_results)
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List all user-generated YouTube titles (Admin only)",
+        description=(
+            "Returns a paginated list of all user-generated YouTube titles.\n\n"
+            "Supports filtering by user or script, searching by prompt or title text, "
+            "and ordering by creation date.\n\n"
+            "Only accessible by admin users."
+        ),
+        parameters=[
+            OpenApiParameter(name="limit", description="Number of results to return per page.", required=False, type=int),
+            OpenApiParameter(name="offset", description="The initial index from which to return the results.", required=False, type=int),
+            OpenApiParameter(name="search", description="Search by prompt, title, or user_title.", required=False, type=str),
+            OpenApiParameter(name="user", description="Filter by User ID.", required=False, type=int),
+            OpenApiParameter(name="script", description="Filter by Script ID.", required=False, type=int),
+            OpenApiParameter(name="ordering", description="Order by created date (e.g., `created` or `-created`).", required=False, type=str),
+        ],
+        responses={
+            200: OpenApiExample(
+                "UserTitles List Example",
+                summary="Example list response",
+                value={
+                    "count": 2,
+                    "next": "http://127.0.0.1:8000/api/admin/user-titles/?limit=10&offset=10",
+                    "previous": None,
+                    "results": {
+                        "data": [
+                            {
+                                "uuid": "a7c4c6e1-9f2e-4c61-923b-64bcd7d66d4b",
+                                "user": 5,
+                                "prompt": "Generate YouTube titles for AI startups",
+                                "titles": [
+                                    "Top 5 AI Startups Changing the Future",
+                                    "How AI is Transforming Business Today"
+                                ],
+                                "tones": ["informative", "tech"],
+                                "user_title": "AI Startup Titles",
+                                "script": 3,
+                                "created": "2025-10-30T08:22:15Z"
+                            }
+                        ],
+                        "message": "User titles retrieved successfully."
+                    }
+                },
+            )
+        },
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve details of a single user-generated title set (Admin only)",
+        description="Returns details of a specific UserTitles record identified by UUID. Only accessible by admin users.",
+        responses={
+            200: OpenApiExample(
+                "UserTitles Retrieve Example",
+                summary="Example retrieve response",
+                value={
+                    "data": {
+                        "uuid": "a7c4c6e1-9f2e-4c61-923b-64bcd7d66d4b",
+                        "user": 5,
+                        "prompt": "Generate YouTube titles for AI startups",
+                        "titles": [
+                            "Top 5 AI Startups Changing the Future",
+                            "How AI is Transforming Business Today"
+                        ],
+                        "tones": ["informative", "tech"],
+                        "user_title": "AI Startup Titles",
+                        "script": 3,
+                        "created": "2025-10-30T08:22:15Z"
+                    },
+                    "message": "User title details retrieved successfully."
+                },
+            )
+        },
+    ),
+)
+class UserTitlesAdminViewSet(ReadOnlyModelViewSet):
+    """
+    Admin-only API for listing and retrieving all user-generated YouTube titles.
+    Includes pagination, filtering, searching, and ordering.
+    """
+    queryset = UserTitles.objects.select_related("user", "script").order_by("-created")
+    serializer_class = UserTitlesSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = GenerationsLimitOffsetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+
+    # Filters and search options
+    filterset_fields = ["user", "script"]
+    search_fields = ["prompt", "titles", "user_title"]
+    ordering_fields = ["created"]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response({
+                "data": serializer.data,
+                "message": "User titles retrieved successfully."
+            })
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {"data": serializer.data, "message": "User titles retrieved successfully."},
+            status=status.HTTP_200_OK
+        )
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(
+            {"data": serializer.data, "message": "User title details retrieved successfully."},
+            status=status.HTTP_200_OK
+        )
