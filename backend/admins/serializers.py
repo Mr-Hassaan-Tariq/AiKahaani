@@ -369,8 +369,29 @@ class FeatureUsageSerializer(serializers.Serializer):
     title_generator = serializers.IntegerField()
     niche_vault = serializers.IntegerField()
 
+
 class StatsResponseSerializer(serializers.Serializer):
     total_users = serializers.IntegerField()
     new_users_this_week = serializers.IntegerField()
     active_subscribers_by_plan = serializers.DictField(child=serializers.IntegerField())
     feature_usage = FeatureUsageSerializer()
+
+
+class UserDetailsReportSerializer(serializers.Serializer):
+    """Serializer for user details report"""
+    name = serializers.CharField()
+    email = serializers.EmailField()
+    total_titles_generated = serializers.IntegerField()
+    total_short_scripts = serializers.IntegerField()
+    total_medium_scripts = serializers.IntegerField()
+    total_long_scripts = serializers.IntegerField()
+
+
+class UserConversionFunnelSerializer(serializers.Serializer):
+    """Serializer for user conversion funnel data"""
+    name = serializers.CharField()
+    email = serializers.EmailField()
+    subscription_plan = serializers.CharField()
+    subscription_status = serializers.CharField()  # Add this field
+    status = serializers.CharField()  # Active/Inactive
+    has_subscription = serializers.BooleanField()

@@ -2,7 +2,6 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from . import views
-from .views import *
 
 # Create router for viewset routes
 router = DefaultRouter()
@@ -13,12 +12,19 @@ router.register(
     r"niche-pacings", views.NichePacingViewSet, basename="admin-niche-pacings"
 )
 
+# IMPORTANT: Define specific paths BEFORE router URLs
 urlpatterns = [
     # Statistics endpoint
     path("user-stats/", views.UserStatsView.as_view(), name="user-stats"),
-    path("admin-stats/", StatisticsAPIView.as_view(), name="statistics-api"),
+    path("admin-stats/", views.StatisticsAPIView.as_view(), name="statistics-api"),
+    # Users report endpoints
+    path("users-report/", views.UsersReportView.as_view(), name="users-report"),
+    path("users-report/export/", views.UsersReportExportView.as_view(), name="users-report-export"),
 
+    # Conversion funnel endpoints
+    path("conversion-funnel/", views.UserConversionFunnelView.as_view(), name="conversion-funnel"),
+    path("conversion-funnel/export/", views.UserConversionFunnelExportView.as_view(), name="conversion-funnel-export"),
 ]
 
-# Include router URLs
+# Include router URLs AFTER specific paths
 urlpatterns += router.urls
