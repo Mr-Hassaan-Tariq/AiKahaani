@@ -104,8 +104,8 @@ class UserDetailsUpdateSerializer(serializers.Serializer):
     def validate_username(self, value):
         user = self.context["request"].user
         if (
-            value
-            and User.objects.exclude(pk=user.pk).filter(username__iexact=value).exists()
+                value
+                and User.objects.exclude(pk=user.pk).filter(username__iexact=value).exists()
         ):
             raise serializers.ValidationError("This username is already taken.")
         return value
@@ -113,8 +113,8 @@ class UserDetailsUpdateSerializer(serializers.Serializer):
     def validate_emailAddress(self, value):
         user = self.context["request"].user
         if (
-            value
-            and User.objects.exclude(pk=user.pk).filter(email__iexact=value).exists()
+                value
+                and User.objects.exclude(pk=user.pk).filter(email__iexact=value).exists()
         ):
             raise serializers.ValidationError("A user with this email already exists.")
         return value
@@ -221,8 +221,8 @@ class ProfilePictureUploadSerializer(serializers.Serializer):
             raise serializers.ValidationError("Image size must be <= 5MB.")
         valid_content_types = {"image/jpeg", "image/png", "image/webp", "image/gif"}
         if (
-            hasattr(value, "content_type")
-            and value.content_type not in valid_content_types
+                hasattr(value, "content_type")
+                and value.content_type not in valid_content_types
         ):
             raise serializers.ValidationError(
                 "Unsupported image type. Use JPEG, PNG, WEBP, or GIF."
@@ -307,3 +307,16 @@ class RefreshTokenResponseSerializer(serializers.Serializer):
     access_token = serializers.CharField()
     refresh_token = serializers.CharField()
     message = serializers.CharField()
+
+
+class SubscriptionInfoSerializer(serializers.Serializer):
+    plan_name = serializers.CharField(allow_null=True)
+    renewal_date = serializers.DateTimeField(allow_null=True)
+    is_active = serializers.BooleanField()
+
+class UserDetailSerializer(serializers.Serializer):
+    name = serializers.CharField(source="fullname")
+    email = serializers.EmailField()
+    role = serializers.CharField()
+    profileImage = serializers.ImageField(source="profile_picture", allow_null=True)
+    subscription = SubscriptionInfoSerializer()
