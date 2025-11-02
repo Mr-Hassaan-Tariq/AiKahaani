@@ -20,6 +20,8 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.permissions import IsAdminUser
 
 from api.mixins import MethodSpecificThrottleMixin
 from notifications.choices import NotificationType
@@ -43,6 +45,8 @@ from .serializers import (
     TemplateStyleSerializer,
     ToneSerializer,
     UnifiedGenerationSerializer,
+    FullScriptDetailSerializer,
+    FullScriptListSerializer
 )
 from .services.open_ai import OpenAIScriptService
 from .services.niche_context import NicheContextBuilder
@@ -2484,3 +2488,34 @@ def _export_docx(script, safe_title, timestamp):
     # TODO: Add file to storage/DELETE AFTER 10 MINUTES
     file_url = settings.MEDIA_URL + filepath
     return {"file_url": file_url}
+
+
+@extend_schema(
+    summary="List and Retrieve Full Scripts (Admin Only)",
+    description=(
+        "Provides paginated access to all generated scripts with their outlines and titles. "
+        "Each entry includes script metadata, model info, and timestamps. "
+        "Retrieve endpoint returns full content and structured sections."
+    ),
+    tags=["Admin • Scripts"],
+)
+class FullScriptAdminViewSet(ReadOnlyModelViewSet):
+    """
+    Admin API for viewing all Full Scripts.
+    Includes outlines, titles, and detailed metadata.
+    """
+
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    pagination_class = GenerationsLimitOffsetPagination
+
+    def get_queryset(self):
+        return (
+            FullScript.objects.select_related("user", "outline")
+            .prefetch_related("outline__tones", "outline__niche", "titles")
+            .order_by("-created")
+        )
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return FullScriptDetailSerializer
+        return FullScriptListSerializer

@@ -145,7 +145,7 @@ class ScriptOutline(TimeStampedModel):
     )
 
     def __str__(self):
-        script_title = self.script.title if self.script else "Direct Outline"
+        script_title = self.title if self.title else "Direct Outline"
         return f"Outline for {script_title} v{self.version}"
 
     def save(self, *args, **kwargs):

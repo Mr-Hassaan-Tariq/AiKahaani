@@ -3,6 +3,12 @@ from django.urls import include, path
 
 from . import views
 from . import test_views
+from .views import *
+
+from rest_framework.routers import DefaultRouter
+router = DefaultRouter()
+router.register(r"admin/all-full-scripts", FullScriptAdminViewSet, basename="admin-all-full-scripts")
+
 
 urlpatterns = [
     # Test endpoints for attachment features
@@ -47,3 +53,6 @@ urlpatterns = [
         "<uuid:uuid>/export/", views.ExportScriptView.as_view(), name="export-script"
     ),
 ]
+
+# Include router URLs
+urlpatterns += router.urls

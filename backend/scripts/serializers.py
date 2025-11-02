@@ -2,7 +2,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from .models import FullScript, ScriptOutline, TemplateStyle, Tone
+from .models import FullScript, ScriptOutline, TemplateStyle, Tone, ScriptTitle
 
 
 class ExportScriptResponseSerializer(serializers.Serializer):
@@ -259,3 +259,81 @@ class StatusUpdateSerializer(serializers.Serializer):
             ("saved", "Saved"),
         ]
     )
+
+class ScriptOutlineMiniSerializer(serializers.ModelSerializer):
+    tones = serializers.StringRelatedField(many=True)
+    niche = serializers.StringRelatedField()
+
+    class Meta:
+        model = ScriptOutline
+        fields = [
+            "uuid",
+            "title",
+            "status",
+            "tones",
+            "niche",
+            "outline_text",
+            "outline_data",
+        ]
+
+
+class ScriptTitleMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScriptTitle
+        fields = [
+            "uuid",
+            "titles",
+            "prompt",
+            "is_optimized_title",
+            "titles_count",
+            "user_provided_title",
+        ]
+
+
+class FullScriptListSerializer(serializers.ModelSerializer):
+    outline = ScriptOutlineMiniSerializer()
+    titles = ScriptTitleMiniSerializer(many=True)
+    user = serializers.StringRelatedField()
+
+    class Meta:
+        model = FullScript
+        fields = [
+            "uuid",
+            "title",
+            "user",
+            "status",
+            "outline",
+            "titles",
+            "word_count",
+            "estimated_duration",
+            "generation_time",
+            "openai_model",
+            "created",
+        ]
+
+
+class FullScriptDetailSerializer(serializers.ModelSerializer):
+    outline = ScriptOutlineMiniSerializer()
+    titles = ScriptTitleMiniSerializer(many=True)
+    user = serializers.StringRelatedField()
+
+    class Meta:
+        model = FullScript
+        fields = [
+            "uuid",
+            "title",
+            "user",
+            "status",
+            "outline",
+            "titles",
+            "content",
+            "sections",
+            "word_count",
+            "estimated_duration",
+            "generation_time",
+            "openai_model",
+            "is_published",
+            "published_at",
+            "created",
+            "modified",
+        ]
