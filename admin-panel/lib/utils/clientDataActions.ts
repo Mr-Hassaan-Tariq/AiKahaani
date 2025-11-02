@@ -18,7 +18,57 @@ function getAuthToken() {
   return Cookies.get('access_token');
 }
 
+export async function getUserConversionFunnel<T>(endpoint: string) {
+  const token = getAuthToken();
+  const res = await fetch(`${baseUrl}${endpoint}`, {
+    method: 'GET',
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    const error = await processError(res);
+    logger.error(error);
+    throw error;
+  }
+  const data = await res.json();
+  return data as T;
+}
+
 export async function getClientDataAction<T>(endpoint: string, schema?: z.ZodSchema<T>) {
+  const token = getAuthToken();
+  const res = await fetch(`${baseUrl}${endpoint}`, {
+    method: 'GET',
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    // if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
+    const error = await processError(res);
+    logger.error(error);
+    throw error;
+  }
+  const data = await res.json();
+
+  if (schema) {
+    const parsedData = schema.safeParse(data);
+    if (parsedData.success) {
+      return parsedData.data;
+    }
+
+    logger.error(parsedData.error);
+    throw new Error('Sorry, we were unable to process your request. Please try again later.');
+  }
+
+  return data as T;
+}
+
+export async function getDashboardStatistics<T>(endpoint: string, schema?: z.ZodSchema<T>) {
   const token = getAuthToken();
   const res = await fetch(`${baseUrl}${endpoint}`, {
     method: 'GET',

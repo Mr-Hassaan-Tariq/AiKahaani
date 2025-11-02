@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import mainLogo from '@assets/sidebar/mainLogo.png';
-import { Crown, LayoutDashboard, Settings, Users } from 'lucide-react';
+import { Crown, LayoutDashboard, ReceiptPoundSterlingIcon, Settings, Users } from 'lucide-react';
 
 import LogoutModal from './LogoutModal';
 import Col from 'components/ui/Col';
@@ -124,6 +124,11 @@ export const mainMenu = [
     name: 'Niche Vault',
     icon: <Crown />,
     path: '/niches',
+  },
+  {
+    name: 'Reports',
+    icon: <ReceiptPoundSterlingIcon />,
+    path: '/reports',
   },
 ];
 

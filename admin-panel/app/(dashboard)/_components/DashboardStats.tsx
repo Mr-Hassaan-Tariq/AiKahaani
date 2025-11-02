@@ -1,26 +1,39 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle, RefreshCw, Shield, UserPlus, Users } from 'lucide-react';
+import {
+  CheckCircle,
+  FileText,
+  FolderOpen,
+  Hash,
+  RefreshCw,
+  Shield,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 
 import StatCard from './StatCard';
-import { getClientDataAction } from 'lib/utils/clientDataActions';
+import { getDashboardStatistics } from 'lib/utils/clientDataActions';
 
 type StatsData = {
   total_users: number;
-  active_users: number;
-  inactive_users: number;
-  verified_users: number;
-  admin_count: number;
-  user_count: number;
-  recent_signups: number;
+  new_users_this_week: number;
+  active_subscribers_by_plan: {
+    'Free Trial': number;
+    'Basic Plan': number;
+    'Pro Plan': number;
+  };
+  feature_usage: {
+    script_generator: number;
+    title_generator: number;
+    niche_vault: number;
+  };
 };
 
 type StatsResponse = {
   data: StatsData;
   message?: string;
 };
-
 export default function DashboardStats() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,10 +44,10 @@ export default function DashboardStats() {
     setError(null);
 
     try {
-      const res = await getClientDataAction<StatsResponse>('v1/admin/user-stats/');
-      if (!res) throw new Error('No response from API');
+      const response = await getDashboardStatistics<StatsResponse>('v1/admin/admin-stats/');
 
-      setStats(res.data);
+      if (!response || !response.data) throw new Error('No response from API');
+      setStats(response.data);
     } catch (err: any) {
       console.error('Error fetching user stats:', err);
       setError(err.message || 'Failed to load stats');
@@ -87,25 +100,50 @@ export default function DashboardStats() {
           title="Total Users"
           value={stats.total_users}
           icon={<Users />}
-          subtitle={`${stats.recent_signups} new`}
+          subtitle={`${stats.new_users_this_week} new this week`}
         />
         <StatCard
-          title="Active Users"
-          value={stats.active_users}
+          title="Basic Plan"
+          value={stats.active_subscribers_by_plan['Basic Plan']}
           icon={<CheckCircle />}
-          subtitle={`${stats.verified_users} verified`}
+          subtitle="Active subscribers"
         />
         <StatCard
-          title="Admins"
-          value={stats.admin_count}
+          title="Pro Plan"
+          value={stats.active_subscribers_by_plan['Pro Plan']}
           icon={<Shield />}
-          subtitle={`${stats.user_count} users`}
+          subtitle="Active subscribers"
         />
         <StatCard
-          title="Inactive Users"
-          value={stats.inactive_users}
+          title="Free Trial"
+          value={stats.active_subscribers_by_plan['Free Trial']}
           icon={<UserPlus />}
-          subtitle={`${stats.recent_signups} recent signups`}
+          subtitle="Active subscribers"
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-white">Feature Usage</h3>
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          title="Script Generator"
+          value={stats.feature_usage.script_generator}
+          icon={<FileText />}
+          subtitle="Total uses"
+        />
+        <StatCard
+          title="Title Generator"
+          value={stats.feature_usage.title_generator}
+          icon={<Hash />}
+          subtitle="Total uses"
+        />
+        <StatCard
+          title="Niche Vault"
+          value={stats.feature_usage.niche_vault}
+          icon={<FolderOpen />}
+          subtitle="Total uses"
         />
       </div>
     </div>
