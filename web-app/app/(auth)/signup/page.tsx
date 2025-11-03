@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import GoogleAuthComponent from '@/(auth)/signup/_components/GoogleAuthComponent';
+import Cookies from 'js-cookie';
 import * as yup from 'yup';
 
 import MaginpanIcon from '/public/images/maginpan.svg';
 import { authService } from 'lib/api';
+import useToast from 'lib/utils/useToast';
 import Button from 'components/common/Button';
 import TextField from 'components/common/TextField';
 
@@ -23,13 +25,51 @@ const signupSchema = yup.object({
 type SignupFormData = yup.InferType<typeof signupSchema>;
 
 export default function Signup() {
+  const toast = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState<SignupFormData>({
     email: '',
   });
   const [errors, setErrors] = useState<Partial<SignupFormData>>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  const [partnerId, setPartnerId] = useState<string | null>(null);
+  useEffect(() => {
+    // Check for ref link in URL
+    const refCode = searchParams.get('ref') || searchParams.get('via');
+
+    if (refCode && typeof window !== 'undefined') {
+      // Determine device type
+      const deviceType = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent)
+        ? 'mobile'
+        : 'desktop';
+
+      // Get current page URL
+      const pageUrl = window.location.href;
+
+      // Call getToltPartnerid function
+      authService
+        .getToltPartnerid({
+          param_name: searchParams.get('via') ? 'via' : 'ref',
+          referral_code: refCode,
+          page_url: pageUrl,
+          device_type: deviceType,
+        })
+        .then((response: any) => {
+          const partnerIdValue = response.partner_id;
+          setPartnerId(partnerIdValue);
+          // Save partner ID to cookies
+          if (partnerIdValue) {
+            Cookies.set('partner_id', partnerIdValue, { expires: 30 }); // Expires in 30 days
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          toast.error('Link not working.');
+        });
+    }
+  }, [searchParams, toast]);
   // Handle input change
   const handleInputChange = (field: keyof SignupFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -128,7 +168,7 @@ export default function Signup() {
         </div>
 
         {/* Google button */}
-        <GoogleAuthComponent />
+        <GoogleAuthComponent partnerId={partnerId ?? undefined} />
       </div>
     </div>
   );

@@ -28,8 +28,15 @@ export default function MagicLinkSent() {
         setIsError(false);
 
         try {
-          const response = await authService.verifyMagicLink(token);
+          // Get partner ID from cookies if available
+          const partnerIdFromCookie = Cookies.get('partner_id');
+
+          const response = await authService.verifyMagicLink(token, partnerIdFromCookie);
           if (response.user && response.access && response.refresh) {
+            // Delete partner_id cookie after successful verification
+            if (partnerIdFromCookie) {
+              Cookies.remove('partner_id');
+            }
             Cookies.set('access_token', response.access, { expires: 7 });
             localStorage.setItem('refresh_token', response.refresh);
             setMessage('Verified successfully! Redirecting...');

@@ -12,7 +12,7 @@ import useGoogleSignup from 'lib/hooks/useGoogleSignup';
 import useToast from 'lib/utils/useToast';
 import PageLoader from 'components/ui/PageLoader';
 
-export default function GoogleAuthComponent() {
+export default function GoogleAuthComponent({ partnerId }: { partnerId?: string }) {
   const toast = useToast();
   const searchParams = useSearchParams();
   // const domain = typeof window !== 'undefined' ? window.location.origin : '';
@@ -24,19 +24,28 @@ export default function GoogleAuthComponent() {
     if (!isPending) {
       const token = searchParams.get('code');
       if (token) {
-        googleSignup(token, {
-          onSuccess: async (response) => {
-            toast.success('Success', 'Successfully logged in');
-            Cookies.set('access_token', response.access);
-            Cookies.set('refresh_token', response.refresh);
-            localStorage.setItem('refresh_token', response.refresh);
-            SetAccessToken(response.access);
-            window.location.href = '/';
+        // Get partner ID from cookies first, then fall back to prop
+        const partnerIdFromCookie = Cookies.get('partner_id');
+        const finalPartnerId = partnerIdFromCookie || partnerId;
+
+        googleSignup(
+          { id_token: token, partnerId: finalPartnerId },
+          {
+            onSuccess: async (response) => {
+              // Delete partner_id cookie after successful sign-in
+              Cookies.remove('partner_id');
+              toast.success('Success', 'Successfully logged in');
+              Cookies.set('access_token', response.access);
+              Cookies.set('refresh_token', response.refresh);
+              localStorage.setItem('refresh_token', response.refresh);
+              SetAccessToken(response.access);
+              window.location.href = '/';
+            },
+            onError: (err) => {
+              toast.error('Error signing up with Google', err.message);
+            },
           },
-          onError: (err) => {
-            toast.error('Error signing up with Google', err.message);
-          },
-        });
+        );
       }
     }
 

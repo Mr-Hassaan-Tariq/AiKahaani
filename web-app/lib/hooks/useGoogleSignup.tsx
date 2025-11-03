@@ -4,10 +4,19 @@ import { useMutation } from '@tanstack/react-query';
 
 import { postClientDataAction } from 'lib/utils/clientDataActions';
 
-async function googleSignup(token: string) {
-  return await postClientDataAction<ResponseType, { id_token: string }>('auth/google/', {
-    id_token: token,
-  });
+interface GoogleSignupParams {
+  id_token: string;
+  partnerId?: string;
+}
+
+async function googleSignup({ id_token, partnerId }: GoogleSignupParams) {
+  const payload: { id_token: string; partner_id?: string } = { id_token };
+
+  if (partnerId) {
+    payload.partner_id = partnerId;
+  }
+
+  return await postClientDataAction<ResponseType, typeof payload>('auth/google/', payload);
 }
 
 export default function useGoogleSignup() {
