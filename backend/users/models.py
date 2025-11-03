@@ -39,6 +39,23 @@ class User(AbstractUser, TimeStampedModel):
     roles = models.ManyToManyField(
         "users.Role", blank=True, default=get_default_user_roles
     )
+    
+    # Tolt affiliate tracking fields
+    tolt_customer_id = models.CharField(
+        max_length=40,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="Tolt's customer ID (links user to their referrer)"
+    )
+    tolt_partner_id = models.CharField(
+        max_length=40,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="Tolt partner ID who referred this user"
+    )
+    
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 

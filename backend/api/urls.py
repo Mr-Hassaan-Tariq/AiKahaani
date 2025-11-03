@@ -24,6 +24,7 @@ urlpatterns = [
     path("api/v1/users/", include("users.users_urls")),
     path("api/v1/payments/", include("payments.urls")),
     path("api/v1/scripts/", include("scripts.urls")),
+    path("api/v1/affiliates/", include("affiliates.urls")),  # Tolt affiliate tracking
     path("admin/", admin.site.urls),
     path("stripe/", include("djstripe.urls", namespace="djstripe")),
     path("api/v1/notifications/", include("notifications.urls")),

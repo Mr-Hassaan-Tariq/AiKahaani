@@ -141,6 +141,7 @@ INSTALLED_APPS = [
     "django_filters",
     "notifications",
     "admins",
+    "affiliates",  # Tolt affiliate tracking
 ] + THIRD_PARTY_APPS
 
 ######################################################################
@@ -418,6 +419,12 @@ TITLE_GENERATION_MODEL = environ.get("TITLE_GENERATION_MODEL", "gpt-4.1")
 # Webshare proxy configuration for YouTube transcript fetching
 TRANSCRIPT_PROXY_USERNAME = environ.get("TRANSCRIPT_PROXY_USERNAME", "hmxiyuge")
 TRANSCRIPT_PROXY_PASSWORD = environ.get("TRANSCRIPT_PROXY_PASSWORD")
+
+######################################################################
+# Tolt Affiliate Configuration
+######################################################################
+TOLT_API_KEY = environ.get("TOLT_API_KEY")
+TOLT_API_BASE_URL = environ.get("TOLT_API_BASE_URL", "https://api.tolt.com/v1")
 
 ######################################################################
 # Logging Configuration

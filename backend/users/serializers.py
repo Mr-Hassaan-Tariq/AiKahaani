@@ -72,6 +72,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class GoogleAuthInputSerializer(serializers.Serializer):
     id_token = serializers.CharField()
+    partner_id = serializers.CharField(required=False, allow_blank=True, help_text="Tolt partner ID from referral")
 
 
 class MagicLinkLoginSerializer(serializers.Serializer):
@@ -80,6 +81,7 @@ class MagicLinkLoginSerializer(serializers.Serializer):
 
 class MagicLinkVerifySerializer(serializers.Serializer):
     token = serializers.CharField()
+    partner_id = serializers.CharField(required=False, allow_blank=True, help_text="Tolt partner ID from referral")
 
     def validate_token(self, value):
         """Validate that the token is a properly formatted UUID"""

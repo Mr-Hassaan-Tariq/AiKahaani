@@ -280,7 +280,28 @@ class GoogleLoginAPIView(MethodSpecificThrottleMixin, APIView):
         )
 
         if created:
-            logger.info(f"Created new user: {email}")
+            logger.info(f"Created new user via Google OAuth: {email}")
+            
+            # Handle Tolt affiliate tracking if partner_id provided in request
+            partner_id = self.request.data.get("partner_id")
+            if partner_id:
+                try:
+                    from affiliates.views import create_tolt_customer
+                    
+                    result = create_tolt_customer(user, partner_id)
+                    if result["success"]:
+                        logger.info(
+                            f"[GOOGLE_SIGNUP] Tolt customer created for {user.email}: "
+                            f"{result['tolt_customer_id']}"
+                        )
+                    else:
+                        logger.warning(
+                            f"[GOOGLE_SIGNUP] Failed to create Tolt customer for {user.email}: "
+                            f"{result.get('error')}"
+                        )
+                except Exception as e:
+                    # Don't fail signup if Tolt integration fails
+                    logger.error(f"[GOOGLE_SIGNUP] Tolt integration error: {str(e)}")
         else:
             logger.info(f"Retrieved existing user: {email}")
 
@@ -595,8 +616,18 @@ class MagicLinkVerifyAPIView(MethodSpecificThrottleMixin, APIView):
         examples=[
             OpenApiExample(
                 "Magic Link Verification Request",
-                summary="Verify magic link token",
-                description="Submit the token received via magic link email",
+                summary="Verify magic link token with optional partner_id",
+                description="Submit the token received via magic link email. Include partner_id if user came from a referral link.",
+                value={
+                    "token": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                    "partner_id": "part_Af9JVFe4qNhykiMmvDypzxUk"
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Without Referral",
+                summary="Verify without referral",
+                description="Token verification without referral tracking",
                 value={"token": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"},
                 request_only=True,
             ),
@@ -660,6 +691,31 @@ class MagicLinkVerifyAPIView(MethodSpecificThrottleMixin, APIView):
             link_token.delete()  # Invalidate the used token
 
             refresh = RefreshToken.for_user(user)
+
+            # Handle Tolt affiliate tracking
+            # Only create if:
+            # 1. partner_id is provided (user came from referral)
+            # 2. User doesn't already have a tolt_customer_id (first time linking)
+            partner_id = request.data.get("partner_id")
+            
+            if partner_id and not user.tolt_customer_id:
+                try:
+                    from affiliates.views import create_tolt_customer
+                    
+                    result = create_tolt_customer(user, partner_id)
+                    if result["success"]:
+                        logger.info(
+                            f"[MAGIC_LINK] Tolt customer created for {user.email}: "
+                            f"{result['tolt_customer_id']}"
+                        )
+                    else:
+                        logger.warning(
+                            f"[MAGIC_LINK] Failed to create Tolt customer for {user.email}: "
+                            f"{result.get('error')}"
+                        )
+                except Exception as e:
+                    # Don't fail login if Tolt integration fails
+                    logger.error(f"[MAGIC_LINK] Tolt integration error: {str(e)}")
 
             # Create welcome back notification for successful login
             try:
