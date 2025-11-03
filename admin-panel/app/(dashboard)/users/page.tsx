@@ -1,16 +1,16 @@
 'use client';
 
 import type { AdminUser } from 'lib/api/user';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Eye, Trash2, UserCheck, UserX } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import Pagination from '../_components/Pagination';
-import { useAdminUsers } from 'lib/api/hooks';
+import CustomTable from 'components/common/CustomTable';
 import Card from 'components/ui/Card';
 import Text from 'components/ui/Text';
-import CustomTable from 'components/common/CustomTable';
+import { useAdminUsers } from 'lib/api/hooks';
+import Pagination from '../_components/Pagination';
 
 const columns = [
   { key: 'id', label: 'ID' },

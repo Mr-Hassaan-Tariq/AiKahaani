@@ -67,14 +67,7 @@ export default function UserDetailPageClient() {
       try {
         await deleteUser(id);
         toast.success('User deleted successfully');
-        try {
-          router.push('/users');
-        } catch (e) {
-          try {
-            router.back();
-          } catch (e) {
-          }
-        }
+        router.push('/users');
       } catch (error) {
         console.error('Failed to delete user:', error);
         toast.error('Failed to delete user');

@@ -58,8 +58,6 @@ export default function DashboardStats() {
     try {
       const response = await getDashboardStatistics<StatsResponse>('v1/admin/admin-stats/');
 
-      console.log('response', response)
-
       if (!response) throw new Error('No response from API');
       setStats(response);
     } catch (err: any) {
