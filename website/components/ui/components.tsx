@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import { CheckCircle, CreditCard, DollarSign, Gift, Users } from 'lucide-react';
+import Image from 'next/image';
 
 const affiliateNotifications = [
   {

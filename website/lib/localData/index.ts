@@ -153,7 +153,7 @@ export const heroSectionContent = {
     rightSection: partnerRightSide,
     btnLabel: 'Start for $1',
     label: 'Official TubeGenius Partner',
-    title: 'Unlock Your YouTube Potential with [Partner Name]',
+    title: 'Unlock Your YouTube Potential with Egor',
     description:
       'Join TubeGenius through this exclusive partnership and start your journey for just $1.',
   },

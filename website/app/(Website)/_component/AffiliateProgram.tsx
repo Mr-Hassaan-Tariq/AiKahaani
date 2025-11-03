@@ -1,6 +1,6 @@
+import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 
 import Col from 'components/ui/Col';
 import Text from 'components/ui/Text';
