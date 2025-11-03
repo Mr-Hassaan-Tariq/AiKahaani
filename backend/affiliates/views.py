@@ -66,19 +66,19 @@ def track_referral_click(request: Request) -> Response:
     referral_code = serializer.validated_data["referral_code"]
     page_url = serializer.validated_data["page_url"]
     device_type = serializer.validated_data.get("device_type", "desktop")
+    param_name = serializer.validated_data.get("param_name", "via")
     
     try:
-        # Initialize Tolt client
         tolt_client = ToltAPIClient(
             api_key=settings.TOLT_API_KEY,
             base_url=settings.TOLT_API_BASE_URL
         )
         
-        # Call Tolt API
         tolt_response = tolt_client.track_click(
             referral_code=referral_code,
             page_url=page_url,
-            device_type=device_type
+            device_type=device_type,
+            param_name=param_name
         )
         
         partner_id = tolt_response.get("partner_id")

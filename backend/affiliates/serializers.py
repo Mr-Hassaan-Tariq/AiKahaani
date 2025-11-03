@@ -32,7 +32,14 @@ class TrackClickRequestSerializer(serializers.Serializer):
     device_type = serializers.ChoiceField(
         choices=["desktop", "mobile", "tablet"],
         default="desktop",
-        required=False
+        required=False,
+        help_text="Device type"
+    )
+    param_name = serializers.CharField(
+        max_length=50,
+        default="via",
+        required=False,
+        help_text="URL parameter name for referral code (default: 'via')"
     )
 
 
