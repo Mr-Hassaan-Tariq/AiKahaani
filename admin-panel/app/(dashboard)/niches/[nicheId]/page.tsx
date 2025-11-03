@@ -35,7 +35,7 @@ export default function NicheDetailsPage() {
   const router = useRouter();
   const [niche, setNiche] = useState<NicheDetailsType | null>(null);
   const [loading, setLoading] = useState(false);
-  const [image, setImage] = useState<string | typeof ThumbnailImage | null>(null);
+  const [imagePresent, setImagePresent] = useState(niche?.thumbnail_url || false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -117,19 +117,23 @@ export default function NicheDetailsPage() {
             </header>
 
             <div className="relative h-48 w-full">
-              {image ? (
+              {imagePresent ? (
                 <Image
-                  src={image}
+                  src={niche?.thumbnail_url || ''}
                   alt={niche.title}
                   className="h-48 w-full rounded-xl object-contain"
                   height={150}
-                  onError={() => setImage(ThumbnailImage ?? '')}
+                  onError={() => setImagePresent(false)}
                   width={400}
                 />
               ) : (
-                <div className="flex h-48 w-full items-center justify-center rounded-xl bg-[#2a2a2a] text-lg font-semibold">
-                  Thumbnail
-                </div>
+                <Image
+                  src={ThumbnailImage}
+                  alt={niche.title}
+                  className="h-48 w-full rounded-xl object-contain"
+                  height={150}
+                  width={400}
+                />
               )}
             </div>
 
