@@ -66,9 +66,9 @@ def handle_payment_succeeded(event, **kwargs):
             
             logger.info(f"[PAYMENT_WEBHOOK] First payment detected for {user.email} - reporting to Tolt")
         
-        # Get payment details
-        amount = int(invoice.amount_paid)  # Amount in cents
-        charge_id = invoice.charge_id or invoice.payment_intent_id or invoice_id
+        # DJ-Stripe stores amount_paid as Decimal in dollars, convert to cents
+        amount = int(invoice.amount_paid * 100)
+        charge_id = str(invoice.charge_id or invoice.payment_intent_id or invoice_id)
         
         # Get product/plan name from subscription
         product_name = "Subscription"
