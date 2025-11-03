@@ -48,7 +48,6 @@ export default function Signup() {
       // Get current page URL
       const pageUrl = window.location.href;
 
-      // Call getToltPartnerid function
       authService
         .getToltPartnerid({
           param_name: searchParams.get('via') ? 'via' : 'ref',
