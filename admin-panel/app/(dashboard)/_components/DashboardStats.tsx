@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
 import {
   CheckCircle,
   FileText,
@@ -11,9 +10,10 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import StatCard from './StatCard';
 import { getDashboardStatistics } from 'lib/utils/clientDataActions';
+import StatCard from './StatCard';
 
 type StatsData = {
   total_users: number;
@@ -31,9 +31,21 @@ type StatsData = {
 };
 
 type StatsResponse = {
-  data: StatsData;
+  total_users: number;
+  new_users_this_week: number;
+  active_subscribers_by_plan: {
+    'Free Trial': number;
+    'Basic Plan': number;
+    'Pro Plan': number;
+  };
+  feature_usage: {
+    script_generator: number;
+    title_generator: number;
+    niche_vault: number;
+  };
   message?: string;
 };
+
 export default function DashboardStats() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,11 +58,13 @@ export default function DashboardStats() {
     try {
       const response = await getDashboardStatistics<StatsResponse>('v1/admin/admin-stats/');
 
-      if (!response || !response.data) throw new Error('No response from API');
-      setStats(response.data);
+      console.log('response', response)
+
+      if (!response) throw new Error('No response from API');
+      setStats(response);
     } catch (err: any) {
       console.error('Error fetching user stats:', err);
-      setError(err.message || 'Failed to load stats');
+      setError(err?.message || 'Failed to load stats');
     } finally {
       setLoading(false);
     }
@@ -59,6 +73,26 @@ export default function DashboardStats() {
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
+
+  // derived values
+  const activeSubscribersTotal = useMemo(() => {
+    if (!stats) return 0;
+    const { active_subscribers_by_plan } = stats;
+    return (
+      (active_subscribers_by_plan?.['Free Trial'] || 0) +
+      (active_subscribers_by_plan?.['Basic Plan'] || 0) +
+      (active_subscribers_by_plan?.['Pro Plan'] || 0)
+    );
+  }, [stats]);
+
+  const planPercent = useCallback(
+    (planCount: number) => {
+      if (!activeSubscribersTotal) return '0%';
+      const pct = (planCount / activeSubscribersTotal) * 100;
+      return `${Math.round(pct)}%`;
+    },
+    [activeSubscribersTotal],
+  );
 
   if (loading && !stats) {
     return (
@@ -102,24 +136,41 @@ export default function DashboardStats() {
           icon={<Users />}
           subtitle={`${stats.new_users_this_week} new this week`}
         />
+
         <StatCard
-          title="Basic Plan"
-          value={stats.active_subscribers_by_plan['Basic Plan']}
+          title="Active Subscribers"
+          value={activeSubscribersTotal}
           icon={<CheckCircle />}
-          subtitle="Active subscribers"
+          subtitle="Sum of all plans"
         />
-        <StatCard
-          title="Pro Plan"
-          value={stats.active_subscribers_by_plan['Pro Plan']}
-          icon={<Shield />}
-          subtitle="Active subscribers"
-        />
+
+        {/* Plan breakdowns */}
         <StatCard
           title="Free Trial"
           value={stats.active_subscribers_by_plan['Free Trial']}
           icon={<UserPlus />}
-          subtitle="Active subscribers"
+          subtitle={`${planPercent(stats.active_subscribers_by_plan['Free Trial'])} of subscribers`}
         />
+
+        <StatCard
+          title="Basic Plan"
+          value={stats.active_subscribers_by_plan['Basic Plan']}
+          icon={<Hash />}
+          subtitle={`${planPercent(stats.active_subscribers_by_plan['Basic Plan'])} of subscribers`}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          title="Pro Plan"
+          value={stats.active_subscribers_by_plan['Pro Plan']}
+          icon={<Shield />}
+          subtitle={`${planPercent(stats.active_subscribers_by_plan['Pro Plan'])} of subscribers`}
+        />
+
+        <div className="hidden lg:block" />
+
+        <div className="hidden lg:block" />
       </div>
 
       <div className="flex items-center justify-between">
@@ -136,7 +187,7 @@ export default function DashboardStats() {
         <StatCard
           title="Title Generator"
           value={stats.feature_usage.title_generator}
-          icon={<Hash />}
+          icon={<FileText />}
           subtitle="Total uses"
         />
         <StatCard
