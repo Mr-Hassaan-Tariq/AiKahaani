@@ -187,37 +187,21 @@ def report_transaction_to_tolt(
     amount: int,
     product_name: str,
     billing_type: str = "subscription",
-    interval: str = "month"
+    interval: str = None
 ) -> bool:
     """
     Report a transaction to Tolt (internal helper function).
     
-    This is called from Stripe webhook handler in payments app.
-    NOT an API endpoint - just a utility function.
-    
     Args:
         user: Django User instance
-        charge_id: Stripe charge/payment intent ID
+        charge_id: Stripe invoice ID
         amount: Amount in cents
         product_name: Product/plan name
         billing_type: "subscription" or "one_time"
-        interval: "month", "year", "week", etc.
+        interval: "month" or "year" (optional, omit for week/other)
     
     Returns:
         bool: True if successful, False otherwise
-    
-    Usage in Stripe webhook:
-    ```python
-    from affiliates.views import report_transaction_to_tolt
-    
-    # After successful payment
-    success = report_transaction_to_tolt(
-        user=user,
-        charge_id="ch_123",
-        amount=9999,
-        product_name="Pro Plan"
-    )
-    ```
     """
     try:
         if not user.tolt_customer_id:

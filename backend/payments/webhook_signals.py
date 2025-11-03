@@ -68,12 +68,13 @@ def handle_payment_succeeded(event, **kwargs):
         
         # DJ-Stripe stores amount_paid as Decimal in dollars, convert to cents
         amount = int(invoice.amount_paid * 100)
-        charge_id = str(invoice.charge_id or invoice.payment_intent_id or invoice_id)
+        # Use invoice ID as charge_id (simpler and always available)
+        charge_id = invoice_id
         
         # Get product/plan name from subscription
         product_name = "Subscription"
         billing_type = "subscription"
-        interval = "month"
+        interval = None  # Will only set if month or year
         
         # Get subscription from invoice to access plan details
         if invoice.subscription:
@@ -83,9 +84,11 @@ def handle_payment_succeeded(event, **kwargs):
                 if item.price and item.price.product:
                     product_name = item.price.product.name
                     
-                    # Get billing interval
+                    # Get billing interval - only use if month or year
                     if item.price.recurring:
-                        interval = item.price.recurring.get("interval", "month")
+                        price_interval = item.price.recurring.get("interval")
+                        if price_interval in ["month", "year"]:
+                            interval = price_interval
         
         # Report to Tolt (first payment only)
         try:

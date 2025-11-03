@@ -264,49 +264,23 @@ class ToltAPIClient:
         Args:
             customer_id: Tolt customer ID (from create_customer response)
             amount: Amount in cents (e.g., 9999 = $99.99)
-            charge_id: Stripe charge/payment intent ID
+            charge_id: Stripe charge/invoice ID
             billing_type: "subscription" or "one_time"
-            product_name: Name of product/plan (can be string or list)
-            interval: "month", "year", "week", or None for one-time
+            product_name: Name of product/plan as string
+            interval: "month" or "year" (optional, omit for weekly/other)
             source: Payment processor (default: "stripe")
-        
-        Returns:
-            {
-                "id": "txn_evCzwwY3vuKRxx4wGSew5JC3",
-                "status": "paid",
-                "amount": "4700",
-                "charge_id": "ch_9bzRGn46BhVgNFHD6fDgXW",
-                "partner_id": "part_Af9JVFe4qNhykiMmvDypzxUk",
-                "customer_id": "cus_mLRF6e6qjbiEfkiBBp2Tw2PV",
-                "interval": "month",
-                "billing_type": "subscription",
-                "product_names": ["Basic Monthly"],
-                ...
-            }
-        
-        Example:
-            client = ToltAPIClient()
-            result = client.report_transaction(
-                customer_id="cust_dK9bzRGn46BhVgNFHD6fDgXW",
-                amount=9999,  # $99.99
-                charge_id="ch_stripe123",
-                product_name="Pro Plan - Monthly"
-            )
         """
-        # Tolt expects product_names as array
-        product_names = [product_name] if isinstance(product_name, str) else product_name
-        
         data = {
             "amount": amount,
             "customer_id": customer_id,
             "billing_type": billing_type,
             "charge_id": charge_id,
-            "product_names": product_names,  # Send as array
+            "product_name": product_name,
             "source": source,
         }
         
-        # Add interval for subscriptions
-        if interval:
+        # Only add interval if it's month or year (Tolt doesn't support week)
+        if interval in ["month", "year"]:
             data["interval"] = interval
         
         response_data, _ = self._make_request("POST", "/transactions", data=data)
