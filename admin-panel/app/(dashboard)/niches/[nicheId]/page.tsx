@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Pin } from 'lucide-react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { Pin } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { MicrophoneIcon, ScriptIcon, TvIcon } from '../_components/components';
-import DeleteConfirmationModal from '../_components/DeleteConfirmationModal';
-import ThumbnailImage from '../../../../public/images/no-niche.png';
-import { deleteClientDataAction, getClientDataAction } from 'lib/utils/clientDataActions';
 import Button from 'components/ui/Button';
 import Card from 'components/ui/Card';
+import { deleteClientDataAction, getClientDataAction } from 'lib/utils/clientDataActions';
+import ThumbnailImage from '../../../../public/images/no-niche.png';
+import { MicrophoneIcon, ScriptIcon, TvIcon } from '../_components/components';
+import DeleteConfirmationModal from '../_components/DeleteConfirmationModal';
 
 interface NicheDetailsType {
   id: number;
@@ -84,15 +84,39 @@ export default function NicheDetailsPage() {
           <div className="py-20 text-center text-gray-300">Loading niche details...</div>
         ) : niche ? (
           <>
-            <header className="space-y-2">
-              <h1 className="text-3xl font-bold">{niche.title}</h1>
-              <p className="text-gray-400">
-                {niche.tagline ||
-                  'Engaging, anonymous, and binge-worthy. Narrate without showing your face.'}
-              </p>
+            <header className="space-y-4">
+              <div>
+                <h1 className="text-3xl font-bold">{niche.title}</h1>
+                <p className="text-gray-400 mt-2">
+                  {niche.tagline ||
+                    'Engaging, anonymous, and binge-worthy. Narrate without showing your face.'}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+                <Button
+                  variant="green"
+                  className="w-full sm:flex-1"
+                  onClick={() => router.push(`/niches/create?nicheId=${nicheId}`)}
+                  disabled={deleting}
+                >
+                  Update format
+                </Button>
+
+                <DeleteConfirmationModal
+                  trigger={
+                    <Button variant="red" type="button" disabled={deleting} className="w-full sm:flex-1">
+                      {deleting ? 'Deleting...' : 'Delete niche'}
+                    </Button>
+                  }
+                  title="Delete Niche"
+                  description="Are you sure you want to delete this niche? This action cannot be undone."
+                  onConfirm={handleDeleteConfirm}
+                />
+              </div>
             </header>
 
-            <div className="relative h-64 w-full">
+            <div className="relative h-48 w-full">
               {image ? (
                 <Image
                   src={image}
@@ -217,27 +241,6 @@ export default function NicheDetailsPage() {
                 <p className="text-sm text-gray-400">No best-for data</p>
               )}
             </section>
-
-            <div className="flex items-center gap-4 pt-8">
-              <Button
-                variant="green"
-                onClick={() => router.push(`/niches/create?nicheId=${nicheId}`)}
-                disabled={deleting}
-              >
-                Update this niche format
-              </Button>
-
-              <DeleteConfirmationModal
-                trigger={
-                  <Button variant="red" type="button" disabled={deleting}>
-                    {deleting ? 'Deleting...' : 'Delete niche'}
-                  </Button>
-                }
-                title="Delete Niche"
-                description="Are you sure you want to delete this niche? This action cannot be undone."
-                onConfirm={handleDeleteConfirm}
-              />
-            </div>
           </>
         ) : (
           <div className="text-center text-gray-400">No data found</div>
