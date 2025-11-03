@@ -84,13 +84,10 @@ def track_referral_click(request: Request) -> Response:
         partner_id = tolt_response.get("partner_id")
         
         if not partner_id:
-            logger.error("[AFFILIATES] No partner_id in Tolt response")
             return Response(
                 {"error": "Invalid referral code"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        logger.info(f"[AFFILIATES] Click tracked: {referral_code} → {partner_id}")
         
         return Response({
             "partner_id": partner_id,
@@ -155,25 +152,20 @@ def create_tolt_customer(user, partner_id: str) -> dict:
         tolt_response = tolt_client.create_customer(
             email=user.email,
             partner_id=partner_id,
-            customer_id=str(user.id)  # Use Django user ID
+            customer_id=str(user.id)
         )
         
-        # Tolt returns: { "id": "cust_...", "email": "...", ... }
         tolt_customer_id = tolt_response.get("id")
         
         if not tolt_customer_id:
-            logger.error(f"[AFFILIATES] No customer id in Tolt response: {tolt_response}")
             return {
                 "success": False,
                 "error": "Failed to create customer in Tolt"
             }
         
-        # Save to User model
         user.tolt_customer_id = tolt_customer_id
         user.tolt_partner_id = partner_id
         user.save(update_fields=["tolt_customer_id", "tolt_partner_id"])
-        
-        logger.info(f"[AFFILIATES] Customer created: {user.email} → {tolt_customer_id}")
         
         return {
             "success": True,
@@ -228,19 +220,15 @@ def report_transaction_to_tolt(
     ```
     """
     try:
-        # Check if user has Tolt customer ID
         if not user.tolt_customer_id:
-            logger.info(f"[AFFILIATES] User {user.email} has no referrer, skipping Tolt")
             return False
         
-        # Initialize Tolt client
         tolt_client = ToltAPIClient(
             api_key=settings.TOLT_API_KEY,
             base_url=settings.TOLT_API_BASE_URL
         )
         
-        # Call Tolt API
-        tolt_response = tolt_client.report_transaction(
+        tolt_client.report_transaction(
             customer_id=user.tolt_customer_id,
             amount=amount,
             charge_id=charge_id,
@@ -249,17 +237,8 @@ def report_transaction_to_tolt(
             interval=interval
         )
         
-        logger.info(
-            f"[AFFILIATES] ✅ Transaction reported to Tolt: "
-            f"ID: {tolt_response.get('id')} - "
-            f"Status: {tolt_response.get('status')} - "
-            f"Amount: ${amount/100:.2f} - "
-            f"Partner: {tolt_response.get('partner_id')}"
-        )
-        
         return True
         
     except Exception as e:
         logger.error(f"[AFFILIATES] Failed to report transaction: {str(e)}")
-        # Stripe will retry the webhook, so Tolt will get another chance
         return False

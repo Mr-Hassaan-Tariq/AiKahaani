@@ -97,8 +97,8 @@ class ToltAPIClient:
         headers = self._get_headers()
         
         try:
-            logger.info(f"[TOLT_API] {method} {url}")
-            logger.debug(f"[TOLT_API] Request data: {data}")
+            logger.info(f"[TOLT_API] {method} {endpoint}")
+            logger.info(f"[TOLT_API] Request: {data}")
             
             response = requests.request(
                 method=method,
@@ -109,19 +109,12 @@ class ToltAPIClient:
                 timeout=self.timeout
             )
             
-            # Log response
-            logger.info(f"[TOLT_API] Response: {response.status_code}")
+            response_data = response.json() if response.text else {}
             
-            # Parse JSON response
-            try:
-                response_data = response.json()
-            except ValueError:
-                response_data = {"raw_response": response.text}
+            logger.info(f"[TOLT_API] Response [{response.status_code}]: {response_data}")
             
-            # Check for errors
             if response.status_code >= 400:
                 error_message = response_data.get("message") or response_data.get("error") or "Unknown error"
-                logger.error(f"[TOLT_API] Error: {error_message}")
                 raise ToltAPIError(
                     message=error_message,
                     status_code=response.status_code,
@@ -131,7 +124,7 @@ class ToltAPIClient:
             return response_data, response.status_code
             
         except requests.exceptions.Timeout:
-            logger.error(f"[TOLT_API] Request timeout after {self.timeout}s")
+            logger.error(f"[TOLT_API] Timeout after {self.timeout}s")
             raise ToltAPIError("Request to Tolt API timed out")
         
         except requests.exceptions.ConnectionError as e:
@@ -194,20 +187,10 @@ class ToltAPIClient:
         
         response_data, _ = self._make_request("POST", "/clicks", data=data)
         
-        # Tolt returns: { "success": true, "data": [{ "partner_id": "...", ... }] }
-        # Extract the first item from data array
         if response_data.get("success") and response_data.get("data"):
-            click_data = response_data["data"][0]  # Get first click object
-            partner_id = click_data.get("partner_id")
-            
-            logger.info(
-                f"[TOLT_API] Click tracked: {referral_code} → Partner {partner_id}"
-            )
-            
-            # Return the click object with partner_id
+            click_data = response_data["data"][0]
             return click_data
         else:
-            logger.error(f"[TOLT_API] Unexpected response format: {response_data}")
             raise ToltAPIError("Invalid response from Tolt API")
     
     def create_customer(
@@ -254,20 +237,10 @@ class ToltAPIClient:
         
         response_data, _ = self._make_request("POST", "/customers", data=data)
         
-        # Tolt returns: { "success": true, "data": [{ "id": "cus_...", ... }] }
-        # Extract the first item from data array
         if response_data.get("success") and response_data.get("data"):
-            customer_data = response_data["data"][0]  # Get first customer object from array
-            
-            logger.info(
-                f"[TOLT_API] Customer created: {email} → Tolt ID {customer_data.get('id')}"
-            )
-            
-            # Return the customer object
+            customer_data = response_data["data"][0]
             return customer_data
         else:
-            logger.error(f"[TOLT_API] Unexpected response format: {response_data}")
-            raise ToltAPIError("Invalid response from Tolt API")
             raise ToltAPIError("Invalid response from Tolt API")
     
     def report_transaction(
@@ -338,24 +311,12 @@ class ToltAPIClient:
         
         response_data, _ = self._make_request("POST", "/transactions", data=data)
         
-        # Tolt returns: { "success": true, "data": [{ "id": "txn_...", "status": "paid", ... }] }
-        # Extract the first item from data array
         if response_data.get("success") and response_data.get("data"):
-            # Check if data is array or object
             transaction_data = response_data["data"]
             if isinstance(transaction_data, list):
-                transaction_data = transaction_data[0]  # Get first item if array
-            
-            logger.info(
-                f"[TOLT_API] Transaction reported: {transaction_data.get('id')} - "
-                f"Status: {transaction_data.get('status')} - "
-                f"Amount: ${int(transaction_data.get('amount', 0))/100:.2f}"
-            )
-            
-            # Return the transaction object with all fields
+                transaction_data = transaction_data[0]
             return transaction_data
         else:
-            logger.error(f"[TOLT_API] Unexpected response format: {response_data}")
             raise ToltAPIError("Invalid response from Tolt API")
     
     # ========================================================================
