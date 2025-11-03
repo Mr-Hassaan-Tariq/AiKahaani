@@ -14,6 +14,8 @@ def handle_payment_succeeded(event, **kwargs):
     """
     Track successful payments to Tolt for affiliate credit.
     
+    Only reports FIRST payment to Tolt (not recurring payments).
+    
     This webhook fires when:
     - A subscription payment is successful (recurring billing)
     - A one-time payment is successful
@@ -45,25 +47,47 @@ def handle_payment_succeeded(event, **kwargs):
             logger.info(f"[PAYMENT_WEBHOOK] User {user.email} has no referrer, skipping Tolt")
             return
         
+        # Check if this is the first invoice for this subscription
+        if invoice.subscription:
+            subscription = invoice.subscription
+            
+            # Count previous paid invoices for this subscription
+            previous_payments = Invoice.objects.filter(
+                subscription=subscription,
+                status="paid"
+            ).exclude(id=invoice_id).count()
+            
+            if previous_payments > 0:
+                logger.info(
+                    f"[PAYMENT_WEBHOOK] Skipping Tolt tracking for {user.email} - "
+                    f"Not first payment (previous payments: {previous_payments})"
+                )
+                return
+            
+            logger.info(f"[PAYMENT_WEBHOOK] First payment detected for {user.email} - reporting to Tolt")
+        
         # Get payment details
         amount = int(invoice.amount_paid)  # Amount in cents
         charge_id = invoice.charge_id or invoice.payment_intent_id or invoice_id
         
-        # Get product/plan name
+        # Get product/plan name from subscription
         product_name = "Subscription"
         billing_type = "subscription"
         interval = "month"
         
-        if invoice.lines.exists():
-            line = invoice.lines.first()
-            if line.price and line.price.product:
-                product_name = line.price.product.name
-                
-                # Get billing interval
-                if line.price.recurring:
-                    interval = line.price.recurring.get("interval", "month")
+        # Get subscription from invoice to access plan details
+        if invoice.subscription:
+            subscription = invoice.subscription
+            if subscription.items.exists():
+                item = subscription.items.first()
+                if item.price and item.price.product:
+                    product_name = item.price.product.name
+                    
+                    # Get billing interval
+                    if item.price.recurring:
+                        interval = item.price.recurring.get("interval", "month")
         
-        # Report to Tolt
+        # Report to Tolt (first payment only)
         try:
             from affiliates.views import report_transaction_to_tolt
             
@@ -79,7 +103,7 @@ def handle_payment_succeeded(event, **kwargs):
             if success:
                 logger.info(
                     f"[PAYMENT_WEBHOOK] ✅ Tolt transaction reported for {user.email}: "
-                    f"${amount/100:.2f} - {product_name}"
+                    f"${amount/100:.2f} - {product_name} (FIRST PAYMENT)"
                 )
             else:
                 logger.warning(
