@@ -74,7 +74,7 @@ class User(AbstractUser, TimeStampedModel):
         Returns:
             bool: True if user has admin role, False otherwise
         """
-        return self.roles.filter(name=UserRoles.ADMIN).exists()
+        return self.is_superuser or self.roles.filter(name=UserRoles.ADMIN).exists()
 
     def has_role(self, role_name):
         """
