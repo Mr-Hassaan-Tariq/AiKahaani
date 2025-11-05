@@ -1,7 +1,7 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 type PaginationProps = {
   totalItems: number;
@@ -60,10 +60,11 @@ export default function Pagination({
           <button
             key={page}
             onClick={() => handlePageChange(page)}
-            className={`flex h-8 w-8 items-center justify-center rounded-full ${currentPage === page
-              ? 'bg-white text-black'
-              : 'bg-[#1C1C1C] text-white hover:bg-[#2C2C2C]'
-              }`}
+            className={`flex h-8 w-8 items-center justify-center rounded-full ${
+              currentPage === page
+                ? 'bg-white text-black'
+                : 'bg-[#1C1C1C] text-white hover:bg-[#2C2C2C]'
+            }`}
           >
             {page}
           </button>
@@ -79,8 +80,8 @@ export default function Pagination({
       </div>
 
       <p className="text-sm text-[#AAACA6]">
-        Page {currentPage} of {totalPages} — Showing {Math.min(currentPage * itemsPerPage, totalItems)} of{' '}
-        {totalItems} niches
+        Page {currentPage} of {totalPages} — Showing{' '}
+        {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} niches
       </p>
     </div>
   );

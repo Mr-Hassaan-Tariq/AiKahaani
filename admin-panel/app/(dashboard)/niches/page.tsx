@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { getClientDataAction } from 'lib/utils/clientDataActions';
 import { NichePaginatedResponse } from '../types';
 import NicheCard from './_components/NicheCard';
 import Pagination from './_components/Pagination';
 import SearchHeader from './_components/SearchHeader';
+import { getClientDataAction } from 'lib/utils/clientDataActions';
 
 export default function NicheVault() {
   const [searchInput, setSearchInput] = useState('');

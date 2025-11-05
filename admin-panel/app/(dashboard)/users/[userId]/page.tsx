@@ -1,15 +1,15 @@
 'use client';
 
-import { CheckCircle, Trash2, User as UserIcon, XCircle } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-import Card from 'components/ui/Card';
-import { useAdminUsers } from 'lib/api/hooks';
-import { getClientDataAction } from 'lib/utils/clientDataActions';
+import { useParams, useRouter } from 'next/navigation';
+import { CheckCircle, Trash2, User as UserIcon, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+
 import ScriptCard from './_components/ScriptCard';
 import TitleCard from './_components/TitleCard';
+import { useAdminUsers } from 'lib/api/hooks';
+import { getClientDataAction } from 'lib/utils/clientDataActions';
+import Card from 'components/ui/Card';
 
 type UserTitle = {
   uuid: string;

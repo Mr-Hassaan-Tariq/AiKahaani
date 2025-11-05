@@ -32,7 +32,9 @@ const NicheCard: FC<NicheCardProps> = ({
   topChannels,
   thumbnailUrl,
 }) => {
-  const [imagePresent, setImagePresent] = useState(thumbnailUrl || false);
+  const [imagePresent, setImagePresent] = useState(!!thumbnailUrl);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const tags = [...(tone || []), ...(pacing || [])];
   const examples = topChannels?.map((c) => c.name) || [];
@@ -44,10 +46,23 @@ const NicheCard: FC<NicheCardProps> = ({
   const displayText =
     truncated.length > maxLength ? truncated.substring(0, maxLength) + '...' : truncated;
 
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    // Only show placeholder if image truly failed to load
+    if (!imageLoaded) {
+      setImageError(true);
+      setImagePresent(false);
+    }
+  };
+
   return (
     <Card className="rounded-xl bg-[#161616] text-white lg:px-5 lg:py-5">
       <div className="relative h-40">
-        {imagePresent ? (
+        {imagePresent && !imageError ? (
           <VedioModal
             trigger={
               <Image
@@ -56,7 +71,9 @@ const NicheCard: FC<NicheCardProps> = ({
                 fill
                 className="rounded-xl object-cover"
                 sizes="(max-width: 768px) 100vw, 33vw"
-                onError={() => setImagePresent(false)}
+                unoptimized
+                onLoad={handleImageLoad}
+                onError={handleImageError}
               />
             }
             title={title}

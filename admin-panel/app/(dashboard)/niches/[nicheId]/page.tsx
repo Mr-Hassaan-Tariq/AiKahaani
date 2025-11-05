@@ -1,17 +1,22 @@
 'use client';
 
-import { Pin } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { MoreVertical, Pin } from 'lucide-react';
 import { toast } from 'sonner';
 
-import Button from 'components/ui/Button';
-import Card from 'components/ui/Card';
-import { deleteClientDataAction, getClientDataAction } from 'lib/utils/clientDataActions';
-import ThumbnailImage from '../../../../public/images/no-niche.png';
 import { MicrophoneIcon, ScriptIcon, TvIcon } from '../_components/components';
 import DeleteConfirmationModal from '../_components/DeleteConfirmationModal';
+import ThumbnailImage from '../../../../public/images/no-niche.png';
+import { deleteClientDataAction, getClientDataAction } from 'lib/utils/clientDataActions';
+import Card from 'components/ui/Card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from 'components/shadcn_ui/dropdown-menu';
 
 interface NicheDetailsType {
   id: number;
@@ -35,8 +40,11 @@ export default function NicheDetailsPage() {
   const router = useRouter();
   const [niche, setNiche] = useState<NicheDetailsType | null>(null);
   const [loading, setLoading] = useState(false);
-  const [imagePresent, setImagePresent] = useState(niche?.thumbnail_url || false);
+  const [imagePresent, setImagePresent] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchNiche = async () => {
@@ -47,6 +55,9 @@ export default function NicheDetailsPage() {
           `v1/admin/niches/${nicheId}/`,
         );
         setNiche(res.data);
+        setImagePresent(!!res.data?.thumbnail_url);
+        setImageError(false);
+        setImageLoaded(false);
       } catch (err: any) {
         console.error('Error fetching niche details:', err?.response || err);
         toast.error('Failed to load niche details');
@@ -56,6 +67,19 @@ export default function NicheDetailsPage() {
     };
     fetchNiche();
   }, [nicheId]);
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    // Only show placeholder if image truly failed to load
+    if (!imageLoaded) {
+      setImageError(true);
+      setImagePresent(false);
+    }
+  };
 
   const handleDeleteConfirm = async () => {
     if (!nicheId) {
@@ -85,64 +109,75 @@ export default function NicheDetailsPage() {
         ) : niche ? (
           <>
             <header className="space-y-4">
-              <div>
-                <h1 className="text-3xl font-bold">{niche.title}</h1>
-                <p className="text-gray-400 mt-2">
-                  {niche.tagline ||
-                    'Engaging, anonymous, and binge-worthy. Narrate without showing your face.'}
-                </p>
-              </div>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold">{niche.title}</h1>
+                  <p className="mt-2 text-gray-400">
+                    {niche.tagline ||
+                      'Engaging, anonymous, and binge-worthy. Narrate without showing your face.'}
+                  </p>
+                </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-                <Button
-                  variant="green"
-                  className="w-full sm:flex-1"
-                  onClick={() => router.push(`/niches/create?nicheId=${nicheId}`)}
-                  disabled={deleting}
-                >
-                  Update format
-                </Button>
-
-                <DeleteConfirmationModal
-                  trigger={
-                    <Button variant="red" type="button" disabled={deleting} className="w-full sm:flex-1">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700 bg-[#2d2d2d] text-gray-300 transition-colors hover:bg-[#3d3d3d] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={deleting}
+                    >
+                      <MoreVertical className="h-5 w-5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-48 border-gray-700 bg-[#2d2d2d] text-white"
+                  >
+                    <DropdownMenuItem
+                      className="cursor-pointer hover:bg-[#3d3d3d] focus:bg-[#3d3d3d]"
+                      onClick={() => router.push(`/niches/create?nicheId=${nicheId}`)}
+                      disabled={deleting}
+                    >
+                      Update format
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer text-red-400 hover:bg-red-950/20 focus:bg-red-950/20"
+                      onClick={() => setDeleteModalOpen(true)}
+                      disabled={deleting}
+                    >
                       {deleting ? 'Deleting...' : 'Delete niche'}
-                    </Button>
-                  }
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <DeleteConfirmationModal
+                  trigger={<div style={{ display: 'none' }} />}
                   title="Delete Niche"
                   description="Are you sure you want to delete this niche? This action cannot be undone."
                   onConfirm={handleDeleteConfirm}
+                  open={deleteModalOpen}
+                  setOpen={setDeleteModalOpen}
                 />
               </div>
             </header>
 
-            <div className="relative h-48 w-full">
-              {imagePresent ? (
+            <div className="relative h-48 w-full overflow-hidden rounded-xl">
+              {imagePresent && !imageError ? (
                 <Image
                   src={niche?.thumbnail_url || ''}
                   alt={niche.title}
-                  className="h-48 w-full rounded-xl object-contain"
-                  height={150}
-                  onError={() => setImagePresent(false)}
-                  width={400}
+                  fill
+                  className="rounded-xl object-cover"
+                  unoptimized
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
                 />
               ) : (
                 <Image
                   src={ThumbnailImage}
                   alt={niche.title}
-                  className="h-48 w-full rounded-xl object-contain"
-                  height={150}
-                  width={400}
+                  fill
+                  className="rounded-xl object-cover"
                 />
               )}
             </div>
-
-            {niche.prompt && (
-              <section className="rounded-xl border border-[#2a2a2a] bg-[#161616] p-4">
-                <h3 className="mb-2 text-xl font-semibold">Prompt</h3>
-                <p className="whitespace-pre-line text-gray-300">{niche.prompt}</p>
-              </section>
-            )}
 
             {/* Script Structure */}
             <section>
@@ -245,6 +280,13 @@ export default function NicheDetailsPage() {
                 <p className="text-sm text-gray-400">No best-for data</p>
               )}
             </section>
+
+            {niche.prompt && (
+              <section className="rounded-xl border border-[#2a2a2a] bg-[#161616] p-4">
+                <h3 className="mb-2 text-xl font-semibold">Prompt</h3>
+                <p className="whitespace-pre-line text-gray-300">{niche.prompt}</p>
+              </section>
+            )}
           </>
         ) : (
           <div className="text-center text-gray-400">No data found</div>

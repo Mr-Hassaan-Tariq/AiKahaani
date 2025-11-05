@@ -3,11 +3,11 @@ Permission classes for the payments app.
 """
 
 import logging
-from django.conf import settings
 
+from django.conf import settings
+from djstripe.enums import SubscriptionStatus
 from djstripe.models import Subscription
 from rest_framework.permissions import BasePermission
-from djstripe.enums import SubscriptionStatus
 
 from .utils import VALID_SUB_STATUSES, get_or_create_customer
 
@@ -17,6 +17,9 @@ logger = logging.getLogger(__name__)
 class HasActiveSubscriptionPermission(BasePermission):
     """
     Permission class that only allows access to users with an active subscription.
+
+    Admin users (superuser or users with admin role) can bypass this check and
+    access the resource without a subscription.
 
     This permission checks if the current authenticated user has an active
     subscription using djstripe models. Valid subscription statuses include:
@@ -32,18 +35,30 @@ class HasActiveSubscriptionPermission(BasePermission):
 
     def has_permission(self, request, view):
         """
-        Check if the user has an active subscription.
+        Check if the user has an active subscription or is an admin.
 
         Args:
             request: The HTTP request object
             view: The view being accessed
 
         Returns:
-            bool: True if user has active subscription, False otherwise
+            bool: True if user has active subscription or is admin, False otherwise
         """
         # First check if user is authenticated
         if not request.user or not request.user.is_authenticated:
             return False
+
+        # Allow admin users to bypass subscription check
+        try:
+            if request.user.is_admin() or request.user.is_superuser:
+                logger.info(
+                    f"Admin user {request.user.email} accessing protected resource "
+                    f"without subscription check"
+                )
+                return True
+        except Exception:
+            # If is_admin() method doesn't exist or fails, continue with subscription check
+            pass
 
         try:
             # Get or create the Stripe customer for this user
@@ -125,7 +140,10 @@ class HasPaidSubscriptionPermission(BasePermission):
                 return False
 
             # Allow for other valid statuses while excluding trialing
-            return subscription.status in VALID_SUB_STATUSES and subscription.status != SubscriptionStatus.trialing
+            return (
+                subscription.status in VALID_SUB_STATUSES
+                and subscription.status != SubscriptionStatus.trialing
+            )
 
         except Exception:
             return False

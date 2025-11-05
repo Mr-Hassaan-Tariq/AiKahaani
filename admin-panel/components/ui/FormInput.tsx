@@ -72,7 +72,7 @@ export default function FormInput(props: InputProps) {
         {type === 'textarea' ? (
           // Textarea
           // register textarea with react-hook-form
-          // eslint-disable-next-line react/jsx-props-no-spreading
+
           <textarea
             // register with the same name/validation
             // eslint-disable-next-line react/jsx-props-no-spreading
@@ -94,7 +94,7 @@ export default function FormInput(props: InputProps) {
           />
         ) : (
           // Regular input
-          // eslint-disable-next-line react/jsx-props-no-spreading
+
           <input
             // eslint-disable-next-line react/jsx-props-no-spreading
             {...(inputProps as React.InputHTMLAttributes<HTMLInputElement>)}

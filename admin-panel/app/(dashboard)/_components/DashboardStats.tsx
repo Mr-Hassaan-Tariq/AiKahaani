@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle,
   FileText,
@@ -10,10 +11,9 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { getDashboardStatistics } from 'lib/utils/clientDataActions';
 import StatCard from './StatCard';
+import { getDashboardStatistics } from 'lib/utils/clientDataActions';
 
 type StatsData = {
   total_users: number;

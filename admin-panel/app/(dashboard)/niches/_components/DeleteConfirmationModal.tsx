@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Dispatch, SetStateAction, useState } from 'react';
 
 import Button from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
@@ -11,6 +11,8 @@ interface DeleteConfirmationModalProps {
   title?: string;
   description?: string;
   onConfirm: () => void;
+  open?: boolean;
+  setOpen?: Dispatch<SetStateAction<boolean>>;
 }
 
 export default function DeleteConfirmationModal({
@@ -18,8 +20,12 @@ export default function DeleteConfirmationModal({
   title = 'Delete Niche',
   description = 'Are you sure you want to delete this niche? This action cannot be undone.',
   onConfirm,
+  open: controlledOpen,
+  setOpen: controlledSetOpen,
 }: DeleteConfirmationModalProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledSetOpen || setInternalOpen;
 
   return (
     <Dialog

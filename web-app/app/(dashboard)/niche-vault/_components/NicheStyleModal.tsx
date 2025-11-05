@@ -40,9 +40,13 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
   const [loading, setLoading] = useState(false);
 
   const [image, setImage] = useState<string | typeof ThumbnailImage | null>(null);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     setImage(niche?.thumbnail_url ?? (ThumbnailImage as unknown as string));
+    setImageError(false);
+    setImageLoaded(false);
   }, [niche]);
 
   useEffect(() => {
@@ -68,6 +72,19 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
     if (!niche?.id) return;
     setOpen(false);
     router.push(`/new-script?nicheId=${niche.id}`);
+  };
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    // Only show placeholder if image truly failed to load
+    if (!imageLoaded) {
+      setImageError(true);
+      setImage(ThumbnailImage as unknown as string);
+    }
   };
 
   return (
@@ -97,16 +114,19 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
         <div className="py-10 text-center text-white">Loading niche details...</div>
       ) : niche ? (
         <div className="space-y-6 text-white">
-          <div className="flex flex-col items-center gap-3">
-            {image ? (
-              <Image
-                src={image}
-                alt={niche.title}
-                className="h-48 w-full rounded-xl object-contain"
-                height={150}
-                onError={() => setImage(ThumbnailImage ?? '')}
-                width={400}
-              />
+          <div className="flex flex-col gap-3">
+            {image && !imageError ? (
+              <div className="relative h-48 w-full overflow-hidden rounded-xl">
+                <Image
+                  src={image}
+                  alt={niche.title}
+                  fill
+                  className="rounded-xl object-cover"
+                  unoptimized
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                />
+              </div>
             ) : (
               <div className="flex h-48 w-full items-center justify-center rounded-xl bg-[#2a2a2a] text-lg font-semibold">
                 Thumbnail
