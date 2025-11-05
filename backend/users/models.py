@@ -166,3 +166,46 @@ class Role(TimeStampedModel):
     class Meta:
         verbose_name = "Role"
         verbose_name_plural = "Roles"
+
+
+class LoginLog(TimeStampedModel):
+    """
+    Tracks user login events for analytics and reporting.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="login_logs",
+        help_text="User who logged in"
+    )
+    login_type = models.CharField(
+        max_length=50,
+        choices=[
+            ("google", "Google OAuth"),
+            ("magic_link", "Magic Link"),
+            ("admin", "Admin Login"),
+        ],
+        help_text="Type of login method used"
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        help_text="IP address of the login request"
+    )
+    user_agent = models.TextField(
+        null=True,
+        blank=True,
+        help_text="User agent string from the login request"
+    )
+
+    class Meta:
+        db_table = "login_logs"
+        verbose_name = "Login Log"
+        verbose_name_plural = "Login Logs"
+        indexes = [
+            models.Index(fields=["-created"]),
+            models.Index(fields=["user", "-created"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.email} - {self.login_type} - {self.created}"

@@ -260,8 +260,8 @@ class AdminLoginSerializer(serializers.Serializer):
         if not user.is_active:
             raise serializers.ValidationError("User account is disabled.")
 
-        # Check if user has admin role
-        if not user.is_admin():
+        # Check if user has admin role or is superuser
+        if not (user.is_admin() or user.is_superuser):
             raise serializers.ValidationError("Access denied. Admin role required.")
 
         attrs["user"] = user
@@ -322,3 +322,15 @@ class UserDetailSerializer(serializers.Serializer):
     role = serializers.CharField()
     profileImage = serializers.ImageField(source="profile_picture", allow_null=True)
     subscription = SubscriptionInfoSerializer()
+
+
+class LoginStatsSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    count = serializers.IntegerField()
+
+
+class LoginStatsResponseSerializer(serializers.Serializer):
+    period = serializers.CharField()
+    duration = serializers.IntegerField()
+    data = LoginStatsSerializer(many=True)
+    total_logins = serializers.IntegerField()

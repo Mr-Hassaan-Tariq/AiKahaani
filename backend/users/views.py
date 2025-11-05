@@ -1,6 +1,9 @@
 import logging
 from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
+from dateutil.relativedelta import relativedelta
+from django.db.models import Count
+from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, TruncYear
 
 import requests
 from django.conf import settings
@@ -34,8 +37,9 @@ from admins.models import Niche
 from admins.serializers import NicheSerializer
 from scripts.pagination import GenerationsLimitOffsetPagination
 from admins.filters import NicheFilter
+from users.permissions import IsAdminPermission
 
-from .models import BlacklistedAccessToken, EmailVerificationToken, MagicLinkToken
+from .models import BlacklistedAccessToken, EmailVerificationToken, MagicLinkToken, LoginLog
 from .serializers import (
     AdminLoginResponseSerializer,
     AdminLoginSerializer,
@@ -53,7 +57,8 @@ from .serializers import (
     UserSerializer,
     UserSignupSerializer,
     UserDetailSerializer,
-
+    LoginStatsSerializer,
+    LoginStatsResponseSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -202,6 +207,17 @@ class GoogleLoginAPIView(MethodSpecificThrottleMixin, APIView):
                 "created": created,
             }
 
+            # Log login event
+            try:
+                LoginLog.objects.create(
+                    user=user,
+                    login_type="google",
+                    ip_address=self.get_client_ip(request),
+                    user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                )
+            except Exception as e:
+                logger.warning(f"Failed to log Google login: {str(e)}")
+
             logger.info(f"Successful Google authentication for user: {user.email}")
             return Response(data, status=status.HTTP_200_OK)
 
@@ -263,6 +279,15 @@ class GoogleLoginAPIView(MethodSpecificThrottleMixin, APIView):
         except Exception as e:
             logger.error(f"Failed to verify Google ID token: {str(e)}")
             raise ValueError("Invalid Google ID token") from e
+
+    def get_client_ip(self, request):
+        """Get client IP address from request."""
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0]
+        else:
+            ip = request.META.get("REMOTE_ADDR")
+        return ip
 
     def get_or_create_user(self, idinfo):
         """
@@ -604,6 +629,15 @@ class MagicLinkVerifyAPIView(MethodSpecificThrottleMixin, APIView):
     permission_classes = [AllowAny]
     serializer_class = MagicLinkVerifySerializer
 
+    def get_client_ip(self, request):
+        """Get client IP address from request."""
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0]
+        else:
+            ip = request.META.get("REMOTE_ADDR")
+        return ip
+
     @extend_schema(
         operation_id="magic_link_verify",
         summary="Verify Magic Link Token",
@@ -727,6 +761,17 @@ class MagicLinkVerifyAPIView(MethodSpecificThrottleMixin, APIView):
                 )
             except Exception as e:
                 logger.warning(f"Failed to create login notification: {str(e)}")
+
+            # Log login event
+            try:
+                LoginLog.objects.create(
+                    user=user,
+                    login_type="magic_link",
+                    ip_address=self.get_client_ip(request),
+                    user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                )
+            except Exception as e:
+                logger.warning(f"Failed to log Magic Link login: {str(e)}")
 
             return Response(
                 {
@@ -895,6 +940,15 @@ class AdminLoginView(MethodSpecificThrottleMixin, APIView):
     permission_classes = [AllowAny]
     serializer_class = AdminLoginSerializer
 
+    def get_client_ip(self, request):
+        """Get client IP address from request."""
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0]
+        else:
+            ip = request.META.get("REMOTE_ADDR")
+        return ip
+
     @extend_schema(
         operation_id="admin_login",
         summary="Admin Login",
@@ -950,6 +1004,17 @@ class AdminLoginView(MethodSpecificThrottleMixin, APIView):
             logger.warning(
                 f"Failed to create login notification for admin {user.email}: {str(e)}"
             )
+
+        # Log login event
+        try:
+            LoginLog.objects.create(
+                user=user,
+                login_type="admin",
+                ip_address=self.get_client_ip(request),
+                user_agent=request.META.get("HTTP_USER_AGENT", ""),
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log Admin login: {str(e)}")
 
         response_data = {
             "access_token": str(refresh.access_token),
@@ -1294,3 +1359,166 @@ class UserDetailAPIView(APIView):
         }
         serializer = UserDetailSerializer(data, context={"request": request})
         return Response(serializer.data)
+
+
+class LoginStatsView(MethodSpecificThrottleMixin, APIView):
+    """
+    GET API endpoint to track the number of logins per period.
+    Supports day, week, month, and year periods.
+    Data is ordered from oldest to newest (today's date at the end).
+    """
+    permission_classes = [IsAuthenticated, IsAdminPermission]
+
+    @extend_schema(
+        operation_id="login_stats",
+        summary="Get Login Statistics",
+        description=(
+            "Retrieve login statistics aggregated by period (day, week, month, year). "
+            "Returns data formatted for graph visualization.\n\n"
+            "**Query Parameters:**\n"
+            "- `period`: Aggregation period - 'day', 'week', 'month', or 'year' (required)\n"
+            "- `duration`: Number of periods to look back (required, e.g., 7 for last 7 days)\n\n"
+            "**Examples:**\n"
+            "- Last 7 days: `?period=day&duration=7`\n"
+            "- Last 4 weeks: `?period=week&duration=4`\n"
+            "- Last 6 months: `?period=month&duration=6`\n"
+            "- Last 2 years: `?period=year&duration=2`\n\n"
+            "**Note:** Data is ordered from oldest to newest (today's date appears at the end)."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="period",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Aggregation period: day, week, month, or year",
+                required=True,
+            ),
+            OpenApiParameter(
+                name="duration",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of periods to look back",
+                required=True,
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=LoginStatsResponseSerializer,
+                description="Login statistics retrieved successfully",
+            ),
+            400: OpenApiResponse(
+                description="Invalid period or duration parameters",
+            ),
+        },
+        tags=["Admin"],
+    )
+    def get(self, request):
+        period = request.query_params.get("period", "").lower()
+        duration_param = request.query_params.get("duration")
+
+        # Validate period
+        if period not in ["day", "week", "month", "year"]:
+            return Response(
+                {"error": "Invalid period. Must be one of: day, week, month, year"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate duration
+        try:
+            duration = int(duration_param) if duration_param else None
+            if duration is None or duration <= 0:
+                return Response(
+                    {"error": "Duration must be a positive integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except (ValueError, TypeError):
+            return Response(
+                {"error": "Duration must be a valid integer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Calculate date range - from today going backward
+        now = timezone.now()
+        
+        if period == "day":
+            start_date = now - timedelta(days=duration)
+        elif period == "week":
+            start_date = now - timedelta(weeks=duration)
+        elif period == "month":
+            start_date = now - relativedelta(months=duration)
+        elif period == "year":
+            start_date = now - relativedelta(years=duration)
+
+        # Query login logs
+        login_logs = LoginLog.objects.filter(
+            created__gte=start_date
+        )
+
+        # Aggregate by period
+        data = []
+        
+        if period == "day":
+            # Group by day, ordered from oldest to newest (today at end)
+            daily_logs = (
+                login_logs.annotate(date=TruncDate("created"))
+                .values("date")
+                .annotate(count=Count("id"))
+                .order_by("date")  # Ascending: oldest first, today last
+            )
+            data = [
+                {"date": entry["date"], "count": entry["count"]}
+                for entry in daily_logs
+            ]
+            
+        elif period == "week":
+            # Group by week (Monday as week start), ordered from oldest to newest
+            weekly_logs = (
+                login_logs.annotate(week=TruncWeek("created"))
+                .values("week")
+                .annotate(count=Count("id"))
+                .order_by("week")  # Ascending: oldest first, today's week last
+            )
+            data = [
+                {"date": entry["week"].date(), "count": entry["count"]}
+                for entry in weekly_logs
+            ]
+            
+        elif period == "month":
+            # Group by month, ordered from oldest to newest
+            monthly_logs = (
+                login_logs.annotate(month=TruncMonth("created"))
+                .values("month")
+                .annotate(count=Count("id"))
+                .order_by("month")  # Ascending: oldest first, today's month last
+            )
+            data = [
+                {"date": entry["month"].date(), "count": entry["count"]}
+                for entry in monthly_logs
+            ]
+            
+        elif period == "year":
+            # Group by year, ordered from oldest to newest
+            yearly_logs = (
+                login_logs.annotate(year=TruncYear("created"))
+                .values("year")
+                .annotate(count=Count("id"))
+                .order_by("year")  # Ascending: oldest first, today's year last
+            )
+            data = [
+                {"date": entry["year"].date(), "count": entry["count"]}
+                for entry in yearly_logs
+            ]
+
+        # Calculate total
+        total_logins = sum(entry["count"] for entry in data)
+
+        # Serialize response
+        response_data = {
+            "period": period,
+            "duration": duration,
+            "data": data,  # Ordered from oldest to newest (today at end)
+            "total_logins": total_logins,
+        }
+
+        serializer = LoginStatsResponseSerializer(response_data)
+        return Response(serializer.data, status=status.HTTP_200_OK)

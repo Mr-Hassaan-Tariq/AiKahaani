@@ -39,8 +39,8 @@ class IsAdminPermission(BasePermission):
             return False
 
         try:
-            # Check if user has admin role using the model method
-            if request.user.is_admin():
+            # Check if user has admin role or is superuser
+            if request.user.is_admin() or request.user.is_superuser:
                 return True
             else:
                 return False

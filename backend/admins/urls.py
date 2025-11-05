@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from . import views
+from users.views import LoginStatsView
 
 # Create router for viewset routes
 router = DefaultRouter()
@@ -24,6 +25,9 @@ urlpatterns = [
     # Conversion funnel endpoints
     path("conversion-funnel/", views.UserConversionFunnelView.as_view(), name="conversion-funnel"),
     path("conversion-funnel/export/", views.UserConversionFunnelExportView.as_view(), name="conversion-funnel-export"),
+    
+    # Login statistics endpoint
+    path("login-stats/", LoginStatsView.as_view(), name="login-stats"),
 ]
 
 # Include router URLs AFTER specific paths

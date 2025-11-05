@@ -1,30 +1,30 @@
 'use client';
 
-import React from 'react';
+import mainLogo from '@assets/sidebar/mainLogo.png';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import mainLogo from '@assets/sidebar/mainLogo.png';
+import React from 'react';
 
-import LogoutModal from './LogoutModal';
-import Col from 'components/ui/Col';
-import Text from 'components/ui/Text';
 import CrownIcon from 'components/icons/CrownIcon';
 import MyScriptsIcon from 'components/icons/MyScriptsIcon';
 import ScriptGeneratorIcon from 'components/icons/ScriptGeneratorIcon';
 import SettingsIcon from 'components/icons/SettingsIcon';
 import SubTitleIcon from 'components/icons/SubTitleIcon';
+import UsersIcon from 'components/icons/UsersIcon';
+import Col from 'components/ui/Col';
+import Text from 'components/ui/Text';
+import LogoutModal from './LogoutModal';
 
 export default function DesktopMenu() {
   const pathname = usePathname() || '/';
 
   const isActive = (path: string) => {
+    if (!path.startsWith('/')) return false; // external links never active
     if (path === '/') {
       return (
         pathname === '/' ||
-        pathname === '/new-script' ||
-        pathname.startsWith('/new-script/') ||
-        pathname.includes('/new-script') ||
+        pathname.startsWith('/new-script') ||
         pathname.includes('new-script')
       );
     }
@@ -66,9 +66,8 @@ export default function DesktopMenu() {
                   </div>
                   <Text
                     variant="lg"
-                    className={`transition-colors ${
-                      active ? 'font-semibold text-white' : 'text-[#AAACA6]'
-                    } group-hover:text-[#20BF0E]/80`}
+                    className={`transition-colors ${active ? 'font-semibold text-white' : 'text-[#AAACA6]'
+                      } group-hover:text-[#20BF0E]/80`}
                   >
                     {e.name}
                   </Text>
@@ -80,12 +79,21 @@ export default function DesktopMenu() {
           {/* Sub Menu */}
           <Col className="gap-6">
             {subMenu.map((e) => {
+              const isExternal = e.path.startsWith('http');
               const active = isActive(e.path);
+
+              const linkProps = isExternal
+                ? {
+                  href: e.path,
+                  target: '_blank',
+                  rel: 'noopener noreferrer',
+                }
+                : { href: e.path };
 
               return (
                 <Link
                   key={e.name}
-                  href={e.path}
+                  {...linkProps}
                   aria-current={active ? 'page' : undefined}
                   className="group flex w-full cursor-pointer flex-row items-center gap-3 whitespace-nowrap"
                 >
@@ -94,9 +102,8 @@ export default function DesktopMenu() {
                   </div>
                   <Text
                     variant="lg"
-                    className={`transition-colors ${
-                      active ? 'font-semibold text-white' : 'text-[#AAACA6]'
-                    } group-hover:text-[#20BF0E]/80`}
+                    className={`transition-colors ${active ? 'font-semibold text-white' : 'text-[#AAACA6]'
+                      } group-hover:text-[#20BF0E]/80`}
                   >
                     {e.name}
                   </Text>
@@ -111,6 +118,8 @@ export default function DesktopMenu() {
     </div>
   );
 }
+
+/* ---------------------- MENUS ---------------------- */
 
 export const mainMenu = [
   {
@@ -136,11 +145,11 @@ export const mainMenu = [
 ];
 
 export const subMenu = [
-  // {
-  //   name: 'Affiliate Program',
-  //   icon: <UsersIcon />,
-  //   path: '/script-generator',
-  // },
+  {
+    name: 'Affiliate Program',
+    icon: <UsersIcon />,
+    path: 'https://tubegeniustest1.tolt.io/',
+  },
   {
     name: 'Settings',
     icon: <SettingsIcon />,

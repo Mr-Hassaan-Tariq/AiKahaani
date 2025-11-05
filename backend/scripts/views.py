@@ -1735,6 +1735,7 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
     - `?type=script&word_count_min=500&duration_max=10&limit=15` - Scripts with 500+ words, max 10 min, 15 per page
     - `?filter_type=saved&search=tutorial&limit=5` - Saved items containing 'tutorial', 5 per page
     - `?status=generated&ordering=-modified&limit=25&offset=50` - Generated items, newest first, page 3 (items 51-75)
+    - `?user=42` - Filter generations by user ID 42
     """,
     parameters=[
         OpenApiParameter(
@@ -1814,6 +1815,13 @@ class FullScriptListView(MethodSpecificThrottleMixin, generics.ListAPIView):
             description="Maximum estimated video duration in minutes (only applies to scripts, outlines are unaffected). Example: 15.0",
             required=False,
         ),
+        OpenApiParameter(
+            name="user",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            description="Filter by user ID. Example: user=42",
+            required=False,
+        ),
     ],
     responses={
         200: OpenApiResponse(
@@ -1845,6 +1853,24 @@ class GenerationsList(MethodSpecificThrottleMixin, generics.ListAPIView):
         filter_type = self.request.GET.get("filter_type", "all")
         type_filter = self.request.GET.get("type", "")
         ordering = self.request.GET.get("ordering", "-created")
+
+        # Get user filter parameter
+        user_param = self.request.GET.get("user")
+        filter_user = self.request.user  # Default to current user
+        
+        if user_param:
+            try:
+                user_id = int(user_param)
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                try:
+                    filter_user = User.objects.get(pk=user_id)
+                except User.DoesNotExist:
+                    # Return empty queryset if user doesn't exist
+                    return []
+            except (ValueError, TypeError):
+                # Invalid user ID, ignore the parameter and use current user
+                pass
 
         # Get numeric filters
         word_count_min = self.request.GET.get("word_count_min")
@@ -1880,7 +1906,7 @@ class GenerationsList(MethodSpecificThrottleMixin, generics.ListAPIView):
             filter_type,
             type_filter,
             ordering,
-            user=self.request.user,
+            user=filter_user,  # Use the filtered user instead of self.request.user
             word_count_min=word_count_min,
             word_count_max=word_count_max,
             duration_min=duration_min,
@@ -2505,7 +2531,7 @@ class FullScriptAdminViewSet(ReadOnlyModelViewSet):
     Includes outlines, titles, and detailed metadata.
     """
 
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
     pagination_class = GenerationsLimitOffsetPagination
 
     def get_queryset(self):
