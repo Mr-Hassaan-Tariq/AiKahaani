@@ -215,33 +215,103 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
   };
 
   // Handle regenerate
-  const handleRegenerate = () => {
+  // inside OutlineComponent — replace handleRegenerate with this:
+
+  const handleRegenerate = async () => {
     if (!outline) return;
 
-    const payload: Partial<FormType> = {
-      description: outline.description || '',
-      tones: outline.tones ? outline.tones.map((tone: any) => tone.id) : [],
-      template_style: outline.template_style ?? undefined,
-      min_length: outline.min_length || 0,
-      max_length: outline.max_length || 500,
-      title: outline.title || '',
-    };
+    // Attempt to read saved payload from localStorage
+    let savedRaw: string | null = null;
+    try {
+      savedRaw =
+        typeof window !== 'undefined' ? localStorage.getItem('last_outline_payload') : null;
+    } catch (e) {
+      logger.warn('Could not read last_outline_payload from localStorage', e);
+      savedRaw = null;
+    }
 
-    if (typeof window !== 'undefined') {
+    let payloadToSend: any = null; // either object or FormData
+
+    if (savedRaw) {
+      try {
+        const saved = JSON.parse(savedRaw);
+        if (saved && saved.hasImageFile && saved.data) {
+          // Reconstruct FormData from saved data + images (data URLs)
+          const fd = new FormData();
+          fd.append('description', saved.data.description ?? '');
+
+          // tones (array)
+          (saved.data.tones || []).forEach((t: any) => fd.append('tones', String(t)));
+
+          if (saved.data.template_style) {
+            fd.append('template_style', String(saved.data.template_style));
+          } else {
+            fd.append('min_length', String(saved.data.min_length ?? 0));
+            fd.append('max_length', String(saved.data.max_length ?? 500));
+          }
+          fd.append('title', String(saved.data.title ?? ''));
+
+          if (saved.data.niche_id) {
+            fd.append('niche_id', String(saved.data.niche_id));
+          }
+
+          // Append link/article items
+          (saved.data.linkItems || []).forEach((l: string) => fd.append('youtube_url', l));
+          (saved.data.articleItems || []).forEach((a: string) => fd.append('article_url', a));
+
+          // Recreate File objects from data URLs and append them
+          const images = saved.data.images || [];
+          for (const img of images) {
+            try {
+              // img.dataUrl is something like "data:image/jpeg;base64,...."
+              const res = await fetch(img.dataUrl);
+              const blob = await res.blob();
+              const file = new File([blob], img.name || 'image', { type: img.type || blob.type });
+              fd.append('image', file);
+            } catch (err) {
+              logger.warn('Failed to reconstruct one image from saved payload', err);
+              // continue without this file
+            }
+          }
+
+          payloadToSend = fd;
+        } else if (saved && saved.hasImageFile === false && saved.payload) {
+          payloadToSend = saved.payload;
+        } else if (saved && saved.data && !saved.hasImageFile) {
+          // fallback in case of different shape
+          payloadToSend = saved.data;
+        }
+      } catch (e) {
+        logger.warn('Could not parse last_outline_payload from localStorage', e);
+        payloadToSend = null;
+      }
+    }
+
+    // If we didn't get a saved payload, fall back to original behavior deriving payload from outline
+    if (!payloadToSend) {
+      const payload: Partial<FormType> = {
+        description: outline.description || '',
+        tones: outline.tones ? outline.tones.map((tone: any) => tone.id) : [],
+        template_style: outline.template_style ?? undefined,
+        min_length: outline.min_length || 0,
+        max_length: outline.max_length || 500,
+        title: outline.title || '',
+      };
+
+      // try to use saved draft_description if present
       try {
         const saved = localStorage.getItem('draft_description');
-        console.log('saved', saved);
         if (saved && saved.trim().length > 0) {
           payload.description = saved;
         }
       } catch (e) {
         logger.warn('Could not read draft_description from localStorage', e);
       }
+
+      payloadToSend = payload;
     }
 
-    console.log('payload', payload, localStorage.getItem('draft_description'));
-
-    generateOutline(payload, {
+    generateOutline(payloadToSend, {
       onSuccess: (data) => {
         toast.success('Success', 'Outline regenerated successfully');
         router.replace(`/new-script/${data.outline.uuid}`);
@@ -276,6 +346,8 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
       </div>
     );
   }
+
+  const isBusy = isRegeneratingOutline || isGeneratingScript;
 
   return (
     <>
@@ -328,8 +400,8 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
         )}
       </Col>
 
-      {!isRegeneratingOutline &&
-        (edit ? (
+      {edit ? (
+        isBusy ? null : (
           <Row className="mt-6">
             <Row className="space-x-3">
               <Button
@@ -357,32 +429,33 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
               {directFileIcon} Save Changes {hasChanges && ''}
             </Button>
           </Row>
-        ) : (
-          <Row className="mt-6 w-full flex-col space-y-3 lg:flex-row lg:space-y-0">
-            <Row className="space-x-3">
-              <Button
-                variant="gray"
-                onClick={() => setEdit(true)}
-                className="transition-colors duration-200 hover:bg-white/20"
-              >
-                <Edit2 size={20} className="min-w-5" /> Edit
-              </Button>
-              <Button
-                variant="gray"
-                className="min-w-[166px] transition-colors duration-200 hover:bg-white/20"
-                onClick={handleRegenerate}
-              >
-                <RefreshCcw size={20} className="min-w-5" /> Regenerate
-              </Button>
-            </Row>
+        )
+      ) : isBusy ? null : (
+        <Row className="mt-6 w-full flex-col space-y-3 lg:flex-row lg:space-y-0">
+          <Row className="space-x-3">
             <Button
-              className="w-full transition-colors duration-200 hover:bg-white/90 lg:w-fit"
-              onClick={handleGenerateScript}
+              variant="gray"
+              onClick={() => setEdit(true)}
+              className="transition-colors duration-200 hover:bg-white/20"
             >
-              {directFileIcon} Generate the script
+              <Edit2 size={20} className="min-w-5" /> Edit
+            </Button>
+            <Button
+              variant="gray"
+              className="min-w-[166px] transition-colors duration-200 hover:bg-white/20"
+              onClick={handleRegenerate}
+            >
+              <RefreshCcw size={20} className="min-w-5" /> Regenerate
             </Button>
           </Row>
-        ))}
+          <Button
+            className="w-full transition-colors duration-200 hover:bg-white/90 lg:w-fit"
+            onClick={handleGenerateScript}
+          >
+            {directFileIcon} Generate the script
+          </Button>
+        </Row>
+      )}
     </>
   );
 }

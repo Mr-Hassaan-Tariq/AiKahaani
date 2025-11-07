@@ -96,11 +96,13 @@ export class ApiClient {
       errors: apiError?.errors,
     };
 
-    // Handle authentication errors
+    // Handle authentication errors - redirect to signin
     if (response.status === 401) {
       this.clearTokensFromStorage();
-      // You can add a redirect to login page here
-      // window.location.href = '/login';
+      // Redirect to signin page when token expires
+      if (typeof window !== 'undefined') {
+        window.location.href = '/signin';
+      }
     }
 
     throw {

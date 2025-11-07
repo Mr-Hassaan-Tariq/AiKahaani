@@ -11,6 +11,7 @@ interface SearchHeaderProps {
   handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   availableFilters?: Record<string, string[]>;
   onApplyFilters?: (filters: Record<string, string[]>) => void;
+  initialFilters?: Record<string, string[]>;
 }
 
 export default function SearchHeader({
@@ -18,13 +19,14 @@ export default function SearchHeader({
   handleSearchChange,
   availableFilters,
   onApplyFilters,
+  initialFilters = {},
 }: SearchHeaderProps) {
   const handleApply = (filters: Record<string, string[]>) => {
     if (onApplyFilters) onApplyFilters(filters);
   };
 
   return (
-    <section className="w-full space-y-6 pb-10 text-center">
+    <section className="mb-5 w-full space-y-6 text-center">
       {/* Heading */}
       <div>
         <h1 className="text-2xl font-semibold text-white md:text-3xl">
@@ -54,10 +56,10 @@ export default function SearchHeader({
               <span className="hidden lg:block">Filters</span>
             </Button>
           }
-          onApply={handleApply}
           availableFilters={availableFilters}
+          onApply={handleApply}
+          initialFilters={initialFilters}
         />
-
         <Link href={'/niches/create'}>
           <Button variant="gray" className="w-[160px]">
             <Plus />

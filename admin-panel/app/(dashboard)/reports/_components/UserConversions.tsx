@@ -19,14 +19,17 @@ interface UserConversionData {
   has_subscription: boolean;
 }
 
-interface ApiResponse {
-  data: UserConversionData[];
+interface PaginatedApiResponse {
   count: number;
+  next: string | null;
+  previous: string | null;
+  results: UserConversionData[];
   message?: string;
 }
 
 export default function UserConversions() {
-  const [allData, setAllData] = useState<UserConversionData[]>([]);
+  const [data, setData] = useState<UserConversionData[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('');
@@ -49,55 +52,64 @@ export default function UserConversions() {
       if (endDate) {
         params.append('end_date', endDate);
       }
+      // Add pagination parameters
+      const offset = (currentPage - 1) * pageSize;
+      params.append('limit', pageSize.toString());
+      params.append('offset', offset.toString());
 
       const queryString = params.toString();
-      const endpoint = queryString
-        ? `v1/admin/conversion-funnel/?${queryString}`
-        : 'v1/admin/conversion-funnel/';
+      const endpoint = `v1/admin/conversion-funnel/?${queryString}`;
 
-      const response = await getUserConversionFunnel<ApiResponse>(endpoint);
+      const response = await getUserConversionFunnel<PaginatedApiResponse>(endpoint);
 
-      if (response && response.data) {
-        setAllData(response.data);
-        setCurrentPage(1); // Reset to first page when new data is fetched
+      if (response && response.results) {
+        setData(response.results);
+        setTotalCount(response.count || 0);
       } else {
-        setAllData([]);
+        setData([]);
+        setTotalCount(0);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
       setError(errorMessage);
-      setAllData([]);
+      setData([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, currentPage, pageSize]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Filter data based on search term
+  // Filter data based on search term (client-side filtering for search)
   const filteredData = useMemo(() => {
     if (!searchTerm.trim()) {
-      return allData;
+      return data;
     }
 
     const search = searchTerm.toLowerCase();
-    return allData.filter(
+    return data.filter(
       (user) =>
         user.name.toLowerCase().includes(search) ||
         user.email.toLowerCase().includes(search) ||
         user.subscription_plan.toLowerCase().includes(search) ||
         user.subscription_status.toLowerCase().includes(search),
     );
-  }, [allData, searchTerm]);
+  }, [data, searchTerm]);
 
-  // Paginate filtered data
-  const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, currentPage, pageSize]);
+  // When search term changes, reset to page 1
+  useEffect(() => {
+    if (searchTerm) {
+      setCurrentPage(1);
+    }
+  }, [searchTerm]);
+
+  // When date filters change, reset to page 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [startDate, endDate]);
 
   const handleExport = async () => {
     setExporting(true);
@@ -171,7 +183,7 @@ export default function UserConversions() {
     { key: 'status', label: 'Status' },
   ];
 
-  const tableData = paginatedData.map((user, index) => ({
+  const tableData = filteredData.map((user, index) => ({
     '#': (currentPage - 1) * pageSize + index + 1,
     name: user.name,
     email: user.email,
@@ -237,7 +249,7 @@ export default function UserConversions() {
             </button>
             <button
               onClick={handleExport}
-              disabled={exporting || loading || filteredData.length === 0}
+              disabled={exporting || loading || totalCount === 0}
               className="flex items-center gap-2 whitespace-nowrap rounded-xl border border-green-500/50 bg-green-500/10 px-4 py-3 text-sm font-medium text-green-400 transition-colors hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
@@ -266,19 +278,19 @@ export default function UserConversions() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-400">
-              Showing {paginatedData.length} of {filteredData.length} user
-              {filteredData.length !== 1 ? 's' : ''}
-              {searchTerm && ` (filtered from ${allData.length} total)`}
+              Showing {filteredData.length} of {totalCount} user
+              {totalCount !== 1 ? 's' : ''}
+              {searchTerm && ` (filtered from ${data.length} on this page)`}
             </p>
           </div>
-          {filteredData.length > 0 ? (
+          {filteredData.length > 0 || totalCount > 0 ? (
             <>
               <CustomTable columns={tableColumns} data={tableData} />
-              {filteredData.length > pageSize && (
+              {totalCount > pageSize && (
                 <div className="mt-4">
                   <Pagination
                     currentPage={currentPage}
-                    totalCount={filteredData.length}
+                    totalCount={totalCount}
                     pageSize={pageSize}
                     onPageChange={setCurrentPage}
                   />
@@ -289,7 +301,7 @@ export default function UserConversions() {
             <div className="rounded-lg border border-[#BAFF3812] bg-brand-surface p-12 text-center">
               <p className="text-gray-400">
                 {searchTerm
-                  ? 'No users found matching your search criteria.'
+                  ? 'No users found matching your search criteria on this page.'
                   : 'No users found for the selected date range.'}
               </p>
             </div>

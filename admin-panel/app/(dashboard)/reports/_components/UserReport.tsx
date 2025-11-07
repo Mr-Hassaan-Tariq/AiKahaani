@@ -19,14 +19,16 @@ interface UserReportData {
   total_long_scripts: number;
 }
 
-interface ApiResponse {
-  data: UserReportData[];
+interface PaginatedApiResponse {
   count: number;
-  message?: string;
+  next: string | null;
+  previous: string | null;
+  results: UserReportData[];
 }
 
 export default function UserReport() {
-  const [allData, setAllData] = useState<UserReportData[]>([]);
+  const [data, setData] = useState<UserReportData[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('');
@@ -49,41 +51,47 @@ export default function UserReport() {
       if (endDate) {
         params.append('end_date', endDate);
       }
+      // Add pagination parameters
+      const offset = (currentPage - 1) * pageSize;
+      params.append('limit', pageSize.toString());
+      params.append('offset', offset.toString());
 
       const queryString = params.toString();
-      const endpoint = queryString
-        ? `v1/admin/users-report/?${queryString}`
-        : 'v1/admin/users-report/';
+      const endpoint = `v1/admin/users-report/?${queryString}`;
 
-      const response = await getClientDataAction<ApiResponse>(endpoint);
+      const response = await getClientDataAction<PaginatedApiResponse>(endpoint);
 
-      if (response && response.data) {
-        setAllData(response.data);
-        setCurrentPage(1); // Reset to first page when new data is fetched
+      if (response) {
+        // Handle paginated response from backend
+        setData(response.results || []);
+        setTotalCount(response.count || 0);
       } else {
-        setAllData([]);
+        setData([]);
+        setTotalCount(0);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
       setError(errorMessage);
-      setAllData([]);
+      setData([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, currentPage, pageSize]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Filter data based on search term
+  // Note: Search is currently client-side only. For better performance with large datasets,
+  // consider implementing server-side search in the backend.
   const filteredData = useMemo(() => {
     if (!searchTerm.trim()) {
-      return allData;
+      return data;
     }
 
     const search = searchTerm.toLowerCase();
-    return allData.filter(
+    return data.filter(
       (user) =>
         user.name.toLowerCase().includes(search) ||
         user.email.toLowerCase().includes(search) ||
@@ -92,14 +100,19 @@ export default function UserReport() {
         user.total_medium_scripts.toString().includes(search) ||
         user.total_long_scripts.toString().includes(search),
     );
-  }, [allData, searchTerm]);
+  }, [data, searchTerm]);
 
-  // Paginate filtered data
-  const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, currentPage, pageSize]);
+  // When search term changes, reset to page 1
+  useEffect(() => {
+    if (searchTerm) {
+      setCurrentPage(1);
+    }
+  }, [searchTerm]);
+
+  // When date filters change, reset to page 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [startDate, endDate]);
 
   const handleExport = async () => {
     setExporting(true);
@@ -174,7 +187,7 @@ export default function UserReport() {
     { key: 'total_long_scripts', label: 'Long Scripts' },
   ];
 
-  const tableData = paginatedData.map((user, index) => ({
+  const tableData = filteredData.map((user, index) => ({
     '#': (currentPage - 1) * pageSize + index + 1,
     name: user.name,
     email: user.email,
@@ -233,7 +246,7 @@ export default function UserReport() {
             </button>
             <button
               onClick={handleExport}
-              disabled={exporting || loading || filteredData.length === 0}
+              disabled={exporting || loading || totalCount === 0}
               className="flex items-center gap-2 whitespace-nowrap rounded-xl border border-green-500/50 bg-green-500/10 px-4 py-3 text-sm font-medium text-green-400 transition-colors hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
@@ -262,19 +275,19 @@ export default function UserReport() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-400">
-              Showing {paginatedData.length} of {filteredData.length} user
-              {filteredData.length !== 1 ? 's' : ''}
-              {searchTerm && ` (filtered from ${allData.length} total)`}
+              Showing {filteredData.length} of {totalCount} user
+              {totalCount !== 1 ? 's' : ''}
+              {searchTerm && ` (filtered from ${data.length} on this page)`}
             </p>
           </div>
-          {filteredData.length > 0 ? (
+          {data.length > 0 || totalCount > 0 ? (
             <>
               <CustomTable columns={tableColumns} data={tableData} />
-              {filteredData.length > pageSize && (
+              {totalCount > pageSize && (
                 <div className="mt-4">
                   <Pagination
                     currentPage={currentPage}
-                    totalCount={filteredData.length}
+                    totalCount={totalCount}
                     pageSize={pageSize}
                     onPageChange={setCurrentPage}
                   />
@@ -285,7 +298,7 @@ export default function UserReport() {
             <div className="rounded-lg border border-[#BAFF3812] bg-brand-surface p-12 text-center">
               <p className="text-gray-400">
                 {searchTerm
-                  ? 'No users found matching your search criteria.'
+                  ? 'No users found matching your search criteria on this page.'
                   : 'No users found for the selected date range.'}
               </p>
             </div>

@@ -10,6 +10,7 @@ import { getClientDataAction } from 'lib/utils/clientDataActions';
 
 export default function NicheVault() {
   const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [niches, setNiches] = useState<NichePaginatedResponse['results']>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,9 +21,14 @@ export default function NicheVault() {
 
   const availableFilters = useMemo(
     () => ({
-      Tone: ['Educational', 'Casual', 'Emotional', 'Satirical'],
-      Format: ['Storytelling', 'Review', 'Explainer', 'Interview'],
-      Popularity: ['Hype', 'Classic', 'Trending', 'New'],
+      Tone: [
+        'Neutral',
+        'Professional',
+        'Educational',
+        'Engaging',
+        'Conversational',
+        'Conversational',
+      ],
     }),
     [],
   );
@@ -41,7 +47,6 @@ export default function NicheVault() {
 
   const buildQuery = (page = 1, search = '', filters: Record<string, string[]>) => {
     const params = new URLSearchParams();
-
     params.append('page', String(page));
     params.append('page_size', String(itemsPerPage));
     const offset = (page - 1) * itemsPerPage;
@@ -64,9 +69,8 @@ export default function NicheVault() {
   const fetchNiches = async (page = 1) => {
     setIsLoading(true);
     try {
-      const url = buildQuery(page, searchInput, activeFilters);
+      const url = buildQuery(page, debouncedSearch, activeFilters);
       const data = await getClientDataAction<NichePaginatedResponse>(url);
-
       setNiches(data.results || []);
       setTotalItems(data.count || 0);
     } catch (error) {
@@ -79,14 +83,47 @@ export default function NicheVault() {
   };
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchInput]);
+
+  useEffect(() => {
     fetchNiches(currentPage);
-  }, [currentPage, searchInput, activeFilters]);
+  }, [currentPage, debouncedSearch, activeFilters]);
 
   const filteredNiches = niches.filter((niche) =>
-    niche.title.toLowerCase().includes(searchInput.toLowerCase()),
+    niche.title.toLowerCase().includes(debouncedSearch.toLowerCase()),
   );
 
-  const visibleNiches = filteredNiches.slice(0, itemsPerPage);
+  const removeFilter = (category: string, valueToRemove: string) => {
+    setActiveFilters((prev) => {
+      const prevValues = prev[category] || [];
+      const nextValues = prevValues.filter((v) => v !== valueToRemove);
+
+      const next = { ...prev };
+      if (nextValues.length > 0) {
+        next[category] = nextValues;
+      } else {
+        delete next[category];
+      }
+
+      setCurrentPage(1);
+      return next;
+    });
+  };
+
+  const activeChips = useMemo(() => {
+    const chips: { category: string; value: string }[] = [];
+    Object.entries(activeFilters).forEach(([category, values]) => {
+      (values || []).forEach((v) => chips.push({ category, value: v }));
+    });
+    return chips;
+  }, [activeFilters]);
 
   return (
     <main>
@@ -95,7 +132,42 @@ export default function NicheVault() {
         handleSearchChange={handleSearchChange}
         availableFilters={availableFilters}
         onApplyFilters={handleApplyFilters}
+        initialFilters={activeFilters}
       />
+
+      <div className="mx-auto mb-5 max-w-xl">
+        <div className="flex flex-wrap gap-2">
+          {activeChips.length === 0
+            ? null
+            : activeChips.map((chip) => (
+                <div
+                  key={`${chip.category}-${chip.value}`}
+                  className="flex items-center gap-2 rounded-full bg-transparent px-3 py-1 text-sm text-white"
+                >
+                  <span className="text-xs font-medium">
+                    {chip.category}: {chip.value}
+                  </span>
+                  <button
+                    onClick={() => removeFilter(chip.category, chip.value)}
+                    aria-label={`Remove ${chip.category} ${chip.value}`}
+                    className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-white/20"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="12"
+                      height="12"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M6 18L18 6" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -108,8 +180,8 @@ export default function NicheVault() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleNiches.length > 0 ? (
-              visibleNiches.map((niche) => (
+            {filteredNiches.length > 0 ? (
+              filteredNiches.map((niche) => (
                 <NicheCard
                   id={niche.id}
                   key={niche.id}

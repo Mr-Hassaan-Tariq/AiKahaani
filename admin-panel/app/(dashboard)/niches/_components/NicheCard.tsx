@@ -1,7 +1,6 @@
 import { FC, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ExternalLink } from 'lucide-react';
 
 import ThumbnailImage from '../../../../public/images/no-niche.png';
 import VedioModal from './VedioModal';
@@ -49,7 +48,6 @@ const NicheCard: FC<NicheCardProps> = ({
   };
 
   const handleImageError = () => {
-    // Only show placeholder if image truly failed to load
     if (!imageLoaded) {
       setImageError(true);
       setImagePresent(false);
@@ -104,7 +102,7 @@ const NicheCard: FC<NicheCardProps> = ({
               <span className="text-gray-400">No tags</span>
             )}
           </div>
-          <ExternalLink className="h-5 w-5 cursor-pointer text-white" />
+          {/* <ExternalLink className="h-5 w-5 cursor-pointer text-white" /> */}
         </div>
 
         <div className="flex-1">

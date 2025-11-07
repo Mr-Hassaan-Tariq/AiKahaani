@@ -17,8 +17,8 @@
     "check:website": "cd website && pnpm lint && pnpm prettier:check && pnpm type-check",
     "check:web-app": "cd web-app && pnpm lint && pnpm prettier:check && pnpm type-check",
     "check:backend": "cd backend && uv run ruff check . && uv run ruff format --check .",
-    "format": "cd website && pnpm prettier:fix && pnpm lint:fix",
-    "format:web-app": "cd web-app && pnpm prettier:fix && pnpm lint:fix",
+    "format:backend": "cd backend && uv run ruff check . && uv run ruff format --check .",
+    "format": "cd website && pnpm prettier:fix && pnpm lint:fix ",
     "format:admin-panel": "cd admin-panel && pnpm prettier:fix && pnpm lint:fix"
   },
   "engines": {

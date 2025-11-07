@@ -1,4 +1,5 @@
 import { ApiError } from 'next/dist/server/api-utils';
+import Cookies from 'js-cookie';
 
 import { ApiClient } from './client';
 import {
@@ -93,17 +94,31 @@ export class AuthService {
         throw new Error('No data received from admin login request');
       }
 
-      // Store tokens if login is successful
-      if (response.data.access_token && response.data.refresh_token) {
-        this.apiClient.setTokens(response.data.access_token, response.data.refresh_token);
+      const access = response.data.access_token;
+      const refresh = response.data.refresh_token;
+
+      if (access && refresh) {
+        this.apiClient.setTokens(access, refresh);
+
+        // Securely store tokens using cookies
+        Cookies.set('access_token', access, {
+          expires: 7,
+          secure: true,
+          sameSite: 'Strict',
+        });
+        Cookies.set('refresh_token', refresh, {
+          expires: 7,
+          secure: true,
+          sameSite: 'Strict',
+        });
       }
 
       return {
         success: true,
         message: response.data.message,
         user: response.data.user,
-        access: response.data.access_token,
-        refresh: response.data.refresh_token,
+        access,
+        refresh,
       };
     } catch (error) {
       const apiError = error as { data: ApiError; status: number };
@@ -175,6 +190,8 @@ export class AuthService {
    */
   logout(): void {
     this.apiClient.clearTokens();
+    Cookies.remove('access_token');
+    Cookies.remove('refresh_token');
   }
 
   /**
@@ -182,9 +199,9 @@ export class AuthService {
    * @returns boolean indicating authentication status
    */
   isAuthenticated(): boolean {
-    return this.apiClient.isAuthenticated();
+    const token = Cookies.get('access_token');
+    return !!token;
   }
-
   /**
    * Get current user data from localStorage (if available)
    * @returns User data or null if not available

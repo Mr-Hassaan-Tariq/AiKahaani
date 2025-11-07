@@ -1,9 +1,15 @@
+import csv
 import logging
 from datetime import datetime
-import csv
 
+import djstripe.models as djm
 from django.contrib.auth import get_user_model
+from django.db.models import Count, Q
+from django.http import HttpResponse
+from django.utils.dateparse import parse_date
+from django.utils.timezone import now, timedelta
 from django_filters.rest_framework import DjangoFilterBackend
+from djstripe.models import Subscription
 from drf_spectacular.openapi import OpenApiExample, OpenApiParameter, OpenApiResponse
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
@@ -14,13 +20,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-
-from django.db.models import Count, Q, Prefetch
-from django.utils.timezone import now, timedelta
-from djstripe.models import Subscription
-from django.utils.dateparse import parse_date
-from django.http import HttpResponse
-
 from admins.serializers import (
     AdminUserDetailSerializer,
     AdminUserListSerializer,
@@ -28,20 +27,17 @@ from admins.serializers import (
     NichePacingSerializer,
     NicheSerializer,
     NicheToneSerializer,
-    UserStatsResponseSerializer,
-    FeatureUsageSerializer,
     StatsResponseSerializer,
     UserDetailsReportSerializer,
-    UserConversionFunnelSerializer
+    UserStatsResponseSerializer,
 )
 from notifications.choices import NotificationType
 from notifications.helpers import NotificationHelper
+from payments.models import SubscriptionPlan
+from scripts.models import FullScript, UserTitles
 from scripts.pagination import GenerationsLimitOffsetPagination
 from users.models import Role
 from users.permissions import IsAdminPermission
-from scripts.models import *
-from payments.utils import get_active_subscription, get_or_create_customer
-from payments.models import SubscriptionPlan
 
 from .filters import NicheFilter, NichePacingFilter, NicheToneFilter
 from .models import Niche, NichePacing, NicheTone
@@ -414,19 +410,19 @@ class UserStatsView(APIView):
         tags=["Admin Niches"],
         summary="List Niches",
         description=(
-                "Retrieve a paginated list of niches with filtering and search capabilities.\n\n"
-                "**Query Parameters:**\n"
-                "- `limit`: Number of items to return (default: 20, max: 100)\n"
-                "- `offset`: Number of items to skip (default: 0)\n"
-                "- `search`: Search by title or tagline (custom search filter)\n"
-                "- `status`: Filter by status (active/inactive)\n"
-                "- `tone`: Filter niches by tone (e.g., 'Educational', 'Professional')\n"
-                "- `pacing`: Filter niches by pacing (e.g., 'Fast', 'Slow')\n"
-                "- `script_structure`: Filter niches by script structure keys or values (e.g., 'intro', 'body')\n"
-                "- `best_for`: Filter niches by categories they are best suited for (e.g., 'Education', 'Gaming')\n"
-                "- `ordering`: Order by field (e.g., 'created', '-created', 'title', '-title')\n\n"
-                "**Note:** Each filter supports partial and case-insensitive matches. "
-                "For example, `?tone=educ` will match both 'Educational' and 'Educative'."
+            "Retrieve a paginated list of niches with filtering and search capabilities.\n\n"
+            "**Query Parameters:**\n"
+            "- `limit`: Number of items to return (default: 20, max: 100)\n"
+            "- `offset`: Number of items to skip (default: 0)\n"
+            "- `search`: Search by title or tagline (custom search filter)\n"
+            "- `status`: Filter by status (active/inactive)\n"
+            "- `tone`: Filter niches by tone (e.g., 'Educational', 'Professional')\n"
+            "- `pacing`: Filter niches by pacing (e.g., 'Fast', 'Slow')\n"
+            "- `script_structure`: Filter niches by script structure keys or values (e.g., 'intro', 'body')\n"
+            "- `best_for`: Filter niches by categories they are best suited for (e.g., 'Education', 'Gaming')\n"
+            "- `ordering`: Order by field (e.g., 'created', '-created', 'title', '-title')\n\n"
+            "**Note:** Each filter supports partial and case-insensitive matches. "
+            "For example, `?tone=educ` will match both 'Educational' and 'Educative'."
         ),
         parameters=[
             OpenApiParameter(
@@ -535,20 +531,20 @@ class UserStatsView(APIView):
         tags=["Admin Niches"],
         summary="Create Niche",
         description=(
-                "Create a new niche with detailed content structure.\n\n"
-                "**Required Fields:**\n"
-                "- `title` (string): The title of the niche\n"
-                "- `tagline` (string): A brief tagline for the niche\n\n"
-                "**Optional Fields:**\n"
-                "- `thumbnail` (file): Image file for the niche thumbnail\n"
-                "- `script_structure` (JSON object): Custom script structure configuration\n"
-                "- `tone` (list of strings): List of tone names. Non-existent tones will be created automatically\n"
-                "- `pacing` (list of strings): List of pacing names. Non-existent pacings will be created automatically\n"
-                "- `top_channels` (list of objects): YouTube channels with name and link\n"
-                "  - Each object must have: `name` (string) and `link` (string)\n"
-                "- `best_for` (list of strings): Categories this niche is best suited for\n"
-                "- `status` (string): Either 'active' or 'inactive' (default: 'active')\n\n"
-                "**Note:** The `admin` field is automatically set to the authenticated user."
+            "Create a new niche with detailed content structure.\n\n"
+            "**Required Fields:**\n"
+            "- `title` (string): The title of the niche\n"
+            "- `tagline` (string): A brief tagline for the niche\n\n"
+            "**Optional Fields:**\n"
+            "- `thumbnail` (file): Image file for the niche thumbnail\n"
+            "- `script_structure` (JSON object): Custom script structure configuration\n"
+            "- `tone` (list of strings): List of tone names. Non-existent tones will be created automatically\n"
+            "- `pacing` (list of strings): List of pacing names. Non-existent pacings will be created automatically\n"
+            "- `top_channels` (list of objects): YouTube channels with name and link\n"
+            "  - Each object must have: `name` (string) and `link` (string)\n"
+            "- `best_for` (list of strings): Categories this niche is best suited for\n"
+            "- `status` (string): Either 'active' or 'inactive' (default: 'active')\n\n"
+            "**Note:** The `admin` field is automatically set to the authenticated user."
         ),
         examples=[
             OpenApiExample(
@@ -733,13 +729,13 @@ class NicheViewSet(ModelViewSet):
         tags=["Admin Niches"],
         summary="Upload Niche Thumbnail",
         description=(
-                "Upload a thumbnail image for a specific niche.\n\n"
-                "**Parameters:**\n"
-                "- `id`: The ID of the niche to update\n\n"
-                "**Request Body:**\n"
-                "- `thumbnail`: Image file (JPEG, PNG, GIF, WebP supported)\n\n"
-                "**Response:**\n"
-                "- Returns the updated niche data with the new thumbnail URL"
+            "Upload a thumbnail image for a specific niche.\n\n"
+            "**Parameters:**\n"
+            "- `id`: The ID of the niche to update\n\n"
+            "**Request Body:**\n"
+            "- `thumbnail`: Image file (JPEG, PNG, GIF, WebP supported)\n\n"
+            "**Response:**\n"
+            "- Returns the updated niche data with the new thumbnail URL"
         ),
         request={
             "multipart/form-data": {
@@ -949,34 +945,43 @@ class StatisticsAPIView(APIView):
 
     def get(self, request):
         total_users = User.objects.count()
-        new_users_this_week = User.objects.filter(created__gte=now() - timedelta(days=7)).count()
+        new_users_this_week = User.objects.filter(
+            created__gte=now() - timedelta(days=7)
+        ).count()
 
         # dj-stripe: Group active subscriptions by plan/price Nickname
         active_subs_query = (
-            Subscription.objects
-                .filter(status="active")
-                .values("items__price__nickname", "items__price__product__name")  # Both nickname and product name
-                .annotate(count=Count("id"))
+            Subscription.objects.filter(status="active")
+            .values(
+                "items__price__nickname", "items__price__product__name"
+            )  # Both nickname and product name
+            .annotate(count=Count("id"))
         )
         subs_by_tier = {}
         for entry in active_subs_query:
-            name = entry["items__price__nickname"] or entry["items__price__product__name"] or "Unnamed Plan"
+            name = (
+                entry["items__price__nickname"]
+                or entry["items__price__product__name"]
+                or "Unnamed Plan"
+            )
             subs_by_tier[name] = entry["count"]
 
         script_count = FullScript.objects.count()
         title_count = UserTitles.objects.count()
         niche_count = Niche.objects.filter(status="active").count()
 
-        return Response({
-            "total_users": total_users,
-            "new_users_this_week": new_users_this_week,
-            "active_subscribers_by_plan": subs_by_tier,
-            "feature_usage": {
-                "script_generator": script_count,
-                "title_generator": title_count,
-                "niche_vault": niche_count
+        return Response(
+            {
+                "total_users": total_users,
+                "new_users_this_week": new_users_this_week,
+                "active_subscribers_by_plan": subs_by_tier,
+                "feature_usage": {
+                    "script_generator": script_count,
+                    "title_generator": title_count,
+                    "niche_vault": niche_count,
+                },
             }
-        })
+        )
 
 
 @extend_schema(
@@ -992,7 +997,9 @@ class StatisticsAPIView(APIView):
         "**Query Parameters:**\n"
         "- `start_date`: Filter users created from this date (YYYY-MM-DD format). Optional.\n"
         "- `end_date`: Filter users created until this date (YYYY-MM-DD format). Optional.\n"
-        "- `format`: Set to 'csv' to export as CSV file.\n\n"
+        "- `format`: Set to 'csv' to export as CSV file.\n"
+        "- `limit`: Number of results to return per page (default: 20, max: 100). Optional.\n"
+        "- `offset`: The initial index from which to return the results (default: 0). Optional.\n\n"
         "**Examples:**\n"
         "- Get all users: `/api/v1/admin/users-report/`\n"
         "- Get users created after start date: `/api/v1/admin/users-report/?start_date=2025-01-01`\n"
@@ -1019,6 +1026,20 @@ class StatisticsAPIView(APIView):
             type=str,
             location=OpenApiParameter.QUERY,
             description="Export format: csv (optional)",
+            required=False,
+        ),
+        OpenApiParameter(
+            name="limit",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Number of results to return per page.",
+            required=False,
+        ),
+        OpenApiParameter(
+            name="offset",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="The initial index from which to return the results.",
             required=False,
         ),
     ],
@@ -1052,7 +1073,9 @@ class UsersReportView(APIView):
             if start_date and end_date:
                 start_datetime = datetime.combine(start_date, datetime.min.time())
                 end_datetime = datetime.combine(end_date, datetime.max.time())
-                queryset = queryset.filter(date_joined__range=(start_datetime, end_datetime))
+                queryset = queryset.filter(
+                    date_joined__range=(start_datetime, end_datetime)
+                )
             elif start_date:
                 start_datetime = datetime.combine(start_date, datetime.min.time())
                 queryset = queryset.filter(date_joined__gte=start_datetime)
@@ -1067,25 +1090,53 @@ class UsersReportView(APIView):
 
         # Annotate counts efficiently
         queryset = queryset.annotate(
-            total_titles_generated=Count('user_titles', distinct=True),
+            total_titles_generated=Count("user_titles", distinct=True),
             total_short_scripts=Count(
-                'full_scripts',
-                filter=Q(full_scripts__word_count__gte=2800, full_scripts__word_count__lte=3000),
-                distinct=True
+                "full_scripts",
+                filter=Q(
+                    full_scripts__word_count__gte=2800,
+                    full_scripts__word_count__lte=3000,
+                ),
+                distinct=True,
             ),
             total_medium_scripts=Count(
-                'full_scripts',
-                filter=Q(full_scripts__word_count__gte=5600, full_scripts__word_count__lte=6000),
-                distinct=True
+                "full_scripts",
+                filter=Q(
+                    full_scripts__word_count__gte=5600,
+                    full_scripts__word_count__lte=6000,
+                ),
+                distinct=True,
             ),
             total_long_scripts=Count(
-                'full_scripts',
-                filter=Q(full_scripts__word_count__gte=8400, full_scripts__word_count__lte=9000),
-                distinct=True
+                "full_scripts",
+                filter=Q(
+                    full_scripts__word_count__gte=8400,
+                    full_scripts__word_count__lte=9000,
+                ),
+                distinct=True,
             ),
-        ).only('id', 'email', 'fullname', 'username')
+        ).only("id", "email", "fullname", "username")
 
-        # Build report
+        # Handle CSV export - need all data for export
+        if export_format == "csv":
+            report_data = [
+                {
+                    "name": user.fullname or user.username,
+                    "email": user.email,
+                    "total_titles_generated": user.total_titles_generated or 0,
+                    "total_short_scripts": user.total_short_scripts or 0,
+                    "total_medium_scripts": user.total_medium_scripts or 0,
+                    "total_long_scripts": user.total_long_scripts or 0,
+                }
+                for user in queryset
+            ]
+            return self._export_csv(report_data, start_date_param, end_date_param)
+
+        # Apply pagination
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+        # Build report data for paginated queryset
         report_data = [
             {
                 "name": user.fullname or user.username,
@@ -1095,25 +1146,20 @@ class UsersReportView(APIView):
                 "total_medium_scripts": user.total_medium_scripts or 0,
                 "total_long_scripts": user.total_long_scripts or 0,
             }
-            for user in queryset
+            for user in paginated_queryset
         ]
 
-        # Handle CSV export
-        if export_format == "csv":
-            return self._export_csv(report_data, start_date_param, end_date_param)
-
         serializer = UserDetailsReportSerializer(report_data, many=True)
-        return Response(
-            {"data": serializer.data, "count": len(report_data), "message": "User details report retrieved successfully"},
-            status=status.HTTP_200_OK,
-        )
+        return paginator.get_paginated_response(serializer.data)
 
     def _export_csv(self, report_data, start_date_param, end_date_param):
         response = HttpResponse(content_type="text/csv; charset=utf-8")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         if start_date_param or end_date_param:
-            date_str = f"{start_date_param or 'NA'}_{end_date_param or 'NA'}".replace("-", "")
+            date_str = f"{start_date_param or 'NA'}_{end_date_param or 'NA'}".replace(
+                "-", ""
+            )
             filename = f"users_report_{date_str}_{timestamp}.csv"
         else:
             filename = f"users_report_all_{timestamp}.csv"
@@ -1121,17 +1167,28 @@ class UsersReportView(APIView):
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
         writer = csv.writer(response)
-        writer.writerow(["Name", "Email", "Total Titles", "Short Scripts", "Medium Scripts", "Long Scripts"])
+        writer.writerow(
+            [
+                "Name",
+                "Email",
+                "Total Titles",
+                "Short Scripts",
+                "Medium Scripts",
+                "Long Scripts",
+            ]
+        )
 
         for row in report_data:
-            writer.writerow([
-                row["name"],
-                row["email"],
-                row["total_titles_generated"],
-                row["total_short_scripts"],
-                row["total_medium_scripts"],
-                row["total_long_scripts"],
-            ])
+            writer.writerow(
+                [
+                    row["name"],
+                    row["email"],
+                    row["total_titles_generated"],
+                    row["total_short_scripts"],
+                    row["total_medium_scripts"],
+                    row["total_long_scripts"],
+                ]
+            )
 
         return response
 
@@ -1193,7 +1250,9 @@ class UsersReportExportView(APIView):
             if start_date and end_date:
                 start_datetime = datetime.combine(start_date, datetime.min.time())
                 end_datetime = datetime.combine(end_date, datetime.max.time())
-                queryset = queryset.filter(date_joined__range=(start_datetime, end_datetime))
+                queryset = queryset.filter(
+                    date_joined__range=(start_datetime, end_datetime)
+                )
             elif start_date:
                 start_datetime = datetime.combine(start_date, datetime.min.time())
                 queryset = queryset.filter(date_joined__gte=start_datetime)
@@ -1207,23 +1266,32 @@ class UsersReportExportView(APIView):
                 )
 
         queryset = queryset.annotate(
-            total_titles_generated=Count('user_titles', distinct=True),
+            total_titles_generated=Count("user_titles", distinct=True),
             total_short_scripts=Count(
-                'full_scripts',
-                filter=Q(full_scripts__word_count__gte=2800, full_scripts__word_count__lte=3000),
-                distinct=True
+                "full_scripts",
+                filter=Q(
+                    full_scripts__word_count__gte=2800,
+                    full_scripts__word_count__lte=3000,
+                ),
+                distinct=True,
             ),
             total_medium_scripts=Count(
-                'full_scripts',
-                filter=Q(full_scripts__word_count__gte=5600, full_scripts__word_count__lte=6000),
-                distinct=True
+                "full_scripts",
+                filter=Q(
+                    full_scripts__word_count__gte=5600,
+                    full_scripts__word_count__lte=6000,
+                ),
+                distinct=True,
             ),
             total_long_scripts=Count(
-                'full_scripts',
-                filter=Q(full_scripts__word_count__gte=8400, full_scripts__word_count__lte=9000),
-                distinct=True
+                "full_scripts",
+                filter=Q(
+                    full_scripts__word_count__gte=8400,
+                    full_scripts__word_count__lte=9000,
+                ),
+                distinct=True,
             ),
-        ).only('id', 'email', 'fullname', 'username')
+        ).only("id", "email", "fullname", "username")
 
         report_data = [
             {
@@ -1244,34 +1312,45 @@ class UsersReportExportView(APIView):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         if start_date_param or end_date_param:
-            date_str = f"{start_date_param or 'NA'}_{end_date_param or 'NA'}".replace("-", "")
+            date_str = f"{start_date_param or 'NA'}_{end_date_param or 'NA'}".replace(
+                "-", ""
+            )
             filename = f"users_report_{date_str}_{timestamp}.csv"
         else:
             filename = f"users_report_all_{timestamp}.csv"
 
-        response["Content-Disposition"] = f'attachment; filename=\"{filename}\"'
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
         writer = csv.writer(response)
-        writer.writerow(["Name", "Email", "Total Titles", "Short Scripts", "Medium Scripts", "Long Scripts"])
+        writer.writerow(
+            [
+                "Name",
+                "Email",
+                "Total Titles",
+                "Short Scripts",
+                "Medium Scripts",
+                "Long Scripts",
+            ]
+        )
 
         for row in report_data:
-            writer.writerow([
-                row["name"],
-                row["email"],
-                row["total_titles_generated"],
-                row["total_short_scripts"],
-                row["total_medium_scripts"],
-                row["total_long_scripts"],
-            ])
+            writer.writerow(
+                [
+                    row["name"],
+                    row["email"],
+                    row["total_titles_generated"],
+                    row["total_short_scripts"],
+                    row["total_medium_scripts"],
+                    row["total_long_scripts"],
+                ]
+            )
 
         return response
-
 
 
 # ... existing code ...
 
 # Helper function to get customer without creating
-import djstripe.models as djm
 
 
 def get_customer_if_exists(user):
@@ -1302,14 +1381,19 @@ def get_plan_name_from_subscription(subscription):
                     )
                     if local_plans.exists():
                         # Get the first matching plan (prefer active ones)
-                        local_plan = local_plans.filter(is_active=True).first() or local_plans.first()
+                        local_plan = (
+                            local_plans.filter(is_active=True).first()
+                            or local_plans.first()
+                        )
                         plan_name = local_plan.name
                         plan_type = local_plan.plan_type
                     else:
                         # Fallback to djstripe data
                         if first_item.price.product:
                             plan_name = first_item.price.product.name or "Unknown Plan"
-                            plan_type = first_item.price.product.metadata.get("plan_type", "unknown")
+                            plan_type = first_item.price.product.metadata.get(
+                                "plan_type", "unknown"
+                            )
                         else:
                             plan_name = "Unknown Plan"
                 except Exception as e:
@@ -1317,7 +1401,9 @@ def get_plan_name_from_subscription(subscription):
                     # Fallback to djstripe data
                     if first_item.price.product:
                         plan_name = first_item.price.product.name or "Unknown Plan"
-                        plan_type = first_item.price.product.metadata.get("plan_type", "unknown")
+                        plan_type = first_item.price.product.metadata.get(
+                            "plan_type", "unknown"
+                        )
                     else:
                         plan_name = "Unknown Plan"
             else:
@@ -1339,7 +1425,14 @@ def get_plan_name_from_subscription(subscription):
     if plan_type and plan_type in plan_type_mapping:
         display_name = plan_type_mapping[plan_type]
         # If plan_name is just the type or generic, use the mapped name
-        if not plan_name or plan_name.lower() in ["trial", "basic", "pro", "trial plan", "basic plan", "pro plan"]:
+        if not plan_name or plan_name.lower() in [
+            "trial",
+            "basic",
+            "pro",
+            "trial plan",
+            "basic plan",
+            "pro plan",
+        ]:
             plan_name = display_name
         elif display_name.lower() not in plan_name.lower():
             # If display name is not in plan_name, prepend or use display name
@@ -1413,7 +1506,10 @@ class UserConversionFunnelView(APIView):
     """
     Admin API to get user conversion funnel data.
     Supports filtering by start_date, end_date, or both.
+    Supports pagination with limit and offset.
     """
+
+    pagination_class = GenerationsLimitOffsetPagination
 
     def get(self, request):
         start_date_param = request.query_params.get("start_date")
@@ -1448,10 +1544,17 @@ class UserConversionFunnelView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        queryset = queryset.only('id', 'email', 'fullname', 'username', 'is_active', 'date_joined')
+        queryset = queryset.only(
+            "id", "email", "fullname", "username", "is_active", "date_joined"
+        )
 
+        # Apply pagination
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+        # Build funnel_data for paginated users
         funnel_data = []
-        for user in queryset:
+        for user in paginated_queryset:
             name = user.fullname or user.username
             email = user.email
             user_status = "Active" if user.is_active else "Inactive"
@@ -1460,25 +1563,29 @@ class UserConversionFunnelView(APIView):
 
             customer = get_customer_if_exists(user)
             if customer:
-                subscription = djm.Subscription.objects.filter(customer=customer).order_by("-created").first()
+                subscription = (
+                    djm.Subscription.objects.filter(customer=customer)
+                    .order_by("-created")
+                    .first()
+                )
                 if subscription:
                     subscription_plan = get_plan_name_from_subscription(subscription)
                     subscription_status = get_subscription_status(subscription)
 
-            funnel_data.append({
-                "name": name,
-                "email": email,
-                "subscription_plan": subscription_plan,
-                "subscription_status": subscription_status,
-                "status": user_status,
-                "has_subscription": subscription_status not in ["No Subscription", "Canceled", "Expired"],
-            })
+            funnel_data.append(
+                {
+                    "name": name,
+                    "email": email,
+                    "subscription_plan": subscription_plan,
+                    "subscription_status": subscription_status,
+                    "status": user_status,
+                    "has_subscription": subscription_status
+                    not in ["No Subscription", "Canceled", "Expired"],
+                }
+            )
 
-        return Response({
-            "data": funnel_data,
-            "count": len(funnel_data),
-            "message": "Conversion funnel data retrieved successfully"
-        }, status=status.HTTP_200_OK)
+        # Return paginated response in the format expected by frontend
+        return paginator.get_paginated_response(funnel_data)
 
 
 @extend_schema(
@@ -1554,7 +1661,9 @@ class UserConversionFunnelExportView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        queryset = queryset.only('id', 'email', 'fullname', 'username', 'is_active', 'date_joined')
+        queryset = queryset.only(
+            "id", "email", "fullname", "username", "is_active", "date_joined"
+        )
 
         funnel_data = []
         for user in queryset:
@@ -1566,18 +1675,24 @@ class UserConversionFunnelExportView(APIView):
 
             customer = get_customer_if_exists(user)
             if customer:
-                subscription = djm.Subscription.objects.filter(customer=customer).order_by("-created").first()
+                subscription = (
+                    djm.Subscription.objects.filter(customer=customer)
+                    .order_by("-created")
+                    .first()
+                )
                 if subscription:
                     subscription_plan = get_plan_name_from_subscription(subscription)
                     subscription_status = get_subscription_status(subscription)
 
-            funnel_data.append({
-                "name": name,
-                "email": email,
-                "subscription_plan": subscription_plan,
-                "subscription_status": subscription_status,
-                "status": user_status,
-            })
+            funnel_data.append(
+                {
+                    "name": name,
+                    "email": email,
+                    "subscription_plan": subscription_plan,
+                    "subscription_status": subscription_status,
+                    "status": user_status,
+                }
+            )
 
         return self._export_csv(funnel_data, start_date_param, end_date_param)
 
@@ -1599,9 +1714,25 @@ class UserConversionFunnelExportView(APIView):
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
         writer = csv.writer(response)
-        writer.writerow(["Name", "Email", "Subscription Plan", "Subscription Status", "Active/Inactive Status"])
+        writer.writerow(
+            [
+                "Name",
+                "Email",
+                "Subscription Plan",
+                "Subscription Status",
+                "Active/Inactive Status",
+            ]
+        )
 
         for row in funnel_data:
-            writer.writerow([row["name"], row["email"], row["subscription_plan"], row["subscription_status"], row["status"]])
+            writer.writerow(
+                [
+                    row["name"],
+                    row["email"],
+                    row["subscription_plan"],
+                    row["subscription_status"],
+                    row["status"],
+                ]
+            )
 
         return response

@@ -13,7 +13,7 @@ import Text from 'components/ui/Text';
 import CustomTable from 'components/common/CustomTable';
 
 const columns = [
-  { key: 'id', label: 'ID' },
+  { key: 'index', label: '#' },
   { key: 'fullname', label: 'Name' },
   { key: 'email', label: 'Email' },
   { key: 'date_joined', label: 'Signup Date' },
@@ -23,34 +23,33 @@ const columns = [
 ];
 
 export default function UserManagement() {
-  const {
-    users,
-    loading,
-    error,
-    pagination,
-    getUsers,
-    activateUser,
-    deactivateUser,
-    deleteUser,
-    // grantAdminPrivileges,
-    // revokeAdminPrivileges,
-  } = useAdminUsers();
+  const { users, loading, error, pagination, getUsers, activateUser, deactivateUser, deleteUser } =
+    useAdminUsers();
 
   const [searchTerm, setSearchTerm] = useState('');
-
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const router = useRouter();
 
   useEffect(() => {
     getUsers(1, 10);
   }, [getUsers]);
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    getUsers(1, pagination.limit, term);
-  };
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  useEffect(() => {
+    getUsers(1, pagination.limit, debouncedSearchTerm);
+  }, [debouncedSearchTerm, pagination.limit, getUsers]);
 
   const handlePageChange = (page: number) => {
-    getUsers(page, pagination.limit, searchTerm);
+    getUsers(page, pagination.limit, debouncedSearchTerm);
   };
 
   const handleActivateUser = async (userId: string) => {
@@ -85,29 +84,11 @@ export default function UserManagement() {
     }
   };
 
-  // const handleGrantAdmin = async (userId: string) => {
-  //   try {
-  //     await grantAdminPrivileges(userId);
-  //     toast.success('Admin privileges granted');
-  //   } catch (error) {
-  //     console.error('Failed to grant admin privileges:', error);
-  //     toast.error('Failed to grant admin privileges');
-  //   }
-  // };
+  const startIndex = (pagination.page - 1) * pagination.limit;
 
-  // const handleRevokeAdmin = async (userId: string) => {
-  //   try {
-  //     await revokeAdminPrivileges(userId);
-  //     toast.success('Admin privileges revoked');
-  //   } catch (error) {
-  //     console.error('Failed to revoke admin privileges:', error);
-  //     toast.error('Failed to revoke admin privileges');
-  //   }
-  // };
-
-  const tableData = users.map((user: AdminUser) => ({
-    id: user?.id,
-    fullname: user?.fullname || 'N/A',
+  const tableData = users.map((user: AdminUser, index: number) => ({
+    index: startIndex + index + 1,
+    fullname: user?.fullname || user?.username || 'N/A',
     email: user?.email,
     date_joined: new Date(user?.date_joined).toLocaleDateString(),
     is_active: user?.is_active ? 'Active' : 'Inactive',
@@ -183,7 +164,7 @@ export default function UserManagement() {
             type="text"
             placeholder="Search users..."
             value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="rounded-xl border border-gray-500 bg-transparent px-4 py-2 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
           />
 

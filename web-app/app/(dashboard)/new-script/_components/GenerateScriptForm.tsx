@@ -104,7 +104,19 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
 
   const { watch } = methods;
 
-  const onSubmit = (_formData: FormType) => {
+  // inside GenerateScriptForm component — replace your existing onSubmit with this:
+
+  const fileToDataUrl = (file: File): Promise<{ name: string; type: string; dataUrl: string }> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        resolve({ name: file.name, type: file.type, dataUrl: String(reader.result) });
+      };
+      reader.onerror = (e) => reject(e);
+      reader.readAsDataURL(file);
+    });
+
+  const onSubmit = async (_formData: FormType) => {
     const formValue = new FormData();
     const payload: Partial<FormType & { niche_id?: string }> = {};
 
@@ -132,13 +144,10 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       (file) => file && typeof file.size === 'number' && file.size > 0,
     );
 
-    console.log('files state:', files);
-    console.log('linkItems:', linkItems, 'articleItems:', articleItems, 'imageItems:', imageItems);
-    console.log('hasImageFile (strict):', hasImageFile);
-
     const nicheParam = nicheId ? nicheId : undefined;
 
     if (!hasImageFile) {
+      // same JSON payload you already build
       payload.description = _formData.description ?? '';
       payload.tones = toneIds;
       if (_formData.template_style) payload.template_style = _formData.template_style;
@@ -147,25 +156,15 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
         payload.max_length = _formData.max_length;
       }
       payload.title = _formData.title ?? '';
+      if (nicheParam) payload.niche_id = nicheParam;
 
-      if (nicheParam) {
-        payload.niche_id = nicheParam;
-      }
+      if (linkItems.length === 1) payload.youtube_url = linkItems[0];
+      else if (linkItems.length > 1) payload.youtube_url = linkItems;
 
-      if (linkItems.length === 1) {
-        payload.youtube_url = linkItems[0];
-      } else if (linkItems.length > 1) {
-        payload.youtube_url = linkItems;
-      }
-
-      if (articleItems.length === 1) {
-        payload.article_url = articleItems[0];
-      } else if (articleItems.length > 1) {
-        payload.article_url = articleItems;
-      }
-
-      logger.info('Sending JSON payload:', payload);
+      if (articleItems.length === 1) payload.article_url = articleItems[0];
+      else if (articleItems.length > 1) payload.article_url = articleItems;
     } else {
+      // build FormData (same as before)
       formValue.append('description', _formData.description ?? '');
 
       toneIds.forEach((id) => formValue.append('tones', String(id)));
@@ -180,16 +179,50 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
 
       if (nicheParam) {
         formValue.append('niche_id', nicheParam);
-        console.log('Including niche_id in FormData:', nicheParam);
       }
 
       imageItems.forEach((file) => formValue.append('image', file));
       linkItems.forEach((l) => formValue.append('youtube_url', l));
       articleItems.forEach((a) => formValue.append('article_url', a));
-
-      logger.info('Sending FormData with files/links');
     }
 
+    // ---- Persist a serializable copy of the payload to localStorage ----
+    try {
+      if (!hasImageFile) {
+        // store JSON payload directly
+        const saved = {
+          hasImageFile: false,
+          timestamp: Date.now(),
+          payload,
+        };
+        localStorage.setItem('last_outline_payload', JSON.stringify(saved));
+      } else {
+        // convert image files to data URLs, then save a serializable object
+        const imagesData = await Promise.all(imageItems.map((f) => fileToDataUrl(f)));
+        const saved = {
+          hasImageFile: true,
+          timestamp: Date.now(),
+          data: {
+            description: _formData.description ?? '',
+            tones: toneIds,
+            template_style: _formData.template_style ?? null,
+            min_length: _formData.min_length ?? 0,
+            max_length: _formData.max_length ?? 500,
+            title: _formData.title ?? '',
+            niche_id: nicheParam ?? null,
+            linkItems,
+            articleItems,
+            images: imagesData, // [{name, type, dataUrl}, ...]
+          },
+        };
+        localStorage.setItem('last_outline_payload', JSON.stringify(saved));
+      }
+    } catch (e) {
+      // Non-fatal: warn but continue
+      logger.warn('Could not save last_outline_payload to localStorage', e);
+    }
+
+    // Save only the description into draft_description (keep existing behavior)
     if (typeof window !== 'undefined') {
       try {
         const descToSave = hasImageFile
@@ -201,6 +234,7 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       }
     }
 
+    // Finally call generateOutline just like before
     generateOutline(hasImageFile ? formValue : payload, {
       onSuccess: (data) => {
         logger.info('Outline generated:', data);

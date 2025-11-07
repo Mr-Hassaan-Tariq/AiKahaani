@@ -29,6 +29,15 @@ export async function getUserConversionFunnel<T>(endpoint: string) {
     },
   });
   if (!res.ok) {
+    // Handle token expiration - redirect to signin
+    if (res.status === 401 && typeof window !== 'undefined') {
+      // Clear tokens
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      // Redirect to signin page
+      window.location.href = '/signin';
+      throw new Error('Session expired. Please sign in again.');
+    }
     const error = await processError(res);
     logger.error(error);
     throw error;
@@ -48,7 +57,15 @@ export async function getClientDataAction<T>(endpoint: string, schema?: z.ZodSch
     },
   });
   if (!res.ok) {
-    // if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
+    // Handle token expiration - redirect to signin
+    if (res.status === 401 && typeof window !== 'undefined') {
+      // Clear tokens
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      // Redirect to signin page
+      window.location.href = '/signin';
+      throw new Error('Session expired. Please sign in again.');
+    }
     const error = await processError(res);
     logger.error(error);
     throw error;
@@ -79,7 +96,15 @@ export async function getDashboardStatistics<T>(endpoint: string, schema?: z.Zod
     },
   });
   if (!res.ok) {
-    // if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
+    // Handle token expiration - redirect to signin
+    if (res.status === 401 && typeof window !== 'undefined') {
+      // Clear tokens
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      // Redirect to signin page
+      window.location.href = '/signin';
+      throw new Error('Session expired. Please sign in again.');
+    }
     const error = await processError(res);
     logger.error(error);
     throw error;
@@ -116,6 +141,15 @@ export async function postClientDataAction<T, P>(endpoint: string, body?: P, cus
   });
 
   if (!res.ok) {
+    // Handle token expiration - redirect to signin
+    if (res.status === 401 && typeof window !== 'undefined') {
+      // Clear tokens
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      // Redirect to signin page
+      window.location.href = '/signin';
+      throw new Error('Session expired. Please sign in again.');
+    }
     const error = await processError(res);
     logger.error(error);
     throw error;
@@ -135,7 +169,15 @@ export async function patchClientDataAction<T, P>(endpoint: string, body?: P) {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
+    // Handle token expiration - redirect to signin
+    if (res.status === 401 && typeof window !== 'undefined') {
+      // Clear tokens
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      // Redirect to signin page
+      window.location.href = '/signin';
+      throw new Error('Session expired. Please sign in again.');
+    }
     const error = await processError(res);
     logger.error(error);
     throw error;
@@ -154,6 +196,15 @@ export async function deleteClientDataAction<T>(endpoint: string) {
   });
 
   if (!res.ok) {
+    // Handle token expiration - redirect to signin
+    if (res.status === 401 && typeof window !== 'undefined') {
+      // Clear tokens
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      // Redirect to signin page
+      window.location.href = '/signin';
+      throw new Error('Session expired. Please sign in again.');
+    }
     const error = await processError(res);
     logger.error(error);
     throw error;
@@ -178,7 +229,15 @@ export async function putClientDataAction<T, P>(endpoint: string, body?: P) {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
+    // Handle token expiration - redirect to signin
+    if (res.status === 401 && typeof window !== 'undefined') {
+      // Clear tokens
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      // Redirect to signin page
+      window.location.href = '/signin';
+      throw new Error('Session expired. Please sign in again.');
+    }
     const error = await processError(res);
     logger.error(error);
     throw error;

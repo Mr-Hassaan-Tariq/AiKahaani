@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CheckCircle, Trash2, User as UserIcon, XCircle } from 'lucide-react';
+import {
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  User as UserIcon,
+  XCircle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import ScriptCard from './_components/ScriptCard';
@@ -49,6 +56,7 @@ type ScriptGeneration = {
 type UserDetail = {
   id: number | string;
   fullname?: string | null;
+  username: string;
   email?: string | null;
   date_joined?: string | null;
   is_active?: boolean;
@@ -68,8 +76,19 @@ export default function UserDetailPageClient() {
 
   const [titles, setTitles] = useState<UserTitle[]>([]);
   const [titlesLoading, setTitlesLoading] = useState<boolean>(false);
+  const [titlesCount, setTitlesCount] = useState<number>(0);
+  const [titlesNext, setTitlesNext] = useState<string | null>(null);
+  const [titlesPrevious, setTitlesPrevious] = useState<string | null>(null);
+  const [titlesOffset, setTitlesOffset] = useState<number>(0);
+  const [titlesLimit] = useState<number>(10);
+
   const [scripts, setScripts] = useState<ScriptGeneration[]>([]);
   const [scriptsLoading, setScriptsLoading] = useState<boolean>(false);
+  const [scriptsCount, setScriptsCount] = useState<number>(0);
+  const [scriptsNext, setScriptsNext] = useState<string | null>(null);
+  const [scriptsPrevious, setScriptsPrevious] = useState<string | null>(null);
+  const [scriptsOffset, setScriptsOffset] = useState<number>(0);
+  const [scriptsLimit] = useState<number>(10);
 
   // Tab state
   const [activeTab, setActiveTab] = useState<'titles' | 'scripts'>('titles');
@@ -137,10 +156,13 @@ export default function UserDetailPageClient() {
       setTitlesLoading(true);
       try {
         const res = await getClientDataAction<UserTitlesResponse>(
-          `v1/scripts/titles/admin/all-titles/?user=${userId}`,
+          `v1/scripts/titles/admin/all-titles/?user=${userId}&limit=${titlesLimit}&offset=${titlesOffset}`,
         );
         if (res?.results?.data) {
           setTitles(res.results.data);
+          setTitlesCount(res.count || 0);
+          setTitlesNext(res.next);
+          setTitlesPrevious(res.previous);
         }
       } catch {
         // Error fetching titles
@@ -149,56 +171,51 @@ export default function UserDetailPageClient() {
       }
     };
 
+    fetchTitles();
+  }, [userId, titlesOffset, titlesLimit]);
+
+  useEffect(() => {
+    if (!userId) return;
+
     const fetchScripts = async () => {
       setScriptsLoading(true);
       try {
-        // Use generations endpoint with user filter (if available) or fetch all and filter
-        // Since generations endpoint filters by authenticated user, we might need admin endpoint
-        // But let's try generations first with a high limit to get all
-        const generationsRes = await getClientDataAction<{
+        // Use admin endpoint for scripts
+        const adminRes = await getClientDataAction<{
           count: number;
           next: string | null;
           previous: string | null;
-          results: ScriptGeneration[];
-        }>(`v1/scripts/generations/?limit=100&user=${userId}`);
+          results: Array<{
+            uuid: string;
+            title: string;
+            status: string;
+            word_count: number | null;
+            estimated_duration: number | null;
+            created: string;
+          }>;
+        }>(
+          `v1/scripts/admin/all-full-scripts/?user=${userId}&limit=${scriptsLimit}&offset=${scriptsOffset}`,
+        );
 
-        if (generationsRes?.results) {
-          // Filter by user ID if the response includes user info
-          // Note: Generations endpoint filters by request.user, so for admin viewing other users,
-          // we may need to use a different approach or admin endpoint
-          setScripts(generationsRes.results);
-        } else {
-          // Fallback: Try admin endpoint
-          const adminRes = await getClientDataAction<{
-            count: number;
-            next: string | null;
-            previous: string | null;
-            results: Array<{
-              uuid: string;
-              title: string;
-              status: string;
-              word_count: number | null;
-              estimated_duration: number | null;
-              created: string;
-            }>;
-          }>(`v1/scripts/admin/all-full-scripts/?user=${userId}&limit=100`);
-          if (adminRes?.results) {
-            // Map admin response to ScriptGeneration format
-            const mappedScripts: any = adminRes.results.map((s) => ({
-              uuid: s.uuid,
-              title: s.title,
-              type: 'script' as const,
-              status: (s.status as 'draft' | 'generated' | 'saved') || 'draft',
-              status_display: s.status || 'Draft',
-              word_count: s.word_count,
-              estimated_duration: Number(s.estimated_duration).toFixed(2),
-              created: s.created,
-              modified: s.created,
-              is_published: null,
-              version: 1,
-            }));
-            setScripts(mappedScripts);
-          }
+        if (adminRes?.results) {
+          // Map admin response to ScriptGeneration format
+          const mappedScripts: ScriptGeneration[] = adminRes.results.map((s) => ({
+            uuid: s.uuid,
+            title: s.title,
+            type: 'script' as const,
+            status: (s.status as 'draft' | 'generated' | 'saved') || 'draft',
+            status_display: s.status || 'Draft',
+            word_count: s.word_count,
+            estimated_duration: s.estimated_duration ? Number(s.estimated_duration) : null,
+            created: s.created,
+            modified: s.created,
+            is_published: null,
+            version: 1,
+          }));
+          setScripts(mappedScripts);
+          setScriptsCount(adminRes.count || 0);
+          setScriptsNext(adminRes.next);
+          setScriptsPrevious(adminRes.previous);
         }
       } catch {
         // Error fetching scripts
@@ -207,9 +224,8 @@ export default function UserDetailPageClient() {
       }
     };
 
-    fetchTitles();
     fetchScripts();
-  }, [userId]);
+  }, [userId, scriptsOffset, scriptsLimit]);
 
   const formatDate = (d?: string | null) => (d ? new Date(d).toLocaleString() : '—');
 
@@ -237,81 +253,88 @@ export default function UserDetailPageClient() {
           </div>
         </Card>
       ) : user ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Left: avatar, status, actions */}
-          <div className="space-y-4">
-            <Card>
-              <div className="text-center">
-                <div className="mx-auto mb-4 flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-[#1E1E1E] text-4xl text-white">
-                  {user.fullname ? (
-                    user.fullname[0].toUpperCase()
-                  ) : (
-                    <UserIcon className="h-12 w-12 text-[#AAACA6]" />
-                  )}
-                </div>
-
-                <div className="text-lg font-semibold text-white">{user.fullname || 'No name'}</div>
-                <div className="text-sm text-[#AAACA6]">{user.email}</div>
-
-                <div className="mt-5 flex flex-col items-center gap-3">
-                  <div className="w-full">
-                    {user.is_active ? (
-                      <div className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm font-semibold text-[#20BF0E]">
-                        <CheckCircle size={16} /> Active
-                      </div>
+        <div className="gap-3">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Left: avatar, status, actions */}
+            <div className="space-y-6">
+              <Card>
+                <div className="text-center">
+                  <div className="mx-auto mb-4 flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-[#1E1E1E] text-4xl text-white">
+                    {user.fullname ? (
+                      user.fullname[0].toUpperCase()
                     ) : (
-                      <div className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-300">
-                        <XCircle size={16} /> Inactive
-                      </div>
+                      <UserIcon className="h-12 w-12 text-[#AAACA6]" />
                     )}
                   </div>
 
-                  <div className="flex w-full gap-3">
-                    <button
-                      onClick={() =>
-                        user.is_active
-                          ? handleDeactivateUser(String(user.id))
-                          : handleActivateUser(String(user.id))
-                      }
-                      className="flex-1 rounded-lg border border-[#2b2b2b] bg-[#1E1E1E] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#20BF0E]/10"
-                    >
-                      {user.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
+                  <div className="text-lg font-semibold text-white">
+                    {user.fullname || user?.username || 'No name'}
+                  </div>
+                  <div className="text-sm text-[#AAACA6]">{user.email}</div>
 
-                    <button
-                      onClick={() => handleDeleteUser(String(user.id))}
-                      className="rounded-lg border border-[#2b2b2b] bg-[#1E1E1E] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500/10"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                  <div className="mt-5 flex flex-col items-center gap-3">
+                    <div className="w-full">
+                      {user.is_active ? (
+                        <div className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm font-semibold text-[#20BF0E]">
+                          <CheckCircle size={16} /> Active
+                        </div>
+                      ) : (
+                        <div className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-300">
+                          <XCircle size={16} /> Inactive
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex w-full gap-3">
+                      <button
+                        onClick={() =>
+                          user.is_active
+                            ? handleDeactivateUser(String(user.id))
+                            : handleActivateUser(String(user.id))
+                        }
+                        className="flex-1 rounded-lg border border-[#2b2b2b] bg-[#1E1E1E] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#20BF0E]/10"
+                      >
+                        {user.is_active ? 'Deactivate' : 'Activate'}
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteUser(String(user.id))}
+                        className="rounded-lg border border-[#2b2b2b] bg-[#1E1E1E] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500/10"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
 
-            <Card>
-              <div className="text-sm text-[#AAACA6]">Roles</div>
-              <div className="mt-2 text-sm font-medium text-white">
-                {user.is_admin ? 'Admin' : user.roles_display?.join(', ') || 'User'}
-              </div>
-            </Card>
+            <div className="space-y-6 lg:col-span-2">
+              <Card>
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-white">User details</h2>
+                  <p className="text-sm text-[#AAACA6]">Overview and activity for this user</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <DetailRow label="User ID" value={String(user.id)} />
+                  <DetailRow label="Signup date" value={formatDate(user.date_joined)} />
+                  <DetailRow label="Last login" value={formatDate(user.last_login)} />
+                  <DetailRow label="Email" value={user.email || '—'} />
+                </div>
+              </Card>
+
+              <Card>
+                <div className="text-sm text-[#AAACA6]">Roles</div>
+                <div className="mt-2 text-sm font-medium text-white">
+                  {user.is_admin ? 'Admin' : user.roles_display?.join(', ') || 'User'}
+                </div>
+              </Card>
+            </div>
           </div>
 
-          <div className="space-y-6 lg:col-span-2">
-            <Card>
-              <div className="mb-4">
-                <h2 className="text-2xl font-bold text-white">User details</h2>
-                <p className="text-sm text-[#AAACA6]">Overview and activity for this user</p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <DetailRow label="User ID" value={String(user.id)} />
-                <DetailRow label="Signup date" value={formatDate(user.date_joined)} />
-                <DetailRow label="Last login" value={formatDate(user.last_login)} />
-                <DetailRow label="Email" value={user.email || '—'} />
-              </div>
-            </Card>
-
+          {/* Tab content */}
+          <div className="mt-6">
             {/* Tabs section */}
             <Card>
               {/* Tabs header */}
@@ -320,33 +343,32 @@ export default function UserDetailPageClient() {
                   onClick={() => setActiveTab('titles')}
                   className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#20BF0E]/40 ${activeTab === 'titles' ? 'border border-green-500/30 bg-green-500/10 text-[#20BF0E]' : 'border border-transparent bg-[#2d2d2d] text-[#AAACA6]'}`}
                 >
-                  Generated Titles ({titles.length})
+                  Generated Titles ({titlesCount})
                 </button>
                 <button
                   onClick={() => setActiveTab('scripts')}
                   className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#20BF0E]/40 ${activeTab === 'scripts' ? 'border border-green-500/30 bg-green-500/10 text-[#20BF0E]' : 'border border-transparent bg-[#2d2d2d] text-[#AAACA6]'}`}
                 >
-                  Script Generations ({scripts.length})
+                  Script Generations ({scriptsCount})
                 </button>
               </div>
 
-              {/* Tab content */}
-              <div>
-                {activeTab === 'titles' && (
-                  <div>
-                    {titlesLoading && (
-                      <div className="flex items-center justify-center py-12">
-                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#20BF0E] border-t-transparent" />
+              {activeTab === 'titles' && (
+                <div>
+                  {titlesLoading && (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#20BF0E] border-t-transparent" />
+                    </div>
+                  )}
+                  {!titlesLoading && titles.length === 0 && (
+                    <div className="py-12 text-center">
+                      <div className="text-sm text-[#AAACA6]">
+                        No titles available for this user.
                       </div>
-                    )}
-                    {!titlesLoading && titles.length === 0 && (
-                      <div className="py-12 text-center">
-                        <div className="text-sm text-[#AAACA6]">
-                          No titles available for this user.
-                        </div>
-                      </div>
-                    )}
-                    {!titlesLoading && (
+                    </div>
+                  )}
+                  {!titlesLoading && (
+                    <>
                       <div className="space-y-3">
                         {titles.map((titleRecord, idx) => (
                           <TitleCard
@@ -357,34 +379,56 @@ export default function UserDetailPageClient() {
                           />
                         ))}
                       </div>
-                    )}
-                  </div>
-                )}
+                      {titlesCount > 0 && (
+                        <PaginationControls
+                          count={titlesCount}
+                          limit={titlesLimit}
+                          offset={titlesOffset}
+                          next={titlesNext}
+                          previous={titlesPrevious}
+                          onPageChange={(newOffset) => setTitlesOffset(newOffset)}
+                        />
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
 
-                {activeTab === 'scripts' && (
-                  <div>
-                    {scriptsLoading && (
-                      <div className="flex items-center justify-center py-12">
-                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#20BF0E] border-t-transparent" />
+              {activeTab === 'scripts' && (
+                <div>
+                  {scriptsLoading && (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#20BF0E] border-t-transparent" />
+                    </div>
+                  )}
+                  {!scriptsLoading && scripts.length === 0 && (
+                    <div className="py-12 text-center">
+                      <div className="text-sm text-[#AAACA6]">
+                        No scripts available for this user.
                       </div>
-                    )}
-                    {!scriptsLoading && scripts.length === 0 && (
-                      <div className="py-12 text-center">
-                        <div className="text-sm text-[#AAACA6]">
-                          No scripts available for this user.
-                        </div>
-                      </div>
-                    )}
-                    {!scriptsLoading && (
+                    </div>
+                  )}
+                  {!scriptsLoading && (
+                    <>
                       <div className="space-y-3">
                         {scripts.map((script) => (
                           <ScriptCard key={script.uuid} script={script} onCopy={copyText} />
                         ))}
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                      {scriptsCount > 0 && (
+                        <PaginationControls
+                          count={scriptsCount}
+                          limit={scriptsLimit}
+                          offset={scriptsOffset}
+                          next={scriptsNext}
+                          previous={scriptsPrevious}
+                          onPageChange={(newOffset) => setScriptsOffset(newOffset)}
+                        />
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </Card>
           </div>
         </div>
@@ -402,6 +446,74 @@ function DetailRow({ label, value }: { label: string; value: string }) {
     <div className="flex flex-col gap-1">
       <div className="text-xs text-[#AAACA6]">{label}</div>
       <div className="text-sm font-medium text-white">{value}</div>
+    </div>
+  );
+}
+
+type PaginationControlsProps = {
+  count: number;
+  limit: number;
+  offset: number;
+  next: string | null;
+  previous: string | null;
+  onPageChange: (newOffset: number) => void;
+};
+
+function PaginationControls({
+  count,
+  limit,
+  offset,
+  next,
+  previous,
+  onPageChange,
+}: PaginationControlsProps) {
+  const currentPage = Math.floor(offset / limit) + 1;
+  const totalPages = Math.ceil(count / limit);
+  const startItem = offset + 1;
+  const endItem = Math.min(offset + limit, count);
+
+  const handlePrevious = () => {
+    if (previous) {
+      onPageChange(Math.max(0, offset - limit));
+    }
+  };
+
+  const handleNext = () => {
+    if (next) {
+      onPageChange(offset + limit);
+    }
+  };
+
+  return (
+    <div className="mt-6 flex items-center justify-between border-t border-[#2b2b2b] pt-4">
+      <div className="text-sm text-[#AAACA6]">
+        Showing {startItem} to {endItem} of {count} results
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handlePrevious}
+          disabled={!previous}
+          className={`flex items-center gap-1 rounded-lg border border-[#2b2b2b] bg-[#1E1E1E] px-3 py-2 text-sm font-medium text-white transition-colors ${
+            previous ? 'cursor-pointer hover:bg-[#20BF0E]/10' : 'cursor-not-allowed opacity-50'
+          }`}
+        >
+          <ChevronLeft size={16} />
+          Previous
+        </button>
+        <div className="text-sm text-[#AAACA6]">
+          Page {currentPage} of {totalPages}
+        </div>
+        <button
+          onClick={handleNext}
+          disabled={!next}
+          className={`flex items-center gap-1 rounded-lg border border-[#2b2b2b] bg-[#1E1E1E] px-3 py-2 text-sm font-medium text-white transition-colors ${
+            next ? 'cursor-pointer hover:bg-[#20BF0E]/10' : 'cursor-not-allowed opacity-50'
+          }`}
+        >
+          Next
+          <ChevronRight size={16} />
+        </button>
+      </div>
     </div>
   );
 }

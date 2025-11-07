@@ -2,7 +2,6 @@
 
 import { FC, useState } from 'react';
 import Image from 'next/image';
-import { ExternalLink } from 'lucide-react';
 
 import ThumbnailImage from '../../../../public/images/no-niche.png';
 import NicheStyleModal from './NicheStyleModal';
@@ -107,7 +106,7 @@ const NicheCard: FC<NicheCardProps> = ({
               <span className="text-gray-400">No tags</span>
             )}
           </div>
-          <ExternalLink className="h-5 w-5 cursor-pointer text-white" />
+          {/* <ExternalLink className="h-5 w-5 cursor-pointer text-white" /> */}
         </div>
 
         <Text className="text-xl font-semibold">{title}</Text>

@@ -67,7 +67,7 @@ export default function CreateNicheModal() {
     defaultValues: {
       title: '',
       description: '',
-      prompt: '', // NEW default
+      prompt: '',
       tone: [],
       pacing: [],
       channels: [{ name: '', link: '' }],
@@ -396,25 +396,6 @@ export default function CreateNicheModal() {
               )}
             />
 
-            <Controller
-              name="prompt"
-              control={control}
-              render={({ field }) => (
-                <div className="md:col-span-2">
-                  <Input
-                    {...field}
-                    id="prompt"
-                    type="textarea"
-                    placeholder="Enter generation prompt"
-                    label="Prompt"
-                    rows={8}
-                    textareaProps={{ wrap: 'soft' }}
-                  />
-                  <FieldError message={errors.prompt?.message as string | undefined} />
-                </div>
-              )}
-            />
-
             {/* Script Structure */}
             <div className="md:col-span-2">
               <Text variant="base" className="mb-2 font-medium text-white">
@@ -523,7 +504,7 @@ export default function CreateNicheModal() {
 
             {/* Channels */}
             <div className="md:col-span-2">
-              <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center justify-between">
                 <Text className="text-base font-semibold text-white">Top Channels</Text>
                 <button
                   type="button"
@@ -610,6 +591,25 @@ export default function CreateNicheModal() {
                 );
               })}
             </div>
+
+            <Controller
+              name="prompt"
+              control={control}
+              render={({ field }) => (
+                <div className="md:col-span-2">
+                  <Input
+                    {...field}
+                    id="prompt"
+                    type="textarea"
+                    placeholder="Enter generation prompt"
+                    label="Prompt"
+                    rows={8}
+                    textareaProps={{ wrap: 'soft' }}
+                  />
+                  <FieldError message={errors.prompt?.message as string | undefined} />
+                </div>
+              )}
+            />
 
             <div className="flex w-full justify-center pt-4 md:col-span-2">
               <div className="w-full max-w-md">

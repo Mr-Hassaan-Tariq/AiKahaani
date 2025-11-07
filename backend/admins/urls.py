@@ -1,8 +1,9 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import views
 from users.views import LoginStatsView
+
+from . import views
 
 # Create router for viewset routes
 router = DefaultRouter()
@@ -20,12 +21,22 @@ urlpatterns = [
     path("admin-stats/", views.StatisticsAPIView.as_view(), name="statistics-api"),
     # Users report endpoints
     path("users-report/", views.UsersReportView.as_view(), name="users-report"),
-    path("users-report/export/", views.UsersReportExportView.as_view(), name="users-report-export"),
-
+    path(
+        "users-report/export/",
+        views.UsersReportExportView.as_view(),
+        name="users-report-export",
+    ),
     # Conversion funnel endpoints
-    path("conversion-funnel/", views.UserConversionFunnelView.as_view(), name="conversion-funnel"),
-    path("conversion-funnel/export/", views.UserConversionFunnelExportView.as_view(), name="conversion-funnel-export"),
-    
+    path(
+        "conversion-funnel/",
+        views.UserConversionFunnelView.as_view(),
+        name="conversion-funnel",
+    ),
+    path(
+        "conversion-funnel/export/",
+        views.UserConversionFunnelExportView.as_view(),
+        name="conversion-funnel-export",
+    ),
     # Login statistics endpoint
     path("login-stats/", LoginStatsView.as_view(), name="login-stats"),
 ]

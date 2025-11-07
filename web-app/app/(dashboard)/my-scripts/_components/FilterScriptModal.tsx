@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import deepEqual from 'fast-deep-equal';
 
 import { FiltersState } from '../_utils/filterUtils';
 import { NoteIcon, TimeIcon, VideoIcon } from './components';
@@ -15,11 +16,11 @@ import { Slider } from 'components/shadcn_ui/slider';
 interface FilterScriptModalProps {
   trigger: React.ReactNode;
   onApplyFilters?: (filters: FiltersState) => void;
-  onClearFilters?: () => void; // ✅ Now supported
+  onClearFilters?: () => void;
   initialFilters?: Partial<FiltersState>;
 }
 
-const defaultFilters: FiltersState = {
+export const defaultFilters: FiltersState = {
   lastEdited: 'most_recent',
   wordCount: [1000, 2000],
   videoDuration: null,
@@ -32,10 +33,20 @@ export default function FilterScriptModal({
   initialFilters = {},
 }: FilterScriptModalProps) {
   const [open, setOpen] = useState(false);
+
+  // internal filters (syncs with initialFilters)
   const [filters, setFilters] = useState<FiltersState>({
     ...defaultFilters,
     ...initialFilters,
   });
+
+  // sync whenever parent updates initialFilters
+  useEffect(() => {
+    setFilters({
+      ...defaultFilters,
+      ...initialFilters,
+    });
+  }, [initialFilters]);
 
   const updateFilter = <K extends keyof FiltersState>(key: K, value: FiltersState[K]) => {
     setFilters((prev) => ({
@@ -50,15 +61,26 @@ export default function FilterScriptModal({
   };
 
   const handleCancel = () => {
+    // revert to whatever parent currently says
     setFilters({ ...defaultFilters, ...initialFilters });
     setOpen(false);
   };
 
   const handleClear = () => {
-    setFilters({ ...defaultFilters, ...initialFilters });
+    const cleared = { ...defaultFilters };
+    setFilters(cleared);
     onClearFilters?.();
     setOpen(false);
   };
+
+  // whether modal currently has any non-default filters
+  const hasActiveFilters = !deepEqual(
+    { ...defaultFilters },
+    {
+      ...defaultFilters,
+      ...filters,
+    },
+  );
 
   const durations = [
     { id: '<20', label: '< 20 min' },
@@ -82,13 +104,16 @@ export default function FilterScriptModal({
               Cancel
             </Text>
           </Button>
+
+          {/* Disable/hide Clear when no active filters */}
           {onClearFilters && (
-            <Button variant="gray" onClick={handleClear}>
+            <Button variant="gray" onClick={handleClear} disabled={!hasActiveFilters}>
               <Text variant="base" className="font-extrabold">
                 Clear filters
               </Text>
             </Button>
           )}
+
           <Button variant="green" onClick={handleApplyFilters}>
             Apply filters
           </Button>
@@ -131,8 +156,9 @@ export default function FilterScriptModal({
             <span>{NoteIcon}</span> Word count:
           </p>
 
+          {/* Controlled slider so it always reflects `filters.wordCount` */}
           <Slider
-            defaultValue={filters.wordCount}
+            value={filters.wordCount}
             onValueChange={(val) => updateFilter('wordCount', val as [number, number])}
             max={10000}
             step={10}

@@ -13,32 +13,46 @@ interface FilterModalProps {
   trigger: React.ReactNode;
   availableFilters?: Record<string, string[]>;
   onApply: (filters: Record<string, string[]>) => void;
+  initialFilters?: Record<string, string[]>; // new prop to receive parent state
 }
 
-export default function FilterNicheModal({ trigger, availableFilters, onApply }: FilterModalProps) {
+export default function FilterNicheModal({
+  trigger,
+  availableFilters,
+  onApply,
+  initialFilters = {},
+}: FilterModalProps) {
   const defaultSections: Record<string, string[]> = {
-    Tone: ['Educational', 'Casual', 'Emotional', 'Satirical', 'Bold', 'Informative'],
-    Format: ['Storytelling', 'Review', 'Explainer', 'Interview'],
-    Popularity: ['Hype', 'Classic', 'Trending', 'New'],
+    Tone: ['Neutral', 'Professional', 'Educational', 'Engaging', 'Conversational', 'Storytelling'],
   };
 
   const sections = availableFilters || defaultSections;
 
-  const initialFilters = useMemo(
-    () => Object.keys(sections).reduce((acc, k) => ({ ...acc, [k]: [] as string[] }), {}),
+  // create a normalized empty-map for categories
+  const initialFiltersFromSections = useMemo(
+    () =>
+      Object.keys(sections).reduce(
+        (acc, k) => {
+          acc[k] = (
+            initialFilters[k] && Array.isArray(initialFilters[k]) ? initialFilters[k] : []
+          ) as string[];
+          return acc;
+        },
+        {} as Record<string, string[]>,
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(sections)],
+    [JSON.stringify(sections), JSON.stringify(initialFilters)],
   );
 
   const [open, setOpen] = useState(false);
-  const [filters, setFilters] = useState<Record<string, string[]>>(initialFilters);
 
+  // internal modal state
+  const [filters, setFilters] = useState<Record<string, string[]>>(initialFiltersFromSections);
+
+  // Sync modal internal filters whenever parent initialFilters changes (so chip removals reflect inside modal)
   useEffect(() => {
-    setFilters((prev) =>
-      Object.keys(sections).reduce((acc, k) => ({ ...acc, [k]: prev[k] || [] }), {}),
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(sections)]);
+    setFilters(initialFiltersFromSections);
+  }, [initialFiltersFromSections]);
 
   const handleToggle = (category: string, value: string) => {
     setFilters((prev) => {
@@ -56,11 +70,19 @@ export default function FilterNicheModal({ trigger, availableFilters, onApply }:
   };
 
   const handleReset = () => {
-    setFilters(initialFilters);
-    onApply(initialFilters);
+    const fresh: Record<string, string[]> = Object.keys(sections).reduce(
+      (acc, k) => {
+        acc[k] = [];
+        return acc;
+      },
+      {} as Record<string, string[]>,
+    );
+    setFilters(fresh);
+    onApply(fresh);
     setOpen(false);
   };
 
+  // detect whether there are any active filters in modal
   const isAnyFilterSelected = Object.values(filters).some((arr) => arr.length > 0);
 
   return (

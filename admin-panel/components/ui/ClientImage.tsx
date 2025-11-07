@@ -10,9 +10,9 @@ export default function ClientImage(props: ImageProps) {
       src={src || dummyProfilePic}
       alt={alt || 'image'}
       className={className}
-      onError={(e) => {
-        e.currentTarget.src = '/images/avatar.png';
-      }}
+      // onError={(e) => {
+      //   e.currentTarget.src = '/images/avatar.png';
+      // }}
       // eslint-disable-next-line react/jsx-props-no-spreading
       {...rest}
     />
