@@ -8,6 +8,8 @@ async function getCurrentPlan() {
   return await getClientDataAction<CurrentPlanType>('v1/payments/subscription/');
 }
 
+const BYPASS_PAYMENT = process.env.NEXT_PUBLIC_BYPASS_PAYMENT_CHECKS === 'true';
+
 export default function useGetCurrentPlan() {
   return useQuery({
     queryKey: ['get-current-plan'],
@@ -15,6 +17,7 @@ export default function useGetCurrentPlan() {
     retry: false,
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 60 * 1, // 1 hours
+    enabled: !BYPASS_PAYMENT,
   });
 }
 

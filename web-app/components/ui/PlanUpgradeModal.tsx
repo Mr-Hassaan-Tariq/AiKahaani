@@ -31,15 +31,17 @@ interface PlanUpgradeModalProps {
 const BYPASS_PAYMENT = process.env.NEXT_PUBLIC_BYPASS_PAYMENT_CHECKS === 'true';
 
 export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalProps) {
+  if (BYPASS_PAYMENT) return null;
+  return <PlanUpgradeModalInner align={align} />;
+}
+
+function PlanUpgradeModalInner({ align = 'center' }: PlanUpgradeModalProps) {
   const toast = useToast();
   const router = useRouter();
   const [openPopover, setOpenPopover] = useState(false);
   const [open, setOpen] = useState(false);
   const [openAllPlans, setOpenAllPlans] = useState(false);
   const { data, isLoading, isError, error } = useGetCurrentPlan();
-
-  if (BYPASS_PAYMENT) return null;
-
   const { isPending, mutate: createStripeSession } = useCreateStripeSession();
   const { mutate: createBillingPortal } = useCreateBillingPortal();
 
