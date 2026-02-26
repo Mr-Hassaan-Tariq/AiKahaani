@@ -407,10 +407,19 @@ OPENAI_MODEL = environ.get("OPENAI_MODEL", "gpt-4.1")
 TRIAL_OUTLINE_LIMIT = int(environ.get("TRIAL_OUTLINE_LIMIT", "10"))
 
 ######################################################################
+# Payment / Subscription Bypass
+######################################################################
+# Set BYPASS_PAYMENT_CHECKS=1 in .env to skip all subscription gates.
+# Never enable this in production.
+BYPASS_PAYMENT_CHECKS = environ.get("BYPASS_PAYMENT_CHECKS", "0") == "1"
+
+######################################################################
 # Title Generation Configuration
 ######################################################################
 # Separate OpenAI configuration for title generation
-TITLE_GENERATION_API_KEY = environ.get("TITLE_GENERATION_API_KEY", environ.get("OPENAI_API_KEY"))
+TITLE_GENERATION_API_KEY = environ.get(
+    "TITLE_GENERATION_API_KEY", environ.get("OPENAI_API_KEY")
+)
 TITLE_GENERATION_MODEL = environ.get("TITLE_GENERATION_MODEL", "gpt-4.1")
 
 ######################################################################
@@ -430,69 +439,69 @@ TOLT_API_BASE_URL = environ.get("TOLT_API_BASE_URL", "https://api.tolt.com/v1")
 # Logging Configuration
 ######################################################################
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '[{levelname}] {asctime} {name} {message}',
-            'style': '{',
-            'datefmt': '%d/%b/%Y %H:%M:%S',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{levelname}] {asctime} {name} {message}",
+            "style": "{",
+            "datefmt": "%d/%b/%Y %H:%M:%S",
         },
-        'simple': {
-            'format': '[{levelname}] {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-            'level': 'DEBUG',
+        "simple": {
+            "format": "[{levelname}] {message}",
+            "style": "{",
         },
     },
-    'loggers': {
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+            "level": "DEBUG",
+        },
+    },
+    "loggers": {
         # Root logger - catches all logs
-        '': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
+        "": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
         },
         # Django loggers
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
         },
-        'django.request': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': False,
+        "django.request": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
         },
         # Your app loggers
-        'scripts': {
-            'handlers': ['console'],
-            'level': 'DEBUG',  # Show all logs from scripts app
-            'propagate': False,
+        "scripts": {
+            "handlers": ["console"],
+            "level": "DEBUG",  # Show all logs from scripts app
+            "propagate": False,
         },
-        'scripts.views': {
-            'handlers': ['console'],
-            'level': 'DEBUG',  # Show all logs from views
-            'propagate': False,
+        "scripts.views": {
+            "handlers": ["console"],
+            "level": "DEBUG",  # Show all logs from views
+            "propagate": False,
         },
-        'scripts.services': {
-            'handlers': ['console'],
-            'level': 'DEBUG',  # Show all logs from services
-            'propagate': False,
+        "scripts.services": {
+            "handlers": ["console"],
+            "level": "DEBUG",  # Show all logs from services
+            "propagate": False,
         },
-        'scripts.services.open_ai': {
-            'handlers': ['console'],
-            'level': 'DEBUG',  # Show all logs from OpenAI service
-            'propagate': False,
+        "scripts.services.open_ai": {
+            "handlers": ["console"],
+            "level": "DEBUG",  # Show all logs from OpenAI service
+            "propagate": False,
         },
-        'scripts.services.word_count_strategy': {
-            'handlers': ['console'],
-            'level': 'DEBUG',  # Show all logs from word count strategy
-            'propagate': False,
+        "scripts.services.word_count_strategy": {
+            "handlers": ["console"],
+            "level": "DEBUG",  # Show all logs from word count strategy
+            "propagate": False,
         },
     },
 }

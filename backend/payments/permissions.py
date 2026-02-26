@@ -48,6 +48,13 @@ class HasActiveSubscriptionPermission(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
 
+        # Global payment bypass (controlled via BYPASS_PAYMENT_CHECKS env var)
+        if getattr(settings, "BYPASS_PAYMENT_CHECKS", False):
+            logger.info(
+                f"Payment bypass active — skipping subscription check for {request.user.email}"
+            )
+            return True
+
         # Allow admin users to bypass subscription check
         try:
             if request.user.is_admin() or request.user.is_superuser:
@@ -124,6 +131,9 @@ class HasPaidSubscriptionPermission(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
 
+        if getattr(settings, "BYPASS_PAYMENT_CHECKS", False):
+            return True
+
         try:
             customer = get_or_create_customer(request.user)
             subscription = (
@@ -165,6 +175,9 @@ class TrialOutlineLimitPermission(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
+
+        if getattr(settings, "BYPASS_PAYMENT_CHECKS", False):
+            return True
 
         try:
             customer = get_or_create_customer(request.user)

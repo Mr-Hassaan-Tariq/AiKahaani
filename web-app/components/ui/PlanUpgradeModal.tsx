@@ -28,6 +28,8 @@ interface PlanUpgradeModalProps {
   align?: 'center' | 'start' | 'end';
 }
 
+const BYPASS_PAYMENT = process.env.NEXT_PUBLIC_BYPASS_PAYMENT_CHECKS === 'true';
+
 export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalProps) {
   const toast = useToast();
   const router = useRouter();
@@ -35,6 +37,8 @@ export default function PlanUpgradeModal({ align = 'center' }: PlanUpgradeModalP
   const [open, setOpen] = useState(false);
   const [openAllPlans, setOpenAllPlans] = useState(false);
   const { data, isLoading, isError, error } = useGetCurrentPlan();
+
+  if (BYPASS_PAYMENT) return null;
 
   const { isPending, mutate: createStripeSession } = useCreateStripeSession();
   const { mutate: createBillingPortal } = useCreateBillingPortal();
