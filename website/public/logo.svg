@@ -1,0 +1,30 @@
+<svg width="500" height="150" viewBox="0 0 500 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background (Optional - keep transparent for most uses) -->
+
+  <!-- Icon Group -->
+  <g id="LogoIcon">
+    <!-- Document / Script Shape -->
+    <rect x="30" y="35" width="65" height="85" rx="8" fill="white" stroke="#333333" stroke-width="4"/>
+
+    <!-- Script Lines -->
+    <line x1="45" y1="55" x2="80" y2="55" stroke="#CCCCCC" stroke-width="4" stroke-linecap="round"/>
+    <line x1="45" y1="70" x2="80" y2="70" stroke="#CCCCCC" stroke-width="4" stroke-linecap="round"/>
+    <line x1="45" y1="85" x2="65" y2="85" stroke="#CCCCCC" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Red Play Button Integration -->
+    <path d="M75 95L95 105L75 115V95Z" fill="#FF0000"/>
+
+    <!-- AI Sparkles -->
+    <path d="M100 35L102 41L108 43L102 45L100 51L98 45L92 43L98 41L100 35Z" fill="#FF0000"/>
+    <path d="M112 55L113.5 59.5L118 61L113.5 62.5L112 67L110.5 62.5L106 61L110.5 59.5L112 55Z" fill="#FF0000" opacity="0.6"/>
+  </g>
+
+  <!-- Typography Group -->
+  <g id="Typography">
+    <text x="120" y="95" font-family="Arial, sans-serif" font-weight="800" font-size="42" fill="#333333">VideoScript</text>
+    <text x="365" y="95" font-family="Arial, sans-serif" font-weight="800" font-size="42" fill="#FF0000">AI</text>
+  </g>
+
+  <!-- Tagline (Optional) -->
+  <text x="122" y="120" font-family="Arial, sans-serif" font-size="14" fill="#666666" letter-spacing="1">GENERATE CONTENT IN SECONDS</text>
+</svg>

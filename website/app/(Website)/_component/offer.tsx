@@ -20,7 +20,7 @@ export default function OfferSection() {
         </h2>
 
         <p className="relative z-10 mb-6 mt-4 text-[14px] text-[#a9ada5]">
-          Try TubeGenius free for 7 days. No credit card required.
+          Try videoScript free for 7 days. No credit card required.
         </p>
 
         <button

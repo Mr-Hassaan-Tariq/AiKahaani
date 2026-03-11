@@ -37,7 +37,7 @@ export default function FooterWidget() {
       {/* <img src="/svg/bottom-circle.svg" alt="grid" className="bottom-circle-img rotate-180" /> */}
       <Row className="z-10 mt-7 justify-center gap-3 lg:gap-7">
         {logo}
-        <Text className="text-3xl font-bold text-white lg:text-5xl">TubeGenius</Text>
+        <Text className="text-3xl font-bold text-white lg:text-5xl">videoScript</Text>
       </Row>
 
       <Row className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap sm:gap-6 md:gap-9">
@@ -45,7 +45,7 @@ export default function FooterWidget() {
       </Row>
       <div className="h-[1px] w-full bg-brand-green/[32%]" />
       <Text variant="sm" className="text-center font-medium text-[#AAACA6]">
-        © 2025 TubeGenius. Built for creators.
+        © 2025 videoScript. Built for creators.
       </Text>
     </Col>
   );

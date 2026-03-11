@@ -16,7 +16,7 @@ export const successStories = [
     subscribers: '482K subscribers',
     category: 'Tech, productivity',
     title: "How I 10x'd my YouTube growth in 3 months",
-    description: 'Increased views by 320% after optimizing scripts with TubeGenius.',
+    description: 'Increased views by 320% after optimizing scripts with videoScript.',
     image: '/images/success-story-2.jpg',
   },
   {
@@ -25,7 +25,7 @@ export const successStories = [
     subscribers: '1.2M subscribers',
     category: 'Fitness & Lifestyle',
     title: 'From Hobby to Full-Time Creator',
-    description: 'Achieved 5 viral videos within the first 2 months using TubeGenius.',
+    description: 'Achieved 5 viral videos within the first 2 months using videoScript.',
     image: '/images/success-story-3.jpg',
   },
   {
@@ -53,25 +53,25 @@ export const questions = [
     id: 1,
     question: 'Do I need any video editing or scripting experience?',
     answer:
-      'Not at all. TubeGenius is beginner-friendly. You simply choose your format, answer a few prompts, and our AI delivers a ready-to-use script and title suggestions.',
+      'Not at all. videoScript is beginner-friendly. You simply choose your format, answer a few prompts, and our AI delivers a ready-to-use script and title suggestions.',
   },
   {
     id: 2,
     question: 'Can I customize the AI-generated scripts?',
     answer:
-      'Not at all. TubeGenius is beginner-friendly. You simply choose your format, answer a few prompts, and our AI delivers a ready-to-use script and title suggestions.',
+      'Not at all. videoScript is beginner-friendly. You simply choose your format, answer a few prompts, and our AI delivers a ready-to-use script and title suggestions.',
   },
   {
     id: 3,
     question: 'How does the Affiliate Program work?',
     answer:
-      'Not at all. TubeGenius is beginner-friendly. You simply choose your format, answer a few prompts, and our AI delivers a ready-to-use script and title suggestions.',
+      'Not at all. videoScript is beginner-friendly. You simply choose your format, answer a few prompts, and our AI delivers a ready-to-use script and title suggestions.',
   },
   {
     id: 4,
     question: 'Can I cancel my subscription anytime?',
     answer:
-      'Not at all. TubeGenius is beginner-friendly. You simply choose your format, answer a few prompts, and our AI delivers a ready-to-use script and title suggestions.',
+      'Not at all. videoScript is beginner-friendly. You simply choose your format, answer a few prompts, and our AI delivers a ready-to-use script and title suggestions.',
   },
 ];
 
@@ -152,16 +152,16 @@ export const heroSectionContent = {
   partner: {
     rightSection: partnerRightSide,
     btnLabel: 'Start for $1',
-    label: 'Official TubeGenius Partner',
+    label: 'Official videoScript Partner',
     title: 'Unlock Your YouTube Potential with Egor',
     description:
-      'Join TubeGenius through this exclusive partnership and start your journey for just $1.',
+      'Join videoScript through this exclusive partnership and start your journey for just $1.',
   },
   affiliates: {
     rightSection: affiliatesRightSide,
     btnLabel: 'Join with your email',
-    label: 'Try TubeGenius for just $1 and start earning today',
-    title: 'Earn with TubeGenius. Share AI video creation',
+    label: 'Try videoScript for just $1 and start earning today',
+    title: 'Earn with videoScript. Share AI video creation',
     description:
       'Join our affiliate program and get paid for helping creators script better videos with AI.',
   },

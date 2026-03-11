@@ -32,7 +32,7 @@ export default function AffiliateProgram({ id }: { id?: string }) {
       >
         <Col className="my-8 flex w-full flex-col items-center gap-8 lg:my-0 lg:my-16 lg:items-start lg:pl-16">
           <Col className="max-w-[300px] gap-4 text-center lg:max-w-[415px] lg:text-left">
-            <Text className="text-3xl lg:text-5xl">Get paid to share TubeGenius</Text>
+            <Text className="text-3xl lg:text-5xl">Get paid to share videoScript</Text>
             <Text variant="xl" className="text-[#AAACA6]">
               Join our affiliate program and earn 50% lifetime commission for every user you bring.
             </Text>

@@ -25,7 +25,7 @@ export default function SuccessStoryWidget({ id }: { id?: string }) {
         <Col className="gap-4">
           <div className="mx-auto max-w-xl text-center md:px-6 lg:px-0">
             <Text className="text-2xl font-bold text-white md:text-4xl lg:text-5xl">
-              Success stories powered by TubeGenius
+              Success stories powered by videoScript
             </Text>
           </div>
           <Text
