@@ -10,7 +10,7 @@ import {
 const faqs = [
   {
     q: 'Can I generate scripts for different languages?',
-    a: 'Yes! videoScript supports over 50 languages. Our AI is trained on global YouTube data, so it understands local context and slang as well.',
+    a: 'Yes! AIKahaani supports over 50 languages. Our AI is trained on global YouTube data, so it understands local context and slang as well.',
   },
   {
     q: 'How does the pacing engine work?',
@@ -18,7 +18,7 @@ const faqs = [
   },
   {
     q: 'Is it really different from using ChatGPT?',
-    a: 'Absolutely. While ChatGPT is generic, videoScript is fine-tuned specifically for YouTube. It includes niche topic discovery, viral hook frameworks, and storyboard generation that generic LLMs fail at.',
+    a: 'Absolutely. While ChatGPT is generic, AIKahaani is fine-tuned specifically for YouTube. It includes niche topic discovery, viral hook frameworks, and storyboard generation that generic LLMs fail at.',
   },
   {
     q: 'Can I save my custom voice/style?',
@@ -38,7 +38,7 @@ export function FAQSection() {
             Frequently asked questions
           </h2>
           <p className="text-lg font-medium text-gray-500 dark:text-gray-400">
-            Everything you need to know about videoScript
+            Everything you need to know about AIKahaani
           </p>
         </div>
 

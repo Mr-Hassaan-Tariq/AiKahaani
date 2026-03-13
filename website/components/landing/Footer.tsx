@@ -12,7 +12,7 @@ export function Footer() {
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               <span className="text-2xl font-black tracking-tighter text-gray-900 dark:text-white">
-                videoScript
+                AIKahaani
               </span>
             </div>
             <p className="font-bold text-gray-400">Empowering the next generation of creators.</p>
@@ -36,7 +36,7 @@ export function Footer() {
 
         <div className="mt-16 flex flex-col items-center justify-between gap-6 border-t border-gray-200 pt-8 dark:border-white/5 md:flex-row">
           <div className="text-sm font-bold text-gray-400">
-            © 2025 videoScript Inc. All rights reserved.
+            © 2025 AIKahaani. All rights reserved.
           </div>
 
           <div className="flex gap-8">

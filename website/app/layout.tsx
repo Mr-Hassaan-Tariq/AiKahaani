@@ -3,7 +3,7 @@ import '../styles/globals.css';
 import { Figtree } from 'next/font/google';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 
-// import TopLeftSvg from '../assert/svg/top-left-gid.svg';
+import { FAQ_SCHEMA, SEO, SITE_URL } from 'lib/seo';
 
 const FIGTREE = Figtree({
   variable: '--figtree-font',
@@ -12,9 +12,118 @@ const FIGTREE = Figtree({
 });
 
 export const metadata = {
-  title: 'videoScript',
-  description:
-    'videoScript is an AI-powered script writing platform specifically designed to automate and enhance the YouTube content creation process. The platform\'s overarching goal is to function as "Your Genius AI Assistant for YouTube Automation," empowering content creators to effortlessly transform nascent video ideas into professionally structured and engaging scripts with minimal manual intervention.',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SEO.title,
+    template: '%s | AIKahaani',
+  },
+  description: SEO.description,
+  keywords: SEO.keywords,
+  authors: [{ name: 'AIKahaani', url: SITE_URL }],
+  creator: 'AIKahaani',
+  publisher: 'AIKahaani',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: SITE_URL,
+    siteName: SEO.openGraph.siteName,
+    title: SEO.title,
+    description: SEO.description,
+    images: [
+      {
+        url: `${SITE_URL}/logo.svg`,
+        width: 512,
+        height: 512,
+        alt: 'AIKahaani - AI YouTube Script & Title Generator',
+      },
+    ],
+  },
+  twitter: {
+    card: SEO.twitter.card,
+    title: SEO.title,
+    description: SEO.description,
+    creator: SEO.twitter.creator,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
+  category: 'technology',
+};
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebApplication',
+      '@id': `${SITE_URL}/#webapp`,
+      name: 'AIKahaani',
+      alternateName: ['AI Kahaani', 'AI Kahaani Story', 'AI Story'],
+      description:
+        'AIKahaani (AI + Kahaani) is an AI-powered web tool that helps YouTube creators generate high-quality video scripts, engaging titles, and video outlines in seconds. Built for beginner creators, faceless YouTube channels, and content marketers.',
+      url: SITE_URL,
+      applicationCategory: 'MultimediaApplication',
+      operatingSystem: 'Web',
+      offers: {
+        '@type': 'Offer',
+        price: '19',
+        priceCurrency: 'USD',
+      },
+    },
+    {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
+      name: 'AIKahaani',
+      url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/logo.svg`,
+      },
+    },
+    {
+      '@type': 'SoftwareApplication',
+      '@id': `${SITE_URL}/#software`,
+      name: 'AIKahaani',
+      applicationCategory: 'MultimediaApplication',
+      operatingSystem: 'Web',
+      description:
+        'AI-powered YouTube script and title generator. Turn topics or keywords into complete YouTube-ready scripts with hooks, storytelling, and CTAs in seconds.',
+      featureList: [
+        'AI YouTube script generation',
+        'Engaging title generator',
+        'Video outline creation',
+        'Hook and CTA optimization',
+        'Multiple script variations',
+      ],
+    },
+    {
+      '@type': 'FAQPage',
+      '@id': `${SITE_URL}/#faq`,
+      mainEntity: FAQ_SCHEMA.map((faq) => ({
+        '@type': 'Question',
+        name: faq.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: faq.answer,
+        },
+      })),
+    },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -23,28 +132,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`${FIGTREE.variable} bg-white font-figtree transition-colors dark:bg-[#0a0a0a]`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <NextThemesProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
-          storageKey="videoscript-theme"
+          storageKey="aikahaani-theme"
           disableTransitionOnChange
         >
           <img src="/svg/top-left-gid.svg" alt="grid" className="absolute left-0 top-0" />
-          {/* Navbar outside container for mobile */}
-
-          <div className="block rounded-b-3xl border-b-2 border-b-green-800 px-8 py-4 md:hidden">
-            {/* <NavSection /> */}
-          </div>
-
-          <div className="">
-            {/* Navbar inside container for desktop */}
-            <div className="container mx-auto hidden px-8 py-8 md:block md:px-12">
-              {/* <NavSection /> */}
-            </div>
-            {children}
-            {/* <FooterWidget /> */}
-          </div>
+          {children}
         </NextThemesProvider>
       </body>
     </html>

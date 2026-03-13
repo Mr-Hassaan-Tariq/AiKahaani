@@ -17,7 +17,7 @@ export function PricingAndIdentity() {
               Design that feels as premium as your content.
             </h2>
             <p className="max-w-lg text-xl font-medium leading-relaxed text-gray-600 dark:text-gray-400">
-              We built videoScript with focus in mind. A clean, modern interface that stays out of
+              We built AIKahaani with focus in mind. A clean, modern interface that stays out of
               your way so you can create your best work.
             </p>
 

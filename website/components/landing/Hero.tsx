@@ -22,19 +22,19 @@ export function Hero() {
           <div className="z-10 flex-1 space-y-8 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 rounded-lg border border-pink-200/60 bg-pink-100 px-4 py-2 text-sm font-medium text-gray-700 dark:border-pink-800/30 dark:bg-pink-900/20 dark:text-gray-300">
               <Sparkles className="h-4 w-4 text-red-500" />
-              <span>YouTube-style creative engine for script generation</span>
+              <span>AI + Kahaani — AI-powered YouTube script & title generator</span>
             </div>
 
             <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tight text-gray-900 dark:text-white md:text-7xl">
-              Turn video ideas <br />
-              into <span className="text-red-600">high-retention</span>{' '}
-              <span className="text-red-600">YouTube scripts</span> in minutes.
+              Turn topics into <br />
+              <span className="text-red-600">YouTube-ready scripts</span> in seconds.
             </h1>
 
             <p className="mx-auto max-w-2xl text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-400 md:text-xl lg:mx-0">
-              videoScript helps creators generate hooks, story beats, title angles, scene prompts,
-              and full talking scripts with a bright, creator-first workflow inspired by modern
-              video platforms.
+              AIKahaani helps YouTube creators generate high-quality video scripts, engaging titles,
+              and video outlines in seconds. Enter a topic or keyword—get a complete script with
+              hooks, storytelling, and CTAs that improve retention. Built for beginners, faceless
+              channels, and content marketers.
             </p>
 
             <div className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row lg:justify-start">
@@ -65,7 +65,7 @@ export function Hero() {
                   <div className="h-3 w-3 rounded-full bg-emerald-500" />
                 </div>
                 <div className="rounded-full bg-gray-100 px-4 py-1.5 text-[11px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                  videoscript.app/editor/viral-script
+                  aikahaani.com/editor
                 </div>
               </div>
 

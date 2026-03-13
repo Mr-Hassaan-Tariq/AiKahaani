@@ -18,7 +18,7 @@ export function Navbar() {
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-            videoScript
+            AIKahaani
           </span>
         </div>
 
@@ -52,7 +52,7 @@ export function Navbar() {
         <div className="hidden items-center justify-end gap-3 md:flex">
           <ThemeToggle className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white" />
           <Link
-            href="/login"
+            href="#"
             className="text-sm font-medium text-gray-700 transition-colors hover:text-red-500 dark:text-gray-300"
           >
             Login
@@ -102,7 +102,7 @@ export function Navbar() {
           </Link>
           <div className="flex flex-col gap-4 pt-4">
             <Link
-              href="/login"
+              href="#"
               className="text-center text-lg font-medium text-gray-900 dark:text-white"
             >
               Login
