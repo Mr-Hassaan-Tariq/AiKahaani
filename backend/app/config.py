@@ -81,10 +81,6 @@ class Settings(BaseSettings):
     transcript_proxy_username: str = ""
     transcript_proxy_password: str = ""
 
-    # ── Tolt Affiliate ────────────────────────────────────────────────────────
-    tolt_api_key: str = ""
-    tolt_api_base_url: str = "https://api.tolt.com/v1"
-
     # ── Brevo Email ───────────────────────────────────────────────────────────
     brevo_api_key: str = ""
     default_from_email: str = "noreply@videoscripts.com"

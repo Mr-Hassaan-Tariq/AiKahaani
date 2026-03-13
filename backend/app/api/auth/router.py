@@ -96,7 +96,6 @@ async def google_login(
         access, refresh, user, created = await auth_service.google_auth(
             db,
             id_token=body.id_token,
-            partner_id=body.partner_id,
         )
     except PermissionError as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))
@@ -162,7 +161,6 @@ async def magic_link_verify(
         access, refresh, user = await auth_service.verify_magic_link(
             db,
             token=body.token,
-            partner_id=body.partner_id,
         )
     except PermissionError as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))

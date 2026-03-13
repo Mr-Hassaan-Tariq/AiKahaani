@@ -75,7 +75,6 @@ class SignupResponse(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     id_token: str
-    partner_id: Optional[str] = None
 
 
 class AuthTokensOut(BaseModel):
@@ -96,7 +95,6 @@ class MagicLinkRequest(BaseModel):
 
 class MagicLinkVerifyRequest(BaseModel):
     token: str
-    partner_id: Optional[str] = None
 
     @field_validator("token")
     @classmethod

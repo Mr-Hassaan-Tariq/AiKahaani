@@ -25,8 +25,6 @@ class UserProfileOut(BaseModel):
     role: str
     plan: str
     plan_expires_at: Optional[datetime] = None
-    tolt_customer_id: Optional[str] = None
-    tolt_partner_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -66,7 +64,6 @@ class UpdateNotificationSettingsRequest(BaseModel):
     account_or_plan_changes: Optional[bool] = None
     tips_content_inspiration: Optional[bool] = None
     feature_updates: Optional[bool] = None
-    community_affiliate_updates: Optional[bool] = None
 
 
 class UpdatePrivacySettingsRequest(BaseModel):

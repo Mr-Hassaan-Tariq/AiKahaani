@@ -44,8 +44,6 @@ class AdminUserDetailOut(BaseModel):
     plan_expires_at: Optional[datetime] = None
     is_active: bool
     is_email_verified: bool
-    tolt_customer_id: Optional[str] = None
-    tolt_partner_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

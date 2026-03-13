@@ -25,8 +25,6 @@ def make_mock_user_orm(user_id: int = 10, role: UserRole = UserRole.user) -> Mag
     u.is_active = True
     u.is_email_verified = True
     u.plan_expires_at = None
-    u.tolt_customer_id = None
-    u.tolt_partner_id = None
     u.created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
     u.updated_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
     return u

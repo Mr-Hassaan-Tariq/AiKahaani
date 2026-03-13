@@ -8,7 +8,6 @@ Responsibilities:
 - Admin login (email + password, admin/super_admin only)
 - Token refresh
 - Logout (delete refresh token row)
-- Tolt affiliate tracking (fire-and-forget)
 """
 
 import asyncio
@@ -94,36 +93,6 @@ async def _create_welcome_notification(db: AsyncSession, user: User, is_new: boo
         await db.rollback()
 
 
-async def _track_tolt(db: AsyncSession, user: User, partner_id: str) -> None:
-    """
-    Register user with Tolt affiliate tracking.
-    Fire-and-forget: never raises, never blocks auth flow.
-    """
-    if not partner_id or user.tolt_customer_id:
-        return
-    if not settings.tolt_api_key:
-        return
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.post(
-                f"{settings.tolt_api_base_url}/customers",
-                json={"email": user.email, "partner_id": partner_id},
-                headers={"Authorization": f"Bearer {settings.tolt_api_key}"},
-            )
-            if resp.is_success:
-                data = resp.json()
-                tolt_customer_id = data.get("id") or data.get("customer_id")
-                if tolt_customer_id:
-                    user.tolt_customer_id = tolt_customer_id
-                    user.tolt_partner_id = partner_id
-                    await db.commit()
-                    logger.info("Tolt customer created for user %s: %s", user.id, tolt_customer_id)
-            else:
-                logger.warning("Tolt API error for user %s: %s", user.id, resp.text)
-    except Exception as exc:
-        logger.error("Tolt tracking failed for user %s: %s", user.id, exc)
-
-
 # ── Signup ────────────────────────────────────────────────────────────────────
 
 
@@ -207,7 +176,6 @@ async def google_auth(
     db: AsyncSession,
     *,
     id_token: str,
-    partner_id: Optional[str] = None,
 ) -> tuple[str, str, User, bool]:
     """
     Authenticate via Google ID token or authorization code.
@@ -258,9 +226,6 @@ async def google_auth(
 
     if not user.is_active:
         raise PermissionError("Account disabled. Contact support.")
-
-    if created and partner_id:
-        await _track_tolt(db, user, partner_id)
 
     access, refresh = await _create_token_pair(db, user)
     await _create_welcome_notification(db, user, is_new=created)
@@ -335,7 +300,6 @@ async def verify_magic_link(
     db: AsyncSession,
     *,
     token: str,
-    partner_id: Optional[str] = None,
 ) -> tuple[str, str, User]:
     """
     Verify the magic link token and issue JWT tokens.
@@ -370,10 +334,6 @@ async def verify_magic_link(
     # Mark token as used (single-use)
     auth_token.is_used = True
     await db.commit()
-
-    # Tolt affiliate tracking (fire-and-forget)
-    if partner_id:
-        await _track_tolt(db, user, partner_id)
 
     access, refresh = await _create_token_pair(db, user)
     await _create_welcome_notification(db, user, is_new=False)

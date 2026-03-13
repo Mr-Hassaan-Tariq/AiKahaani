@@ -96,8 +96,6 @@ def upgrade() -> None:
             server_default="free",
         ),
         sa.Column("plan_expires_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("tolt_customer_id", sa.String(40), nullable=True),
-        sa.Column("tolt_partner_id", sa.String(40), nullable=True),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -116,8 +114,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_users_role", "users", ["role"])
     op.create_index("ix_users_is_active", "users", ["is_active"])
-    op.create_index("ix_users_tolt_customer_id", "users", ["tolt_customer_id"])
-    op.create_index("ix_users_tolt_partner_id", "users", ["tolt_partner_id"])
 
     # ── user_settings ─────────────────────────────────────────────────────────
     op.create_table(

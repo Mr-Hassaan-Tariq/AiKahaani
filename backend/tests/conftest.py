@@ -49,8 +49,6 @@ def make_mock_user(
     user.role = role
     user.plan = plan
     user.plan_expires_at = None
-    user.tolt_customer_id = None
-    user.tolt_partner_id = None
     user.created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
     user.updated_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
     return user

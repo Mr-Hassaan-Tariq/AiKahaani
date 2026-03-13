@@ -82,8 +82,6 @@ class User(Base, TimestampMixin):
         server_default=UserPlan.free.value,
     )
     plan_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    tolt_customer_id: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
-    tolt_partner_id: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
 
     # Relationships
     settings: Mapped[Optional["UserSettings"]] = relationship(
@@ -114,8 +112,6 @@ class User(Base, TimestampMixin):
     __table_args__ = (
         Index("ix_users_role", "role"),
         Index("ix_users_is_active", "is_active"),
-        Index("ix_users_tolt_customer_id", "tolt_customer_id"),
-        Index("ix_users_tolt_partner_id", "tolt_partner_id"),
     )
 
     def __repr__(self) -> str:
