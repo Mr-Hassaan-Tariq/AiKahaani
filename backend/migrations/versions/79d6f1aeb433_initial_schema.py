@@ -26,7 +26,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 _user_role = postgresql.ENUM("user", "admin", "super_admin", name="user_role")
 _user_plan = postgresql.ENUM("free", "pro", name="user_plan")
-_auth_token_type = postgresql.ENUM("magic_link", "email_verification", name="auth_token_type")
+_one_time_token_type = postgresql.ENUM("magic_link", "email_verification", name="one_time_token_type")
 _tone_scope = postgresql.ENUM("script", "title", "both", name="tone_scope")
 _outline_status = postgresql.ENUM("draft", "generated", "saved", name="outline_status")
 _script_status = postgresql.ENUM("draft", "generated", "saved", name="script_status")
@@ -61,7 +61,7 @@ def upgrade() -> None:
     # ── Create ENUM types ─────────────────────────────────────────────────────
     _user_role.create(op.get_bind(), checkfirst=True)
     _user_plan.create(op.get_bind(), checkfirst=True)
-    _auth_token_type.create(op.get_bind(), checkfirst=True)
+    _one_time_token_type.create(op.get_bind(), checkfirst=True)
     _tone_scope.create(op.get_bind(), checkfirst=True)
     _outline_status.create(op.get_bind(), checkfirst=True)
     _script_status.create(op.get_bind(), checkfirst=True)
@@ -169,15 +169,15 @@ def upgrade() -> None:
     op.create_index("ix_user_refresh_tokens_user_id", "user_refresh_tokens", ["user_id"])
     op.create_index("ix_user_refresh_tokens_expires_at", "user_refresh_tokens", ["expires_at"])
 
-    # ── user_auth_tokens ──────────────────────────────────────────────────────
+    # ── user_one_time_tokens ──────────────────────────────────────────────────────
     op.create_table(
-        "user_auth_tokens",
+        "user_one_time_tokens",
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("user_id", sa.BigInteger(), nullable=False),
         sa.Column(
             "token_type",
             postgresql.ENUM(
-                "magic_link", "email_verification", name="auth_token_type", create_type=False
+                "magic_link", "email_verification", name="one_time_token_type", create_type=False
             ),
             nullable=False,
         ),
@@ -201,11 +201,11 @@ def upgrade() -> None:
         sa.UniqueConstraint("token"),
     )
     op.create_index(
-        "ix_user_auth_tokens_user_id_token_type",
-        "user_auth_tokens",
+        "ix_user_one_time_tokens_user_id_token_type",
+        "user_one_time_tokens",
         ["user_id", "token_type"],
     )
-    op.create_index("ix_user_auth_tokens_expires_at", "user_auth_tokens", ["expires_at"])
+    op.create_index("ix_user_one_time_tokens_expires_at", "user_one_time_tokens", ["expires_at"])
 
     # ── niches ────────────────────────────────────────────────────────────────
     op.create_table(
@@ -707,7 +707,7 @@ def downgrade() -> None:
     op.drop_table("niche_pacings")
     op.drop_table("niche_tones")
     op.drop_table("niches")
-    op.drop_table("user_auth_tokens")
+    op.drop_table("user_one_time_tokens")
     op.drop_table("user_refresh_tokens")
     op.drop_table("user_settings")
     op.drop_table("users")
@@ -721,6 +721,6 @@ def downgrade() -> None:
     _script_status.drop(op.get_bind(), checkfirst=True)
     _outline_status.drop(op.get_bind(), checkfirst=True)
     _tone_scope.drop(op.get_bind(), checkfirst=True)
-    _auth_token_type.drop(op.get_bind(), checkfirst=True)
+    _one_time_token_type.drop(op.get_bind(), checkfirst=True)
     _user_plan.drop(op.get_bind(), checkfirst=True)
     _user_role.drop(op.get_bind(), checkfirst=True)

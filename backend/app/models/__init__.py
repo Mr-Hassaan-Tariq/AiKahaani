@@ -30,9 +30,9 @@ from app.models.script import (
     OutlineStatus,
 )
 from app.models.user import (
-    AuthTokenType,
+    OneTimeTokenType,
     User,
-    UserAuthToken,
+    UserOneTimeToken,
     UserPlan,
     UserRefreshToken,
     UserRole,
@@ -49,8 +49,8 @@ __all__ = [
     "UserPlan",
     "UserSettings",
     "UserRefreshToken",
-    "UserAuthToken",
-    "AuthTokenType",
+    "UserOneTimeToken",
+    "OneTimeTokenType",
     # Script domain
     "Tone",
     "ToneScope",

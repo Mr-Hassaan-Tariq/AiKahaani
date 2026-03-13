@@ -31,7 +31,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models.notification import Notification, NotificationType
-from app.models.user import AuthTokenType, User, UserAuthToken, UserRefreshToken, UserRole
+from app.models.user import OneTimeTokenType, User, UserOneTimeToken, UserRefreshToken, UserRole
 from app.services.email.service import send_magic_link_email
 
 logger = logging.getLogger(__name__)
@@ -268,9 +268,9 @@ async def send_magic_link(db: AsyncSession, *, email: str) -> bool:
 
     # Create auth token (30 min expiry)
     now = datetime.now(timezone.utc)
-    auth_token = UserAuthToken(
+    auth_token = UserOneTimeToken(
         user_id=user.id,
-        token_type=AuthTokenType.magic_link,
+        token_type=OneTimeTokenType.magic_link,
         token=uuid.uuid4(),
         expires_at=now + timedelta(minutes=30),
     )
@@ -311,11 +311,11 @@ async def verify_magic_link(
     now = datetime.now(timezone.utc)
 
     result = await db.execute(
-        select(UserAuthToken).where(
-            UserAuthToken.token == uuid.UUID(token),
-            UserAuthToken.token_type == AuthTokenType.magic_link,
-            UserAuthToken.is_used == False,  # noqa: E712
-            UserAuthToken.expires_at > now,
+        select(UserOneTimeToken).where(
+            UserOneTimeToken.token == uuid.UUID(token),
+            UserOneTimeToken.token_type == OneTimeTokenType.magic_link,
+            UserOneTimeToken.is_used == False,  # noqa: E712
+            UserOneTimeToken.expires_at > now,
         )
     )
     auth_token = result.scalar_one_or_none()

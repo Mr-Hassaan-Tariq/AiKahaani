@@ -5,7 +5,7 @@ Tables:
 - users                — core user record
 - user_settings        — JSONB preferences (notification + privacy)
 - user_refresh_tokens  — active refresh tokens (session management)
-- user_auth_tokens     — magic link + email verification tokens
+- user_one_time_tokens — magic link + email verification tokens
 """
 
 import enum
@@ -51,7 +51,7 @@ class UserPlan(str, enum.Enum):
     pro = "pro"
 
 
-class AuthTokenType(str, enum.Enum):
+class OneTimeTokenType(str, enum.Enum):
     magic_link = "magic_link"
     email_verification = "email_verification"
 
@@ -90,8 +90,8 @@ class User(Base, TimestampMixin):
     refresh_tokens: Mapped[list["UserRefreshToken"]] = relationship(
         "UserRefreshToken", back_populates="user", cascade="all, delete-orphan"
     )
-    auth_tokens: Mapped[list["UserAuthToken"]] = relationship(
-        "UserAuthToken", back_populates="user", cascade="all, delete-orphan"
+    auth_tokens: Mapped[list["UserOneTimeToken"]] = relationship(
+        "UserOneTimeToken", back_populates="user", cascade="all, delete-orphan"
     )
     script_outlines: Mapped[list["ScriptOutline"]] = relationship(
         "ScriptOutline", back_populates="user", cascade="all, delete-orphan"
@@ -169,20 +169,20 @@ class UserRefreshToken(Base):
         return f"<UserRefreshToken user_id={self.user_id} expires_at={self.expires_at}>"
 
 
-class UserAuthToken(Base):
+class UserOneTimeToken(Base):
     """
     Short-lived tokens for magic links and email verification.
     No updated_at — tokens are write-once, then either consumed (is_used=True) or expired.
     """
 
-    __tablename__ = "user_auth_tokens"
+    __tablename__ = "user_one_time_tokens"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    token_type: Mapped[AuthTokenType] = mapped_column(
-        Enum(AuthTokenType, name="auth_token_type"), nullable=False
+    token_type: Mapped[OneTimeTokenType] = mapped_column(
+        Enum(OneTimeTokenType, name="one_time_token_type"), nullable=False
     )
     token: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -201,9 +201,9 @@ class UserAuthToken(Base):
     user: Mapped["User"] = relationship("User", back_populates="auth_tokens")
 
     __table_args__ = (
-        Index("ix_user_auth_tokens_user_id_token_type", "user_id", "token_type"),
-        Index("ix_user_auth_tokens_expires_at", "expires_at"),
+        Index("ix_user_one_time_tokens_user_id_token_type", "user_id", "token_type"),
+        Index("ix_user_one_time_tokens_expires_at", "expires_at"),
     )
 
     def __repr__(self) -> str:
-        return f"<UserAuthToken user_id={self.user_id} type={self.token_type} used={self.is_used}>"
+        return f"<UserOneTimeToken user_id={self.user_id} type={self.token_type} used={self.is_used}>"
