@@ -12,6 +12,7 @@ module.exports = {
     extend: {
       fontFamily: {
         figtree: 'var(--figtree-font)',
+        robotoFlex: ['var(--roboto-flex-font)', 'sans-serif'],
       },
       colors: {
         brand: {
