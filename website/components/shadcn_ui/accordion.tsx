@@ -12,7 +12,7 @@ const AccordionItem = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>
 >(({ className, ...props }, ref) => (
-  <AccordionPrimitive.Item ref={ref} className={cn('border-b', className)} {...props} />
+  <AccordionPrimitive.Item ref={ref} className={cn('border-b', className)} {...props} /> // eslint-disable-line react/jsx-props-no-spreading
 ));
 AccordionItem.displayName = 'AccordionItem';
 
@@ -27,7 +27,7 @@ const AccordionTrigger = React.forwardRef<
         'flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180',
         className
       )}
-      {...props}
+      {...props} // eslint-disable-line react/jsx-props-no-spreading
     >
       {children}
       {isIcon && <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />}
@@ -43,7 +43,7 @@ const AccordionContent = React.forwardRef<
   <AccordionPrimitive.Content
     ref={ref}
     className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
-    {...props}
+    {...props} // eslint-disable-line react/jsx-props-no-spreading
   >
     <div className={cn('pb-4 pt-0', className)}>{children}</div>
   </AccordionPrimitive.Content>

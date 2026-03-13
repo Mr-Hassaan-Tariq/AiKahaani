@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import {
   ArrowRight,
   BarChart3,
@@ -10,24 +11,54 @@ import {
   Zap,
 } from 'lucide-react';
 
+import { VariableFontAndCursor } from 'components/ui/variable-font-and-cursor';
+import { useMousePosition } from 'components/hooks/use-mouse-position';
 import { Button } from 'components/shadcn_ui/button';
 
 export function Hero() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { x, y } = useMousePosition(containerRef);
+
   return (
-    <section className="relative overflow-hidden px-6 pb-20 pt-32">
+    <section ref={containerRef} className="relative cursor-none overflow-hidden px-6 pb-20 pt-32">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-pink-50/80 via-white to-white dark:from-gray-900/50 dark:via-[#0a0a0a] dark:to-[#0a0a0a]" />
+
+      {/* Custom cursor overlay */}
+      <div className="pointer-events-none absolute inset-0 z-20">
+        <div
+          className="absolute h-full w-px -translate-x-1/2 bg-gray-300/30 dark:bg-gray-600/30"
+          style={{ left: `${x}px` }}
+        />
+        <div
+          className="absolute h-px w-full -translate-y-1/2 bg-gray-300/30 dark:bg-gray-600/30"
+          style={{ top: `${y}px` }}
+        />
+        <div
+          className="absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-red-600"
+          style={{ left: `${x}px`, top: `${y}px` }}
+        />
+      </div>
 
       <div className="container mx-auto max-w-7xl">
         <div className="flex flex-col items-center gap-16 lg:flex-row">
           <div className="z-10 flex-1 space-y-8 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 rounded-lg border border-pink-200/60 bg-pink-100 px-4 py-2 text-sm font-medium text-gray-700 dark:border-pink-800/30 dark:bg-pink-900/20 dark:text-gray-300">
               <Sparkles className="h-4 w-4 text-red-500" />
-              <span>AI + Kahaani — AI-powered YouTube script & title generator</span>
+              <span>AIKahaani - AI-powered YouTube script & title generator</span>
             </div>
 
             <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tight text-gray-900 dark:text-white md:text-7xl">
               Turn topics into <br />
-              <span className="text-red-600">YouTube-ready scripts</span> in seconds.
+              <VariableFontAndCursor
+                label="YouTube-ready scripts"
+                className="font-robotoFlex text-red-600 dark:text-red-500"
+                fontVariationMapping={{
+                  y: { name: 'wght', min: 400, max: 900 },
+                  x: { name: 'slnt', min: 0, max: -10 },
+                }}
+                containerRef={containerRef}
+              />{' '}
+              in seconds.
             </h1>
 
             <p className="mx-auto max-w-2xl text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-400 md:text-xl lg:mx-0">

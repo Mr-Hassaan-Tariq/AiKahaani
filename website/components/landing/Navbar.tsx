@@ -11,7 +11,7 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="fixed left-0 right-0 top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md transition-colors duration-300 dark:border-white/5 dark:bg-[#0a0a0a]/80">
+    <nav className="fixed left-0 right-0 top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur-md transition-colors duration-300 dark:border-white/5 dark:bg-[#0a0a0a]/80">
       <div className="container mx-auto flex h-20 items-center justify-between px-6 md:grid md:grid-cols-3 md:gap-4">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 shadow-lg shadow-red-600/20">

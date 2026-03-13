@@ -1,8 +1,7 @@
-'use client';
-
 import { FileText, Layers, Mic, Target, Zap } from 'lucide-react';
 
 import { cn } from 'lib/utils';
+import { GlowingEffect } from 'components/ui/grid-glow-effect';
 
 const features = [
   {
@@ -71,6 +70,17 @@ export function Features() {
                 feature.className
               )}
             >
+              <GlowingEffect
+                spread={45}
+                glow
+                disabled={false}
+                proximity={70}
+                inactiveZone={0.05}
+                borderWidth={2}
+                variant="red"
+                blur={1}
+                movementDuration={2}
+              />
               {feature.badge && (
                 <div className="absolute right-8 top-8 rounded-full border border-red-600/20 bg-red-600/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-red-600 dark:text-red-500">
                   {feature.badge}

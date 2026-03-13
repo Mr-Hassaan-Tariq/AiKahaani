@@ -1,13 +1,19 @@
 import '../styles/globals.css';
 
-import { Figtree } from 'next/font/google';
+import { Figtree, Roboto_Flex } from 'next/font/google';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 
 import { FAQ_SCHEMA, SEO, SITE_URL } from 'lib/seo';
+import { Cursor } from 'components/ui/inverted-cursor';
 
 const FIGTREE = Figtree({
   variable: '--figtree-font',
   weight: ['400', '500', '600', '700'],
+  subsets: ['latin'],
+});
+
+const ROBOTO_FLEX = Roboto_Flex({
+  variable: '--roboto-flex-font',
   subsets: ['latin'],
 });
 
@@ -130,7 +136,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${FIGTREE.variable} bg-white font-figtree transition-colors dark:bg-[#0a0a0a]`}
+        className={`${FIGTREE.variable} ${ROBOTO_FLEX.variable} cursor-none bg-white font-figtree transition-colors dark:bg-[#0a0a0a]`}
       >
         <script
           type="application/ld+json"
@@ -143,8 +149,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           storageKey="aikahaani-theme"
           disableTransitionOnChange
         >
-          <img src="/svg/top-left-gid.svg" alt="grid" className="absolute left-0 top-0" />
           {children}
+          <Cursor size={56} variant="red" />
         </NextThemesProvider>
       </body>
     </html>
