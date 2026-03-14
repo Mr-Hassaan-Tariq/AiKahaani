@@ -19,6 +19,9 @@ const ROBOTO_FLEX = Roboto_Flex({
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
+  icons: {
+    icon: '/logos/icon.svg',
+  },
   title: {
     default: SEO.title,
     template: '%s | AIKahaani',
@@ -42,7 +45,7 @@ export const metadata = {
     description: SEO.description,
     images: [
       {
-        url: `${SITE_URL}/logo.svg`,
+        url: `${SITE_URL}/logos/colored-logo.png`,
         width: 512,
         height: 512,
         alt: 'AIKahaani - AI YouTube Script & Title Generator',
@@ -98,7 +101,7 @@ const jsonLd = {
       url: SITE_URL,
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/logo.svg`,
+        url: `${SITE_URL}/logos/colored-logo.png`,
       },
     },
     {

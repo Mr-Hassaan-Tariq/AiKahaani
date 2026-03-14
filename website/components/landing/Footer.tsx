@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
+
+import { Logo } from 'components/Logo';
 
 export function Footer() {
   return (
@@ -7,14 +8,9 @@ export function Footer() {
       <div className="container mx-auto max-w-7xl">
         <div className="flex flex-col items-center justify-between gap-10 md:flex-row">
           <div className="flex flex-col items-center gap-4 md:items-start">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 shadow-lg shadow-red-600/20">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-2xl font-black tracking-tighter text-gray-900 dark:text-white">
-                AIKahaani
-              </span>
-            </div>
+            <Link href="/" className="flex items-center">
+              <Logo size="md" />
+            </Link>
             <p className="font-bold text-gray-400">Empowering the next generation of creators.</p>
           </div>
 

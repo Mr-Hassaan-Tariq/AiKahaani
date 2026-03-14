@@ -14,8 +14,8 @@ export interface GooeyLoaderProps extends React.HTMLAttributes<HTMLDivElement> {
 const GooeyLoader = React.forwardRef<HTMLDivElement, GooeyLoaderProps>(
   ({ className, primaryColor, secondaryColor, borderColor, ...props }, ref) => {
     const style = {
-      '--gooey-primary-color': primaryColor || 'hsl(var(--primary))',
-      '--gooey-secondary-color': secondaryColor || 'hsl(var(--secondary))',
+      '--gooey-primary-color': primaryColor || 'hsl(0 72% 51%)',
+      '--gooey-secondary-color': secondaryColor || 'hsl(0 84% 60%)',
       '--gooey-border-color': borderColor || 'hsl(var(--border))',
     } as React.CSSProperties;
 
