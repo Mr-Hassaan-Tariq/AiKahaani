@@ -20,7 +20,7 @@ export function Hero() {
   const { x, y } = useMousePosition(containerRef);
 
   return (
-    <section ref={containerRef} className="relative cursor-none overflow-hidden px-6 pb-20 pt-32">
+    <section ref={containerRef} className="relative overflow-hidden px-6 pb-20 pt-32">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-pink-50/80 via-white to-white dark:from-gray-900/50 dark:via-[#0a0a0a] dark:to-[#0a0a0a]" />
 
       {/* Custom cursor overlay */}

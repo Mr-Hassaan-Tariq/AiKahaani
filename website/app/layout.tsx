@@ -4,7 +4,6 @@ import { Figtree, Roboto_Flex } from 'next/font/google';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 
 import { FAQ_SCHEMA, SEO, SITE_URL } from 'lib/seo';
-import { Cursor } from 'components/ui/inverted-cursor';
 
 const FIGTREE = Figtree({
   variable: '--figtree-font',
@@ -139,7 +138,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${FIGTREE.variable} ${ROBOTO_FLEX.variable} cursor-none bg-white font-figtree transition-colors dark:bg-[#0a0a0a]`}
+        className={`${FIGTREE.variable} ${ROBOTO_FLEX.variable} bg-white font-figtree transition-colors dark:bg-[#0a0a0a]`}
       >
         <script
           type="application/ld+json"
@@ -153,7 +152,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           disableTransitionOnChange
         >
           {children}
-          <Cursor size={56} variant="red" />
         </NextThemesProvider>
       </body>
     </html>

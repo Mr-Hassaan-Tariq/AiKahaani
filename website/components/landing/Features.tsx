@@ -12,6 +12,7 @@ const features = [
     icon: <FileText className="h-6 w-6" />,
     className: 'md:col-span-2 md:row-span-2',
     badge: 'Production Ready',
+    glow: true,
   },
   {
     id: 'hook',
@@ -19,6 +20,7 @@ const features = [
     description: 'Easily craft magnetic hooks that stop the scroll and improve CTR.',
     icon: <Zap className="h-6 w-6" />,
     className: 'md:col-span-1',
+    glow: false,
   },
   {
     id: 'topic',
@@ -26,6 +28,7 @@ const features = [
     description: 'Find trending topics in your niche that are proven to get views.',
     icon: <Target className="h-6 w-6" />,
     className: 'md:col-span-1',
+    glow: false,
   },
   {
     id: 'voice',
@@ -33,6 +36,7 @@ const features = [
     description: 'Scripts that actually sound like you. Train the AI on your unique style.',
     icon: <Mic className="h-6 w-6" />,
     className: 'md:col-span-1',
+    glow: false,
   },
   {
     id: 'workflow',
@@ -41,6 +45,7 @@ const features = [
       'Everything you need for a successful video, all generated in one cohesive process.',
     icon: <Layers className="h-6 w-6" />,
     className: 'md:col-span-2',
+    glow: false,
   },
 ];
 
@@ -73,7 +78,7 @@ export function Features() {
               <GlowingEffect
                 spread={45}
                 glow
-                disabled={false}
+                disabled={!feature.glow}
                 proximity={70}
                 inactiveZone={0.05}
                 borderWidth={2}
