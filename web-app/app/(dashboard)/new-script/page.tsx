@@ -16,14 +16,14 @@ export default async function NewScriptPage() {
   }
 
   return (
-    <>
+    <div className="flex h-full flex-col overflow-hidden">
       <Topbar
         title="Script Generator"
         subtitle="Describe your video and we'll build a complete script outline."
       />
-      <div className="mx-auto max-w-3xl px-6 py-8">
+      <div className="flex flex-1 overflow-hidden">
         <GenerateScriptForm configData={data} />
       </div>
-    </>
+    </div>
   );
 }

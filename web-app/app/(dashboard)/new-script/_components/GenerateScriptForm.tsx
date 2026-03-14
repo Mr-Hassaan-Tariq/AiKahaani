@@ -1,23 +1,32 @@
 'use client';
 
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { InitialScriptWordCount } from 'defaultValues';
-import { LinkIcon, MonitorPlayIcon, Paperclip, Pencil, PlusIcon, Upload, X } from 'lucide-react';
+import {
+  Film,
+  Layers,
+  LinkIcon,
+  ListTree,
+  MonitorPlayIcon,
+  Paperclip,
+  Plus,
+  PlusIcon,
+  SlidersHorizontal,
+  Sparkles,
+  Upload,
+  Wand2,
+  X,
+  Zap,
+} from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import { FormType, GenerationPromptType } from '../types';
+import { FormType, GenerationPromptType, ToneType } from '../types';
 import { LoadingScreen } from './components';
-import InfoModal from './InfoModal';
-import SliderWidget from './SliderWidget';
-import TemplatesWidget from './TemplatesWidget';
-import VibeToneWidget from './VibeToneWidget';
 import useGenerateOutline from 'lib/hooks/useGenerateOutline';
 import { logger } from 'lib/logger';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
 import useToast from 'lib/utils/useToast';
 import { Button } from 'components/ui/Button';
-import FormTextarea from 'components/ui/FormTextarea';
 import { cn } from 'lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from 'components/shadcn_ui/popover';
 
@@ -29,11 +38,22 @@ interface NicheDetailsType {
   title: string;
   tagline?: string;
   thumbnail_url?: string | null;
-  script_structure?: { intro?: string; body?: string; conclusion?: string };
   tone?: string[];
-  pacing?: string[];
-  top_channels?: { name: string; link: string }[];
-  best_for?: string[];
+}
+
+// ── Icon map for template styles ──────────────────────────────────────
+const templateIcons: Record<string, React.ElementType> = {
+  'Short-form':  Zap,
+  'Standard':    Layers,
+  'Long-form':   Film,
+  'Outline':     ListTree,
+};
+
+function getTemplateIcon(name: string) {
+  for (const [key, Icon] of Object.entries(templateIcons)) {
+    if (name.toLowerCase().includes(key.toLowerCase())) return Icon;
+  }
+  return Layers;
 }
 
 // ── Main form ─────────────────────────────────────────────────────────
@@ -61,17 +81,22 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       tones: [],
       template_style: undefined,
       min_length: 0,
-      max_length: 500,
+      max_length: 1500,
       title: '',
     },
   });
 
+  const { watch, setValue, register } = methods;
+  const selectedTemplateId = watch('template_style');
+  const selectedToneIds    = watch('tones') as number[];
+  const maxLength          = watch('max_length') as number;
+
   // Prefill tones from niche
   useEffect(() => {
     if (!niche) return;
-    const availableTones = Array.isArray(configData?.tones) ? configData.tones : [];
+    const available = Array.isArray(configData?.tones) ? configData.tones : [];
     const preselected = (niche.tone ?? [])
-      .map((name) => availableTones.find((t: any) => String(t.name).toLowerCase() === name.toLowerCase()))
+      .map((name) => available.find((t: any) => String(t.name).toLowerCase() === name.toLowerCase()))
       .filter(Boolean)
       .map((t: any) => Number(t.id))
       .filter((id) => Number.isFinite(id) && id !== 0);
@@ -131,7 +156,6 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       articleItems.forEach((a) => formValue.append('article_url', a));
     }
 
-    // Persist to localStorage
     try {
       if (!hasImageFile) {
         localStorage.setItem('last_outline_payload', JSON.stringify({ hasImageFile: false, timestamp: Date.now(), payload }));
@@ -160,109 +184,327 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
     });
   };
 
-  // ── Render ───────────────────────────────────────────────────────
   if (isPending) return <LoadingScreen />;
+
+  const templates = configData?.template_styles ?? [];
+  const allTones  = configData?.tones ?? [];
+  const range     = configData?.length_range ?? { min: 300, max: 3000, default: 1000 };
+
+  // Tones helpers
+  const toggleTone = (id: number) => {
+    const current = (methods.getValues('tones') as number[]) ?? [];
+    if (current.includes(id)) {
+      setValue('tones', current.filter((t) => t !== id));
+    } else if (current.length < 3) {
+      setValue('tones', [...current, id]);
+    }
+  };
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form
+        onSubmit={methods.handleSubmit(onSubmit)}
+        className="flex flex-1 overflow-hidden"
+      >
 
-        {/* Niche badge */}
-        {niche && (
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-accent px-3 py-2">
-            <span className="text-xs text-muted-foreground">Niche template:</span>
-            <span className="text-xs font-semibold text-accent-foreground">{niche.title}</span>
-          </div>
-        )}
+        {/* ═══ LEFT: Editor pane ═══════════════════════════════════════ */}
+        <div className="flex-1 min-w-0 overflow-y-auto px-12 py-10 flex flex-col gap-8">
 
-        {/* Topic textarea */}
-        <div className="relative">
-          <FormTextarea
-            name="description"
-            validationSchema={{
-              required: 'Description is required',
-              minLength: { value: 50, message: 'Description must be at least 50 characters' },
-            }}
-            label={
-              <div className="flex items-center gap-2">
-                <span>What&apos;s your video about?</span>
-                <InfoModal description="Be specific about your topic, audience, and key points you want to cover." />
-              </div>
-            }
-            placeholder="e.g. Top 5 productivity hacks that actually work for creators who struggle with focus..."
-            className="min-h-[140px] pb-12"
+          {/* Niche badge */}
+          {niche && (
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-accent px-3 py-2 self-start">
+              <span className="text-xs text-muted-foreground">Niche template:</span>
+              <span className="text-xs font-semibold text-accent-foreground">{niche.title}</span>
+            </div>
+          )}
+
+          {/* Title input */}
+          <input
+            {...register('title')}
+            placeholder="Give your script a working title…"
+            className="w-full bg-transparent text-[32px] font-bold tracking-tight text-foreground border-none outline-none placeholder:text-muted-foreground/40 leading-tight"
           />
-          {/* Context button floated inside textarea */}
-          <div className="absolute bottom-3 right-3">
-            <ContextButton files={files} setFiles={setFiles} />
+
+          {/* Prompt section */}
+          <div className="flex flex-col gap-3">
+            <label className="flex items-center gap-2 text-sm font-semibold text-primary">
+              <Sparkles className="h-4 w-4" />
+              Describe the video you want to turn into a script
+            </label>
+
+            <div className="rounded-lg bg-secondary border border-border p-6">
+              <textarea
+                {...register('description', {
+                  required: 'Description is required',
+                  minLength: { value: 50, message: 'Description must be at least 50 characters' },
+                })}
+                placeholder="Create a high-retention YouTube script for creators who want to grow with educational content. Start with a curiosity-driven hook, explain 5 practical scripting methods, add pattern interrupts, and finish with a strong subscribe CTA."
+                rows={8}
+                className="w-full bg-transparent text-base leading-relaxed resize-none outline-none text-foreground placeholder:text-muted-foreground"
+              />
+
+              {/* Textarea footer */}
+              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5">
+                  <ContextButton files={files} setFiles={setFiles} />
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  Add notes, links, or research points
+                </span>
+              </div>
+            </div>
+
+            {/* Description error */}
+            {methods.formState.errors.description && (
+              <p className="text-xs text-destructive">
+                {methods.formState.errors.description.message}
+              </p>
+            )}
           </div>
+
+          {/* Attached files */}
+          {files.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {files.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5"
+                >
+                  {file.type === 'link'    && <MonitorPlayIcon className="h-3.5 w-3.5 text-muted-foreground" />}
+                  {file.type === 'article' && <LinkIcon        className="h-3.5 w-3.5 text-muted-foreground" />}
+                  {file.type === 'file'    && <Paperclip       className="h-3.5 w-3.5 text-muted-foreground" />}
+                  <span className="max-w-[180px] truncate text-xs text-foreground">
+                    {file.value instanceof File ? file.value.name : file.value}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFiles(files.filter((_, i) => i !== index))}
+                    className="ml-0.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Attached files display */}
-        {files.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {files.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-2.5 py-1.5"
-              >
-                {file.type === 'link'    && <MonitorPlayIcon className="h-3.5 w-3.5 text-muted-foreground" />}
-                {file.type === 'article' && <LinkIcon        className="h-3.5 w-3.5 text-muted-foreground" />}
-                {file.type === 'file'    && <Paperclip       className="h-3.5 w-3.5 text-muted-foreground" />}
-                <span className="max-w-[180px] truncate text-xs text-foreground">
-                  {file.value instanceof File ? file.value.name : file.value}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setFiles(files.filter((_, i) => i !== index))}
-                  className="ml-0.5 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
+        {/* ═══ RIGHT: Inspector pane ═══════════════════════════════════ */}
+        <div className="w-[360px] shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
+
+          {/* Inspector header */}
+          <div className="px-6 py-5 border-b border-border flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+            <span className="text-[15px] font-semibold text-foreground">Script Settings</span>
           </div>
-        )}
 
-        {/* Divider */}
-        <div className="h-px bg-border" />
+          {/* Inspector body — scrollable */}
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
 
-        {/* Template style */}
-        <TemplatesWidget name="template_style" templates={configData?.template_styles ?? []} />
+            {/* ── Output Format ── */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">Output format</span>
+                <span className="text-xs text-muted-foreground">Choose one</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {templates.map((tmpl) => {
+                  const Icon      = getTemplateIcon(tmpl.name);
+                  const isSelected = selectedTemplateId === tmpl.id;
+                  return (
+                    <button
+                      key={tmpl.id}
+                      type="button"
+                      onClick={() =>
+                        setValue('template_style', isSelected ? undefined : tmpl.id)
+                      }
+                      className={cn(
+                        'flex flex-col gap-2 rounded-lg border p-3 text-left transition-colors',
+                        isSelected
+                          ? 'border-primary bg-accent'
+                          : 'border-border bg-background hover:bg-secondary',
+                      )}
+                    >
+                      <div className={cn(
+                        'flex h-8 w-8 items-center justify-center rounded-md',
+                        isSelected ? 'bg-primary' : 'bg-muted',
+                      )}>
+                        <Icon className={cn('h-4 w-4', isSelected ? 'text-primary-foreground' : 'text-muted-foreground')} />
+                      </div>
+                      <p className="text-[13px] font-semibold text-foreground leading-tight">{tmpl.name}</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight">{tmpl.description}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-        {/* Script length */}
-        <SliderWidget
-          range={configData?.length_range ?? { min: 300, max: 3000, default: 1000 }}
-          defaultValue={InitialScriptWordCount}
-          disabled={methods.watch('template_style') !== undefined}
-          validationSchema={{
-            required: 'Length is required',
-            min: { value: 500, message: 'Length must be at least 500 words' },
-            validate: (_value: number, formValues: any) => {
-              if (typeof formValues?.min_length === 'number' && typeof formValues?.max_length === 'number') {
-                if (formValues.max_length - formValues.min_length < 500) {
-                  return 'Difference between min and max must be at least 500 words';
-                }
-              }
-              return true;
-            },
-          }}
-        />
+            {/* ── Script Length ── */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">Script length</span>
+                <span className="text-xs text-muted-foreground">
+                  ~{(maxLength || range.default).toLocaleString()} words
+                </span>
+              </div>
+              <LengthSlider
+                range={range}
+                disabled={selectedTemplateId !== undefined}
+                value={maxLength || range.default}
+                onChange={(val) => {
+                  const half = Math.round((val - range.min) * 0.4);
+                  setValue('min_length', range.min + half);
+                  setValue('max_length', val);
+                }}
+              />
+              <div className="flex justify-between text-[11px] text-muted-foreground">
+                <span>Short</span>
+                <span>Long form</span>
+              </div>
+              {selectedTemplateId !== undefined && (
+                <p className="text-[11px] text-muted-foreground">
+                  Length set by selected format.
+                </p>
+              )}
+            </div>
 
-        {/* Tone */}
-        <VibeToneWidget tones={configData?.tones ?? []} name="tones" />
+            {/* ── Creator Voice ── */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">Creator voice</span>
+                <span className="text-xs text-muted-foreground">Up to 3 styles</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {/* Selected tone chips */}
+                {selectedToneIds.map((id) => {
+                  const tone = allTones.find((t: ToneType) => t.id === id);
+                  if (!tone) return null;
+                  return (
+                    <span
+                      key={id}
+                      className="flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-foreground"
+                    >
+                      {tone.name}
+                      <button
+                        type="button"
+                        onClick={() => toggleTone(id)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
 
-        {/* Submit */}
-        <Button type="submit" size="lg" loading={isPending} className="w-full">
-          <Pencil className="h-4 w-4" />
-          Generate Script Outline
-        </Button>
+                {/* Add style popover */}
+                {selectedToneIds.length < 3 && (
+                  <AddTonePopover
+                    allTones={allTones}
+                    selectedIds={selectedToneIds}
+                    onToggle={toggleTone}
+                  />
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Inspector footer — Generate button */}
+          <div className="p-6 border-t border-border shrink-0">
+            <Button
+              type="submit"
+              loading={isPending}
+              className="w-full h-12 text-[15px] font-semibold shadow-[0_8px_16px_rgba(255,0,0,0.15)]"
+            >
+              <Wand2 className="h-[18px] w-[18px]" />
+              Generate YouTube Script
+            </Button>
+          </div>
+        </div>
       </form>
     </FormProvider>
   );
 }
 
-// ── Context button (add YouTube link / article / image) ───────────────
+// ── Length slider ─────────────────────────────────────────────────────
+function LengthSlider({
+  range,
+  value,
+  onChange,
+  disabled,
+}: {
+  range: { min: number; max: number };
+  value: number;
+  onChange: (val: number) => void;
+  disabled?: boolean;
+}) {
+  const pct = Math.round(((value - range.min) / (range.max - range.min)) * 100);
+  return (
+    <div className="relative flex items-center">
+      <input
+        type="range"
+        min={range.min}
+        max={range.max}
+        step={100}
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full h-1.5 appearance-none rounded-full bg-secondary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+        style={{
+          background: disabled
+            ? undefined
+            : `linear-gradient(to right, hsl(var(--primary)) ${pct}%, hsl(var(--secondary)) ${pct}%)`,
+        }}
+      />
+    </div>
+  );
+}
+
+// ── Add tone popover ──────────────────────────────────────────────────
+function AddTonePopover({
+  allTones,
+  selectedIds,
+  onToggle,
+}: {
+  allTones: ToneType[];
+  selectedIds: number[];
+  onToggle: (id: number) => void;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+        >
+          <Plus className="h-3 w-3" />
+          Add style
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="top" align="start" className="w-52 p-2">
+        <div className="flex flex-col gap-0.5">
+          {allTones
+            .filter((t) => !selectedIds.includes(t.id))
+            .map((tone) => (
+              <button
+                key={tone.id}
+                type="button"
+                onClick={() => onToggle(tone.id)}
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-secondary text-left"
+              >
+                {tone.name}
+              </button>
+            ))}
+          {allTones.filter((t) => !selectedIds.includes(t.id)).length === 0 && (
+            <p className="px-3 py-2 text-xs text-muted-foreground">All styles selected</p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ── Context button (attach YouTube / article / image) ─────────────────
 function ContextButton({
   files,
   setFiles,
@@ -274,6 +516,7 @@ function ContextButton({
   const [link,    setLink]    = useState('');
   const [article, setArticle] = useState('');
   const [file,    setFile]    = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAdd = (type: 'link' | 'article' | 'file', value: string | File) => {
     if (files.length >= 3) return toast.error('You can only add up to 3 context items');
@@ -284,22 +527,18 @@ function ContextButton({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="sm"
-          className={cn(files.length > 0 && 'border-primary/50 bg-accent text-accent-foreground')}
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+            files.some((f) => f.type === 'file') && 'border-primary/50 text-primary',
+          )}
         >
-          <Paperclip className="h-3.5 w-3.5" />
-          Add context {files.length > 0 ? `(${files.length})` : ''}
-        </Button>
+          <Paperclip className="h-4 w-4" />
+        </button>
       </PopoverTrigger>
 
-      <PopoverContent
-        side="top"
-        align="end"
-        className="w-80 rounded-xl border border-border bg-card p-0 shadow-md"
-      >
+      <PopoverContent side="top" align="start" className="w-80 rounded-xl border border-border bg-card p-0 shadow-md">
         <div className="divide-y divide-border">
           {/* YouTube link */}
           <div className="flex items-center gap-2 p-3">
@@ -345,12 +584,9 @@ function ContextButton({
           <div className="flex items-center gap-2 p-3">
             <Upload className="h-4 w-4 shrink-0 text-muted-foreground" />
             <label className="flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-md border border-border bg-input px-2 text-xs text-muted-foreground hover:bg-muted">
-              {file ? (
-                <span className="truncate text-foreground">{file.name}</span>
-              ) : (
-                'Upload image'
-              )}
+              {file ? <span className="truncate text-foreground">{file.name}</span> : 'Upload image'}
               <input
+                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 className="hidden"
@@ -369,9 +605,7 @@ function ContextButton({
         </div>
 
         {files.length >= 3 && (
-          <p className="px-3 py-2 text-xs text-muted-foreground">
-            Maximum 3 context items reached.
-          </p>
+          <p className="px-3 py-2 text-xs text-muted-foreground">Maximum 3 context items reached.</p>
         )}
       </PopoverContent>
     </Popover>
