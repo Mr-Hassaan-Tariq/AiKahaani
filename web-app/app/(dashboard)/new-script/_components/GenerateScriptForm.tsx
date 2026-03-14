@@ -208,7 +208,7 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
       >
 
         {/* ═══ LEFT: Editor pane ═══════════════════════════════════════ */}
-        <div className="flex-1 min-w-0 overflow-y-auto px-12 py-10 flex flex-col gap-8">
+        <div className="flex-1 min-w-0 overflow-y-auto px-10 py-10 flex flex-col gap-8">
 
           {/* Niche badge */}
           {niche && (
@@ -290,16 +290,16 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
         </div>
 
         {/* ═══ RIGHT: Inspector pane ═══════════════════════════════════ */}
-        <div className="w-[360px] shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
+        <div className="w-[440px] shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
 
           {/* Inspector header */}
-          <div className="px-6 py-5 border-b border-border flex items-center gap-2">
+          <div className="px-7 py-5 border-b border-border flex items-center gap-2">
             <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
             <span className="text-[15px] font-semibold text-foreground">Script Settings</span>
           </div>
 
           {/* Inspector body — scrollable */}
-          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
+          <div className="flex-1 overflow-y-auto px-7 py-6 flex flex-col gap-8">
 
             {/* ── Output Format ── */}
             <div className="flex flex-col gap-3">
@@ -410,7 +410,7 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
           </div>
 
           {/* Inspector footer — Generate button */}
-          <div className="p-6 border-t border-border shrink-0">
+          <div className="px-7 py-5 border-t border-border shrink-0">
             <Button
               type="submit"
               loading={isPending}
