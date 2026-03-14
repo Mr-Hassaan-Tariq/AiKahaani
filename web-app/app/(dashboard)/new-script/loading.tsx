@@ -3,14 +3,6 @@ import { Skeleton } from 'components/shadcn_ui/skeleton';
 export default function NewScriptLoading() {
   return (
     <div className="flex flex-col">
-      {/* Topbar skeleton */}
-      <div className="flex h-16 items-center border-b border-border px-6">
-        <div className="flex flex-col gap-1">
-          <Skeleton className="h-4 w-36" />
-          <Skeleton className="h-3 w-56" />
-        </div>
-      </div>
-
       <div className="mx-auto w-full max-w-3xl px-6 py-8">
         <div className="flex flex-col gap-6">
           {/* Textarea */}

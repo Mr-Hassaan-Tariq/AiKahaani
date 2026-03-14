@@ -5,6 +5,7 @@ import DesktopMenu from './_components/DesktopMenu';
 import MobileMenu from './_components/MobileMenu';
 import { MobileDrawer } from './_components/Drawer';
 import { Dropdown } from './_components/DropdownMenu';
+import NavPageTitle from 'components/layout/NavPageTitle';
 import ClientImage from 'components/ui/ClientImage';
 import { getNotifications, getUserProfile } from './actions';
 
@@ -66,24 +67,27 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </header>
 
         {/* ── Desktop topbar ── */}
-        <header className="hidden h-14 shrink-0 items-center justify-end gap-3 border-b border-border bg-background px-6 lg:flex">
-          <Dropdown notifications={notifications} />
-          {user?.profile_picture ? (
-            <ClientImage
-              src={user.profile_picture}
-              alt="Profile"
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full object-cover ring-2 ring-border"
-            />
-          ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-              {initials}
-            </div>
-          )}
-          <span className="text-sm font-medium text-foreground">
-            {user?.fullname || user?.username || ''}
-          </span>
+        <header className="hidden h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6 lg:flex">
+          <NavPageTitle />
+          <div className="flex items-center gap-3">
+            <Dropdown notifications={notifications} />
+            {user?.profile_picture ? (
+              <ClientImage
+                src={user.profile_picture}
+                alt="Profile"
+                width={32}
+                height={32}
+                className="h-8 w-8 rounded-full object-cover ring-2 ring-border"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                {initials}
+              </div>
+            )}
+            <span className="text-sm font-medium text-foreground">
+              {user?.fullname || user?.username || ''}
+            </span>
+          </div>
         </header>
 
         {/* ── Page content ── */}

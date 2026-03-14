@@ -16,7 +16,6 @@ import useGetScripts from 'lib/hooks/useGetScripts';
 import useOptimizeTitles from 'lib/hooks/useOptimizeTitles';
 import useToast from 'lib/utils/useToast';
 import { Button } from 'components/ui/Button';
-import Topbar from 'components/layout/Topbar';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<'generate' | 'optimize'>('generate');
@@ -127,11 +126,6 @@ export default function Page() {
 
   return (
     <div className="flex flex-col">
-      <Topbar
-        title="Title Generator"
-        subtitle="Generate or optimize YouTube titles with AI."
-      />
-
       <div className="mx-auto w-full max-w-2xl px-6 py-8">
         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} isGenerating={isGenerating} />
 

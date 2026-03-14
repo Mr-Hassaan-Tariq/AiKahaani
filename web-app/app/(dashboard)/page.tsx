@@ -14,9 +14,7 @@ import {
   FileVideo,
 } from 'lucide-react';
 
-import { getUserProfile } from './actions';
 import { getScriptGenerations } from './my-scripts/actions';
-import Topbar from 'components/layout/Topbar';
 import { Badge } from 'components/ui/Badge';
 import { Button } from 'components/ui/Button';
 
@@ -104,9 +102,8 @@ function ActionCard({
 
 // ── Page ─────────────────────────────────────────────────────────────
 export default async function DashboardPage() {
-  const [{ data: user }, { data: scriptsData }, { data: outlinesData }, { data: recentData }] =
+  const [{ data: scriptsData }, { data: outlinesData }, { data: recentData }] =
     await Promise.all([
-      getUserProfile(),
       getScriptGenerations({ type: 'script',  limit: 1 }),
       getScriptGenerations({ type: 'outline', limit: 1 }),
       getScriptGenerations({ limit: 4, ordering: 'modified' }),
@@ -115,24 +112,9 @@ export default async function DashboardPage() {
   const totalScripts  = scriptsData?.count  ?? 0;
   const totalOutlines = outlinesData?.count ?? 0;
   const recentItems   = recentData?.results ?? [];
-  const firstName     = user?.fullname?.split(' ')[0] || user?.username || 'Creator';
 
   return (
-    <>
-      <Topbar
-        title="Dashboard"
-        subtitle={`Welcome back, ${firstName}. Let's make your next hit video.`}
-        actions={
-          <Button asChild size="md">
-            <Link href="/new-script">
-              <Sparkles className="h-4 w-4" />
-              New script
-            </Link>
-          </Button>
-        }
-      />
-
-      <div className="p-7 space-y-6">
+    <div className="p-7 space-y-6">
 
         {/* ── Stats grid ── */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -309,7 +291,6 @@ export default async function DashboardPage() {
           </div>
 
         </div>
-      </div>
-    </>
+    </div>
   );
 }

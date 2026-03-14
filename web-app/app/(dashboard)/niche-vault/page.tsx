@@ -7,7 +7,6 @@ import { NichePaginatedResponse } from '../types';
 import NicheCard from './_components/NicheCard';
 import Pagination from './_components/Pagination';
 import SearchHeader from './_components/SearchHeader';
-import Topbar from 'components/layout/Topbar';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
 
 export default function NicheVault() {
@@ -94,11 +93,6 @@ export default function NicheVault() {
 
   return (
     <div className="flex flex-col">
-      <Topbar
-        title="Niche Vault"
-        subtitle="Explore proven content styles and apply them to your scripts."
-      />
-
       <div className="px-6 py-6">
         <SearchHeader
           searchInput={searchInput}

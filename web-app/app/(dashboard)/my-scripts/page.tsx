@@ -1,13 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { PenLine } from 'lucide-react';
 
 import MyScriptsContent from './_components/MyScriptsContent';
 import { getScriptGenerations, ScriptFilters } from './actions';
-import Topbar from 'components/layout/Topbar';
-import { Button } from 'components/ui/Button';
 
 type TabKey = 'all' | 'outlines' | 'scripts';
 
@@ -86,17 +82,6 @@ export default function MyScriptsPage() {
 
   return (
     <div className="flex flex-col">
-      <Topbar
-        title="My Scripts"
-        subtitle="Manage all your outlines and generated scripts."
-        actions={
-          <Link href="/new-script">
-            <Button size="sm">
-              <PenLine className="h-4 w-4" /> New Script
-            </Button>
-          </Link>
-        }
-      />
       <div className="px-6 py-6">
         <MyScriptsContent
           activeTab={activeTab}

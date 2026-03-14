@@ -8,17 +8,7 @@ function Skeleton({ className }: { className?: string }) {
 
 export default function DashboardLoading() {
   return (
-    <>
-      {/* Topbar skeleton */}
-      <div className="flex h-16 items-center justify-between border-b border-border px-6">
-        <div className="space-y-1.5">
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-3 w-48" />
-        </div>
-        <Skeleton className="h-9 w-28 rounded-lg" />
-      </div>
-
-      <div className="p-6 space-y-6 max-w-screen-xl">
+    <div className="p-6 space-y-6">
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -59,7 +49,6 @@ export default function DashboardLoading() {
             </div>
           </Card>
         </div>
-      </div>
-    </>
+    </div>
   );
 }

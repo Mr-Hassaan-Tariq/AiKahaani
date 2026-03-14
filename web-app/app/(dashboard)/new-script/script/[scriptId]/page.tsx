@@ -4,7 +4,6 @@ import { Download, ExternalLink, Clock, FileText, Hash } from 'lucide-react';
 import CopyAllButton from '@/(dashboard)/new-script/_components/CopyAllButton';
 import ExportScriptModal from '@/(dashboard)/my-scripts/_components/ExportScriptModal';
 import { ScriptData } from '@/(dashboard)/my-scripts/_types';
-import Topbar from 'components/layout/Topbar';
 import { Button } from 'components/ui/Button';
 
 import { getScript } from './actions';
@@ -40,23 +39,18 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
 
   return (
     <div className="flex flex-col">
-      <Topbar
-        title={data?.title || 'Full Script'}
-        subtitle="Your generated script is ready to review, copy, and export."
-        actions={
-          <div className="flex items-center gap-2">
-            <CopyAllButton text={allContent} />
-            <ExportScriptModal
-              trigger={
-                <Button size="sm">
-                  <Download className="h-4 w-4" /> Export
-                </Button>
-              }
-              script={data as ScriptData}
-            />
-          </div>
-        }
-      />
+      {/* Actions bar */}
+      <div className="flex items-center justify-end gap-2 border-b border-border px-7 py-3">
+        <CopyAllButton text={allContent} />
+        <ExportScriptModal
+          trigger={
+            <Button size="sm">
+              <Download className="h-4 w-4" /> Export
+            </Button>
+          }
+          script={data as ScriptData}
+        />
+      </div>
 
       <div className="p-7">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_280px]">

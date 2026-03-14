@@ -1,6 +1,5 @@
 import { getOutline } from './actions';
 import OutlineComponent from './OutlineComponent';
-import Topbar from 'components/layout/Topbar';
 
 export default async function Page({ params }: { params: Promise<{ outlineId: string }> }) {
   const { outlineId } = await params;
@@ -17,14 +16,8 @@ export default async function Page({ params }: { params: Promise<{ outlineId: st
   }
 
   return (
-    <div className="flex flex-col">
-      <Topbar
-        title="Script Outline"
-        subtitle="Review the structure, refine key beats, and then generate the full script."
-      />
-      <div className="p-7">
-        <OutlineComponent outline={data} />
-      </div>
+    <div className="p-7">
+      <OutlineComponent outline={data} />
     </div>
   );
 }

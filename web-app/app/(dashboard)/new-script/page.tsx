@@ -1,6 +1,5 @@
 import GenerateScriptForm from './_components/GenerateScriptForm';
 import { getConfig } from './actions';
-import Topbar from 'components/layout/Topbar';
 
 export default async function NewScriptPage() {
   const { data, error, isError } = await getConfig();
@@ -16,14 +15,8 @@ export default async function NewScriptPage() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      <Topbar
-        title="Script Generator"
-        subtitle="Describe your video and we'll build a complete script outline."
-      />
-      <div className="flex flex-1 overflow-hidden">
-        <GenerateScriptForm configData={data} />
-      </div>
+    <div className="flex h-full overflow-hidden">
+      <GenerateScriptForm configData={data} />
     </div>
   );
 }
