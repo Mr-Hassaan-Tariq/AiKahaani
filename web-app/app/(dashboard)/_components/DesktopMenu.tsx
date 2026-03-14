@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 
 import { cn } from 'lib/utils';
-import CreditsCard from './CreditsCard';
 import LogoutModal from './LogoutModal';
 
 // ── Nav config ───────────────────────────────────────────────────────
@@ -86,9 +85,6 @@ export default function DesktopMenu() {
 
       {/* ── Spacer ── */}
       <div className="flex-1" />
-
-      {/* ── Credits card ── */}
-      <CreditsCard />
 
       {/* ── Sub nav + logout ── */}
       <nav className="mt-3 flex flex-col gap-0.5">
