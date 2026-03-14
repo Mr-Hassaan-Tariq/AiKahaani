@@ -140,21 +140,21 @@ export const SearchIcon = (
   <svg
     width="20"
     height="21"
-    className="absolute left-3 top-4 h-5 w-5 text-[#AAACA6]"
+    className="absolute left-3 top-4 h-5 w-5 text-muted-foreground"
     viewBox="0 0 20 21"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
       d="M9.58332 18.0001C13.9556 18.0001 17.5 14.4557 17.5 10.0834C17.5 5.71116 13.9556 2.16675 9.58332 2.16675C5.21107 2.16675 1.66666 5.71116 1.66666 10.0834C1.66666 14.4557 5.21107 18.0001 9.58332 18.0001Z"
-      stroke="#AAACA6"
+      stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
       d="M18.3333 18.8334L16.6667 17.1667"
-      stroke="#AAACA6"
+      stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -165,14 +165,14 @@ export const TimeIcon = (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M22 12C22 17.52 17.52 22 12 22C6.48 22 2 17.52 2 12C2 6.48 6.48 2 12 2C17.52 2 22 6.48 22 12Z"
-      stroke="white"
+      stroke="currentColor"
       stroke-width="1.5"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
     <path
       d="M15.7099 15.1798L12.6099 13.3298C12.0699 13.0098 11.6299 12.2398 11.6299 11.6098V7.50977"
-      stroke="white"
+      stroke="currentColor"
       stroke-width="1.5"
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -183,7 +183,7 @@ export const NoteIcon = (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M8 2V5"
-      stroke="white"
+      stroke="currentColor"
       stroke-width="1.5"
       stroke-miterlimit="10"
       stroke-linecap="round"
@@ -191,7 +191,7 @@ export const NoteIcon = (
     />
     <path
       d="M16 2V5"
-      stroke="white"
+      stroke="currentColor"
       stroke-width="1.5"
       stroke-miterlimit="10"
       stroke-linecap="round"
@@ -199,7 +199,7 @@ export const NoteIcon = (
     />
     <path
       d="M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z"
-      stroke="white"
+      stroke="currentColor"
       stroke-width="1.5"
       stroke-miterlimit="10"
       stroke-linecap="round"
@@ -207,7 +207,7 @@ export const NoteIcon = (
     />
     <path
       d="M8 11H16"
-      stroke="white"
+      stroke="currentColor"
       stroke-width="1.5"
       stroke-miterlimit="10"
       stroke-linecap="round"
@@ -215,7 +215,7 @@ export const NoteIcon = (
     />
     <path
       d="M8 16H12"
-      stroke="white"
+      stroke="currentColor"
       stroke-width="1.5"
       stroke-miterlimit="10"
       stroke-linecap="round"
@@ -227,14 +227,14 @@ export const VideoIcon = (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z"
-      stroke="white"
+      stroke="currentColor"
       stroke-width="1.5"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
     <path
       d="M9.1001 12V10.52C9.1001 8.60999 10.4501 7.83999 12.1001 8.78999L13.3801 9.52999L14.6601 10.27C16.3101 11.22 16.3101 12.78 14.6601 13.73L13.3801 14.47L12.1001 15.21C10.4501 16.16 9.1001 15.38 9.1001 13.48V12Z"
-      stroke="white"
+      stroke="currentColor"
       stroke-width="1.5"
       stroke-miterlimit="10"
       stroke-linecap="round"

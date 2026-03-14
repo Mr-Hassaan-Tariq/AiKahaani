@@ -1,40 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { Download } from 'lucide-react';
 
 import { ScriptData } from '../_types';
-import { Download } from './components';
 import useExportScript from 'lib/hooks/useExportScript';
-import Button from 'components/ui/Button';
+import { Button } from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
 import { Checkbox } from 'components/shadcn_ui/checkbox';
+import { logger } from 'lib/logger';
 
 type ExportFormat = 'docx' | 'pdf' | 'txt';
 
-interface ExportOption {
-  value: ExportFormat;
-  label: string;
-  description: string;
-}
-
-const exportOptions: ExportOption[] = [
-  {
-    value: 'docx',
-    label: '.docx',
-    description: 'Best for editing in Microsoft Word or Google Docs',
-  },
-  {
-    value: 'pdf',
-    label: '.pdf',
-    description: 'Great for sharing or printing',
-  },
-  {
-    value: 'txt',
-    label: '.txt',
-    description: 'Simple text file for quick copy-paste',
-  },
+const exportOptions = [
+  { value: 'docx' as ExportFormat, label: '.docx', description: 'Best for editing in Word or Google Docs' },
+  { value: 'pdf' as ExportFormat, label: '.pdf', description: 'Great for sharing or printing' },
+  { value: 'txt' as ExportFormat, label: '.txt', description: 'Simple text file for quick copy-paste' },
 ];
 
 export default function ExportScriptModal({
@@ -48,23 +29,13 @@ export default function ExportScriptModal({
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat | null>(null);
   const { mutate: exportScript, isPending } = useExportScript();
 
-  const handleFormatChange = (format: ExportFormat, checked: boolean) => {
-    if (checked) {
-      setSelectedFormat(format);
-    } else {
-      setSelectedFormat(null);
-    }
-  };
-
   const handleDownload = () => {
     if (!selectedFormat || !script?.uuid) return;
-
     exportScript(
       { uuid: script.uuid, format: selectedFormat },
       {
         onSuccess: (data) => {
           if (data.format === 'docx') {
-            // For DOCX: Download/open in current tab
             const a = document.createElement('a');
             a.href = data.file_url;
             a.download = `${script.title || 'script'}-${script.uuid}.${data.format}`;
@@ -73,67 +44,52 @@ export default function ExportScriptModal({
             a.click();
             document.body.removeChild(a);
           } else {
-            // For other formats: Redirect to new page
             window.open(data.file_url, '_blank');
           }
-
           setOpen(false);
         },
-        onError: (err) => {
-          console.error('Export error:', err);
-        },
+        onError: (err) => { logger.error('Export error:', err); },
       },
     );
   };
 
-  const isFormatSelected = (format: ExportFormat) => selectedFormat === format;
-
   return (
     <Dialog
       open={open}
-      setOpen={setOpen}
+      setOpen={(v) => { setOpen(v); if (!v) setSelectedFormat(null); }}
       trigger={trigger}
-      title="Ready to save your script?"
-      description="Choose a file format for your script"
+      title="Export script"
+      description="Choose a file format for your script."
       footer={
-        <Row className="w-full gap-6">
-          <Button
-            variant="gray"
-            onClick={() => {
-              setOpen(false);
-              setSelectedFormat(null);
-            }}
-          >
-            <Text
-              variant="base"
-              className="font-extrabold [font-feature-settings:'liga'_off,'clig'_off]"
-            >
-              Cancel
-            </Text>
+        <div className="flex w-full gap-3">
+          <Button variant="outline" className="flex-1" onClick={() => { setOpen(false); setSelectedFormat(null); }}>
+            Cancel
           </Button>
           <Button
-            type="submit"
-            variant="green"
+            className="flex-1"
             onClick={handleDownload}
             disabled={!selectedFormat || isPending}
+            loading={isPending}
           >
-            {Download} {isPending ? 'Downloading...' : 'Download'}
+            <Download className="h-4 w-4" /> Download
           </Button>
-        </Row>
+        </div>
       }
     >
-      {exportOptions.map((option) => (
-        <Row key={option.value} className="my-2 justify-start">
-          <Checkbox
-            className="border-white"
-            checked={isFormatSelected(option.value)}
-            onCheckedChange={(checked) => handleFormatChange(option.value, checked as boolean)}
-          />
-          <Text variant="base">
-            {option.label} — {option.description}
-          </Text>
-        </Row>
-      ))}
+      <div className="flex flex-col gap-3 my-2">
+        {exportOptions.map((option) => (
+          <label key={option.value} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-accent">
+            <Checkbox
+              checked={selectedFormat === option.value}
+              onCheckedChange={(checked) => setSelectedFormat(checked ? option.value : null)}
+            />
+            <div>
+              <p className="text-sm font-medium text-foreground">{option.label}</p>
+              <p className="text-xs text-muted-foreground">{option.description}</p>
+            </div>
+          </label>
+        ))}
+      </div>
     </Dialog>
   );
 }

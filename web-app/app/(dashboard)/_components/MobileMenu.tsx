@@ -1,59 +1,89 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { MenuIcon } from 'lucide-react';
 
+import { cn } from 'lib/utils';
 import { mainMenu, subMenu } from './DesktopMenu';
 import LogoutModal from './LogoutModal';
-import Col from 'components/ui/Col';
-import PlanUpgradeModal from 'components/ui/PlanUpgradeModal';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from 'components/shadcn_ui/sheet';
 
 export default function MobileMenu() {
+  const pathname = usePathname() ?? '/';
+
+  const isActive = (path: string) => {
+    if (!path.startsWith('/')) return false;
+    if (path === '/') return pathname === '/';
+    return pathname === path || pathname.startsWith(`${path}/`);
+  };
+
   return (
     <Sheet>
-      <SheetTrigger>
-        <MenuIcon size={24} />
+      <SheetTrigger asChild>
+        <button
+          aria-label="Open navigation"
+          className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted"
+        >
+          <MenuIcon className="h-4 w-4" />
+        </button>
       </SheetTrigger>
-      <SheetContent
-        side="right"
-        className="w-80 border-l border-[#BAFF381F] bg-[#161616] text-white"
-      >
-        <Text variant="base" className="flex items-center gap-4 text-white">
-          Plan: <PlanUpgradeModal />
-        </Text>
-        <Col className="h-full w-full items-start justify-between pt-8">
-          <Col className="w-full gap-6">
-            {mainMenu.map((e) => (
-              <Link href={e.path} key={e.name}>
-                <SheetClose>
-                  <Row className="group w-full cursor-pointer justify-start gap-4 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
-                    {e.icon}
-                    <p className="text-[#AAACA6] group-hover:text-[#20BF0E]/80">{e.name}</p>
-                  </Row>
-                </SheetClose>
-              </Link>
-            ))}
-          </Col>
-          <Col className="w-full gap-6">
-            {subMenu.map((e) => (
-              <Link href={e.path} key={e.name}>
-                <SheetClose className="px-0 py-0">
-                  <Row className="group w-full cursor-pointer justify-start gap-4 whitespace-nowrap [font-feature-settings:'liga'_off,'clig'_off]">
-                    {e.icon}
-                    <Text variant="lg" className="text-[#AAACA6] group-hover:text-[#20BF0E]/80">
-                      {e.name}
-                    </Text>
-                  </Row>
-                </SheetClose>
-              </Link>
-            ))}
 
+      <SheetContent
+        side="left"
+        className="w-72 border-r border-border bg-sidebar p-0 text-sidebar-foreground"
+      >
+        <div className="flex h-full flex-col px-4 py-5">
+          {/* Brand */}
+          <p className="mb-7 px-2 text-sm font-semibold text-sidebar-foreground">AiKahani</p>
+
+          {/* Main nav */}
+          <nav className="flex flex-col gap-0.5">
+            {mainMenu.map((item) => {
+              const active = isActive(item.path);
+              const Icon = item.icon;
+              return (
+                <SheetClose key={item.name} asChild>
+                  <Link
+                    href={item.path}
+                    className={cn(
+                      'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
+                      active
+                        ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    )}
+                  >
+                    <Icon className="h-[18px] w-[18px] shrink-0" />
+                    {item.name}
+                  </Link>
+                </SheetClose>
+              );
+            })}
+          </nav>
+
+          <div className="flex-1" />
+
+          {/* Sub nav */}
+          <nav className="flex flex-col gap-0.5">
+            {subMenu.map((item) => {
+              const Icon = item.icon;
+              return (
+                <SheetClose key={item.name} asChild>
+                  <Link
+                    href={item.path}
+                    target={item.external ? '_blank' : undefined}
+                    rel={item.external ? 'noopener noreferrer' : undefined}
+                    className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <Icon className="h-[18px] w-[18px] shrink-0" />
+                    {item.name}
+                  </Link>
+                </SheetClose>
+              );
+            })}
             <LogoutModal />
-          </Col>
-        </Col>
+          </nav>
+        </div>
       </SheetContent>
     </Sheet>
   );

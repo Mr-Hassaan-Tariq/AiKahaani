@@ -5,16 +5,11 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ImagePlus } from 'lucide-react';
 
-import { imageUploadIcon } from './components';
 import useUpdateProfileImage from 'lib/hooks/useUpdateProfileImage';
 import { logger } from 'lib/logger';
 import useToast from 'lib/utils/useToast';
-import Button from 'components/ui/Button';
-import Col from 'components/ui/Col';
+import { Button } from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
-import PageLoader from 'components/ui/PageLoader';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
 
 export default function ChangePhotoModal({ trigger }: { trigger: ReactNode }) {
   const toast = useToast();
@@ -24,15 +19,13 @@ export default function ChangePhotoModal({ trigger }: { trigger: ReactNode }) {
   const { isPending, mutate: updateProfileImage } = useUpdateProfileImage();
 
   function handleSave() {
-    if (!image) return toast.error('Something went wrong', 'Please select an image');
-    if (image.size > 5 * 1024 * 1024)
-      return toast.error('File too large', 'Please select an image smaller than 5MB');
-
+    if (!image) return toast.error('No image selected', 'Please select an image first');
+    if (image.size > 5 * 1024 * 1024) return toast.error('File too large', 'Max size is 5 MB');
     const formData = new FormData();
     formData.append('profile_picture', image);
     updateProfileImage(formData, {
-      onSuccess: async () => {
-        toast.success('Success', 'Profile image updated successfully');
+      onSuccess: () => {
+        toast.success('Success', 'Profile photo updated');
         router.refresh();
         setImage(undefined);
         setOpen(false);
@@ -43,96 +36,54 @@ export default function ChangePhotoModal({ trigger }: { trigger: ReactNode }) {
       },
     });
   }
+
   return (
     <Dialog
       open={open}
-      setOpen={(value) => {
-        if (!value) {
-          setImage(undefined);
-        }
-        setOpen(value);
-      }}
+      setOpen={(value) => { if (!value) setImage(undefined); setOpen(value); }}
       trigger={trigger}
-      title="Change your profile photo"
-      description={
-        <Col className="mt-5 items-center justify-center gap-2">
-          <Row className="justify-normal">
-            <Text variant="base">Recommended size:</Text>{' '}
-            <Text variant="base" className="font-semibold">
-              400×400 px
-            </Text>
-          </Row>
-          <Row className="justify-normal">
-            <Text variant="base">Accepted formats:</Text>{' '}
-            <Text variant="base" className="font-semibold">
-              JPG, PNG · Max file size: 5MB
-            </Text>
-          </Row>
-        </Col>
-      }
+      title="Change profile photo"
+      description="Recommended size: 400×400 px · JPG or PNG · Max 5 MB"
       footer={
-        <Row className="w-full gap-6">
-          <Button
-            variant="gray"
-            onClick={() => {
-              setImage(undefined);
-              setOpen(false);
-            }}
-          >
-            <Text
-              variant="base"
-              className="font-extrabold [font-feature-settings:'liga'_off,'clig'_off]"
-            >
-              Cancel
-            </Text>
+        <div className="flex w-full gap-3">
+          <Button variant="outline" className="flex-1" onClick={() => { setImage(undefined); setOpen(false); }}>
+            Cancel
           </Button>
-          <Button type="button" disabled={!image || isPending} onClick={handleSave}>
-            {isPending ? 'Saving...' : 'Save'}
+          <Button className="flex-1" disabled={!image || isPending} loading={isPending} onClick={handleSave}>
+            Save
           </Button>
-        </Row>
+        </div>
       }
     >
-      {isPending && <PageLoader size="2xl" />}
-      <Col className="my-5 items-center gap-8">
+      <div className="my-4 flex flex-col items-center gap-4">
         {image ? (
           <Image
             src={URL.createObjectURL(image)}
-            alt="profile"
-            width={250}
-            height={250}
-            className="h-[250px] w-full rounded-lg object-cover"
+            alt="preview"
+            width={200}
+            height={200}
+            className="h-48 w-48 rounded-full object-cover ring-2 ring-border"
           />
         ) : (
-          imageUploadIcon
+          <div className="flex h-48 w-48 items-center justify-center rounded-full bg-accent">
+            <ImagePlus className="h-10 w-10 text-muted-foreground" />
+          </div>
         )}
 
-        <div>
+        <label htmlFor="upload_profile_photo" className="cursor-pointer">
+          <div className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+            <ImagePlus className="h-4 w-4" />
+            {image ? 'Change photo' : 'Upload photo'}
+          </div>
           <input
-            className="hidden"
-            id="upload_docs"
-            accept="image/jpeg, image/png, image/gif"
+            id="upload_profile_photo"
             type="file"
-            onChange={(e) => {
-              if (e.target.files) {
-                setImage(e.target.files[0]);
-              } else {
-                setImage(undefined);
-              }
-            }}
+            accept="image/jpeg,image/png,image/gif"
+            className="hidden"
+            onChange={(e) => setImage(e.target.files?.[0])}
           />
-          <label htmlFor="upload_docs">
-            <div className="flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-white/10 px-5 backdrop-blur-[2px] hover:bg-white/10 hover:opacity-70">
-              <ImagePlus size={16} />
-              <Text
-                variant="base"
-                className="flex font-extrabold [font-feature-settings:'liga'_off,'clig'_off]"
-              >
-                Upload new photo
-              </Text>
-            </div>
-          </label>
-        </div>
-      </Col>
+        </label>
+      </div>
     </Dialog>
   );
 }

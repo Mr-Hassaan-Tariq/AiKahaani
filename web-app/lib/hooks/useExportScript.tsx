@@ -16,6 +16,15 @@ async function exportScript({
   uuid,
   format,
 }: ExportScriptPayload): Promise<{ file_url: string; format: string }> {
+  // Bypass mode: generate a local blob download from mock content
+  if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
+    const { mockScript } = await import('lib/mockData');
+    const text = [mockScript.title, '', ...mockScript.sections.map((s) => `## ${s.title}\n${s.content}`)].join('\n\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const file_url = URL.createObjectURL(blob);
+    return { file_url, format };
+  }
+
   const token = Cookies.get('access_token');
 
   if (!token) {

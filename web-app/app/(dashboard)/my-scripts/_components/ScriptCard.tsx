@@ -1,86 +1,85 @@
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import Draft from '@assets/svg/draft.svg';
-import { Download } from 'lucide-react';
+import { Download, Edit2, FileText, ScrollText, Trash2 } from 'lucide-react';
 
 import { ScriptCardProps } from '../_types';
-import { basketIcon, Edit } from './components';
 import DeleteScriptModal from './DeleteScriptModal';
 import ExportScriptModal from './ExportScriptModal';
-import Button from 'components/ui/Button';
-import Card from 'components/ui/Card';
-import Text from 'components/ui/Text';
+import { Button } from 'components/ui/Button';
+import { Badge } from 'components/ui/Badge';
 
 export default function ScriptCard({ script, actions, className = '' }: ScriptCardProps) {
   const router = useRouter();
-  // Handle both original API format and legacy format
   const isCompleted = script.type === 'script' && script.status === 'generated';
   const scriptId = script.uuid;
-  const scriptStatus = script.type;
-  const scriptTitle = script.title;
   const lastEdited = script.modified
     ? new Date(script.modified).toLocaleDateString('en-US', {
-        month: 'long',
+        month: 'short',
         day: 'numeric',
         year: 'numeric',
       })
     : 'Unknown';
   const duration = script.estimated_duration
     ? `${Math.round(script.estimated_duration)} min`
-    : '0 min';
-  const wordCount = script.word_count ? `${script.word_count} words` : '0 words';
+    : null;
+  const wordCount = script.word_count ? `${script.word_count.toLocaleString()} words` : null;
 
   return (
-    <Card className={`flex flex-col justify-between text-white lg:p-6 ${className}`}>
+    <div className={`flex flex-col justify-between rounded-xl border border-border bg-card p-5 ${className}`}>
       <div>
-        {!isCompleted && (
-          <span className="inline-flex items-center gap-2 rounded-lg border border-[#BAFF3812] bg-[#303030] p-2 text-xs">
-            <Image src={Draft} alt="Draft" width={16} height={16} />
-            Draft – {scriptStatus}
-          </span>
-        )}
+        {/* Type badge */}
+        <div className="mb-3 flex items-center gap-2">
+          {isCompleted ? (
+            <Badge variant="primary" className="gap-1">
+              <ScrollText className="h-3 w-3" /> Script
+            </Badge>
+          ) : (
+            <Badge variant="muted" className="gap-1">
+              <FileText className="h-3 w-3" /> Outline
+            </Badge>
+          )}
+        </div>
 
         {/* Title */}
-        <h3 className="mt-3 line-clamp-2 text-xl font-semibold">{scriptTitle}</h3>
+        <h3 className="line-clamp-2 text-sm font-semibold text-foreground">{script.title}</h3>
 
         {/* Metadata */}
-        <div className="mt-3 space-y-2 text-sm text-gray-400">
-          <Text className="text-white">
-            Last edited: <span className="font-semibold">{lastEdited}</span>
-          </Text>
-          <Text className="text-white">
-            Estimated video duration: <span className="font-semibold">{duration}</span>
-          </Text>
-          <Text className="text-white">
-            Word count: <span className="font-semibold">{wordCount}</span>
-          </Text>
+        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+          <p>Last edited: <span className="font-medium text-foreground">{lastEdited}</span></p>
+          {duration && <p>Duration: <span className="font-medium text-foreground">{duration}</span></p>}
+          {wordCount && <p>Words: <span className="font-medium text-foreground">{wordCount}</span></p>}
         </div>
       </div>
 
-      <div className="mt-5 flex items-center gap-3">
+      <div className="mt-4 flex items-center gap-2">
         <DeleteScriptModal
-          trigger={<Button variant="gray">Delete {basketIcon}</Button>}
+          trigger={
+            <Button variant="outline" size="sm">
+              <Trash2 className="h-3.5 w-3.5" /> Delete
+            </Button>
+          }
           script={script}
           actions={actions}
         />
         {isCompleted ? (
           <ExportScriptModal
             trigger={
-              <Button variant="green">
-                <Download size={16} className="mr-1" /> Export
+              <Button size="sm" className="flex-1">
+                <Download className="h-3.5 w-3.5" /> Export
               </Button>
             }
             script={script}
           />
         ) : (
           <Button
-            className="bg-green-500 text-black hover:bg-green-600"
-            onClick={() => router.push(`/new-script//${scriptId}`)}
+            size="sm"
+            variant="outline"
+            className="flex-1"
+            onClick={() => router.push(`/new-script/${scriptId}`)}
           >
-            {Edit} Edit
+            <Edit2 className="h-3.5 w-3.5" /> Edit
           </Button>
         )}
       </div>
-    </Card>
+    </div>
   );
 }

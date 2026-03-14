@@ -6,9 +6,7 @@ import Image from 'next/image';
 import ThumbnailImage from '../../../../public/images/no-niche.png';
 import NicheStyleModal from './NicheStyleModal';
 import VedioModal from './VedioModal';
-import Button from 'components/ui/Button';
-import Card from 'components/ui/Card';
-import Text from 'components/ui/Text';
+import { Button } from 'components/ui/Button';
 
 interface NicheCardProps {
   id: number;
@@ -19,8 +17,6 @@ interface NicheCardProps {
   topChannels: { name: string; link: string }[];
   thumbnailUrl?: string | null;
 }
-
-// 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
 
 const NicheCard: FC<NicheCardProps> = ({
   id,
@@ -35,32 +31,20 @@ const NicheCard: FC<NicheCardProps> = ({
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  const tags = [...(tone || []), ...(pacing || [])];
+  const tags = [...(tone || []), ...(pacing || [])].slice(0, 4);
   const examples = topChannels?.map((c) => c.name) || [];
-
   const videoUrl = topChannels[0]?.link || '';
+  const displayExamples = examples.join(', ');
+  const truncatedExamples =
+    displayExamples.length > 40 ? displayExamples.substring(0, 40) + '…' : displayExamples;
 
-  const truncated = examples.join(', ');
-  const maxLength = 35;
-  const displayText =
-    truncated.length > maxLength ? truncated.substring(0, maxLength) + '...' : truncated;
-
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-    setImageError(false);
-  };
-
-  const handleImageError = () => {
-    // Only show placeholder if image truly failed to load
-    if (!imageLoaded) {
-      setImageError(true);
-      setImagePresent(false);
-    }
-  };
+  const handleImageLoad = () => { setImageLoaded(true); setImageError(false); };
+  const handleImageError = () => { if (!imageLoaded) { setImageError(true); setImagePresent(false); } };
 
   return (
-    <Card className="rounded-xl bg-[#161616] text-white lg:px-5 lg:py-5">
-      <div className="relative h-40">
+    <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
+      {/* Thumbnail */}
+      <div className="relative h-40 bg-muted">
         {imagePresent && !imageError ? (
           <VedioModal
             trigger={
@@ -68,7 +52,7 @@ const NicheCard: FC<NicheCardProps> = ({
                 src={thumbnailUrl || ''}
                 alt={title}
                 fill
-                className="rounded-xl object-cover"
+                className="object-cover"
                 sizes="(max-width: 768px) 100vw, 33vw"
                 unoptimized
                 onLoad={handleImageLoad}
@@ -76,7 +60,7 @@ const NicheCard: FC<NicheCardProps> = ({
               />
             }
             title={title}
-            videoId={'videoId'}
+            videoId="videoId"
             subtitle={description}
             youtubeUrl={videoUrl}
             thumbnailUrl={thumbnailUrl || ''}
@@ -86,43 +70,54 @@ const NicheCard: FC<NicheCardProps> = ({
             src={ThumbnailImage}
             alt="placeholder"
             fill
-            className="rounded-xl object-cover"
+            className="object-cover opacity-60"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
         )}
       </div>
 
-      <div className="mt-4 space-y-3">
-        <div className="flex flex-wrap items-center justify-between text-xs text-gray-300">
-          <div className="rounded-md border border-[#BAFF381F] bg-[#2a2a2a] p-2">
-            {tags.length > 0 ? (
-              tags.slice(0, 4).map((tag, i) => (
-                <span key={i} className="text-white">
-                  {tag}
-                  {i < tags.length - 1 && ', '}
-                </span>
-              ))
-            ) : (
-              <span className="text-gray-400">No tags</span>
-            )}
+      {/* Body */}
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((tag, i) => (
+              <span
+                key={i}
+                className="rounded-md border border-border bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+              >
+                {tag}
+              </span>
+            ))}
           </div>
-          {/* <ExternalLink className="h-5 w-5 cursor-pointer text-white" /> */}
+        )}
+
+        {/* Title + description */}
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {description.length > 80 ? description.slice(0, 80) + '…' : description}
+          </p>
         </div>
 
-        <Text className="text-xl font-semibold">{title}</Text>
-        <Text variant="base" className="mt-1 text-[#AAACA6]">
-          {description.slice(0, 50)}
-          {description.length > 50 && '...'}
-        </Text>
+        {/* Examples */}
+        {examples.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Examples: <span className="text-foreground">{truncatedExamples}</span>
+          </p>
+        )}
 
-        <Text variant="base" className="text-[#AAACA6]">
-          Examples:{' '}
-          <span className="text-white">{examples.length > 0 ? displayText : 'No examples'}</span>
-        </Text>
-
-        <NicheStyleModal trigger={<Button variant="green">Use this style</Button>} nicheId={id} />
+        {/* CTA */}
+        <NicheStyleModal
+          trigger={
+            <Button size="sm" className="mt-auto w-full">
+              Use this style
+            </Button>
+          }
+          nicheId={id}
+        />
       </div>
-    </Card>
+    </div>
   );
 };
 

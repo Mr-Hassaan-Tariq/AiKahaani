@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { FormProvider, useForm } from 'react-hook-form';
+import { Wand2 } from 'lucide-react';
 
 import ActionButtons from './_components/ActionButtons';
 import { LoadingScreen } from './_components/LoadingScreen';
@@ -11,18 +11,12 @@ import PromptInput from './_components/PromptInput';
 import Tabs from './_components/Tabs';
 import TitleList from './_components/TitleList';
 import ToneSelector from './_components/ToneSelector';
-import InfoGrayIcon from '/public/images/info-gray.svg';
-import InfoIcon from '/public/images/info.svg';
-import MaginpanIcon from '/public/images/maginpan.svg';
 import useGenerateTitles from 'lib/hooks/useGenerateTitles';
 import useGetScripts from 'lib/hooks/useGetScripts';
 import useOptimizeTitles from 'lib/hooks/useOptimizeTitles';
 import useToast from 'lib/utils/useToast';
-import Button from 'components/ui/Button';
-import Card from 'components/ui/Card';
-import Col from 'components/ui/Col';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
+import { Button } from 'components/ui/Button';
+import Topbar from 'components/layout/Topbar';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<'generate' | 'optimize'>('generate');
@@ -36,62 +30,26 @@ export default function Page() {
   const optimizeTitles = useOptimizeTitles();
   const toast = useToast();
 
-  // Adjust validation logic for the form
   const methods = useForm({
     defaultValues: { prompt: '', tones: [], duration: 'saved', scriptOption: '', manualTitle: '' },
     mode: 'onChange',
     resolver: async (data) => {
       const errors: any = {};
-
-      // Description is required
-      if (!data.prompt) {
-        errors.prompt = 'Description is required';
-      }
-
-      // At least one tone is required
-      if (!data.tones || data.tones.length === 0) {
-        errors.tones = 'At least one tone is required';
-      }
-
+      if (!data.prompt) errors.prompt = 'Description is required';
+      if (!data.tones || data.tones.length === 0) errors.tones = 'At least one tone is required';
       if (activeTab === 'optimize') {
-        // Validation for "saved" duration
-        if (data.duration === 'saved' && !data.scriptOption) {
-          errors.scriptOption = 'Script selection is required';
-        }
-
-        // Validation for "manual" duration
-        if (data.duration === 'manual' && !data.manualTitle) {
-          errors.manualTitle = 'Manual title is required';
-        }
+        if (data.duration === 'saved' && !data.scriptOption) errors.scriptOption = 'Script selection is required';
+        if (data.duration === 'manual' && !data.manualTitle) errors.manualTitle = 'Manual title is required';
       }
-
       return { values: data, errors };
     },
   });
 
-  const {
-    control,
-    handleSubmit,
-    watch,
-    formState: { isValid },
-    register,
-    reset,
-    resetField,
-    setValue,
-  } = methods;
+  const { control, handleSubmit, watch, formState: { isValid }, register, reset, resetField, setValue } = methods;
 
   useEffect(() => {
-    reset(
-      {
-        prompt: '',
-        tones: [],
-        duration: 'saved',
-        scriptOption: '',
-        manualTitle: '',
-      },
-      { keepErrors: false, keepDirty: false, keepTouched: false },
-    );
-  }, [activeTab]);
+    reset({ prompt: '', tones: [], duration: 'saved', scriptOption: '', manualTitle: '' }, { keepErrors: false });
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = async (data: any) => {
     const hasShocking = data.tones.includes('Shocking');
@@ -99,17 +57,12 @@ export default function Page() {
     const hasNeutral = data.tones.includes('Neutral');
 
     if ((hasShocking && hasMysterious) || (hasShocking && hasNeutral)) {
-      let message = '';
-
-      if (hasShocking && hasMysterious) {
-        message =
-          'Selecting both "Shocking" and "Mysterious" together may confuse your audience. Please choose one.';
-      } else if (hasShocking && hasNeutral) {
-        message =
-          'Selecting both "Shocking" and "Neutral" tones creates an inconsistent mood. Please choose one.';
-      }
-
-      toast.error('Confusing Tone Selection', message);
+      toast.error(
+        'Conflicting tones',
+        hasShocking && hasMysterious
+          ? '"Shocking" and "Mysterious" together may confuse your audience.'
+          : '"Shocking" and "Neutral" create an inconsistent mood.',
+      );
       return;
     }
 
@@ -118,113 +71,68 @@ export default function Page() {
 
     try {
       let response;
-
       if (activeTab === 'optimize') {
-        if (data.duration === 'saved') {
-          response = await optimizeTitles.mutateAsync({
-            prompt: data.prompt,
-            tones: data.tones,
-            script: data.scriptOption,
-          });
-        } else if (data.duration === 'manual') {
-          response = await optimizeTitles.mutateAsync({
-            prompt: data.prompt,
-            tones: data.tones,
-            user_title: data.manualTitle,
-          });
-        }
+        response = await optimizeTitles.mutateAsync(
+          data.duration === 'saved'
+            ? { prompt: data.prompt, tones: data.tones, script: data.scriptOption }
+            : { prompt: data.prompt, tones: data.tones, user_title: data.manualTitle },
+        );
       } else {
-        response = await generateTitles.mutateAsync({
-          prompt: data.prompt,
-          tones: data.tones,
-        });
+        response = await generateTitles.mutateAsync({ prompt: data.prompt, tones: data.tones });
       }
 
       setTitles(response?.titles || []);
       setIsGenerating(false);
       setShowTitles(true);
-      toast.success(
-        'Success',
-        `Titles ${activeTab === 'optimize' ? 'optimized' : 'generated'} successfully 🎉`,
-      );
+      toast.success('Success', `Titles ${activeTab === 'optimize' ? 'optimized' : 'generated'} successfully`);
     } catch (err: any) {
-      console.error('Error generating titles:', err);
       setIsGenerating(false);
-
-      if (err && typeof err === 'object') {
-        if (err.prompt && Array.isArray(err.prompt)) {
-          toast.error('Validation Error', err.prompt[0]);
-          return;
-        } else if (err.detail) {
-          toast.error('Error', err.detail.toString());
-          return;
-        }
-      }
-
+      if (err?.prompt?.[0]) { toast.error('Validation Error', err.prompt[0]); return; }
+      if (err?.detail) { toast.error('Error', err.detail.toString()); return; }
       toast.error('Error', 'Something went wrong while processing your request.');
     }
   };
 
   const handleRegenerate = async () => {
     if (!lastPayload) return;
-
     setIsGenerating(true);
     try {
       let response;
       if (activeTab === 'optimize') {
-        if (lastPayload.duration === 'saved') {
-          response = await optimizeTitles.mutateAsync({
-            prompt: lastPayload.prompt,
-            tones: lastPayload.tones,
-            script: lastPayload.scriptOption,
-          });
-        } else if (lastPayload.duration === 'manual') {
-          response = await optimizeTitles.mutateAsync({
-            prompt: lastPayload.prompt,
-            tones: lastPayload.tones,
-            user_title: lastPayload.manualTitle,
-          });
-        }
+        response = await optimizeTitles.mutateAsync(
+          lastPayload.duration === 'saved'
+            ? { prompt: lastPayload.prompt, tones: lastPayload.tones, script: lastPayload.scriptOption }
+            : { prompt: lastPayload.prompt, tones: lastPayload.tones, user_title: lastPayload.manualTitle },
+        );
       } else {
-        response = await generateTitles.mutateAsync({
-          prompt: lastPayload.prompt,
-          tones: lastPayload.tones,
-        });
+        response = await generateTitles.mutateAsync({ prompt: lastPayload.prompt, tones: lastPayload.tones });
       }
-
       setTitles(response?.titles || []);
       setIsGenerating(false);
-      toast.success(
-        'Success',
-        `Titles ${activeTab === 'optimize' ? 're-optimized' : 'regenerated'} successfully 🎉`,
-      );
+      toast.success('Success', `Titles ${activeTab === 'optimize' ? 're-optimized' : 'regenerated'} successfully`);
     } catch (err: any) {
-      console.error('Error regenerating titles:', err);
       setIsGenerating(false);
-      toast.error('Error', err.detail?.toString() || 'Something went wrong');
+      toast.error('Error', err?.detail?.toString() || 'Something went wrong');
     }
   };
 
   const handleCopy = async (title: string) => {
     try {
       await navigator.clipboard.writeText(title);
-      toast.success('Copied!', 'Title copied to clipboard 📋');
-    } catch (err) {
-      console.error('Failed to copy:', err);
+      toast.success('Copied!', 'Title copied to clipboard');
+    } catch {
       toast.error('Error', 'Failed to copy title');
     }
   };
 
   return (
-    <Card className="mx-auto w-full max-w-[864px]">
-      <Col className="items-center">
-        <Text className="text-center text-xl font-semibold text-white lg:text-[32px]">
-          Title Generator
-        </Text>
-        <Text className="mt-1 text-center text-base text-[#AAACA6]">
-          Generate or optimize YouTube titles with AI.
-        </Text>
+    <div className="flex flex-col">
+      <Topbar
+        title="Title Generator"
+        subtitle="Generate or optimize YouTube titles with AI."
+      />
 
+      <div className="mx-auto w-full max-w-2xl px-6 py-8">
         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} isGenerating={isGenerating} />
 
         {!showTitles ? (
@@ -232,7 +140,7 @@ export default function Page() {
             {isGenerating ? (
               <LoadingScreen />
             ) : (
-              <form onSubmit={handleSubmit(onSubmit)} className="mt-6 w-full">
+              <form onSubmit={handleSubmit(onSubmit)} className="mt-6 flex flex-col gap-5">
                 {activeTab === 'optimize' && (
                   <OptimizeFormFields
                     watch={watch}
@@ -242,67 +150,31 @@ export default function Page() {
                     setValue={setValue}
                   />
                 )}
+
                 <PromptInput />
-                <Row>
-                  <Row className="flex items-center justify-start gap-2">
-                    <Text className="text-md mb-2 mt-5 text-left text-white">Tone / Style</Text>
-                    <Image
-                      className="mt-[10px]"
-                      src={InfoIcon}
-                      alt="info-icon"
-                      width={16}
-                      height={16}
-                    />
-                  </Row>
-                  <Row className="flex items-center justify-start gap-2">
-                    <Image
-                      className="mt-[10px]"
-                      src={InfoGrayIcon}
-                      alt="info-gray-icon"
-                      width={16}
-                      height={16}
-                    />
-                    <Text className="mb-2 mt-5 text-left text-[12px] font-semibold text-[#AAACA6]">
-                      Recommended for your niche
-                    </Text>
-                  </Row>
-                </Row>
 
-                <ToneSelector control={control} />
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">Tone / Style</span>
+                    <span className="text-xs text-muted-foreground">Pick 1–3 tones</span>
+                  </div>
+                  <ToneSelector control={control} />
+                </div>
 
-                <Button
-                  type="submit"
-                  disabled={!isValid || isGenerating}
-                  className="mt-10 flex items-center justify-center gap-2"
-                >
-                  {isGenerating ? (
-                    <>
-                      <div className="w-5 animate-spin rounded-full border-2 border-black border-t-transparent"></div>
-                      <span>{activeTab === 'optimize' ? 'Optimizing...' : 'Generating...'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Image src={MaginpanIcon} alt="maginpan" width={20} height={20} />
-                      <span className="font-bold">
-                        {activeTab === 'optimize' ? 'Optimize Title' : 'Generate Title'}
-                      </span>
-                    </>
-                  )}
+                <Button type="submit" size="lg" className="w-full" disabled={!isValid || isGenerating} loading={isGenerating}>
+                  <Wand2 className="h-4 w-4" />
+                  {activeTab === 'optimize' ? 'Optimize Title' : 'Generate Titles'}
                 </Button>
               </form>
             )}
           </FormProvider>
         ) : (
-          <>
+          <div className="mt-6 flex flex-col gap-5">
             <TitleList titles={titles} onCopy={handleCopy} />
-            <ActionButtons
-              isGenerating={isGenerating}
-              onEdit={() => setShowTitles(false)}
-              onRegenerate={handleRegenerate}
-            />
-          </>
+            <ActionButtons isGenerating={isGenerating} onEdit={() => setShowTitles(false)} onRegenerate={handleRegenerate} />
+          </div>
         )}
-      </Col>
-    </Card>
+      </div>
+    </div>
   );
 }

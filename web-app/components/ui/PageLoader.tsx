@@ -1,25 +1,15 @@
 'use client';
 
 import { createPortal } from 'react-dom';
+import { PageSpinner } from './Spinner';
 
-import Loader, { LoaderModel } from './Loader';
-
-export default function PageLoader(props: LoaderModel) {
-  return createPortal(
-    <div className="visible fixed bottom-0 left-0 right-0 top-0 z-[1001] h-screen w-screen bg-white/10 opacity-100 transition-opacity duration-150 ease-out">
-      <div className="flex h-screen items-center justify-center">
-        <Loader {...props} />
-      </div>
-    </div>,
-    document.body,
-  );
+export default function PageLoader() {
+  return createPortal(<PageSpinner />, document.body);
 }
 
 export function PageRestrict() {
   return createPortal(
-    <div className="visible fixed bottom-0 left-0 right-0 top-0 z-[1001] h-screen w-screen bg-[#E5EAEA82] opacity-70 transition-opacity duration-150 ease-out">
-      <div className="flex h-screen items-center justify-center" />
-    </div>,
+    <div className="fixed inset-0 z-[1001] bg-background/60 backdrop-blur-sm" />,
     document.body,
   );
 }

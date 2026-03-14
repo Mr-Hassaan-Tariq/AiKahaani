@@ -3,8 +3,6 @@
 import { Dispatch, ReactNode, SetStateAction } from 'react';
 import { DialogTrigger } from '@radix-ui/react-dialog';
 
-import Col from './Col';
-import Text from './Text';
 import { cn } from 'lib/utils';
 import {
   DialogClose,
@@ -31,30 +29,37 @@ export default function Dialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent
         className={cn(
-          'sm:py-12" scrollbar max-h-[95dvh] overflow-y-auto rounded-3xl border-[#BAFF38]/30 bg-brand-surface px-4 py-8 text-white shadow-[0_45px_103px_0_rgba(255,255,255,0.04),0_9px_16.737px_0_rgba(255,255,255,0.02)] sm:max-w-[640px] sm:rounded-3xl sm:px-12',
+          'scrollbar max-h-[90dvh] overflow-y-auto rounded-2xl border border-border bg-card px-6 py-8 shadow-md sm:max-w-[480px] sm:rounded-2xl sm:px-8',
           className,
         )}
-        overlayClasses={overlayClasses}
+        overlayClasses={cn('bg-foreground/20 backdrop-blur-sm', overlayClasses)}
         onInteractOutside={(event) => !outsideInteract && event.preventDefault()}
       >
-        <Col className="gap-4">
-          <Text variant="3xl" className="w-full text-center font-semibold text-white">
-            {title}
-          </Text>
-          {description && (
-            <Text
-              variant="lg"
-              className="text-center leading-[28px] text-[#AAACA6]"
-              dangerouslySetInnerHTML={{ __html: description }}
-            />
+        <div className="flex flex-col gap-3">
+          {title && (
+            <h2 className="text-center text-lg font-semibold text-foreground">{title}</h2>
           )}
-        </Col>
-        <div className="">{children}</div>
-        <DialogFooter>
+          {description && (
+            <p
+              className="text-center text-sm leading-relaxed text-muted-foreground"
+              dangerouslySetInnerHTML={
+                typeof description === 'string' ? { __html: description } : undefined
+              }
+            >
+              {typeof description !== 'string' ? description : null}
+            </p>
+          )}
+        </div>
+
+        {children && <div className="mt-4">{children}</div>}
+
+        <DialogFooter className="mt-6">
           {footer}
-          <DialogClose asChild className="w-full">
-            {closeActionButton}
-          </DialogClose>
+          {closeActionButton && (
+            <DialogClose asChild className="w-full">
+              {closeActionButton}
+            </DialogClose>
+          )}
         </DialogFooter>
       </DialogContent>
     </ShadcnDialog>

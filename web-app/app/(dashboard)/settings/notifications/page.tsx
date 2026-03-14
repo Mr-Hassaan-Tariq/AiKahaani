@@ -1,20 +1,16 @@
 import { getNotificationSettings } from '@/(dashboard)/actions';
 
 import NotificationToggles from './_components/NotificationToggles';
-import Col from 'components/ui/Col';
-import Text from 'components/ui/Text';
 
 export default async function NotificationsPage() {
   const { data, error, isError } = await getNotificationSettings();
 
   return (
-    <Col className="container gap-10 text-white">
+    <div className="flex flex-col gap-5 max-w-2xl">
       {isError && (
-        <Text variant="base" className="text-brand-secondary">
-          {error.message?.toString()}
-        </Text>
+        <p className="text-sm text-destructive">{error?.message?.toString()}</p>
       )}
       {data && <NotificationToggles initialSettings={data} />}
-    </Col>
+    </div>
   );
 }

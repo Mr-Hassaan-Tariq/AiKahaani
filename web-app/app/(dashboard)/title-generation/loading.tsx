@@ -1,52 +1,38 @@
-import Col from 'components/ui/Col';
-import Row from 'components/ui/Row';
 import { Skeleton } from 'components/shadcn_ui/skeleton';
 
-export default function TitleGeneratorSkeleton() {
+export default function TitleGeneratorLoading() {
   return (
-    // Outer Container matching the card's dimensions and padding
-    <div className="mx-auto w-full max-w-[864px] rounded-xl bg-neutral-800 p-8 font-sans shadow-2xl">
-      <Col className="gap-8">
-        {/* --- Header Skeleton --- */}
-        <Col className="mb-2 w-full items-center gap-1">
-          <Skeleton className="h-8 w-48" /> {/* Title */}
-          <Skeleton className="h-4 w-64" /> {/* Subtitle */}
-        </Col>
-        {/* --- Generate/Optimize Tabs Skeleton --- */}
-        <Row className="mb-4 justify-center space-x-4">
-          <Skeleton className="h-10 w-32 rounded-full" /> {/* 'Generate New' button */}
-          <Skeleton className="h-10 w-36 rounded-full" /> {/* 'Optimize Existing' button */}
-        </Row>
-        {/* --- Main Input Section Skeleton --- */}
-        <Col className="mb-2 gap-2">
-          <Row className="justify-normal gap-2">
-            <Skeleton className="h-5 w-40" /> {/* Label */}
-            <Skeleton className="h-4 w-4 rounded-full" /> {/* Info icon */}
-          </Row>
-          {/* Input field area */}
-          <Skeleton className="h-24 w-full rounded-lg" />
-        </Col>
-        {/* --- Tone / Style Section Skeleton --- */}
-        <Col className="gap-4">
-          <Row className="items-center justify-between">
-            <Row className="justify-normal gap-2">
-              <Skeleton className="h-5 w-20" /> {/* 'Tone / Style' label */}
-              <Skeleton className="h-4 w-4 rounded-full" /> {/* Info icon */}
-            </Row>
-            <Skeleton className="h-4 w-40" /> {/* 'Recommended for your niche' text */}
-          </Row>
+    <div className="flex flex-col">
+      <div className="flex h-16 items-center border-b border-border px-6">
+        <div className="flex flex-col gap-1">
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="h-3 w-48" />
+        </div>
+      </div>
 
-          {/* Tone/Style Buttons Skeleton */}
-          <Row className="flex-wrap gap-2">
-            {/* Generate 8 button placeholders */}
-            {Array.from({ length: 8 }).map((_, index) => (
-              <Skeleton key={index} className="h-8 w-24 rounded-full" />
+      <div className="mx-auto w-full max-w-2xl px-6 py-8 flex flex-col gap-6">
+        {/* Tabs */}
+        <Skeleton className="h-10 w-full rounded-lg" />
+
+        {/* Textarea */}
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+        </div>
+
+        {/* Tones */}
+        <div className="flex flex-col gap-3">
+          <Skeleton className="h-4 w-24" />
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-8 w-20 rounded-md" />
             ))}
-          </Row>
-        </Col>
-        {/* --- Generate Button Skeleton --- */}
-        <Skeleton className="h-12 w-full rounded-xl" /> {/* 'Generate Title' button */}
-      </Col>
+          </div>
+        </div>
+
+        {/* Submit */}
+        <Skeleton className="h-12 w-full rounded-lg" />
+      </div>
     </div>
   );
 }

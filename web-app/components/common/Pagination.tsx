@@ -1,6 +1,9 @@
 'use client';
 
 import React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+import { cn } from 'lib/utils';
 
 interface PaginationProps {
   currentPage: number;
@@ -9,55 +12,46 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
-const Pagination: React.FC<PaginationProps> = ({
-  currentPage,
-  totalCount,
-  pageSize,
-  onPageChange,
-}) => {
+const Pagination: React.FC<PaginationProps> = ({ currentPage, totalCount, pageSize, onPageChange }) => {
   const totalPages = Math.ceil(totalCount / pageSize);
+  if (totalPages <= 1) return null;
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages && page !== currentPage) {
-      onPageChange(page);
-    }
-  };
-
-  const renderPageNumbers = () => {
-    const pages = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(
-        <button
-          key={i}
-          className={`min-w-10 rounded-full p-2 ${
-            currentPage === i ? 'bg-gray-200 text-black' : 'bg-gray-800 text-white'
-          }`}
-          onClick={() => handlePageChange(i)}
-          disabled={currentPage === i}
-        >
-          {i}
-        </button>,
-      );
-    }
-    return pages;
+    if (page >= 1 && page <= totalPages && page !== currentPage) onPageChange(page);
   };
 
   return (
-    <div className="flex items-center justify-center space-x-2">
+    <div className="flex items-center justify-center gap-1">
       <button
-        className="min-w-10 rounded-full bg-gray-200 p-2 text-black"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage === 1}
       >
-        &lt;
+        <ChevronLeft size={14} />
       </button>
-      {renderPageNumbers()}
+
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+        <button
+          key={page}
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-medium transition-colors',
+            currentPage === page
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border bg-background text-foreground hover:bg-accent',
+          )}
+          onClick={() => handlePageChange(page)}
+          disabled={currentPage === page}
+        >
+          {page}
+        </button>
+      ))}
+
       <button
-        className="min-w-10 rounded-full bg-gray-200 p-2 text-black"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
         onClick={() => handlePageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
       >
-        &gt;
+        <ChevronRight size={14} />
       </button>
     </div>
   );

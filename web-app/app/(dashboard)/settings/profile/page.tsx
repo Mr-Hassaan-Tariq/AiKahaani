@@ -2,21 +2,17 @@ import { getUserProfile } from '@/(dashboard)/actions';
 
 import ProfileCardDetail from './_components/ProfileCardDetail';
 import ProfilePhotoCard from './_components/ProfilePhotoCard';
-import Col from 'components/ui/Col';
-import Text from 'components/ui/Text';
 
 export default async function Page() {
   const { data, error, isError } = await getUserProfile();
 
   return (
-    <Col className="gap-10 text-white">
+    <div className="flex flex-col gap-6 max-w-2xl">
       {isError && (
-        <Text variant="base" className="text-brand-secondary">
-          {error.message?.toString()}
-        </Text>
+        <p className="text-sm text-destructive">{error?.message?.toString()}</p>
       )}
       <ProfilePhotoCard profileImage={data?.profile_picture} fullName={data?.username} />
       <ProfileCardDetail profile={data} />
-    </Col>
+    </div>
   );
 }

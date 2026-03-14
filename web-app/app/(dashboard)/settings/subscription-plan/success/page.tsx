@@ -1,26 +1,24 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { CircleCheck } from 'lucide-react';
 
-import Button from 'components/ui/Button';
+import { Button } from 'components/ui/Button';
 
 export default function SuccessPage() {
   const router = useRouter();
   return (
-    <div>
-      <div className="flex items-center justify-center text-white">
-        <div className="text-center">
-          {/* Title */}
-          <h1 className="mt-4 text-2xl font-semibold">Payment Successful!</h1>
-
-          {/* Subtitle */}
-          <p className="mt-2 text-gray-500">Your payment has been completed.</p>
-
-          <Button className="mt-5" onClick={() => router.push('/settings/subscription-plan')}>
-            Finish
-          </Button>
-        </div>
+    <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+        <CircleCheck className="h-8 w-8 text-success" />
       </div>
+      <div>
+        <h1 className="text-xl font-semibold text-foreground">Payment Successful!</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Your subscription has been activated.</p>
+      </div>
+      <Button size="sm" onClick={() => router.push('/settings/subscription-plan')}>
+        View subscription
+      </Button>
     </div>
   );
 }

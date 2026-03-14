@@ -2,12 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Edit2, PlusCircle, RefreshCcw } from 'lucide-react';
+import {
+  ArrowLeft,
+  FileText,
+  PlusCircle,
+  RefreshCcw,
+  Pencil,
+  Clock,
+  Mic,
+  Lightbulb,
+  Tags,
+  Megaphone,
+} from 'lucide-react';
 
 import { LoadingScreen } from '../_components/components';
 import { FormType, OutlineType } from '../types';
 import { CardView } from './_components/CardView';
-import { directFileIcon } from './_components/components';
 import { SortableCard } from './_components/SortableCard';
 import { useCardManager } from './_components/useCardManager';
 import { useDragAndDrop } from './_components/useDragAndDrop';
@@ -17,110 +27,75 @@ import useUpdateOutline from 'lib/hooks/useUpdateOutline';
 import useUpdateOutlineOrder from 'lib/hooks/useUpdateOutlineOrder';
 import { logger } from 'lib/logger';
 import useToast from 'lib/utils/useToast';
-import Button from 'components/ui/Button';
-import Card from 'components/ui/Card';
-import Col from 'components/ui/Col';
-import PageLoader from 'components/ui/PageLoader';
-import Row from 'components/ui/Row';
+import { Button } from 'components/ui/Button';
+import { Spinner } from 'components/ui/Spinner';
 
-// Convert outline data to card format
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 const convertOutlineToCards = (outline: OutlineType) => {
-  // Add null checks and fallbacks
-  if (!outline || !outline.outline_data || !outline.outline_data.sections) {
-    return [];
-  }
-
-  // Use section_order if available, otherwise use default order
+  if (!outline?.outline_data?.sections) return [];
   const sectionOrder =
-    outline.section_order || outline.outline_data.sections.map((_, index) => index);
-
-  // Reorder sections based on section_order
-  const orderedSections = sectionOrder
+    outline.section_order || outline.outline_data.sections.map((_, i) => i);
+  return sectionOrder
     .map((index) => outline.outline_data.sections[index])
-    .filter(Boolean);
-
-  return orderedSections.map((section, index) => ({
-    id: index + 1,
-    title: section.title || '',
-    description: section.description || '',
-    keyPoints: section.key_points || [],
-    timing: section.timing || '',
-    transition: section.transition || '',
-  }));
+    .filter(Boolean)
+    .map((section, index) => ({
+      id: index + 1,
+      title: section.title || '',
+      description: section.description || '',
+      keyPoints: section.key_points || [],
+      timing: section.timing || '',
+      transition: section.transition || '',
+    }));
 };
 
-// Convert cards back to outline format
-const convertCardsToOutline = (cards: any[], originalOutline: OutlineType) => {
-  const sections = cards.map((card) => ({
-    title: card.title || '',
-    description: card.description || '',
-    key_points: card.keyPoints || [],
-    timing: card.timing || '',
-    transition: card.transition || '',
-  }));
+const convertCardsToOutline = (cards: any[], originalOutline: OutlineType) => ({
+  ...originalOutline,
+  outline_data: {
+    ...originalOutline.outline_data,
+    sections: cards.map((card) => ({
+      title: card.title || '',
+      description: card.description || '',
+      key_points: card.keyPoints || [],
+      timing: card.timing || '',
+      transition: card.transition || '',
+    })),
+  },
+});
 
-  return {
-    ...originalOutline,
-    outline_data: {
-      ...originalOutline.outline_data,
-      sections,
-    },
-  };
-};
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function OutlineComponent({ outline }: { outline: OutlineType }) {
   const toast = useToast();
   const router = useRouter();
   const [edit, setEdit] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const { isPending, mutate: updateOutline } = useUpdateOutline();
+
+  const { isPending: isSaving, mutate: updateOutline } = useUpdateOutline();
   const { isPending: isUpdatingOrder, mutate: updateOutlineOrder } = useUpdateOutlineOrder();
   const { isPending: isGeneratingScript, mutate: generateScript } = useGenerateScript();
   const { isPending: isRegeneratingOutline, mutate: generateOutline } = useGenerateOutline();
 
-  // Convert outline to cards format with fallback
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const initialCards = outline ? convertOutlineToCards(outline) : [];
 
-  // Handle delete callback
+  // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = (cardId: number) => {
     if (!outline) return;
-
-    // Find the card to delete
-    const cardToDelete = cards.find((card) => card.id === cardId);
-    if (!cardToDelete) return;
-
-    // Find the index of the card in the current cards array
-    const cardIndex = cards.findIndex((card) => card.id === cardId);
-
-    // Remove the card from local state
-    const newCards = cards.filter((card) => card.id !== cardId);
+    const cardIndex = cards.findIndex((c) => c.id === cardId);
+    const newCards = cards.filter((c) => c.id !== cardId);
     setCards(newCards);
 
-    // Calculate new section_order by removing the deleted section's index
-    // Since cards are ordered according to section_order, we can safely remove by index
     const newSectionOrder = [...(outline.section_order || [])];
-    if (cardIndex < newSectionOrder.length) {
-      newSectionOrder.splice(cardIndex, 1);
-    }
-    // Convert remaining cards back to outline format
-    const updatedOutlineData = convertCardsToOutline(newCards, outline);
+    if (cardIndex < newSectionOrder.length) newSectionOrder.splice(cardIndex, 1);
 
-    // Call API to update the outline
     updateOutlineOrder(
+      { uuid: outline.uuid, sectionOrder: newSectionOrder, outlineData: convertCardsToOutline(newCards, outline).outline_data },
       {
-        uuid: outline.uuid,
-        sectionOrder: newSectionOrder,
-        outlineData: updatedOutlineData.outline_data,
-      },
-      {
-        onSuccess: () => {
-          toast.success('Success', 'Section deleted successfully');
-        },
+        onSuccess: () => toast.success('Success', 'Section deleted'),
         onError: (error) => {
           logger.error(error);
           toast.error('Something went wrong', 'Error deleting section');
-          // Revert the local state on error
           setCards(cards);
         },
       },
@@ -128,82 +103,32 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
   };
 
   const {
-    cards,
-    setCards,
-    editingCard,
-    editValues,
-    validationErrors,
-    draggedCard,
-    setDraggedCard,
-    dragOverIndex,
-    setDragOverIndex,
-    titleInputRef,
-    descriptionInputRef,
-    addNewCard,
-    startEditing,
-    saveChanges,
-    cancelEditing,
-    deleteCard,
-    handleInputChange,
-    handleKeyDown,
+    cards, setCards, editingCard, editValues, validationErrors,
+    draggedCard, setDraggedCard, dragOverIndex, setDragOverIndex,
+    titleInputRef, descriptionInputRef,
+    addNewCard, startEditing, saveChanges, cancelEditing, deleteCard,
+    handleInputChange, handleKeyDown,
   } = useCardManager(initialCards, handleDelete);
-
-  // // Handle reorder callback
-  // const handleReorder = (newCards: any[], sectionOrder: number[]) => {
-  //   if (!outline) return;
-
-  //   // Convert cards back to outline format with reordered sections
-  //   const reorderedOutlineData = convertCardsToOutline(newCards, outline);
-
-  //   // Call API to update the outline order
-  //   updateOutlineOrder(
-  //     {
-  //       uuid: outline.uuid,
-  //       sectionOrder,
-  //       outlineData: reorderedOutlineData.outline_data,
-  //     },
-  //     {
-  //       onSuccess: () => {
-  //         toast.success('Success', 'Section order updated successfully');
-  //       },
-  //       onError: (error) => {
-  //         logger.error(error);
-  //         toast.error('Something went wrong', 'Error updating section order');
-  //         // Revert the local state on error
-  //         setCards(cards);
-  //       },
-  //     },
-  //   );
-  // };
 
   const { handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd } =
     useDragAndDrop(cards, setCards, draggedCard, setDraggedCard, dragOverIndex, setDragOverIndex);
 
   // Track changes
   useEffect(() => {
-    const hasChanges = JSON.stringify(cards) !== JSON.stringify(initialCards);
-    setHasChanges(hasChanges);
+    setHasChanges(JSON.stringify(cards) !== JSON.stringify(initialCards));
   }, [cards, initialCards]);
 
-  // Handle save changes
+  // ── Save ──────────────────────────────────────────────────────────────────
   const handleSaveChanges = () => {
     if (!outline) return;
-
-    const invalidCard = cards.find((card) => !card.title?.trim() || !card.description?.trim());
-
-    if (invalidCard) {
-      toast.error(
-        'Missing Fields',
-        'Every section must have a title and description before saving.',
-      );
+    const invalid = cards.find((c) => !c.title?.trim() || !c.description?.trim());
+    if (invalid) {
+      toast.error('Missing Fields', 'Every section must have a title and description.');
       return;
     }
-
-    const updatedOutline = convertCardsToOutline(cards, outline);
-
-    updateOutline(updatedOutline, {
+    updateOutline(convertCardsToOutline(cards, outline), {
       onSuccess: () => {
-        toast.success('Success', 'Outline updated successfully');
+        toast.success('Success', 'Outline updated');
         setHasChanges(false);
         setEdit(false);
       },
@@ -214,106 +139,69 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
     });
   };
 
-  // Handle regenerate
-  // inside OutlineComponent — replace handleRegenerate with this:
-
+  // ── Regenerate ────────────────────────────────────────────────────────────
   const handleRegenerate = async () => {
     if (!outline) return;
 
-    // Attempt to read saved payload from localStorage
     let savedRaw: string | null = null;
     try {
-      savedRaw =
-        typeof window !== 'undefined' ? localStorage.getItem('last_outline_payload') : null;
+      savedRaw = typeof window !== 'undefined' ? localStorage.getItem('last_outline_payload') : null;
     } catch (e) {
-      logger.warn('Could not read last_outline_payload from localStorage', e);
-      savedRaw = null;
+      logger.warn('Could not read last_outline_payload', e);
     }
 
-    let payloadToSend: any = null; // either object or FormData
+    let payloadToSend: any = null;
 
     if (savedRaw) {
       try {
         const saved = JSON.parse(savedRaw);
-        if (saved && saved.hasImageFile && saved.data) {
-          // Reconstruct FormData from saved data + images (data URLs)
+        if (saved?.hasImageFile && saved?.data) {
           const fd = new FormData();
           fd.append('description', saved.data.description ?? '');
-
-          // tones (array)
           (saved.data.tones || []).forEach((t: any) => fd.append('tones', String(t)));
-
-          if (saved.data.template_style) {
-            fd.append('template_style', String(saved.data.template_style));
-          } else {
-            fd.append('min_length', String(saved.data.min_length ?? 0));
-            fd.append('max_length', String(saved.data.max_length ?? 500));
-          }
+          if (saved.data.template_style) fd.append('template_style', String(saved.data.template_style));
+          else { fd.append('min_length', String(saved.data.min_length ?? 0)); fd.append('max_length', String(saved.data.max_length ?? 500)); }
           fd.append('title', String(saved.data.title ?? ''));
-
-          if (saved.data.niche_id) {
-            fd.append('niche_id', String(saved.data.niche_id));
-          }
-
-          // Append link/article items
+          if (saved.data.niche_id) fd.append('niche_id', String(saved.data.niche_id));
           (saved.data.linkItems || []).forEach((l: string) => fd.append('youtube_url', l));
           (saved.data.articleItems || []).forEach((a: string) => fd.append('article_url', a));
-
-          // Recreate File objects from data URLs and append them
-          const images = saved.data.images || [];
-          for (const img of images) {
+          for (const img of (saved.data.images || [])) {
             try {
-              // img.dataUrl is something like "data:image/jpeg;base64,...."
               const res = await fetch(img.dataUrl);
               const blob = await res.blob();
-              const file = new File([blob], img.name || 'image', { type: img.type || blob.type });
-              fd.append('image', file);
+              fd.append('image', new File([blob], img.name || 'image', { type: img.type || blob.type }));
             } catch (err) {
-              logger.warn('Failed to reconstruct one image from saved payload', err);
-              // continue without this file
+              logger.warn('Failed to reconstruct image', err);
             }
           }
-
           payloadToSend = fd;
-        } else if (saved && saved.hasImageFile === false && saved.payload) {
+        } else if (saved?.hasImageFile === false && saved?.payload) {
           payloadToSend = saved.payload;
-        } else if (saved && saved.data && !saved.hasImageFile) {
-          // fallback in case of different shape
-          payloadToSend = saved.data;
         }
       } catch (e) {
-        logger.warn('Could not parse last_outline_payload from localStorage', e);
-        payloadToSend = null;
+        logger.warn('Could not parse saved payload', e);
       }
     }
 
-    // If we didn't get a saved payload, fall back to original behavior deriving payload from outline
     if (!payloadToSend) {
       const payload: Partial<FormType> = {
         description: outline.description || '',
-        tones: outline.tones ? outline.tones.map((tone: any) => tone.id) : [],
+        tones: outline.tones ? outline.tones.map((t: any) => t.id) : [],
         template_style: outline.template_style ?? undefined,
         min_length: outline.min_length || 0,
         max_length: outline.max_length || 500,
         title: outline.title || '',
       };
-
-      // try to use saved draft_description if present
       try {
         const saved = localStorage.getItem('draft_description');
-        if (saved && saved.trim().length > 0) {
-          payload.description = saved;
-        }
-      } catch (e) {
-        logger.warn('Could not read draft_description from localStorage', e);
-      }
-
+        if (saved?.trim()) payload.description = saved;
+      } catch (e) { logger.warn('Could not read draft_description', e); }
       payloadToSend = payload;
     }
 
     generateOutline(payloadToSend, {
       onSuccess: (data) => {
-        toast.success('Success', 'Outline regenerated successfully');
+        toast.success('Success', 'Outline regenerated');
         router.replace(`/new-script/${data.outline.uuid}`);
       },
       onError: (error) => {
@@ -323,41 +211,102 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
     });
   };
 
-  // Handle generate script
+  // ── Generate script ───────────────────────────────────────────────────────
   const handleGenerateScript = () => {
     if (!outline) return;
     generateScript(outline.uuid, {
       onSuccess: (data) => {
-        toast.success('Success', 'Script generated successFully');
+        toast.success('Success', 'Script generated');
         router.replace(`/new-script/script/${data.script.uuid}`);
       },
       onError: (error) => {
         logger.error(error);
-        toast.error('Something went wrong', 'Error in generation script');
+        toast.error('Something went wrong', 'Error generating script');
       },
     });
   };
 
-  // Show loading state if outline is not available
   if (!outline) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <p className="text-white/70">Loading outline...</p>
+        <p className="text-sm text-muted-foreground">Loading outline…</p>
       </div>
     );
   }
 
   const isBusy = isRegeneratingOutline || isGeneratingScript;
+  const toneNames = Array.isArray(outline.tones)
+    ? outline.tones.map((t: any) => (typeof t === 'object' ? t.name : String(t))).join(', ')
+    : '';
+  const lengthLabel = outline.max_length
+    ? `${outline.min_length || 0}–${outline.max_length} words`
+    : 'Standard';
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  if (isBusy) return <LoadingScreen />;
 
   return (
-    <>
-      {isPending || (isUpdatingOrder && <PageLoader size="lg" color="white" />)}
-      <Col className="scrollbar max-h-[calc(100vh-200px)] w-full space-y-3 overflow-hidden overflow-y-auto">
-        {isRegeneratingOutline || isGeneratingScript ? (
-          <LoadingScreen />
-        ) : (
-          // eslint-disable-next-line react/jsx-no-useless-fragment
-          <>
+    <div className="flex flex-col gap-6">
+
+      {/* Saving overlay */}
+      {(isSaving || isUpdatingOrder) && (
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-accent px-3 py-2">
+          <Spinner size="sm" color="primary" />
+          <span className="text-xs text-muted-foreground">Saving changes…</span>
+        </div>
+      )}
+
+      {/* ── Status row ── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-lg bg-card border border-border p-5 flex flex-col gap-2">
+          <p className="text-[13px] font-medium text-muted-foreground">Topic</p>
+          <p className="text-[22px] font-semibold tracking-tight text-foreground leading-tight line-clamp-1">
+            {outline.title || 'Untitled'}
+          </p>
+          <p className="text-[13px] font-medium text-muted-foreground leading-relaxed line-clamp-2">
+            {outline.description || 'No description provided.'}
+          </p>
+        </div>
+        <div className="rounded-lg bg-card border border-border p-5 flex flex-col gap-2">
+          <p className="text-[13px] font-medium text-muted-foreground">Tone</p>
+          <p className="text-[22px] font-semibold tracking-tight text-foreground leading-tight line-clamp-1">
+            {toneNames || 'Default'}
+          </p>
+          <p className="text-[13px] font-medium text-muted-foreground leading-relaxed">
+            A creator-friendly structure with crisp transitions and practical examples.
+          </p>
+        </div>
+        <div className="rounded-lg bg-card border border-border p-5 flex flex-col gap-2">
+          <p className="text-[13px] font-medium text-muted-foreground">Estimated length</p>
+          <p className="text-[22px] font-semibold tracking-tight text-foreground leading-tight">
+            {lengthLabel}
+          </p>
+          <p className="text-[13px] font-medium text-muted-foreground leading-relaxed">
+            Balanced pacing across {cards.length} sections with a strong closing CTA.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Main 2-column grid ── */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.8fr)]">
+
+        {/* ── Outline panel ── */}
+        <div className="rounded-lg bg-card border border-border flex flex-col gap-6 p-6">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-1.5">
+              <h2 className="text-[20px] font-semibold tracking-tight text-foreground">Generated outline</h2>
+              <p className="text-sm font-medium text-muted-foreground">
+                Each section is optimized for YouTube flow, watch time, and creator-friendly delivery.
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground">
+              {cards.length} sections
+            </span>
+          </div>
+
+          {/* Sections list */}
+          <div className="flex flex-col gap-3">
             {edit
               ? cards.map((card, index) => (
                   <SortableCard
@@ -385,77 +334,133 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
                     onDelete={deleteCard}
                   />
                 ))
-              : cards.map((card) => (
-                  <Card
+              : cards.map((card, index) => (
+                  <div
                     key={card.id}
-                    className="group cursor-pointer border border-white/20 bg-white/10 backdrop-blur-sm transition-all duration-200 hover:bg-white/15 hover:shadow-lg hover:shadow-white/10"
-                    onClick={() => startEditing(card)}
+                    className="flex items-start gap-3.5 rounded-md bg-secondary p-4"
                   >
-                    <div className="">
+                    <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-card text-[13px] font-semibold text-foreground">
+                      {index + 1}
+                    </div>
+                    <div className="min-w-0 flex-1">
                       <CardView card={card} onEdit={startEditing} />
                     </div>
-                  </Card>
+                  </div>
                 ))}
-          </>
-        )}
-      </Col>
+          </div>
 
-      {edit ? (
-        isBusy ? null : (
-          <Row className="mt-6">
-            <Row className="space-x-3">
-              <Button
-                variant="gray"
-                onClick={() => setEdit(false)}
-                className="transition-colors duration-200 hover:bg-white/20"
-              >
-                <ArrowLeft size={20} className="min-w-5" /> Back
-              </Button>
-              <Button
-                variant="gray"
-                className="min-w-[200px] transition-colors duration-200 hover:bg-white/20"
-                onClick={addNewCard}
-              >
-                <PlusCircle size={20} className="min-w-5" /> Add new section
-              </Button>
-            </Row>
-            <Button
-              onClick={handleSaveChanges}
-              disabled={!hasChanges}
-              className={`w-full transition-colors duration-200 lg:w-fit ${
-                hasChanges ? 'hover:bg-white/90' : 'cursor-not-allowed opacity-50'
-              }`}
-            >
-              {directFileIcon} Save Changes {hasChanges && ''}
-            </Button>
-          </Row>
-        )
-      ) : isBusy ? null : (
-        <Row className="mt-6 w-full flex-col space-y-3 lg:flex-row lg:space-y-0">
-          <Row className="space-x-3">
-            <Button
-              variant="gray"
-              onClick={() => setEdit(true)}
-              className="transition-colors duration-200 hover:bg-white/20"
-            >
-              <Edit2 size={20} className="min-w-5" /> Edit
-            </Button>
-            <Button
-              variant="gray"
-              className="min-w-[166px] transition-colors duration-200 hover:bg-white/20"
-              onClick={handleRegenerate}
-            >
-              <RefreshCcw size={20} className="min-w-5" /> Regenerate
-            </Button>
-          </Row>
-          <Button
-            className="w-full transition-colors duration-200 hover:bg-white/90 lg:w-fit"
-            onClick={handleGenerateScript}
-          >
-            {directFileIcon} Generate the script
-          </Button>
-        </Row>
-      )}
-    </>
+          {/* Actions */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {edit ? (
+              <>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setEdit(false)}>
+                    <ArrowLeft className="h-4 w-4" /> Back
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={addNewCard}>
+                    <PlusCircle className="h-4 w-4" /> Add section
+                  </Button>
+                </div>
+                <Button size="sm" onClick={handleSaveChanges} loading={isSaving} disabled={!hasChanges}>
+                  Save changes
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setEdit(true)}>
+                    <Pencil className="h-4 w-4" /> Edit outline
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleRegenerate} loading={isRegeneratingOutline}>
+                    <RefreshCcw className="h-4 w-4" /> Regenerate
+                  </Button>
+                </div>
+                <Button size="sm" onClick={handleGenerateScript} loading={isGeneratingScript}>
+                  <FileText className="h-4 w-4" /> Generate full script
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ── Insights panel ── */}
+        <div className="rounded-lg bg-card border border-border flex flex-col gap-5 p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-1.5">
+              <h2 className="text-[20px] font-semibold tracking-tight text-foreground">Outline insights</h2>
+              <p className="text-sm font-medium text-muted-foreground">
+                Quick checks before you move into the long-form draft.
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground">
+              Ready
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {/* Hook strength */}
+            <div className="rounded-md bg-secondary p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Hook strength</p>
+              </div>
+              <p className="text-sm font-medium text-muted-foreground leading-relaxed">
+                Strong opening concept with broad appeal. Add one surprising stat or bold promise to improve first-30-second retention.
+              </p>
+            </div>
+
+            {/* Audience fit */}
+            <div className="rounded-md bg-secondary p-4 flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Tags className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Audience fit</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {['Productivity', 'Self-improvement', 'Creator economy'].map((tag) => (
+                  <span key={tag} className="rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-foreground">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Delivery notes */}
+            <div className="rounded-md bg-secondary p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Mic className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Delivery notes</p>
+              </div>
+              <p className="text-sm font-medium text-muted-foreground leading-relaxed">
+                Keep examples short, transition quickly between sections, and reinforce one key result after every beat.
+              </p>
+            </div>
+
+            {/* Suggested CTA */}
+            <div className="rounded-md bg-secondary p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Megaphone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Suggested CTA</p>
+              </div>
+              <p className="text-sm font-medium text-muted-foreground leading-relaxed">
+                Ask viewers which section resonated most, then invite them to subscribe for more practical creator workflows.
+              </p>
+            </div>
+
+            {/* Runtime estimate */}
+            <div className="rounded-md bg-secondary p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Runtime estimate</p>
+              </div>
+              <p className="text-sm font-medium text-muted-foreground leading-relaxed">
+                Based on {cards.length} sections and {lengthLabel}, expect roughly{' '}
+                {Math.round((outline.max_length || 1000) / 130)}–{Math.round((outline.max_length || 1000) / 100)} minutes of spoken content.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 }

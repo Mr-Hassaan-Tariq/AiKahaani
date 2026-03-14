@@ -8,15 +8,20 @@ interface CardViewProps {
 export const CardView = ({ card, onEdit }: CardViewProps) => {
   return (
     <div
-      className="-m-2 cursor-pointer rounded-lg font-figtree text-base text-white transition-colors duration-200 hover:bg-white/5"
+      className="cursor-pointer rounded-lg p-1 transition-colors hover:bg-accent/50"
       onClick={() => onEdit(card)}
     >
-      <span className="font-semibold text-white/90">
-        {card.id}. {card.title || 'Untitled Section'}
-      </span>
-      <span className="ml-2 text-white/70">
-        {card.description || 'Click to add description...'}
-      </span>
+      <div className="flex items-baseline gap-2">
+        <span className="shrink-0 text-xs font-semibold text-primary">
+          {String(card.id).padStart(2, '0')}
+        </span>
+        <span className="text-sm font-semibold text-foreground">
+          {card.title || 'Untitled Section'}
+        </span>
+        <span className="ml-1 text-sm text-muted-foreground">
+          {card.description || 'Click to add description…'}
+        </span>
+      </div>
     </div>
   );
 };

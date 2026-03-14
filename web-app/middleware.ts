@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 const publicPaths = ['/signup', '/magic-link'];
 
 export async function middleware(request: NextRequest) {
+  if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') return NextResponse.next();
+
   const path = request.nextUrl.pathname;
   const token = request.cookies.get('access_token')?.value; // Read token from cookies
 

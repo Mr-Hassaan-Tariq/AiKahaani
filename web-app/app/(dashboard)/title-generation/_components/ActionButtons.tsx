@@ -1,37 +1,26 @@
-import Image from 'next/image';
+import { Edit2, RefreshCcw } from 'lucide-react';
 
-import EditIcon from '/public/images/edit.svg';
-import RefreshIcon from '/public/images/refresh.svg';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
+import { Button } from 'components/ui/Button';
 
-export default function ActionButtons({ isGenerating, onEdit, onRegenerate }: any) {
+export default function ActionButtons({ isGenerating, onEdit, onRegenerate }: {
+  isGenerating: boolean;
+  onEdit: () => void;
+  onRegenerate: () => void;
+}) {
   return (
-    <Row className="flex w-full gap-3">
-      <button
-        onClick={onEdit}
-        className="flex flex-1 items-center justify-center gap-2 rounded-[100px] bg-[#FFFFFF1A] py-[18px]"
-      >
-        <Image src={EditIcon} alt="edit-icon" width={24} height={24} />
-        <Text className="text-[16px] font-bold text-white">Edit Title Info</Text>
-      </button>
-      <button
+    <div className="flex w-full gap-3">
+      <Button variant="outline" className="flex-1" onClick={onEdit}>
+        <Edit2 className="h-4 w-4" /> Edit info
+      </Button>
+      <Button
+        variant="outline"
+        className="flex-1"
         onClick={onRegenerate}
+        loading={isGenerating}
         disabled={isGenerating}
-        className="flex flex-1 items-center justify-center gap-2 rounded-[100px] bg-[#FFFFFF1A] py-[18px]"
       >
-        {isGenerating ? (
-          <>
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-            <Text className="text-[16px] font-bold text-white">Regenerating...</Text>
-          </>
-        ) : (
-          <>
-            <Image src={RefreshIcon} alt="refresh-icon" width={24} height={24} />
-            <Text className="text-[16px] font-bold text-white">Regenerate</Text>
-          </>
-        )}
-      </button>
-    </Row>
+        <RefreshCcw className="h-4 w-4" /> Regenerate
+      </Button>
+    </div>
   );
 }

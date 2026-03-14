@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 
 module.exports = {
-  darkMode: ['class', 'class'],
+  darkMode: ['class'],
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -10,27 +10,16 @@ module.exports = {
   ],
   theme: {
     extend: {
+      // ── Typography ──────────────────────────────
       fontFamily: {
-        figtree: 'var(--figtree-font)',
+        inter: 'var(--inter-font)',
       },
+
+      // ── Colors (all mapped to CSS vars) ─────────
       colors: {
-        brandGradient: 'linear-gradient(to right, #2BFF13, #20BF0E)',
-        error: '#FF5050',
-        brand: {
-          surface: '#161616',
-          secondary: '#AAACA6',
-        },
-        black: {
-          DEFAULT: '#000',
-          100: '#2BFF13',
-          200: '#20BF0E',
-        },
-        green: {
-          100: '#2BFF13',
-          200: '#20BF0E',
-        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
@@ -59,9 +48,28 @@ module.exports = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
+
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+
+        // ── Sidebar ──
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+          primary: 'hsl(var(--sidebar-primary))',
+          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+        },
+
+        // ── Charts ──
         chart: {
           1: 'hsl(var(--chart-1))',
           2: 'hsl(var(--chart-2))',
@@ -70,25 +78,35 @@ module.exports = {
           5: 'hsl(var(--chart-5))',
         },
       },
+
+      // ── Border Radius ────────────────────────────
+      borderRadius: {
+        sm: 'calc(var(--radius) - 4px)',  /* 4px */
+        md: 'calc(var(--radius) - 2px)',  /* 6px */
+        lg: 'var(--radius)',              /* 8px */
+        xl: 'calc(var(--radius) + 4px)',  /* 12px */
+        '2xl': 'calc(var(--radius) + 8px)', /* 16px */
+      },
+
+      // ── Animations ───────────────────────────────
       keyframes: {
         'pulse-up': {
-          '0%': {
-            opacity: 0.3,
-            transform: 'scale(1)',
-          },
-          '100%': {
-            opacity: 0,
-            transform: 'scale(3)',
-          },
+          '0%':   { opacity: '0.3', transform: 'scale(1)' },
+          '100%': { opacity: '0',   transform: 'scale(3)' },
+        },
+        'fade-in': {
+          '0%':   { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'slide-in-left': {
+          '0%':   { opacity: '0', transform: 'translateX(-8px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
       },
       animation: {
-        'pulse-up': 'pulse-up 2s ease-out infinite',
-      },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        'pulse-up':      'pulse-up 2s ease-out infinite',
+        'fade-in':       'fade-in 0.2s ease-out',
+        'slide-in-left': 'slide-in-left 0.2s ease-out',
       },
     },
   },

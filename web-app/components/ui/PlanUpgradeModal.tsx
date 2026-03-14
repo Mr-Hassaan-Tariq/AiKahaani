@@ -147,7 +147,7 @@ function PlanUpgradeModalInner({ align = 'center' }: PlanUpgradeModalProps) {
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      {isPending && <PageLoader size="2xl" color="white" />}
+      {isPending && <PageLoader />}
       {isLoading ? (
         <Skeleton className="h-8 w-20 rounded-full" />
       ) : (
@@ -188,7 +188,7 @@ function PlanUpgradeModalInner({ align = 'center' }: PlanUpgradeModalProps) {
                 })
               }
             >
-              <Button fullRounded>Upgrade now</Button>
+              <Button>Upgrade now</Button>
             </p>
             <ViewAllPlanModal
               open={open}
@@ -250,7 +250,7 @@ export function ViewTrialPlanModal({
       open={open}
       setOpen={setOpen}
       trigger={trigger}
-      title="Welcome to TubeGenius!"
+      title="Welcome to AiKahani!"
       description="Your journey to smarter content creation starts now!"
       className="sm:max-w-[983px] lg:max-w-[680px]"
       closeActionButton={null}
@@ -376,7 +376,7 @@ function TrailWidget({ data, handleUpgrade, isTrial = false, onOpenAllPlans }: T
                     <Col className="gap-4">
                       {e?.description && (
                         <div className="flex w-fit items-center justify-center rounded-md border border-[#BAFF38]/[.12] bg-white/10 p-2 text-[10px] leading-[14px] text-white shadow-[0_0_4px_0_rgba(0,0,0,0.04),0_8px_16px_0_rgba(0,0,0,0.08)] backdrop-blur-md md:text-xs">
-                          {/* Try TubeGenius for 7 days — just $1 */}
+                          {/* Try AiKahani for 7 days — just $1 */}
                           {e?.description}
                         </div>
                       )}
@@ -441,7 +441,7 @@ function TrailWidget({ data, handleUpgrade, isTrial = false, onOpenAllPlans }: T
 
                     {isTrial && (
                       <Row className="mt-auto gap-3">
-                        <Button variant="gray" className="flex-1 bg-black" onClick={onOpenAllPlans}>
+                        <Button variant="outline" className="flex-1" onClick={onOpenAllPlans}>
                           <Row className="md:text-md items-center gap-2 text-sm">
                             Other Plans <ChevronRight />
                           </Row>

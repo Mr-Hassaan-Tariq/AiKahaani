@@ -1,9 +1,4 @@
-import Image from 'next/image';
-
-import CopyIcon from '/public/images/copy.svg';
-import Col from 'components/ui/Col';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
+import { Copy } from 'lucide-react';
 
 export default function TitleList({
   titles,
@@ -13,28 +8,25 @@ export default function TitleList({
   onCopy: (title: string) => void;
 }) {
   return (
-    <Col
-      className="flex max-h-[350px] w-full flex-col gap-3 overflow-y-auto pr-2"
-      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-    >
-      {titles.map((title, index) => (
-        <Row
-          key={index}
-          className="w-full items-center justify-between rounded-[16px] bg-[#FFFFFF1A] px-[12px] py-[16px]"
+    <div className="flex max-h-80 w-full flex-col gap-2 overflow-y-auto pr-1">
+      {titles.map((title, i) => (
+        <div
+          key={i}
+          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3"
         >
-          <Text className="text-md font-semibold text-white">
-            {index + 1}. {title}
-          </Text>
-          <Image
-            className="cursor-pointer"
-            src={CopyIcon}
-            alt="copy"
-            width={24}
-            height={24}
+          <span className="text-sm text-foreground">
+            <span className="mr-2 font-semibold text-primary">{i + 1}.</span>
+            {title}
+          </span>
+          <button
             onClick={() => onCopy(title)}
-          />
-        </Row>
+            className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Copy title"
+          >
+            <Copy className="h-4 w-4" />
+          </button>
+        </div>
       ))}
-    </Col>
+    </div>
   );
 }
