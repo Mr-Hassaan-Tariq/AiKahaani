@@ -11,7 +11,7 @@ import useGoogleSignup from 'lib/hooks/useGoogleSignup';
 import useToast from 'lib/utils/useToast';
 import { Spinner } from 'components/ui/Spinner';
 
-export default function GoogleAuthComponent({ partnerId }: { partnerId?: string }) {
+export default function GoogleAuthComponent() {
   const toast = useToast();
   const searchParams = useSearchParams();
   const { mutate: googleSignup, isPending } = useGoogleSignup();
@@ -20,14 +20,10 @@ export default function GoogleAuthComponent({ partnerId }: { partnerId?: string 
     if (!isPending) {
       const token = searchParams.get('code');
       if (token) {
-        const partnerIdFromCookie = Cookies.get('partner_id');
-        const finalPartnerId = partnerIdFromCookie || partnerId;
-
         googleSignup(
-          { id_token: token, partnerId: finalPartnerId },
+          { id_token: token },
           {
             onSuccess: async (response) => {
-              Cookies.remove('partner_id');
               toast.success('Success', 'Successfully logged in');
               Cookies.set('access_token', response.access);
               Cookies.set('refresh_token', response.refresh);

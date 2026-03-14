@@ -1,13 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Wand2 } from 'lucide-react';
-import Cookies from 'js-cookie';
 import * as yup from 'yup';
 
 import { authService } from 'lib/api';
-import useToast from 'lib/utils/useToast';
 import { Button } from 'components/ui/Button';
 import { Input } from 'components/ui/Input';
 import GoogleAuthComponent from './_components/GoogleAuthComponent';
@@ -18,36 +16,11 @@ const signupSchema = yup.object({
 });
 // ── Page ─────────────────────────────────────────────────────────────
 export default function Signup() {
-  const toast = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [email, setEmail]         = useState('');
   const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [partnerId, setPartnerId] = useState<string | null>(null);
-
-  // ── Affiliate / partner tracking ──────────────────────────────────
-  useEffect(() => {
-    const refCode = searchParams.get('ref') || searchParams.get('via');
-    if (!refCode) return;
-
-    const deviceType = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop';
-
-    authService
-      .getToltPartnerid({
-        param_name: searchParams.get('via') ? 'via' : 'ref',
-        referral_code: refCode,
-        page_url: window.location.href,
-        device_type: deviceType,
-      })
-      .then((response: any) => {
-        const id = response.partner_id;
-        setPartnerId(id);
-        if (id) Cookies.set('partner_id', id, { expires: 30 });
-      })
-      .catch(() => toast.error('Referral link invalid.'));
-  }, [searchParams, toast]);
 
   // ── Submit ────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,7 +99,7 @@ export default function Signup() {
         </div>
 
         {/* Google */}
-        <GoogleAuthComponent partnerId={partnerId ?? undefined} />
+        <GoogleAuthComponent />
       </div>
     </div>
   );

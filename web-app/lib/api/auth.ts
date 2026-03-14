@@ -62,41 +62,12 @@ export class AuthService {
   }
 
   /**
-   * Notify affiliate click and retrieve partner id
-   * @param data - Object containing referral_code, page_url and device_type
-   */
-  async getToltPartnerid(data: {
-    param_name: 'via' | 'ref';
-    referral_code: string;
-    page_url: string;
-    device_type: string;
-  }) {
-    try {
-      const response = await this.apiClient.post<{ partnerid: string }>(
-        '/v1/affiliates/click/',
-        data,
-      );
-
-      if (!response.data) {
-        throw new Error('No data received from getToltPartnerid request');
-      }
-
-      return response.data;
-    } catch (error) {
-      const apiError = error as { data: ApiError; status: number };
-      throw {
-        status: apiError?.status ?? 500,
-      };
-    }
-  }
-  /**
    * Verify magic link token
    * @param token - Magic link token
    * @param partnerId - Optional partner ID for referral tracking
    */
   async verifyMagicLink(
     token: string,
-    partnerId?: string,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -105,11 +76,7 @@ export class AuthService {
     refresh?: string;
   }> {
     try {
-      const payload: { token: string; partner_id?: string } = { token };
-
-      if (partnerId) {
-        payload.partner_id = partnerId;
-      }
+      const payload = { token };
 
       const response = await this.apiClient.post<{
         success: boolean;

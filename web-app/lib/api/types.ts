@@ -96,7 +96,6 @@ export interface NotificationSettings {
   account_or_plan_changes: boolean;
   tips_content_inspiration: boolean;
   feature_updates: boolean;
-  community_affiliate_updates: boolean;
 }
 
 // Privacy Types

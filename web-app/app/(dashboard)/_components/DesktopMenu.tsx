@@ -9,7 +9,6 @@ import {
   History,
   FolderOpen,
   Type,
-  Users2,
   Settings,
 } from 'lucide-react';
 
@@ -27,8 +26,7 @@ export const mainMenu = [
 ];
 
 export const subMenu = [
-  { name: 'Affiliate Program', icon: Users2,   path: 'https://aikahanitest1.tolt.io/', external: true },
-  { name: 'Settings',          icon: Settings,  path: '/settings', external: false },
+  { name: 'Settings', icon: Settings, path: '/settings', external: false },
 ];
 
 // ── Sidebar ──────────────────────────────────────────────────────────

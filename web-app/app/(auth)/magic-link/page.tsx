@@ -26,11 +26,9 @@ export default function MagicLinkPage() {
 
     const verify = async () => {
       try {
-        const partnerIdFromCookie = Cookies.get('partner_id');
-        const response = await authService.verifyMagicLink(token, partnerIdFromCookie);
+        const response = await authService.verifyMagicLink(token);
 
         if (response.user && response.access && response.refresh) {
-          if (partnerIdFromCookie) Cookies.remove('partner_id');
           Cookies.set('access_token', response.access, { expires: 7 });
           localStorage.setItem('refresh_token', response.refresh);
           setVerifyStatus('success');

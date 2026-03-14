@@ -61,7 +61,6 @@ export default function NotificationToggles({ initialSettings }: NotificationTog
           account_or_plan_changes:    newPreferences.notificationTypes.account_or_plan_changes   || false,
           tips_content_inspiration:   newPreferences.notificationTypes.tips_content_inspiration  || false,
           feature_updates:            newPreferences.notificationTypes.feature_updates           || false,
-          community_affiliate_updates: newPreferences.notificationTypes.community_affiliate_updates || false,
         };
         const result = await updateNotificationSettings(settings);
         if (result.isError) throw new Error(result.error?.message?.toString() || 'Failed to update');

@@ -58,7 +58,6 @@ export const mockNotificationSettings = {
   account_or_plan_changes: true,
   tips_content_inspiration: false,
   feature_updates: true,
-  community_affiliate_updates: false,
 };
 
 export const mockPrivacySettings = {

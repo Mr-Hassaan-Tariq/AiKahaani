@@ -42,11 +42,6 @@ export const notificationTexts = {
         label: 'Feature updates',
         key: 'feature_updates',
       },
-      {
-        label: 'Community or affiliate updates',
-        key: 'community_affiliate_updates',
-        description: 'Get updates about our community and affiliate program.',
-      },
     ],
   },
 };
