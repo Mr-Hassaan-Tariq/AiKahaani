@@ -8,7 +8,6 @@ import {
   PlusCircle,
   RefreshCcw,
   Pencil,
-  Clock,
   Mic,
   Lightbulb,
   Tags,
@@ -238,10 +237,6 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
   const toneNames = Array.isArray(outline.tones)
     ? outline.tones.map((t: any) => (typeof t === 'object' ? t.name : String(t))).join(', ')
     : '';
-  const lengthLabel = outline.max_length
-    ? `${outline.min_length || 0}–${outline.max_length} words`
-    : 'Standard';
-
   // ── Render ────────────────────────────────────────────────────────────────
   if (isBusy) return <LoadingScreen />;
 
@@ -277,9 +272,9 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
           </p>
         </div>
         <div className="rounded-lg bg-card border border-border p-5 flex flex-col gap-2">
-          <p className="text-[13px] font-medium text-muted-foreground">Estimated length</p>
+          <p className="text-[13px] font-medium text-muted-foreground">Estimated runtime</p>
           <p className="text-[22px] font-semibold tracking-tight text-foreground leading-tight">
-            {lengthLabel}
+            {Math.round((outline.min_length || outline.max_length || 1000) / 130)}–{Math.round((outline.max_length || 1000) / 100)} min
           </p>
           <p className="text-[13px] font-medium text-muted-foreground leading-relaxed">
             Balanced pacing across {cards.length} sections with a strong closing CTA.
@@ -446,17 +441,6 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
               </p>
             </div>
 
-            {/* Runtime estimate */}
-            <div className="rounded-md bg-secondary p-4 flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <p className="text-sm font-semibold text-foreground">Runtime estimate</p>
-              </div>
-              <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-                Based on {cards.length} sections and {lengthLabel}, expect roughly{' '}
-                {Math.round((outline.max_length || 1000) / 130)}–{Math.round((outline.max_length || 1000) / 100)} minutes of spoken content.
-              </p>
-            </div>
           </div>
         </div>
 
