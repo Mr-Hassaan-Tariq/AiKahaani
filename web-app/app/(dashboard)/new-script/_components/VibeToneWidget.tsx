@@ -1,18 +1,13 @@
-import { useMemo, useState } from 'react';
-import { ChevronDown, X } from 'lucide-react';
+'use client';
+
+import { useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import { ToneType } from '../types';
 import InfoModal from './InfoModal';
 import { cn } from 'lib/utils';
-import Col from 'components/ui/Col';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
-import { Popover, PopoverContent, PopoverTrigger } from 'components/shadcn_ui/popover';
 
 export default function VibeToneWidget({ tones, name }: { tones: ToneType[]; name: string }) {
-  const [open, setOpen] = useState(false);
-
   const {
     register,
     watch,
@@ -27,86 +22,68 @@ export default function VibeToneWidget({ tones, name }: { tones: ToneType[]; nam
     },
   });
 
-  const handleTopicToggle = (toneId: number) => {
-    const prev: number[] = watch(name);
-    onChange({
-      target: {
-        name,
-        value: prev.includes(toneId) ? prev.filter((id) => id !== toneId) : [...prev, toneId],
-      },
-    });
+  const selectedIds: number[] = watch(name) ?? [];
+
+  const handleToggle = (toneId: number) => {
+    const next = selectedIds.includes(toneId)
+      ? selectedIds.filter((id) => id !== toneId)
+      : [...selectedIds, toneId];
+    onChange({ target: { name, value: next } });
   };
 
-  const selectedTopics = useMemo(() => {
-    return tones.filter((tone) => watch(name).includes(tone.id));
+  const selectedTones = useMemo(
+    () => tones.filter((t) => selectedIds.includes(t.id)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, tones, watch(name)]);
+    [tones, selectedIds],
+  );
 
   return (
-    <Col className="gap-2">
-      <Text variant="base" className="font-medium text-white">
-        <Row className="justify-normal gap-2">
-          <span>What&apos;s your video about?</span>
-          <InfoModal description="Choose up to 3 tones to match your brand or content goal" />
-        </Row>
-      </Text>
+    <div className="flex flex-col gap-3">
+      {/* Label */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-foreground">Video tone</span>
+        <InfoModal description="Choose up to 3 tones that match your content style and target audience." />
+        <span className="ml-auto text-xs text-muted-foreground">
+          {selectedIds.length}/3 selected
+        </span>
+      </div>
 
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
-          asChild
-          className="data-[state=open]:border data-[state=open]:border-[#BAFF38]/[12%]"
-        >
-          <div className="flex h-14 w-full items-center justify-between rounded-2xl bg-white/10 px-4 text-brand-secondary">
-            <span className="text-left text-base font-medium">
-              Choose up to 3 tones (e.g. Informative, Motivational...)
-            </span>
-            <ChevronDown size={20} />
-          </div>
-        </PopoverTrigger>
-        <Row className="mt-1 flex-wrap justify-normal gap-6">
-          {selectedTopics?.map((tone) => (
-            <Row key={tone.id.toString()} className="text-white hover:text-brand-secondary">
-              <Text variant="sm" className="font-medium">
-                {tone.name}
-              </Text>
-              <X size={16} className="cursor-pointer" onClick={() => handleTopicToggle(tone.id)} />
-            </Row>
-          ))}
-        </Row>
-        <PopoverContent
-          className="w-[var(--radix-popover-trigger-width)] border-[#BAFF38]/[12%] bg-[#2D2D2D] p-0"
-          align="start"
-        >
-          {tones.map((tone) => (
-            <div
-              key={tone.id.toString()}
-              className="flex w-full items-center justify-between space-x-2 border-b border-[#BAFF38]/[12%] px-4 py-3 hover:bg-white/5"
+      {/* Chip grid */}
+      <div className="flex flex-wrap gap-2">
+        {tones.map((tone) => {
+          const active = selectedIds.includes(tone.id);
+          const maxReached = selectedIds.length >= 3 && !active;
+
+          return (
+            <button
+              key={tone.id}
+              type="button"
+              disabled={maxReached}
+              onClick={() => handleToggle(tone.id)}
+              className={cn(
+                'rounded-md border px-3 py-1.5 text-sm font-medium transition-colors',
+                active
+                  ? 'border-primary bg-accent text-accent-foreground'
+                  : 'border-border bg-transparent text-muted-foreground hover:border-primary/40 hover:bg-muted hover:text-foreground',
+                maxReached && 'cursor-not-allowed opacity-40',
+              )}
             >
-              <label
-                htmlFor={tone.id.toString()}
-                className={cn(
-                  'w-full cursor-pointer text-base text-brand-secondary',
-                  selectedTopics.some((topic) => topic.id === tone.id) && 'font-bold text-white',
-                )}
-              >
-                {tone.name}
-              </label>
-              <input
-                type="checkbox"
-                id={tone.id.toString()}
-                checked={selectedTopics.some((topic) => topic.id === tone.id)}
-                onChange={() => handleTopicToggle(tone.id)}
-                className="size-6 rounded-md accent-white"
-              />
-            </div>
-          ))}
-        </PopoverContent>
-      </Popover>
-      {errors[name]?.message && (
-        <Text variant="xs" className="text-rose-500">
-          {errors[name]?.message?.toString()}
-        </Text>
+              {tone.name}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected summary */}
+      {selectedTones.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Selected: {selectedTones.map((t) => t.name).join(', ')}
+        </p>
       )}
-    </Col>
+
+      {errors[name]?.message && (
+        <p className="text-xs text-destructive">{errors[name]?.message?.toString()}</p>
+      )}
+    </div>
   );
 }

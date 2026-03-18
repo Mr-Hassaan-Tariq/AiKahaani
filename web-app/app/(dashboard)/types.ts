@@ -16,7 +16,6 @@ export interface NotificationSettingsType {
   account_or_plan_changes: boolean;
   tips_content_inspiration: boolean;
   feature_updates: boolean;
-  community_affiliate_updates: boolean;
 }
 
 export interface NotificationType {

@@ -1,20 +1,24 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { Smile, Flame, Video } from 'lucide-react';
 
-import { Fire, SmileTone, VedioIconWhite } from './components';
 import Button from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
 import { Checkbox } from 'components/shadcn_ui/checkbox';
+import { cn } from 'lib/utils';
 
 interface FilterModalProps {
   trigger: React.ReactNode;
   availableFilters?: Record<string, string[]>;
   onApply: (filters: Record<string, string[]>) => void;
-  initialFilters?: Record<string, string[]>; // new prop to receive parent state
+  initialFilters?: Record<string, string[]>;
 }
+
+const categoryIcon: Record<string, React.ReactNode> = {
+  Tone: <Smile className="h-5 w-5" />,
+  Popularity: <Flame className="h-5 w-5" />,
+};
 
 export default function FilterNicheModal({
   trigger,
@@ -28,7 +32,6 @@ export default function FilterNicheModal({
 
   const sections = availableFilters || defaultSections;
 
-  // create a normalized empty-map for categories
   const initialFiltersFromSections = useMemo(
     () =>
       Object.keys(sections).reduce(
@@ -45,11 +48,8 @@ export default function FilterNicheModal({
   );
 
   const [open, setOpen] = useState(false);
-
-  // internal modal state
   const [filters, setFilters] = useState<Record<string, string[]>>(initialFiltersFromSections);
 
-  // Sync modal internal filters whenever parent initialFilters changes (so chip removals reflect inside modal)
   useEffect(() => {
     setFilters(initialFiltersFromSections);
   }, [initialFiltersFromSections]);
@@ -82,7 +82,6 @@ export default function FilterNicheModal({
     setOpen(false);
   };
 
-  // detect whether there are any active filters in modal
   const isAnyFilterSelected = Object.values(filters).some((arr) => arr.length > 0);
 
   return (
@@ -93,52 +92,33 @@ export default function FilterNicheModal({
       title="Filter niches"
       description=""
       footer={
-        <Row className="w-full gap-3">
-          <Button variant="gray" onClick={() => setOpen(false)}>
-            <Text variant="base" className="font-extrabold">
-              Cancel
-            </Text>
+        <div className="flex w-full gap-3">
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
           </Button>
 
           {isAnyFilterSelected && (
-            <Button
-              type="button"
-              variant="gray"
-              onClick={handleReset}
-              className="border border-white/10 bg-transparent text-white/80 hover:bg-white/5"
-            >
+            <Button variant="outline" type="button" onClick={handleReset}>
               Reset
             </Button>
           )}
 
           <Button
             type="button"
-            variant="green"
             onClick={handleApply}
             disabled={!isAnyFilterSelected}
-            className={`transition-all duration-200 ${
-              !isAnyFilterSelected
-                ? 'cursor-not-allowed opacity-50'
-                : 'hover:bg-white/90 hover:text-black'
-            }`}
           >
             Apply filters
           </Button>
-        </Row>
+        </div>
       }
     >
       <div className="my-4 space-y-6">
         {Object.entries(sections).map(([category, options]) => (
           <div key={category}>
-            <h4 className="mb-2 flex gap-2 text-lg text-white">
-              <span>
-                {category === 'Tone' ? (
-                  <SmileTone />
-                ) : category === 'Popularity' ? (
-                  <Fire />
-                ) : (
-                  <VedioIconWhite />
-                )}
+            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <span className="text-muted-foreground">
+                {categoryIcon[category] ?? <Video className="h-5 w-5" />}
               </span>
               {category}
             </h4>
@@ -147,12 +127,16 @@ export default function FilterNicheModal({
               {options.map((option) => (
                 <label
                   key={option}
-                  className="flex cursor-pointer items-center gap-2 text-sm text-[#AAACA6] hover:text-white"
+                  className={cn(
+                    'flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm transition-colors',
+                    filters[category]?.includes(option)
+                      ? 'border-primary bg-accent text-foreground'
+                      : 'text-muted-foreground hover:border-primary/40 hover:bg-muted hover:text-foreground',
+                  )}
                 >
                   <Checkbox
                     checked={filters[category]?.includes(option)}
                     onCheckedChange={() => handleToggle(category, option)}
-                    className="border-[#AAACA6]"
                   />
                   {option}
                 </label>

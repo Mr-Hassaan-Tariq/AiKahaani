@@ -1,11 +1,9 @@
 'use client';
 
-import Image from 'next/image';
-import RightSvg from '@assets/svg/right.svg';
+import { Bell, ArrowRight } from 'lucide-react';
 
 import { postClientDataAction } from 'lib/utils/clientDataActions';
-import Col from 'components/ui/Col';
-import Row from 'components/ui/Row';
+import { cn } from 'lib/utils';
 
 interface NotificationItemProps {
   id: number;
@@ -27,7 +25,6 @@ export default function NotificationItem({
   actionText,
   actionLink,
   isNew = false,
-  icon,
   onRead,
 }: NotificationItemProps) {
   const handleMarkAsRead = async () => {
@@ -35,106 +32,61 @@ export default function NotificationItem({
     try {
       await postClientDataAction(`v1/notifications/${id}/read/`, {});
       onRead?.(id);
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
+    } catch {
+      // silently fail
     }
   };
 
   const getFinalURL = (link?: string) => {
     if (!link) return '#';
-
-    if (link.startsWith('/scripts/')) {
-      const id = link.replace('scripts/', '');
-      return `/new-script/script/${id}`;
-    }
-
-    if (link.startsWith('/outlines/')) {
-      const id = link.replace('/outlines/', '');
-      return `/new-script/${id}`;
-    }
-
+    if (link.startsWith('/scripts/')) return `/new-script/script/${link.replace('scripts/', '')}`;
+    if (link.startsWith('/outlines/')) return `/new-script/${link.replace('/outlines/', '')}`;
     return link;
   };
 
   const finalActionLink = getFinalURL(actionLink);
 
   return (
-    <>
-      {/* Desktop */}
-      <div className="hidden md:block">
-        <Row
-          onClick={handleMarkAsRead}
-          className="mb-3 cursor-pointer items-start justify-between rounded-xl border border-[var(--Stroke-Surface,#BAFF381F)] bg-[var(--Bg-Surface,#161616)] p-5 text-white hover:bg-[#1C1C1C]"
-        >
-          <Col className="flex-1 items-start gap-3">
-            <Row className="items-center gap-2">
-              <Image src={icon} alt="icon" width={20} height={20} />
-              <h3 className="font-medium">{title}</h3>
-            </Row>
-            <p className="text-sm text-[#AAACA6]">{description}</p>
-          </Col>
+    <div
+      onClick={handleMarkAsRead}
+      className={cn(
+        'cursor-pointer rounded-xl border p-4 transition-colors hover:bg-accent/40',
+        isNew ? 'border-primary/20 bg-accent/20' : 'border-border bg-card',
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className={cn(
+            'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
+            isNew ? 'bg-primary/10' : 'bg-muted',
+          )}>
+            <Bell className={cn('h-4 w-4', isNew ? 'text-primary' : 'text-muted-foreground')} />
+          </div>
 
-          <Col className="items-end gap-2">
-            <Row className="items-center justify-end gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-foreground">{title}</p>
               {isNew && (
-                <>
-                  <span className="h-2 w-2 rounded-full bg-[linear-gradient(90deg,#2BFF13_0%,#20BF0E_100%)]"></span>
-                  <span className="text-md font-semibold">New</span>
-                  <span className="h-0.5 w-0.5 rounded-full bg-white"></span>
-                </>
+                <span className="flex h-4 items-center rounded-full bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
+                  New
+                </span>
               )}
-              <p className="text-sm font-medium text-[#AAACA6]">{time}</p>
-            </Row>
-
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{description}</p>
             {actionText && actionLink && (
               <a
                 href={finalActionLink}
-                className="flex w-full items-center justify-end gap-2 text-right text-sm font-semibold hover:underline"
+                onClick={(e) => e.stopPropagation()}
+                className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
               >
-                {actionText} <Image src={RightSvg} height={20} width={20} alt="RightSvg" />
+                {actionText} <ArrowRight className="h-3 w-3" />
               </a>
             )}
-          </Col>
-        </Row>
+          </div>
+        </div>
+
+        <span className="shrink-0 text-xs text-muted-foreground">{time}</span>
       </div>
-
-      {/* Mobile */}
-      <div className="block md:hidden">
-        <Col
-          onClick={handleMarkAsRead}
-          className="mb-3 cursor-pointer items-start justify-between rounded-xl border border-[var(--Stroke-Surface,#BAFF381F)] bg-[var(--Bg-Surface,#161616)] p-3 text-white hover:bg-[#1C1C1C]"
-        >
-          <Row className="w-full items-center justify-end gap-2">
-            {isNew && (
-              <>
-                <span className="h-2 w-2 rounded-full bg-[linear-gradient(90deg,#2BFF13_0%,#20BF0E_100%)]"></span>
-                <span className="text-md font-semibold">New</span>
-                <span className="h-0.5 w-0.5 rounded-full bg-white"></span>
-              </>
-            )}
-            <p className="text-sm font-medium text-[#AAACA6]">{time}</p>
-          </Row>
-
-          <Col className="w-full items-start gap-2">
-            <Row className="items-center gap-2">
-              <Image src={icon} alt="icon" width={20} height={20} />
-              <h3 className="font-medium">{title}</h3>
-            </Row>
-            <p className="text-sm text-[#AAACA6]">{description}</p>
-          </Col>
-
-          {actionText && actionLink && (
-            <div className="flex w-full justify-end">
-              <a
-                href={finalActionLink}
-                className="flex items-center gap-2 text-right text-sm font-semibold hover:underline"
-              >
-                {actionText} <Image src={RightSvg} height={20} width={20} alt="RightSvg" />
-              </a>
-            </div>
-          )}
-        </Col>
-      </div>
-    </>
+    </div>
   );
 }

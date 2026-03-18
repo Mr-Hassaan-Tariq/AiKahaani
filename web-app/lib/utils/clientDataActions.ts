@@ -19,6 +19,10 @@ function getAuthToken() {
 }
 
 export async function getClientDataAction<T>(endpoint: string, schema?: z.ZodSchema<T>) {
+  if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
+    const { getMockDataForEndpoint } = await import('lib/mockData');
+    return getMockDataForEndpoint(endpoint) as T;
+  }
   const token = getAuthToken();
   const res = await fetch(`${baseUrl}${endpoint}`, {
     method: 'GET',
@@ -50,6 +54,10 @@ export async function getClientDataAction<T>(endpoint: string, schema?: z.ZodSch
 }
 
 export async function postClientDataAction<T, P>(endpoint: string, body?: P, customUrl?: string) {
+  if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
+    const { getMockPostDataForEndpoint } = await import('lib/mockData');
+    return getMockPostDataForEndpoint(endpoint) as T;
+  }
   const token = getAuthToken();
 
   // headers

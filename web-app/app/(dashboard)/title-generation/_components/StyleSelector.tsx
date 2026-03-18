@@ -1,3 +1,4 @@
+import { cn } from 'lib/utils';
 import useGetTitleStyles from 'lib/hooks/useGetTitleStyles';
 
 export default function StyleSelector({
@@ -10,16 +11,13 @@ export default function StyleSelector({
   error?: string;
 }) {
   const { data } = useGetTitleStyles();
-
   if (!data) return null;
 
   const handleSelect = (option: string) => {
     if (value.includes(option)) {
       onChange(value.filter((item) => item !== option));
-    } else {
-      if (value.length < 3) {
-        onChange([...value, option]);
-      }
+    } else if (value.length < 3) {
+      onChange([...value, option]);
     }
   };
 
@@ -33,18 +31,19 @@ export default function StyleSelector({
               type="button"
               key={tone.id}
               onClick={() => handleSelect(tone.name)}
-              className={`rounded-full px-[12px] py-[8px] text-sm font-medium transition ${
+              className={cn(
+                'rounded-md border px-3 py-1.5 text-sm font-medium transition-colors',
                 isSelected
-                  ? 'border border-[#BAFF381F] bg-[#FFFFFF1A] text-white'
-                  : 'border border-transparent bg-[#FFFFFF1A] text-[#AAACA6]'
-              }`}
+                  ? 'border-primary bg-accent text-accent-foreground'
+                  : 'border-border bg-transparent text-muted-foreground hover:border-primary/40 hover:bg-muted hover:text-foreground',
+              )}
             >
               {tone.name}
             </button>
           );
         })}
       </div>
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }

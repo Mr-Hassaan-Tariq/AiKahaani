@@ -1,11 +1,9 @@
-import { HTMLAttributes, ReactNode } from 'react';
+import { TextareaHTMLAttributes, ReactNode } from 'react';
 import { RegisterOptions, useFormContext } from 'react-hook-form';
 
-import Col from './Col';
-import Text from './Text';
 import { cn } from 'lib/utils';
 
-type FormTextareaProps = HTMLAttributes<HTMLTextAreaElement> & {
+type FormTextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label?: ReactNode;
   name: string;
   validationSchema?: RegisterOptions;
@@ -22,29 +20,27 @@ export default function FormTextarea({
     register,
     formState: { errors },
   } = useFormContext();
+
   return (
-    <Col className="gap-2">
+    <div className="flex flex-col gap-1.5">
       {label && (
-        <Text variant="base" className="font-medium text-white">
-          {label}
-        </Text>
+        <label className="text-sm font-medium text-foreground">{label}</label>
       )}
       <textarea
-        // eslint-disable-next-line react/jsx-props-no-spreading
         {...props}
-        // eslint-disable-next-line react/jsx-props-no-spreading
         {...register(name, validationSchema)}
-        placeholder="e.g. Top 5 productivity hacks that actually work..."
         className={cn(
-          'h-32 w-full resize-none rounded-2xl border-none bg-white/10 p-4 text-base font-medium leading-6 tracking-[-0.2px] text-white outline-none placeholder:text-brand-secondary',
+          'min-h-[120px] w-full resize-none rounded-lg border border-border bg-input px-4 py-3',
+          'text-sm text-foreground placeholder:text-muted-foreground',
+          'focus:outline-none focus:ring-2 focus:ring-ring',
+          'transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+          errors[name] && 'border-destructive focus:ring-destructive',
           className,
         )}
       />
       {errors[name]?.message && (
-        <Text variant="xs" className="-mt-1 text-rose-500">
-          {errors[name]?.message?.toString()}
-        </Text>
+        <p className="text-xs text-destructive">{errors[name]?.message?.toString()}</p>
       )}
-    </Col>
+    </div>
   );
 }

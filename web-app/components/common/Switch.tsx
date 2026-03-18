@@ -24,22 +24,25 @@ export default function Switch({
   };
 
   return (
-    <div className="flex items-start gap-2 py-1 lg:items-center">
+    <div className="flex items-start gap-3 py-1 lg:items-center">
       <button
+        type="button"
         onClick={handleToggle}
-        className={`flex h-6 w-12 items-center rounded-full p-1 transition ${
-          checked ? 'bg-white' : 'bg-[#2d2d2d]'
-        } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+        aria-checked={checked}
+        role="switch"
+        className={`relative flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${
+          checked ? 'bg-primary' : 'bg-border'
+        } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
       >
         <div
-          className={`h-4 w-4 transform rounded-full shadow-md transition ${
-            checked ? 'translate-x-6 bg-[#0E0F0C]' : 'translate-x-0 bg-white'
+          className={`h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+            checked ? 'translate-x-5' : 'translate-x-0'
           }`}
         />
       </button>
-      <div className="w-[240px] md:w-full lg:w-full">
-        <p className="font-medium text-white">{label}</p>
-        {description && <p className="text-sm text-gray-400">{description}</p>}
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
       </div>
     </div>
   );

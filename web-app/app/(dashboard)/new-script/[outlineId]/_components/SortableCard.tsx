@@ -5,7 +5,7 @@ import DeleteOutlineSection from './DeleteOutlineSection';
 import { DragHandle } from './DragHandle';
 import { EditForm } from './EditForm';
 import { CardData, isFormValid } from './utils';
-import Card from 'components/ui/Card';
+import { cn } from 'lib/utils';
 
 interface SortableCardProps {
   card: CardData;
@@ -63,13 +63,15 @@ export const SortableCard = ({
     <div className="relative">
       {/* Drop indicator */}
       {showDropIndicator && (
-        <div className="absolute -bottom-2 left-0 right-0 z-10 h-1 animate-pulse rounded-full bg-blue-400" />
+        <div className="absolute -bottom-1.5 left-0 right-0 z-10 h-0.5 rounded-full bg-primary" />
       )}
 
-      <Card
-        className={`group relative flex flex-row items-center border border-white/20 bg-white/10 backdrop-blur-sm transition-all duration-200 hover:bg-white/15 hover:shadow-lg hover:shadow-white/10 ${
-          isDragged ? 'scale-95 opacity-30 shadow-2xl' : ''
-        } ${isDragOver ? 'bg-blue-500/10 ring-2 ring-blue-400/50' : ''}`}
+      <div
+        className={cn(
+          'group relative flex flex-row items-center rounded-xl border border-border bg-card transition-all',
+          isDragged && 'scale-[0.98] opacity-40 shadow-lg',
+          isDragOver && 'border-primary/40 bg-accent',
+        )}
         onDragOver={(e) => onDragOver(e)}
         onDragLeave={onDragLeave}
         onDrop={(e) => onDrop(e)}
@@ -89,7 +91,7 @@ export const SortableCard = ({
         />
 
         {/* Content */}
-        <div className="ml-8 w-full py-4 pr-4">
+        <div className="ml-8 flex-1 py-4 pr-4">
           {isEditing ? (
             <EditForm
               cardId={card.id}
@@ -112,12 +114,12 @@ export const SortableCard = ({
         <DeleteOutlineSection
           onDelete={() => onDelete(card.id)}
           trigger={
-            <div className="flex size-12 min-w-12 cursor-pointer items-center justify-center rounded-full bg-red-500/10 text-red-400 opacity-70 transition-all duration-200 hover:bg-red-500/20 hover:text-red-300 active:scale-95 group-hover:opacity-100">
-              <Trash2 size={18} />
+            <div className="mr-3 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100">
+              <Trash2 size={15} />
             </div>
           }
         />
-      </Card>
+      </div>
     </div>
   );
 };

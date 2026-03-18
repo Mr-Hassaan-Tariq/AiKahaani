@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 
 import useBillingPortal from 'lib/hooks/useBIllingPortal';
-import Button from 'components/ui/Button';
+import { Button } from 'components/ui/Button';
 
 export function ManageSubscriptionButton() {
   const router = useRouter();
@@ -11,22 +11,18 @@ export function ManageSubscriptionButton() {
 
   return (
     <Button
-      variant="gray"
-      className="whitespace-nowrap px-8"
-      height={41}
+      variant="outline"
+      size="sm"
+      loading={mutation.status === 'pending'}
+      disabled={mutation.status === 'pending'}
       onClick={() =>
         mutation.mutate(undefined, {
-          onSuccess: (url) => {
-            router.push(url);
-          },
-          onError: (error: any) => {
-            alert(error.message || 'Something went wrong while redirecting.');
-          },
+          onSuccess: (url) => { router.push(url); },
+          onError: (error: any) => { alert(error.message || 'Something went wrong.'); },
         })
       }
-      disabled={mutation.status === 'pending'}
     >
-      {mutation.status === 'pending' ? 'Redirecting...' : 'Manage subscription'}
+      {mutation.status === 'pending' ? 'Redirecting…' : 'Manage subscription'}
     </Button>
   );
 }

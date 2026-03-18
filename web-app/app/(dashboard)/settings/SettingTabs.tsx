@@ -1,9 +1,7 @@
 import { headers } from 'next/headers';
 import Link from 'next/link';
 
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
-import { Tabs, TabsList, TabsTrigger } from 'components/shadcn_ui/tabs';
+import { cn } from 'lib/utils';
 
 const tabsPath = [
   { label: 'Profile', path: '/settings/profile' },
@@ -18,30 +16,36 @@ export default async function SettingTabs({ children }: { children: React.ReactN
   const activeTab = tabsPath.find((tab) => pathname?.includes(tab.path));
 
   return (
-    <div className="flex grow flex-col gap-10">
-      <Row className="flex-col items-start justify-normal gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <Text variant="3xl" className="text-[32px] font-semibold text-white">
-          Settings
-        </Text>
-        <div className="w-full overflow-x-auto overflow-y-visible lg:w-fit">
-          <Tabs defaultValue={activeTab?.label || ''} className="min-w-[550px]">
-            <TabsList className="flex h-[52px] w-full items-center justify-normal gap-1.5 bg-transparent md:justify-normal md:gap-4 lg:h-fit">
-              {tabsPath.map((tab) => (
-                <Link key={tab.label} href={tab.path}>
-                  <TabsTrigger
-                    value={tab.label}
-                    className="whitespace-nowrap rounded-full border-gray-100 bg-[#FFFFFF1A] px-3 py-3 text-base font-bold text-white data-[state=active]:bg-white data-[state=active]:text-black lg:px-6 lg:py-[18px]"
-                  >
-                    {tab.label}
-                  </TabsTrigger>
-                </Link>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
-      </Row>
+    <div className="flex flex-col">
+      {/* Settings topbar */}
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-background px-6">
+        <h1 className="text-base font-semibold text-foreground">Settings</h1>
+      </header>
 
-      <div className="scrollbar pb-3">{children}</div>
+      {/* Tab nav */}
+      <div className="border-b border-border bg-background px-6">
+        <nav className="-mb-px flex gap-1 overflow-x-auto">
+          {tabsPath.map((tab) => {
+            const isActive = activeTab?.label === tab.label;
+            return (
+              <Link
+                key={tab.label}
+                href={tab.path}
+                className={cn(
+                  'whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'border-primary text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {tab.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+
+      <div className="px-6 py-6">{children}</div>
     </div>
   );
 }

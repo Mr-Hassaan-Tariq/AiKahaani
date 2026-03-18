@@ -1,14 +1,11 @@
 'use client';
 
+import { Camera, Trash2 } from 'lucide-react';
+
 import ChangePhotoModal from './ChangePhotoModal';
-import { basketIcon, changePhotoIcon } from './components';
 import DeletePhotoModal from './DeletePhotoModal';
-import Button from 'components/ui/Button';
-import Card from 'components/ui/Card';
+import { Button } from 'components/ui/Button';
 import ClientImage from 'components/ui/ClientImage';
-import Col from 'components/ui/Col';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
 
 export default function ProfilePhotoCard({
   profileImage,
@@ -24,81 +21,53 @@ export default function ProfilePhotoCard({
     return (parts[0][0] + parts[1][0]).toUpperCase();
   };
 
-  const initials = getInitials(fullName);
-
   return (
-    <Card>
-      <Col className="gap-6 lg:gap-8">
-        <Text variant="2xl" className="text-xl text-white lg:text-2xl">
-          Profile Photo
-        </Text>
+    <div className="rounded-xl border border-border bg-card p-6">
+      <h3 className="mb-5 text-sm font-semibold text-foreground">Profile Photo</h3>
 
-        <Row className="flex-col justify-normal gap-6 md:flex-row">
-          {/* <Image
-            src={profileImage || brokenImage}
-            alt="DP"
-            width={500}
-            height={500}
-            priority={true}
-            className="h-[120px] w-[120px] rounded-full bg-white/10 object-cover"
-            onError={(e) => {
-              e.currentTarget.src = brokenImage.src;
-            }}
-          /> */}
-          {profileImage ? (
-            <ClientImage
-              src={profileImage}
-              alt="DP"
-              width={500}
-              height={500}
-              priority={true}
-              className="h-[120px] w-[120px] rounded-full bg-white/10 object-cover"
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+        {/* Avatar */}
+        {profileImage ? (
+          <ClientImage
+            src={profileImage}
+            alt="Profile"
+            width={96}
+            height={96}
+            priority
+            className="h-24 w-24 shrink-0 rounded-full object-cover ring-2 ring-border"
+          />
+        ) : (
+          <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-accent text-xl font-bold text-accent-foreground ring-2 ring-border">
+            {getInitials(fullName)}
+          </div>
+        )}
+
+        <div className="flex flex-col gap-3">
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p>Recommended size: <span className="font-medium text-foreground">400×400 px</span></p>
+            <p>Accepted formats: <span className="font-medium text-foreground">JPG, PNG · Max 5 MB</span></p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <ChangePhotoModal
+              trigger={
+                <Button variant="outline" size="sm">
+                  <Camera className="h-4 w-4" /> Change photo
+                </Button>
+              }
             />
-          ) : (
-            <div className="flex h-[120px] w-[120px] items-center justify-center rounded-full bg-white/10 text-3xl font-bold text-white">
-              {initials}
-            </div>
-          )}
-          <Col className="gap-6">
-            <Col className="gap-3">
-              <Row className="justify-normal">
-                <Text variant="base">Recommended size:</Text>{' '}
-                <Text variant="base" className="font-semibold">
-                  400×400 px
-                </Text>
-              </Row>
-              <Row className="justify-normal">
-                <Text variant="base">Accepted formats:</Text>{' '}
-                <Text variant="base" className="font-semibold">
-                  JPG, PNG · Max file size: 5MB
-                </Text>
-              </Row>
-            </Col>
-            <Row className="justify-center lg:justify-normal">
-              <ChangePhotoModal
+            {profileImage && (
+              <DeletePhotoModal
                 trigger={
-                  <Button variant="gray" className="flex w-fit items-center">
-                    {changePhotoIcon} Change photo
+                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" /> Remove
                   </Button>
                 }
               />
-
-              {profileImage && (
-                <DeletePhotoModal
-                  trigger={
-                    <Button
-                      variant="red"
-                      className="flex w-fit items-center justify-center bg-[#FF50500D]"
-                    >
-                      {basketIcon} Remove photo
-                    </Button>
-                  }
-                />
-              )}
-            </Row>
-          </Col>
-        </Row>
-      </Col>
-    </Card>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

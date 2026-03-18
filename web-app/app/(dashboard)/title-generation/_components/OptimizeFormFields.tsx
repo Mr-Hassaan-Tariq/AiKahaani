@@ -1,56 +1,43 @@
 import { useEffect } from 'react';
 
 import ScriptSelector from './ScriptSelector';
-import Col from 'components/ui/Col';
 import FormInput from 'components/ui/FormInput';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
+import { cn } from 'lib/utils';
 
-export default function OptimizeFormFields({
-  watch,
-  scripts,
-  register,
-  resetField,
-  setValue,
-}: any) {
+export default function OptimizeFormFields({ watch, scripts, register, resetField, setValue }: any) {
   const duration = watch('duration');
 
   useEffect(() => {
-    if (duration === 'saved') {
-      resetField('manualTitle');
-      setValue('scriptOption', '');
-    } else if (duration === 'manual') {
-      resetField('scriptOption');
-      setValue('manualTitle', '');
-    }
-  }, [duration]);
+    if (duration === 'saved') { resetField('manualTitle'); setValue('scriptOption', ''); }
+    else if (duration === 'manual') { resetField('scriptOption'); setValue('manualTitle', ''); }
+  }, [duration]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <Col className="mt-6 w-full justify-start gap-4">
-      <Text className="text-md mb-2 text-left text-white">Script length & duration</Text>
-      <Row className="flex flex-col items-start justify-start gap-4 lg:flex-row lg:gap-[200px]">
-        <label className="flex cursor-pointer items-center gap-2">
-          <input
-            type="radio"
-            value="saved"
-            {...register('duration')}
-            className="peer h-6 w-6 cursor-pointer appearance-none rounded-full border-2 border-[#AAACA6] checked:border-white checked:bg-white checked:shadow-[inset_0_0_0_4px_#1E1E1E]"
-          />
-          <Text className="text-[16px] text-[#AAACA6] peer-checked:text-white">
-            Use a saved draft or script
-          </Text>
-        </label>
-        <label className="flex cursor-pointer items-center gap-2">
-          <input
-            type="radio"
-            value="manual"
-            {...register('duration')}
-            className="peer h-6 w-6 cursor-pointer appearance-none rounded-full border-2 border-[#AAACA6] checked:border-white checked:bg-white checked:shadow-[inset_0_0_0_4px_#1E1E1E]"
-          />
-          <Text className="text-[16px] text-[#AAACA6] peer-checked:text-white">
-            Enter a title manually
-          </Text>
-        </label>
-      </Row>
+    <div className="flex flex-col gap-4">
+      <div>
+        <p className="mb-2 text-sm font-medium text-foreground">Script source</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-6">
+          {[
+            { value: 'saved', label: 'Use a saved draft or script' },
+            { value: 'manual', label: 'Enter a title manually' },
+          ].map((opt) => (
+            <label key={opt.value} className="flex cursor-pointer items-center gap-2">
+              <input
+                type="radio"
+                value={opt.value}
+                {...register('duration')}
+                className="peer h-4 w-4 cursor-pointer accent-primary"
+              />
+              <span className={cn(
+                'text-sm text-muted-foreground transition-colors',
+                'peer-checked:text-foreground peer-checked:font-medium',
+              )}>
+                {opt.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
 
       {watch('duration') === 'saved' && (
         <ScriptSelector
@@ -66,13 +53,14 @@ export default function OptimizeFormFields({
       {watch('duration') === 'manual' && (
         <FormInput
           name="manualTitle"
-          placeholder="Enter your title manually..."
+          label="Your title"
+          placeholder="Enter your title manually…"
           validationSchema={{
-            required: 'Title is required when entering manually',
-            minLength: { value: 10, message: 'Title must be at least 5 characters' },
+            required: 'Title is required',
+            minLength: { value: 10, message: 'Title must be at least 10 characters' },
           }}
         />
       )}
-    </Col>
+    </div>
   );
 }

@@ -1,14 +1,9 @@
 'use client';
 
-import { FC, useState } from 'react';
-import Image from 'next/image';
+import { FC } from 'react';
+import { ArrowRight } from 'lucide-react';
 
-import ThumbnailImage from '../../../../public/images/no-niche.png';
 import NicheStyleModal from './NicheStyleModal';
-import VedioModal from './VedioModal';
-import Button from 'components/ui/Button';
-import Card from 'components/ui/Card';
-import Text from 'components/ui/Text';
 
 interface NicheCardProps {
   id: number;
@@ -20,109 +15,69 @@ interface NicheCardProps {
   thumbnailUrl?: string | null;
 }
 
-// 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
+const CARD_GRADIENTS = [
+  'from-violet-800 to-purple-600',
+  'from-blue-800 to-sky-600',
+  'from-emerald-800 to-teal-600',
+  'from-rose-800 to-red-600',
+  'from-amber-800 to-orange-600',
+  'from-indigo-800 to-blue-600',
+  'from-pink-800 to-rose-600',
+  'from-cyan-800 to-blue-600',
+  'from-slate-700 to-slate-500',
+];
 
-const NicheCard: FC<NicheCardProps> = ({
-  id,
-  title,
-  description,
-  tone,
-  pacing,
-  topChannels,
-  thumbnailUrl,
-}) => {
-  const [imagePresent, setImagePresent] = useState(!!thumbnailUrl);
-  const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  const tags = [...(tone || []), ...(pacing || [])];
-  const examples = topChannels?.map((c) => c.name) || [];
-
-  const videoUrl = topChannels[0]?.link || '';
-
-  const truncated = examples.join(', ');
-  const maxLength = 35;
-  const displayText =
-    truncated.length > maxLength ? truncated.substring(0, maxLength) + '...' : truncated;
-
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-    setImageError(false);
-  };
-
-  const handleImageError = () => {
-    // Only show placeholder if image truly failed to load
-    if (!imageLoaded) {
-      setImageError(true);
-      setImagePresent(false);
-    }
-  };
+const NicheCard: FC<NicheCardProps> = ({ id, title, description, tone, topChannels, thumbnailUrl }) => {
+  const badge = tone?.[0] || null;
+  const author = topChannels?.[0]?.name || null;
+  const gradient = CARD_GRADIENTS[id % CARD_GRADIENTS.length];
 
   return (
-    <Card className="rounded-xl bg-[#161616] text-white lg:px-5 lg:py-5">
-      <div className="relative h-40">
-        {imagePresent && !imageError ? (
-          <VedioModal
-            trigger={
-              <Image
-                src={thumbnailUrl || ''}
-                alt={title}
-                fill
-                className="rounded-xl object-cover"
-                sizes="(max-width: 768px) 100vw, 33vw"
-                unoptimized
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-              />
-            }
-            title={title}
-            videoId={'videoId'}
-            subtitle={description}
-            youtubeUrl={videoUrl}
-            thumbnailUrl={thumbnailUrl || ''}
-          />
+    <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
+      {/* Thumbnail */}
+      <div className="relative w-full aspect-[16/10] overflow-hidden bg-muted">
+        {thumbnailUrl ? (
+          <img src={thumbnailUrl} alt={title} className="w-full h-full object-cover" />
         ) : (
-          <Image
-            src={ThumbnailImage}
-            alt="placeholder"
-            fill
-            className="rounded-xl object-cover"
-            sizes="(max-width: 768px) 100vw, 33vw"
-          />
+          <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+            <span className="text-white/20 text-6xl font-black select-none">{title[0]}</span>
+          </div>
+        )}
+        {badge && (
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[#0F172A] text-xs font-semibold shadow-sm">
+            {badge}
+          </span>
         )}
       </div>
 
-      <div className="mt-4 space-y-3">
-        <div className="flex flex-wrap items-center justify-between text-xs text-gray-300">
-          <div className="rounded-md border border-[#BAFF381F] bg-[#2a2a2a] p-2">
-            {tags.length > 0 ? (
-              tags.slice(0, 4).map((tag, i) => (
-                <span key={i} className="text-white">
-                  {tag}
-                  {i < tags.length - 1 && ', '}
+      {/* Content */}
+      <div className="flex flex-1 flex-col gap-3 p-6">
+        <h3 className="text-[18px] font-bold text-foreground leading-snug">{title}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">
+          {description}
+        </p>
+
+        {/* Footer */}
+        <NicheStyleModal
+          trigger={
+            <button className="flex items-center justify-between w-full pt-4 mt-2 border-t border-border hover:opacity-80 transition-opacity">
+              {author ? (
+                <span className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
+                  <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {author[0]}
+                  </span>
+                  {author}
                 </span>
-              ))
-            ) : (
-              <span className="text-gray-400">No tags</span>
-            )}
-          </div>
-          {/* <ExternalLink className="h-5 w-5 cursor-pointer text-white" /> */}
-        </div>
-
-        <Text className="text-xl font-semibold">{title}</Text>
-        <Text variant="base" className="mt-1 text-[#AAACA6]">
-          {description.slice(0, 50)}
-          {description.length > 50 && '...'}
-        </Text>
-
-        <Text variant="base" className="text-[#AAACA6]">
-          Examples:{' '}
-          <span className="text-white">{examples.length > 0 ? displayText : 'No examples'}</span>
-        </Text>
-
-        <NicheStyleModal trigger={<Button variant="green">Use this style</Button>} nicheId={id} />
+              ) : (
+                <span />
+              )}
+              <ArrowRight className="h-4 w-4 text-foreground" />
+            </button>
+          }
+          nicheId={id}
+        />
       </div>
-    </Card>
+    </div>
   );
 };
 

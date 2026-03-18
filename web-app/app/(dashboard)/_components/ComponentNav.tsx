@@ -3,13 +3,12 @@
 import Link from 'next/link';
 
 import { cn } from 'lib/utils';
-import Text from 'components/ui/Text';
-import { Button } from 'components/common/Button';
+import { Button } from 'components/ui/Button';
 
 interface ComponentNavProps {
   title?: string;
   buttonText?: string;
-  buttonIcon?: any;
+  buttonIcon?: React.ReactNode;
   _onButtonClick?: (() => void) | string;
   className?: string;
   buttonClassName?: string;
@@ -28,32 +27,32 @@ export default function ComponentNav({
   return (
     <div
       className={cn(
-        'flex flex-col justify-between gap-2 md:flex-row lg:flex-row lg:items-center',
+        'flex flex-col justify-between gap-2 md:flex-row md:items-center',
         className,
       )}
     >
-      <Text variant="3xl" className="text-[32px] font-semibold text-white">
-        {title}
-      </Text>
+      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
 
       {typeof _onButtonClick === 'string' ? (
         <Link href={_onButtonClick}>
           <Button
-            className={cn('md:max-w-[200px] lg:max-w-[200px]', buttonClassName)}
+            size="sm"
+            className={cn(buttonClassName)}
             disabled={disabled}
           >
-            {buttonIcon && buttonIcon}
-            <span className="font-bold">{buttonText}</span>
+            {buttonIcon}
+            {buttonText}
           </Button>
         </Link>
       ) : (
         <Button
-          className={cn('md:max-w-[200px] lg:max-w-[200px]', buttonClassName)}
+          size="sm"
+          className={cn(buttonClassName)}
           onClick={_onButtonClick}
           disabled={disabled}
         >
-          {buttonIcon && buttonIcon}
-          <span className="font-bold">{buttonText}</span>
+          {buttonIcon}
+          {buttonText}
         </Button>
       )}
     </div>

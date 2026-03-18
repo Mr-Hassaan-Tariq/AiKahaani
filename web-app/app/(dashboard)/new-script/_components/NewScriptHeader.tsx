@@ -5,9 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { Edit3 } from 'lucide-react';
 
 import { getClientDataAction } from 'lib/utils/clientDataActions';
-import Col from 'components/ui/Col';
-import H3 from 'components/ui/H3';
-import Text from 'components/ui/Text';
 
 interface NicheDetailsType {
   id: number;
@@ -39,7 +36,6 @@ export default function NewScriptHeader() {
           `auth/niches/${nicheId}/`,
         );
         setNiche(res.data);
-        console.log('Fetched niche data:', res.data);
       } catch (err: any) {
         console.error('Error fetching niche details:', err?.response || err);
         setNiche(null);
@@ -50,29 +46,29 @@ export default function NewScriptHeader() {
   }, [searchParams]);
 
   return (
-    <Col className="w-full items-center space-y-2 text-center">
-      <H3>Create Your Script</H3>
+    <div className="flex w-full flex-col items-center gap-2 text-center">
+      <h2 className="text-2xl font-bold text-foreground">Create Your Script</h2>
 
       {niche ? (
-        <div className="flex items-center gap-1 text-sm text-gray-300">
+        <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <span>
-            You’ve selected niche template:{' '}
-            <span className="font-semibold text-white">{niche.title}</span>
+            You&apos;ve selected niche template:{' '}
+            <span className="font-semibold text-foreground">{niche.title}</span>
           </span>
           <button
             type="button"
             onClick={() => console.log('Edit niche clicked')}
-            className="ml-1 text-white transition-colors hover:text-[#BAFF38]"
+            className="ml-1 text-muted-foreground transition-colors hover:text-foreground"
             title="Edit selected niche"
           >
             <Edit3 size={14} strokeWidth={1.5} />
           </button>
         </div>
       ) : (
-        <Text variant="lg" className="text-brand-secondary">
+        <p className="text-sm text-muted-foreground">
           Fill out the details below to generate your YouTube script
-        </Text>
+        </p>
       )}
-    </Col>
+    </div>
   );
 }

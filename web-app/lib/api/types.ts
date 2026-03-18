@@ -96,7 +96,6 @@ export interface NotificationSettings {
   account_or_plan_changes: boolean;
   tips_content_inspiration: boolean;
   feature_updates: boolean;
-  community_affiliate_updates: boolean;
 }
 
 // Privacy Types
@@ -114,6 +113,7 @@ export interface ScriptGeneration {
   status_display: string;
   word_count: number | null;
   estimated_duration: number | null;
+  section_count?: number | null;
   created: string;
   modified: string;
   is_published: boolean | null;

@@ -17,9 +17,16 @@ export async function getServerDataAction<T>(
   endpoint: string,
 ): Promise<GetServerDataActionReturnType<T>> {
   try {
+    if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
+      const { getMockDataForEndpoint } = await import('lib/mockData');
+      return { isError: false, error: undefined, data: getMockDataForEndpoint(endpoint) as T };
+    }
+
     const cookieStore = await cookies();
     const userCookie = cookieStore.get('access_token');
-    if (!userCookie?.value) return redirect('/signup');
+    if (!userCookie?.value) {
+      return redirect('/signup');
+    }
 
     const res = await fetch(`${baseUrl}${endpoint}`, {
       method: 'GET',

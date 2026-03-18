@@ -1,15 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import BellIcon from '@assets/svg/bell-notification.svg';
-import NotificationIcon from '@assets/svg/notification.svg';
-import { X } from 'lucide-react';
+import { Bell, Sparkles, X } from 'lucide-react';
 
-import MagicPan from '../../../public/images/magicpen.svg';
 import { formatTimeAgo } from 'lib/utils';
-import Col from 'components/ui/Col';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,97 +17,99 @@ export function Dropdown({ notifications }: { notifications: any[] }) {
 
   const getFinalURL = (link?: string) => {
     if (!link) return '#';
-
-    if (link.startsWith('/scripts/')) {
-      const id = link.replace('scripts/', '');
-      return `/new-script/script/${id}`;
-    }
-
-    if (link.startsWith('/outlines/')) {
-      const id = link.replace('/outlines/', '');
-      return `/new-script/${id}`;
-    }
-
+    if (link.startsWith('/scripts/'))  return `/new-script/script/${link.replace('scripts/', '')}`;
+    if (link.startsWith('/outlines/')) return `/new-script/${link.replace('/outlines/', '')}`;
     return link;
   };
 
-  // Handle redirect based on metadata
   const handleNotificationClick = (metadata: Record<string, any>) => {
     const metaValue = metadata?.script || metadata?.outline;
     if (metaValue?.link) {
-      const finalURL = getFinalURL(metaValue?.link);
-      router.push(finalURL);
+      router.push(getFinalURL(metaValue.link));
       setOpen(false);
     }
   };
 
+  const items: any[] = notifications?.[0]?.results ?? [];
+  const hasItems = items.length > 0;
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <div className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#2d2d2d] backdrop-blur-sm">
-          <Image src={NotificationIcon} alt="NotificationIcon" width={16} height={16} />
-        </div>
+        <button
+          aria-label="Notifications"
+          className="relative flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Bell className="h-4 w-4" />
+          {hasItems && (
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
+          )}
+        </button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="w-[340px] rounded-xl border-none bg-[#343434] p-4 text-white"
         align="end"
+        className="w-[340px] rounded-xl border border-border bg-card p-4 shadow-md"
       >
         {/* Header */}
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Notifications</h2>
-          <X className="h-5 w-5 cursor-pointer" onClick={() => setOpen(false)} />
+          <h2 className="text-sm font-semibold text-foreground">Notifications</h2>
+          <button
+            onClick={() => setOpen(false)}
+            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        {/* Notifications */}
-        {notifications?.length > 0 ? (
-          notifications[0]?.results?.map((item: any, index: number) => {
-            const hasMetadata = Object.keys(item?.metadata || {}).length > 0;
-            const icon = hasMetadata ? MagicPan : BellIcon;
+        {/* Items */}
+        {hasItems ? (
+          <div className="flex flex-col gap-1">
+            {items.map((item: any, index: number) => {
+              const showTime =
+                index === 0 ||
+                formatTimeAgo(items[index - 1]?.created_at) !== formatTimeAgo(item?.created_at);
 
-            return (
-              <div
-                key={item?.id}
-                className="mb-3 cursor-pointer rounded-lg p-2 transition-all hover:bg-[#3d3d3d]"
-                onClick={() => handleNotificationClick(item?.metadata)}
-              >
-                {/* Time Grouping */}
-                {(index === 0 ||
-                  formatTimeAgo(notifications[index - 1]?.created_at) !==
-                    formatTimeAgo(item?.created_at)) && (
-                  <p className="mb-2 text-sm text-[#AAACA6]">{formatTimeAgo(item?.created_at)}</p>
-                )}
-
-                {/* Item */}
-                <div className="flex items-start gap-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black">
-                    <Image src={icon} alt={item?.title} width={16} height={16} />
-                  </div>
-                  <Col className="gap-1">
-                    <p className="text-sm font-medium">{item.title}</p>
-                    <p className="text-xs text-[#AAACA6]">
-                      {item?.message?.slice(0, 50)}
-                      {item?.message?.length > 50 && '...'}
+              return (
+                <div key={item?.id}>
+                  {showTime && (
+                    <p className="mb-1 mt-2 px-2 text-xs text-muted-foreground first:mt-0">
+                      {formatTimeAgo(item?.created_at)}
                     </p>
-                  </Col>
+                  )}
+                  <button
+                    className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted"
+                    onClick={() => handleNotificationClick(item?.metadata)}
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent">
+                      <Sparkles className="h-3.5 w-3.5 text-accent-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {item?.message?.slice(0, 60)}
+                        {item?.message?.length > 60 && '…'}
+                      </p>
+                    </div>
+                  </button>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         ) : (
-          <p className="text-sm text-gray-400">No notifications yet</p>
+          <div className="py-6 text-center">
+            <Bell className="mx-auto mb-2 h-6 w-6 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">No notifications yet</p>
+          </div>
         )}
 
         {/* Footer */}
-        <div className="mt-5 text-center">
+        <div className="mt-3 border-t border-border pt-3 text-center">
           <button
-            className="text-sm hover:underline"
-            onClick={() => {
-              router.push('/notifications');
-              setOpen(false);
-            }}
+            className="text-xs font-medium text-primary hover:underline"
+            onClick={() => { router.push('/notifications'); setOpen(false); }}
           >
-            View All Notifications
+            View all notifications
           </button>
         </div>
       </DropdownMenuContent>

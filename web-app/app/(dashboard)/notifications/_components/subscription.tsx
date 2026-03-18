@@ -10,7 +10,7 @@ export default function SubscriptionPage() {
       <EmptyState
         icon={Icon}
         title="No subscription updates yet"
-        description="You’ll see important updates here — like plan changes, billing reminders, or trial expiration alerts."
+        description="You'll see important updates here — like plan changes, billing reminders, or trial expiration alerts."
       />
     </div>
   );

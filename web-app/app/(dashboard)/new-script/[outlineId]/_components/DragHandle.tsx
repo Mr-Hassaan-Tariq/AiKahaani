@@ -34,9 +34,9 @@ export const DragHandle = ({
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      className="absolute left-0 top-0 flex h-full w-8 cursor-grab touch-manipulation items-center justify-center rounded-l-2xl bg-white/10 text-white/70 transition-colors duration-200 hover:bg-white/20 hover:text-white active:cursor-grabbing"
+      className="absolute left-0 top-0 flex h-full w-8 cursor-grab touch-manipulation items-center justify-center rounded-l-xl bg-muted text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:cursor-grabbing"
     >
-      <GripVertical size={16} />
+      <GripVertical size={14} />
     </div>
   );
 };

@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import BellIcon from '@assets/svg/bell-notification.svg';
+import { Bell } from 'lucide-react';
 
-import EmptyState from '../_components/EmptyState';
-import MagicPan from '../../../public/images/magicpen.svg';
 import NotificationItem from './_components/NotificationItem';
 import NotificationTabs from './_components/NotificationTabs';
 import Pagination from './_components/Pagination';
@@ -13,6 +11,7 @@ import ProductUpdates from './_components/ProductUpdates';
 import Subscription from './_components/subscription';
 import { formatTimeAgo } from 'lib/utils';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
+import { Spinner } from 'components/ui/Spinner';
 
 type NotificationApiResponse = {
   count: number;
@@ -55,83 +54,71 @@ export default function NotificationsPage() {
         setNotifications(data.results);
         setTotalItems(data.count);
       }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
+    } catch {
+      // silently fail
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchNotifications(currentPage);
-  }, [fetchNotifications, currentPage]);
+  useEffect(() => { fetchNotifications(currentPage); }, [fetchNotifications, currentPage]);
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const hasNotifications = notifications.length > 0;
+  if (query && components[query]) {
+    return (
+      <NotificationTabs>
+        {components[query]}
+      </NotificationTabs>
+    );
+  }
 
   return (
     <NotificationTabs>
-      <div className="flex min-h-[calc(100vh-200px)] flex-1 flex-col">
-        <div className="flex-1 overflow-y-auto">
-          {query && components[query] ? (
-            components[query]
-          ) : loading ? (
-            <div className="flex flex-1 items-center justify-center">
-              <p className="text-lg text-gray-400">Loading notifications...</p>
-            </div>
-          ) : hasNotifications ? (
-            <>
-              {notifications.map((item) => {
-                const scriptLink = item.metadata?.script?.link;
-                const outlineLink = item.metadata?.outline?.link;
-                const link = scriptLink || outlineLink;
-                const icon = link ? MagicPan : BellIcon;
-
-                return (
-                  <NotificationItem
-                    key={item.id}
-                    id={item.id}
-                    title={item.title}
-                    description={item.message}
-                    time={formatTimeAgo(item.created_at)}
-                    isNew={!item.read}
-                    icon={icon}
-                    onRead={(id: number) =>
-                      setNotifications((prev) =>
-                        prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-                      )
-                    }
-                    actionText="Use this style"
-                    actionLink={link}
-                  />
-                );
-              })}
-            </>
-          ) : (
-            <div className="flex flex-1 items-center justify-center">
-              <EmptyState
-                icon={BellIcon}
-                title="You’re all caught up!"
-                description="There are no new notifications at the moment. Check back later or explore the latest features in the meantime."
+      {loading ? (
+        <div className="flex min-h-[200px] items-center justify-center">
+          <Spinner size="md" color="primary" />
+        </div>
+      ) : notifications.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          {notifications.map((item) => {
+            const scriptLink = item.metadata?.script?.link;
+            const outlineLink = item.metadata?.outline?.link;
+            const link = scriptLink || outlineLink;
+            return (
+              <NotificationItem
+                key={item.id}
+                id={item.id}
+                title={item.title}
+                description={item.message}
+                time={formatTimeAgo(item.created_at)}
+                isNew={!item.read}
+                actionText={link ? 'View' : undefined}
+                actionLink={link}
+                onRead={(id) => setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n))}
+              />
+            );
+          })}
+          {totalItems > itemsPerPage && (
+            <div className="pt-4">
+              <Pagination
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
               />
             </div>
           )}
         </div>
-
-        {!loading && !hasNotifications && (
-          <div className="pt-4">
-            <Pagination
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              currentPage={currentPage}
-              onPageChange={handlePageChange}
-            />
+      ) : (
+        <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent">
+            <Bell className="h-6 w-6 text-muted-foreground" />
           </div>
-        )}
-      </div>
+          <p className="text-sm font-medium text-foreground">You&apos;re all caught up!</p>
+          <p className="max-w-xs text-xs text-muted-foreground">
+            No new notifications at the moment. Check back later or explore the latest features.
+          </p>
+        </div>
+      )}
     </NotificationTabs>
   );
 }

@@ -1,7 +1,6 @@
 import { ReactNode } from 'react';
 
-import Card from 'components/ui/Card';
-
+// No Card wrapper — each page provides its own layout via Topbar
 export default function Layout({ children }: { children: ReactNode }) {
-  return <Card>{children}</Card>;
+  return <div>{children}</div>;
 }

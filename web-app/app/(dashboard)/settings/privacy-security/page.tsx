@@ -38,7 +38,7 @@ export default function PrivacySecurityPage() {
     return (
       <div className="mx-auto space-y-6">
         <div className="flex items-center justify-center py-8">
-          <div className="text-gray-400">Loading privacy settings...</div>
+          <div className="text-sm text-muted-foreground">Loading privacy settings…</div>
         </div>
       </div>
     );
@@ -56,7 +56,7 @@ export default function PrivacySecurityPage() {
           disabled={isUpdating}
         />
         <Switch
-          label="Allow use of anonymized data for improving TubeGenius"
+          label="Allow use of anonymized data for improving AiKahani"
           description="Help us improve by sharing anonymous usage data"
           defaultChecked={privacySettings?.allow_anonymized_data_usage}
           onToggle={(checked) => handleDataPreferenceToggle('allow_anonymized_data_usage', checked)}
@@ -66,7 +66,7 @@ export default function PrivacySecurityPage() {
 
       {isUpdating && (
         <div className="flex items-center justify-center py-2">
-          <div className="text-sm text-gray-400">Saving changes...</div>
+          <div className="text-sm text-muted-foreground">Saving changes…</div>
         </div>
       )}
     </div>

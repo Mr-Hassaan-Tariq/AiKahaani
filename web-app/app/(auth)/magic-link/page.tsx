@@ -1,134 +1,157 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
+import { Check, XCircle, Loader2 } from 'lucide-react';
 import Cookies from 'js-cookie';
-import CheckIcon from 'public/images/right-check.svg';
 
 import { authService } from 'lib/api';
 
-export default function MagicLinkSent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const email = searchParams.get('email');
-  const token = searchParams.get('token');
+// ── Page ─────────────────────────────────────────────────────────────
+export default function MagicLinkPage() {
+  const searchParams  = useSearchParams();
+  const router        = useRouter();
+  const email         = searchParams.get('email');
+  const token         = searchParams.get('token');
 
-  const [isResending, setIsResending] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [isVerifying, setIsVerifying] = useState<boolean>(!!token);
-  const [isError, setIsError] = useState<boolean>(false);
+  const [isResending, setIsResending]   = useState(false);
+  const [resendMsg, setResendMsg]       = useState<string | null>(null);
+  const [isVerifying, setIsVerifying]   = useState(!!token);
+  const [verifyStatus, setVerifyStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [verifyMsg, setVerifyMsg]       = useState('');
 
-  // Verification logic
+  // ── Token verification ────────────────────────────────────────────
   useEffect(() => {
-    if (token) {
-      const verifyMagicLink = async () => {
-        setMessage('Verifying your link...');
-        setIsError(false);
+    if (!token) return;
 
-        try {
-          // Get partner ID from cookies if available
-          const partnerIdFromCookie = Cookies.get('partner_id');
+    const verify = async () => {
+      try {
+        const response = await authService.verifyMagicLink(token);
 
-          const response = await authService.verifyMagicLink(token, partnerIdFromCookie);
-          if (response.user && response.access && response.refresh) {
-            // Delete partner_id cookie after successful verification
-            if (partnerIdFromCookie) {
-              Cookies.remove('partner_id');
-            }
-            Cookies.set('access_token', response.access, { expires: 7 });
-            localStorage.setItem('refresh_token', response.refresh);
-            setMessage('Verified successfully! Redirecting...');
-            setIsError(false);
-            setTimeout(() => {
-              router.push('/');
-            }, 2000);
-          } else {
-            setMessage('Invalid or expired magic link.');
-            setIsError(true);
-          }
-        } catch {
-          setMessage('Failed to verify the magic link.');
-          setIsError(true);
-        } finally {
-          setIsVerifying(false);
+        if (response.user && response.access && response.refresh) {
+          Cookies.set('access_token', response.access, { expires: 7 });
+          localStorage.setItem('refresh_token', response.refresh);
+          setVerifyStatus('success');
+          setVerifyMsg('Verified successfully! Redirecting…');
+          setTimeout(() => router.push('/'), 1800);
+        } else {
+          setVerifyStatus('error');
+          setVerifyMsg('Invalid or expired magic link.');
         }
-      };
-      verifyMagicLink();
-    }
+      } catch {
+        setVerifyStatus('error');
+        setVerifyMsg('Failed to verify the magic link. Please try again.');
+      } finally {
+        setIsVerifying(false);
+      }
+    };
+
+    verify();
   }, [token, router]);
 
+  // ── Resend ────────────────────────────────────────────────────────
   const handleResend = async () => {
     if (!email) {
-      setMessage('No email found. Please go back and enter your email again.');
+      setResendMsg('No email found. Please go back and enter your email.');
       return;
     }
-
     setIsResending(true);
-    setMessage(null);
-
+    setResendMsg(null);
     try {
       const response = await authService.sendMagicLink(email);
-      setMessage(response.message || 'Magic link resent!');
+      setResendMsg(response.message || 'Magic link resent!');
     } catch {
-      setMessage('Failed to resend magic link. Please try again.');
+      setResendMsg('Failed to resend. Please try again.');
     } finally {
       setIsResending(false);
     }
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-3">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#1a2e1d,transparent_40%)] opacity-50" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,#1a2e1d,transparent_40%)] opacity-50" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
 
-      {/* Card */}
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-[#BAFF381F] bg-[#161616] p-10 text-center shadow-lg">
+      {/* ── Decorative background orbs ── */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-48 -top-48 h-[600px] w-[600px] rounded-full bg-green-500/5 blur-[120px]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-24 -right-24 h-[400px] w-[400px] rounded-full bg-green-500/5 blur-[120px]"
+      />
+
+      {/* ── Card ── */}
+      <div className="relative z-10 w-full max-w-[440px] rounded-2xl border border-border bg-card px-10 py-14 text-center shadow-sm">
+
+        {/* ── Token verification state ── */}
         {token ? (
           <>
-            <h1 className="text-4xl font-bold text-white">
-              {isVerifying ? 'Verifying...' : 'Magic Link Verification'}
+            <h1 className="text-2xl font-semibold text-foreground">
+              {isVerifying ? 'Verifying your link…' : 'Magic Link Verification'}
             </h1>
-            {message && (
-              <div className="mt-4 flex flex-col items-center justify-center space-y-3">
-                {/* Icon */}
-                <div>
-                  {isVerifying ? null : isError ? (
-                    <XCircleIcon className="h-20 w-20 text-red-500" />
-                  ) : (
-                    <CheckCircleIcon className="h-20 w-20 text-green-400" />
-                  )}
-                </div>
 
-                {/* Message */}
-                <p className={`mt-2 text-sm ${isError ? 'text-red-500' : 'text-green-400'}`}>
-                  {message}
+            <div className="mt-8 flex flex-col items-center gap-4">
+              {isVerifying ? (
+                <Loader2 className="h-14 w-14 animate-spin text-primary" />
+              ) : verifyStatus === 'success' ? (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+                  <Check className="h-8 w-8 text-success" strokeWidth={2.5} />
+                </div>
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+                  <XCircle className="h-8 w-8 text-destructive" />
+                </div>
+              )}
+
+              {verifyMsg && (
+                <p className={`text-sm font-medium ${
+                  verifyStatus === 'error' ? 'text-destructive' : 'text-success'
+                }`}>
+                  {verifyMsg}
                 </p>
-              </div>
+              )}
+            </div>
+
+            {verifyStatus === 'error' && (
+              <button
+                onClick={() => router.push('/signup')}
+                className="mt-8 text-sm font-medium text-primary hover:underline"
+              >
+                ← Back to sign in
+              </button>
             )}
           </>
+
         ) : (
+          /* ── Magic link sent state ── */
           <>
-            <h1 className="text-4xl font-bold text-white">Magic link sent!</h1>
-            <p className="text-md mt-4 text-gray-400">
-              Check your inbox — click the link to <br /> enter your workspace.
+            <h1 className="text-2xl font-semibold text-foreground">Magic link sent!</h1>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Check your inbox — click the link to
+              <br />enter your workspace.
             </p>
-            <div className="mt-8 flex items-center justify-center">
-              <Image src={CheckIcon} alt="check" width={100} height={100} />
+
+            {/* Check icon */}
+            <div className="mx-auto mt-8 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+              <Check className="h-8 w-8 text-success" strokeWidth={2.5} />
             </div>
-            <p className="mt-6 text-sm text-gray-500">
-              Didn’t get the email?{' '}
+
+            {/* Resend */}
+            <p className="mt-8 text-sm text-muted-foreground">
+              Didn&apos;t get the email?{' '}
               <button
                 type="button"
                 disabled={isResending}
-                className="ml-2 text-white hover:underline"
                 onClick={handleResend}
+                className="font-medium text-primary hover:underline disabled:opacity-50"
               >
-                {isResending ? 'Resending...' : 'Resend'}
+                {isResending ? 'Resending…' : 'Resend'}
               </button>
             </p>
-            {message && <p className="mt-3 text-sm text-green-400">{message}</p>}
+
+            {resendMsg && (
+              <p className="mt-2 text-xs text-muted-foreground">{resendMsg}</p>
+            )}
           </>
         )}
       </div>

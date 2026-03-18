@@ -1,14 +1,10 @@
 'use client';
 
-import { Clock, InfoIcon } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { RegisterOptions, useFormContext } from 'react-hook-form';
 
 import { TemplateStyleType } from '../types';
 import { cn } from 'lib/utils';
-import Col from 'components/ui/Col';
-import H5 from 'components/ui/H5';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
 
 export default function TemplatesWidget({
   templates,
@@ -26,51 +22,55 @@ export default function TemplatesWidget({
   } = useFormContext();
 
   const { onChange } = register(name, validationSchema);
+  const selected: number | undefined = watch(name);
 
   return (
-    <Col>
-      <Row>
-        <Text variant="base" className="font-medium text-white">
-          Choose a template style
-        </Text>
-        <Row className="gap-2">
-          <InfoIcon size={16} className="cursor-pointer text-brand-secondary" />
-          <Text variant="xs" className="text-brand-secondary">
-            Optional
-          </Text>
-        </Row>
-      </Row>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {templates.map((template) => (
-          <Col
-            key={template.id}
-            className={cn(
-              'cursor-pointer rounded-2xl bg-white/10 p-4',
-              watch(name) === template.id && 'border border-[#BAFF38]/[12%] bg-[#F9F9FF]/[.16]',
-            )}
-            onClick={() => {
-              const currentValue = watch(name);
-              const newValue = currentValue === template.id ? undefined : template.id;
-              onChange({ target: { name, value: newValue } });
-            }}
-          >
-            <Row>
-              <H5 className="tracking-normal">{template.name}</H5>
-              <Row className="gap-2 text-xs text-white">
-                <Clock size={16} /> ~{template.duration}m, {template.word_range}
-              </Row>
-            </Row>
-            <Text variant="xs" className="text-brand-secondary">
-              {template.description}
-            </Text>
-          </Col>
-        ))}
+    <div className="flex flex-col gap-3">
+      {/* Label */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-foreground">Template style</span>
+        <span className="text-xs text-muted-foreground">Optional</span>
       </div>
+
+      {/* Card grid */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {templates.map((template) => {
+          const active = selected === template.id;
+          return (
+            <button
+              key={template.id}
+              type="button"
+              onClick={() => {
+                const newValue = active ? undefined : template.id;
+                onChange({ target: { name, value: newValue } });
+              }}
+              className={cn(
+                'flex flex-col gap-2 rounded-xl border p-4 text-left transition-colors',
+                active
+                  ? 'border-primary bg-accent'
+                  : 'border-border bg-card hover:border-primary/30 hover:bg-muted/50',
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className={cn('text-sm font-semibold', active ? 'text-accent-foreground' : 'text-foreground')}>
+                  {template.name}
+                </span>
+                <span className={cn('flex items-center gap-1 whitespace-nowrap text-xs', active ? 'text-accent-foreground/70' : 'text-muted-foreground')}>
+                  <Clock className="h-3 w-3" />
+                  ~{template.duration}m · {template.word_range}
+                </span>
+              </div>
+              <p className={cn('text-xs leading-relaxed', active ? 'text-accent-foreground/80' : 'text-muted-foreground')}>
+                {template.description}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
       {errors[name]?.message && (
-        <Text variant="xs" className="text-rose-500">
-          {errors[name]?.message?.toString()}
-        </Text>
+        <p className="text-xs text-destructive">{errors[name]?.message?.toString()}</p>
       )}
-    </Col>
+    </div>
   );
 }

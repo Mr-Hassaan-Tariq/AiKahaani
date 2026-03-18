@@ -14,7 +14,7 @@ export const notificationTexts = {
       {
         label: 'In-app notifications',
         key: 'in_app_notifications',
-        description: 'See notifications directly in your TubeGenius.',
+        description: 'See notifications directly in your AiKahani.',
       },
       {
         label: 'Web push notifications (coming soon)',
@@ -41,11 +41,6 @@ export const notificationTexts = {
       {
         label: 'Feature updates',
         key: 'feature_updates',
-      },
-      {
-        label: 'Community or affiliate updates',
-        key: 'community_affiliate_updates',
-        description: 'Get updates about our community and affiliate program.',
       },
     ],
   },

@@ -50,13 +50,13 @@ export default function CommingSoon() {
         {/* Main heading */}
         <h1 className="mb-6 text-5xl font-bold md:text-7xl lg:text-8xl">
           <span className="bg-gradient-to-r from-[#2BFF13] via-[#20BF0E] to-[#2BFF13] bg-clip-text text-transparent">
-            TubeGenius
+            AiKahani
           </span>
         </h1>
 
         {/* Description */}
         <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-gray-400 md:text-xl">
-          TubeGenius is envisioned as an AI-powered script writing platform specifically designed to
+          AiKahani is envisioned as an AI-powered script writing platform specifically designed to
           automate and enhance the YouTube content creation process. The platform&apos;s overarching
           goal is to function as &quot;Your Genius AI Assistant for YouTube Automation,&quot;
           empowering content creators to effortlessly transform nascent video ideas into
@@ -82,7 +82,7 @@ export default function CommingSoon() {
 
         {/* Footer */}
         <div className="mt-12 text-center">
-          <p className="text-sm text-gray-400">© 2024 TubeGenius. Built for creators.</p>
+          <p className="text-sm text-gray-400">© 2024 AiKahani. Built for creators.</p>
         </div>
       </div>
     </div>

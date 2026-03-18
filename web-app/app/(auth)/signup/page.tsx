@@ -1,113 +1,45 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
-import GoogleAuthComponent from '@/(auth)/signup/_components/GoogleAuthComponent';
-import Cookies from 'js-cookie';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Wand2 } from 'lucide-react';
 import * as yup from 'yup';
 
-import MaginpanIcon from '/public/images/maginpan.svg';
 import { authService } from 'lib/api';
-import useToast from 'lib/utils/useToast';
-import Button from 'components/common/Button';
-import TextField from 'components/common/TextField';
+import { Button } from 'components/ui/Button';
+import { Input } from 'components/ui/Input';
+import GoogleAuthComponent from './_components/GoogleAuthComponent';
 
-// Yup validation schema
+// ── Validation ───────────────────────────────────────────────────────
 const signupSchema = yup.object({
-  email: yup
-    .string()
-    .required('Email is required')
-    .email('Please enter a valid email address')
-    .trim(),
+  email: yup.string().required('Email is required').email('Please enter a valid email address').trim(),
 });
-
-type SignupFormData = yup.InferType<typeof signupSchema>;
-
+// ── Page ─────────────────────────────────────────────────────────────
 export default function Signup() {
-  const toast = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [formData, setFormData] = useState<SignupFormData>({
-    email: '',
-  });
-  const [errors, setErrors] = useState<Partial<SignupFormData>>({});
-  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const [partnerId, setPartnerId] = useState<string | null>(null);
-  useEffect(() => {
-    // Check for ref link in URL
-    const refCode = searchParams.get('ref') || searchParams.get('via');
+  const [email, setEmail]         = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-    if (refCode && typeof window !== 'undefined') {
-      // Determine device type
-      const deviceType = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent)
-        ? 'mobile'
-        : 'desktop';
-
-      // Get current page URL
-      const pageUrl = window.location.href;
-
-      authService
-        .getToltPartnerid({
-          param_name: searchParams.get('via') ? 'via' : 'ref',
-          referral_code: refCode,
-          page_url: pageUrl,
-          device_type: deviceType,
-        })
-        .then((response: any) => {
-          const partnerIdValue = response.partner_id;
-          setPartnerId(partnerIdValue);
-          // Save partner ID to cookies
-          if (partnerIdValue) {
-            Cookies.set('partner_id', partnerIdValue, { expires: 30 }); // Expires in 30 days
-          }
-        })
-        .catch((error) => {
-          console.error(error);
-          toast.error('Link not working.');
-        });
-    }
-  }, [searchParams, toast]);
-  // Handle input change
-  const handleInputChange = (field: keyof SignupFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user types
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  // Handle form submission
+  // ── Submit ────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Reset errors
-    setErrors({});
+    setEmailError('');
     setIsLoading(true);
 
     try {
-      // Validate form data
-      await signupSchema.validate(formData, { abortEarly: false });
-
-      const response = await authService.sendMagicLink(formData.email);
+      await signupSchema.validate({ email }, { abortEarly: false });
+      const response = await authService.sendMagicLink(email);
 
       if (response.message === 'Magic link sent to your email') {
-        router.push(`/magic-link?email=${encodeURIComponent(formData.email)}`);
+        router.push(`/magic-link?email=${encodeURIComponent(email)}`);
       }
-    } catch (validationError) {
-      if (validationError instanceof yup.ValidationError) {
-        // Convert Yup errors to our format
-        const yupErrors: Partial<SignupFormData> = {};
-        validationError.inner.forEach((error) => {
-          if (error.path) {
-            yupErrors[error.path as keyof SignupFormData] = error.message;
-          }
-        });
-        setErrors(yupErrors);
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        setEmailError(err.inner[0]?.message ?? err.message);
       } else {
-        // Handle other errors
-        setErrors({ email: 'Failed to send magic link. Please try again.' });
+        setEmailError('Failed to send magic link. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -115,59 +47,59 @@ export default function Signup() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-3">
-      {/* Background grid effect */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#1a2e1d,transparent_40%)] opacity-100" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,#1a2e1d,transparent_40%)] opacity-100" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
 
-      {/* Card */}
-      <div className="relative z-10 w-full max-w-xl rounded-2xl border border-[#BAFF381F] bg-[#161616] p-8 shadow-lg">
+      {/* ── Decorative background orbs ── */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-48 -top-48 h-[600px] w-[600px] rounded-full bg-green-500/5 blur-[120px]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-24 -right-24 h-[400px] w-[400px] rounded-full bg-green-500/5 blur-[120px]"
+      />
+
+      {/* ── Auth card ── */}
+      <div className="relative z-10 w-full max-w-[480px] rounded-2xl border border-border bg-card px-10 py-14 shadow-sm">
+
         {/* Heading */}
-        <h1 className="text-center text-4xl font-bold text-white">Let&apos;s get you creating</h1>
-        <p className="mt-2 text-center text-lg text-gray-400">
-          Sign in or create an account in seconds <br></br> — no password needed.
+        <h1 className="text-center text-3xl font-semibold tracking-tight text-foreground">
+          Let&apos;s get you creating
+        </h1>
+        <p className="mt-3 text-center text-sm leading-relaxed text-muted-foreground">
+          Sign in or create an account in seconds
+          <br />— no password needed.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6">
-          {/* Email input */}
-          <div className="mt-6">
-            <TextField
-              label="Email"
-              placeholder="Enter your email"
-              type="email"
-              className={`w-full rounded-xl border ${
-                errors.email ? 'border-red-500' : 'border-transparent'
-              } bg-[#2d2d2d] px-4 py-3 text-white placeholder-[#aaaca6] outline-none focus:border-green-500`}
-              value={formData.email}
-              onChange={(value) => handleInputChange('email', value)}
-            />
-            {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
-          </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
+          <Input
+            label="Email"
+            type="email"
+            placeholder="example@email.com"
+            value={email}
+            error={emailError}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (emailError) setEmailError('');
+            }}
+          />
 
-          <Button type="submit" disabled={isLoading} className="mt-10">
-            {isLoading ? (
-              <>
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent"></div>
-                <span>Sending...</span>
-              </>
-            ) : (
-              <>
-                <Image src={MaginpanIcon} alt="maginpan" width={20} height={20} />
-                <span className="font-bold"> Send me the magic link</span>
-              </>
-            )}
+          <Button type="submit" loading={isLoading} size="lg" className="w-full">
+            <Wand2 className="h-4 w-4" />
+            Send me the magic link
           </Button>
         </form>
 
         {/* Divider */}
-        <div className="my-6 flex items-center">
-          <div className="h-px flex-grow bg-gray-700"></div>
-          <span className="px-2 text-sm text-gray-500">or</span>
-          <div className="h-px flex-grow bg-gray-700"></div>
+        <div className="my-6 flex items-center gap-3">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-muted-foreground">or</span>
+          <div className="h-px flex-1 bg-border" />
         </div>
 
-        {/* Google button */}
-        <GoogleAuthComponent partnerId={partnerId ?? undefined} />
+        {/* Google */}
+        <GoogleAuthComponent />
       </div>
     </div>
   );

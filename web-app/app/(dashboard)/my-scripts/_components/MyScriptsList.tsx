@@ -24,35 +24,32 @@ export default function MyScriptsList({
   const [scripts, setScripts] = useState<ScriptGeneration[]>(initialScripts);
   const { actions } = useScriptActions();
 
-  // Update scripts when initialScripts change (e.g., after refresh)
   if (initialScripts !== scripts && initialScripts.length !== scripts.length) {
     setScripts(initialScripts);
   }
 
   const emptyState = searchQuery ? (
     <div className="py-12 text-center">
-      <div className="mb-4 text-6xl">🔍</div>
-      <h3 className="mb-2 text-xl font-semibold text-white">No scripts found for {searchQuery}</h3>
-      <p className="text-gray-400">Try adjusting your search terms or create a new script.</p>
+      <p className="text-sm font-medium text-foreground">No results for &quot;{searchQuery}&quot;</p>
+      <p className="mt-1 text-xs text-muted-foreground">Try adjusting your search terms.</p>
     </div>
   ) : undefined;
 
   return (
     <>
       {isError && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
           <div className="flex items-center justify-between">
-            <p className="text-red-400">Error: {error?.message || 'Failed to load scripts'}</p>
+            <p className="text-sm text-destructive">{error?.message || 'Failed to load scripts'}</p>
             <button
               onClick={() => window.location.reload()}
-              className="ml-4 rounded bg-red-500/20 px-3 py-1 text-sm text-red-400 hover:bg-red-500/30"
+              className="ml-4 rounded-md border border-destructive/30 px-3 py-1 text-xs text-destructive transition-colors hover:bg-destructive/10"
             >
               Retry
             </button>
           </div>
         </div>
       )}
-
       <ScriptList scripts={scripts} actions={actions} loading={loading} emptyState={emptyState} />
     </>
   );

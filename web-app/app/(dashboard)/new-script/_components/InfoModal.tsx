@@ -1,23 +1,22 @@
 import { ReactNode } from 'react';
 import { InfoIcon } from 'lucide-react';
 
-import Text from 'components/ui/Text';
 import { Popover, PopoverContent, PopoverTrigger } from 'components/shadcn_ui/popover';
 
 export default function InfoModal({ description }: { description: ReactNode }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <InfoIcon size={16} className="text-white" />
+        <button type="button" className="inline-flex text-muted-foreground hover:text-foreground transition-colors">
+          <InfoIcon className="h-4 w-4" />
+        </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-full rounded-lg border border-[#BAFF38]/[12%] bg-brand-surface bg-white/10 p-2"
+        className="w-64 rounded-lg border border-border bg-card p-3 shadow-md"
         align="start"
         side="top"
       >
-        <Text variant="sm" className="w-full text-white">
-          {description}
-        </Text>
+        <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
       </PopoverContent>
     </Popover>
   );

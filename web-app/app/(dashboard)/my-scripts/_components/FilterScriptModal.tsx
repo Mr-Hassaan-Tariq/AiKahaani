@@ -1,14 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Clock, FileText, Video } from 'lucide-react';
 import deepEqual from 'fast-deep-equal';
 
 import { FiltersState } from '../_utils/filterUtils';
-import { NoteIcon, TimeIcon, VideoIcon } from './components';
-import Button from 'components/ui/Button';
+import { Button } from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
-import Row from 'components/ui/Row';
-import Text from 'components/ui/Text';
 import { Checkbox } from 'components/shadcn_ui/checkbox';
 import { RadioGroup, RadioGroupItem } from 'components/shadcn_ui/radio-group';
 import { Slider } from 'components/shadcn_ui/slider';
@@ -26,6 +24,14 @@ export const defaultFilters: FiltersState = {
   videoDuration: null,
 };
 
+const durations = [
+  { id: '<20', label: '< 20 min' },
+  { id: '20', label: '20 min' },
+  { id: '40', label: '40 min' },
+  { id: '60', label: '60 min' },
+  { id: '>60', label: '> 60 min' },
+];
+
 export default function FilterScriptModal({
   trigger,
   onApplyFilters,
@@ -33,169 +39,96 @@ export default function FilterScriptModal({
   initialFilters = {},
 }: FilterScriptModalProps) {
   const [open, setOpen] = useState(false);
+  const [filters, setFilters] = useState<FiltersState>({ ...defaultFilters, ...initialFilters });
 
-  // internal filters (syncs with initialFilters)
-  const [filters, setFilters] = useState<FiltersState>({
-    ...defaultFilters,
-    ...initialFilters,
-  });
-
-  // sync whenever parent updates initialFilters
   useEffect(() => {
-    setFilters({
-      ...defaultFilters,
-      ...initialFilters,
-    });
+    setFilters({ ...defaultFilters, ...initialFilters });
   }, [initialFilters]);
 
   const updateFilter = <K extends keyof FiltersState>(key: K, value: FiltersState[K]) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleApplyFilters = () => {
-    onApplyFilters?.(filters);
-    setOpen(false);
-  };
-
-  const handleCancel = () => {
-    // revert to whatever parent currently says
-    setFilters({ ...defaultFilters, ...initialFilters });
-    setOpen(false);
-  };
-
-  const handleClear = () => {
-    const cleared = { ...defaultFilters };
-    setFilters(cleared);
-    onClearFilters?.();
-    setOpen(false);
-  };
-
-  // whether modal currently has any non-default filters
-  const hasActiveFilters = !deepEqual(
-    { ...defaultFilters },
-    {
-      ...defaultFilters,
-      ...filters,
-    },
-  );
-
-  const durations = [
-    { id: '<20', label: '< 20 min' },
-    { id: '20', label: '20 min' },
-    { id: '40', label: '40 min' },
-    { id: '60', label: '60 min' },
-    { id: '>60', label: '> 60 min' },
-  ];
+  const hasActiveFilters = !deepEqual(defaultFilters, { ...defaultFilters, ...filters });
 
   return (
     <Dialog
       open={open}
       setOpen={setOpen}
       trigger={trigger}
-      title="Filter my scripts"
+      title="Filter scripts"
       description=""
       footer={
-        <Row className="w-full gap-6">
-          <Button variant="gray" onClick={handleCancel}>
-            <Text variant="base" className="font-extrabold">
-              Cancel
-            </Text>
+        <div className="flex w-full gap-2">
+          <Button variant="outline" className="flex-1" onClick={() => { setFilters({ ...defaultFilters, ...initialFilters }); setOpen(false); }}>
+            Cancel
           </Button>
-
-          {/* Disable/hide Clear when no active filters */}
           {onClearFilters && (
-            <Button variant="gray" onClick={handleClear} disabled={!hasActiveFilters}>
-              <Text variant="base" className="font-extrabold">
-                Clear filters
-              </Text>
+            <Button variant="outline" onClick={() => { setFilters({ ...defaultFilters }); onClearFilters?.(); setOpen(false); }} disabled={!hasActiveFilters}>
+              Clear
             </Button>
           )}
-
-          <Button variant="green" onClick={handleApplyFilters}>
-            Apply filters
+          <Button className="flex-1" onClick={() => { onApplyFilters?.(filters); setOpen(false); }}>
+            Apply
           </Button>
-        </Row>
+        </div>
       }
     >
-      <>
+      <div className="flex flex-col gap-5 my-2">
         {/* Last Edited */}
-        <div className="my-4">
-          <p className="mb-2 flex items-center gap-2 font-medium">
-            <span>{TimeIcon}</span> Last edited:
+        <div>
+          <p className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
+            <Clock className="h-4 w-4" /> Last edited
           </p>
           <RadioGroup
             value={filters.lastEdited}
             onValueChange={(val) => updateFilter('lastEdited', val)}
             className="flex gap-6"
           >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem
-                value="most_recent"
-                id="most_recent"
-                className="border-[#3b3b3b] text-white data-[state=checked]:border-white"
-              />
-              <Text>Most recent</Text>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem
-                value="oldest"
-                id="oldest"
-                className="border-[#3b3b3b] text-white data-[state=checked]:border-white"
-              />
-              <Text>Oldest</Text>
-            </div>
+            {[{ value: 'most_recent', label: 'Most recent' }, { value: 'oldest', label: 'Oldest' }].map((opt) => (
+              <div key={opt.value} className="flex items-center gap-2">
+                <RadioGroupItem value={opt.value} id={opt.value} />
+                <label htmlFor={opt.value} className="cursor-pointer text-sm text-foreground">{opt.label}</label>
+              </div>
+            ))}
           </RadioGroup>
         </div>
 
         {/* Word Count */}
-        <div className="my-4">
-          <p className="mb-3 flex items-center gap-2 font-medium">
-            <span>{NoteIcon}</span> Word count:
+        <div>
+          <p className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
+            <FileText className="h-4 w-4" /> Word count
           </p>
-
-          {/* Controlled slider so it always reflects `filters.wordCount` */}
           <Slider
             value={filters.wordCount}
             onValueChange={(val) => updateFilter('wordCount', val as [number, number])}
             max={10000}
             step={10}
-            className="h-2"
           />
-
-          <Row className="mt-3">
-            <Text variant="xs" className="text-[#AAACA6]">
-              {filters.wordCount[1] - filters.wordCount[0]} words
-            </Text>
-            <Text variant="xs" className="text-[#AAACA6]">
-              10,000 words
-            </Text>
-          </Row>
+          <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+            <span>{filters.wordCount[0].toLocaleString()} words</span>
+            <span>{filters.wordCount[1].toLocaleString()} words</span>
+          </div>
         </div>
 
-        {/* Estimated video duration */}
-        <div className="my-4">
-          <p className="mb-2 flex items-center gap-2 font-medium">
-            <span>{VideoIcon}</span> Estimated video duration
+        {/* Video Duration */}
+        <div>
+          <p className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
+            <Video className="h-4 w-4" /> Estimated duration
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {durations.map((d) => (
-              <div key={d.id} className="flex items-center space-x-2">
+              <label key={d.id} className="flex cursor-pointer items-center gap-2 rounded-lg border border-border p-2 transition-colors hover:bg-accent has-[:checked]:border-primary">
                 <Checkbox
                   checked={filters.videoDuration === d.id}
-                  onCheckedChange={() =>
-                    updateFilter('videoDuration', filters.videoDuration === d.id ? null : d.id)
-                  }
-                  className="border-[#3b3b3b] data-[state=checked]:border-white"
+                  onCheckedChange={() => updateFilter('videoDuration', filters.videoDuration === d.id ? null : d.id)}
                 />
-                <Text>{d.label}</Text>
-              </div>
+                <span className="text-sm text-foreground">{d.label}</span>
+              </label>
             ))}
           </div>
         </div>
-      </>
+      </div>
     </Dialog>
   );
 }

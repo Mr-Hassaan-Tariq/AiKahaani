@@ -18,6 +18,13 @@ export class ScriptsService {
     search?: string,
     type?: 'script' | 'outline',
   ): Promise<ScriptGeneration[]> {
+    if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
+      const { mockScriptGenerations } = await import('lib/mockData');
+      let results = mockScriptGenerations;
+      if (search) results = results.filter((s) => s.title.toLowerCase().includes(search.toLowerCase()));
+      if (type) results = results.filter((s) => s.type === type);
+      return results;
+    }
     try {
       const token = this.getCookie('access_token');
 
