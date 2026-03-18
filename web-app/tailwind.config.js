@@ -81,31 +81,31 @@ module.exports = {
 
       // ── Border Radius ────────────────────────────
       borderRadius: {
-        sm: 'calc(var(--radius) - 4px)',  /* 4px */
-        md: 'calc(var(--radius) - 2px)',  /* 6px */
-        lg: 'var(--radius)',              /* 8px */
-        xl: 'calc(var(--radius) + 4px)',  /* 12px */
-        '2xl': 'calc(var(--radius) + 8px)', /* 16px */
+        sm: 'calc(var(--radius) - 4px)' /* 4px */,
+        md: 'calc(var(--radius) - 2px)' /* 6px */,
+        lg: 'var(--radius)' /* 8px */,
+        xl: 'calc(var(--radius) + 4px)' /* 12px */,
+        '2xl': 'calc(var(--radius) + 8px)' /* 16px */,
       },
 
       // ── Animations ───────────────────────────────
       keyframes: {
         'pulse-up': {
-          '0%':   { opacity: '0.3', transform: 'scale(1)' },
-          '100%': { opacity: '0',   transform: 'scale(3)' },
+          '0%': { opacity: '0.3', transform: 'scale(1)' },
+          '100%': { opacity: '0', transform: 'scale(3)' },
         },
         'fade-in': {
-          '0%':   { opacity: '0', transform: 'translateY(4px)' },
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'slide-in-left': {
-          '0%':   { opacity: '0', transform: 'translateX(-8px)' },
+          '0%': { opacity: '0', transform: 'translateX(-8px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
       },
       animation: {
-        'pulse-up':      'pulse-up 2s ease-out infinite',
-        'fade-in':       'fade-in 0.2s ease-out',
+        'pulse-up': 'pulse-up 2s ease-out infinite',
+        'fade-in': 'fade-in 0.2s ease-out',
         'slide-in-left': 'slide-in-left 0.2s ease-out',
       },
     },

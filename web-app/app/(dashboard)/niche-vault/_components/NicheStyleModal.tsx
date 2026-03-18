@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Pin, Settings2, Mic, Tv } from 'lucide-react';
+import { Mic, Pin, Settings2, Tv } from 'lucide-react';
 
 import ThumbnailImage from '../../../../public/images/no-niche.png';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
@@ -182,7 +182,9 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
                 ))}
               </ul>
             ) : (
-              <p className="pl-1 text-sm text-muted-foreground">No tone or pacing info available.</p>
+              <p className="pl-1 text-sm text-muted-foreground">
+                No tone or pacing info available.
+              </p>
             )}
           </section>
 
@@ -192,7 +194,9 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
           <section>
             <div className="mb-2 flex items-center gap-2">
               <Tv className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold text-foreground">Top channels using this style</h3>
+              <h3 className="text-sm font-semibold text-foreground">
+                Top channels using this style
+              </h3>
             </div>
             {niche?.top_channels?.length ? (
               <ul className="space-y-1 pl-1 text-sm">

@@ -7,9 +7,7 @@ export default async function NotificationsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      {isError && (
-        <p className="text-sm text-destructive">{error?.message?.toString()}</p>
-      )}
+      {isError && <p className="text-sm text-destructive">{error?.message?.toString()}</p>}
       {data && <NotificationToggles initialSettings={data} />}
     </div>
   );

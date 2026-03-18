@@ -6,17 +6,18 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from 'lib/utils';
 
 const tabsPath = [
-  { label: 'All',             path: '/notifications' },
+  { label: 'All', path: '/notifications' },
   { label: 'Product Updates', path: '/notifications?query=product-updates' },
-  { label: 'Subscription',    path: '/notifications?query=subscription' },
+  { label: 'Subscription', path: '/notifications?query=subscription' },
 ] as const;
 
 export default function NotificationTabs({ children }: { children: React.ReactNode }) {
-  const pathname    = usePathname();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const query     = searchParams.get('query');
-  const activeTab = tabsPath.find((tab) => tab.path === pathname + '?query=' + query) ?? tabsPath[0];
+  const query = searchParams.get('query');
+  const activeTab =
+    tabsPath.find((tab) => tab.path === pathname + '?query=' + query) ?? tabsPath[0];
 
   return (
     <div className="flex flex-col">
@@ -45,9 +46,7 @@ export default function NotificationTabs({ children }: { children: React.ReactNo
 
       {/* ── Content ── */}
       <div className="p-7">
-        <div className="mx-auto max-w-2xl">
-          {children}
-        </div>
+        <div className="mx-auto max-w-2xl">{children}</div>
       </div>
     </div>
   );

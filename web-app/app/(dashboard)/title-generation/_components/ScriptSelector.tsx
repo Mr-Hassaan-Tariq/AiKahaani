@@ -15,10 +15,17 @@ export default function ScriptSelector({
   name: string;
 }) {
   const [open, setOpen] = useState(false);
-  const { register, watch, formState: { errors } } = useFormContext();
+  const {
+    register,
+    watch,
+    formState: { errors },
+  } = useFormContext();
   const { onChange } = register(name, { required: 'Please select a script option' });
   const selectedValue = watch(name);
-  const selectedScript = useMemo(() => scripts.find((s) => s.uuid === selectedValue), [selectedValue, scripts]);
+  const selectedScript = useMemo(
+    () => scripts.find((s) => s.uuid === selectedValue),
+    [selectedValue, scripts],
+  );
 
   const handleSelect = (uuid: string) => {
     onChange({ target: { name, value: uuid } });
@@ -33,7 +40,7 @@ export default function ScriptSelector({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex h-11 w-full items-center justify-between rounded-xl border border-border bg-background px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring hover:bg-muted/50 transition-colors"
+            className="flex h-11 w-full items-center justify-between rounded-xl border border-border bg-background px-4 text-sm text-foreground transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <span className="truncate text-left">
               {selectedScript ? selectedScript.title : 'Select a script…'}
@@ -49,23 +56,25 @@ export default function ScriptSelector({
           <div className="max-h-48 overflow-y-auto">
             {scripts.length === 0 ? (
               <p className="px-3 py-2 text-xs text-muted-foreground">No saved scripts found.</p>
-            ) : scripts.map((script) => {
-              const isSelected = selectedValue === script.uuid;
-              return (
-                <button
-                  key={script.uuid}
-                  type="button"
-                  className={cn(
-                    'flex w-full cursor-pointer items-center border-b border-border px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent',
-                    isSelected && 'bg-accent font-medium text-foreground',
-                    !isSelected && 'text-muted-foreground',
-                  )}
-                  onClick={() => handleSelect(script.uuid)}
-                >
-                  {script.title.length > 60 ? `${script.title.substring(0, 60)}…` : script.title}
-                </button>
-              );
-            })}
+            ) : (
+              scripts.map((script) => {
+                const isSelected = selectedValue === script.uuid;
+                return (
+                  <button
+                    key={script.uuid}
+                    type="button"
+                    className={cn(
+                      'flex w-full cursor-pointer items-center border-b border-border px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent',
+                      isSelected && 'bg-accent font-medium text-foreground',
+                      !isSelected && 'text-muted-foreground',
+                    )}
+                    onClick={() => handleSelect(script.uuid)}
+                  >
+                    {script.title.length > 60 ? `${script.title.substring(0, 60)}…` : script.title}
+                  </button>
+                );
+              })
+            )}
           </div>
         </PopoverContent>
       </Popover>

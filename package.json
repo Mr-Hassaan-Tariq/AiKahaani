@@ -19,7 +19,8 @@
     "check:backend": "cd backend && uv run ruff check . && uv run ruff format --check .",
     "format:backend": "cd backend && uv run ruff check . && uv run ruff format --check .",
     "format": "cd website && pnpm prettier:fix && pnpm lint:fix ",
-    "format:admin-panel": "cd admin-panel && pnpm prettier:fix && pnpm lint:fix"
+    "format:admin-panel": "cd admin-panel && pnpm prettier:fix && pnpm lint:fix",
+    "format:web-app": "cd web-app && pnpm prettier:fix && pnpm lint:fix"
   },
   "engines": {
     "node": ">=20.18.0",

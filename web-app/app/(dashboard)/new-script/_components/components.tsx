@@ -13,9 +13,7 @@ export function LoadingScreen() {
 
       {/* Text */}
       <div className="text-center">
-        <p className="text-sm font-semibold text-foreground">
-          Analyzing your topic…
-        </p>
+        <p className="text-sm font-semibold text-foreground">Analyzing your topic…</p>
         <p className="mt-1 text-xs text-muted-foreground">
           Outlining key points and structuring your script
         </p>

@@ -2,7 +2,11 @@ import { Edit2, RefreshCcw } from 'lucide-react';
 
 import { Button } from 'components/ui/Button';
 
-export default function ActionButtons({ isGenerating, onEdit, onRegenerate }: {
+export default function ActionButtons({
+  isGenerating,
+  onEdit,
+  onRegenerate,
+}: {
   isGenerating: boolean;
   onEdit: () => void;
   onRegenerate: () => void;

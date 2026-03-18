@@ -7,13 +7,13 @@ export const badgeVariants = cva(
     variants: {
       // ── Visual style ─────────────────────────────────────────────
       variant: {
-        default:     'bg-secondary    text-secondary-foreground',
-        primary:     'bg-accent       text-accent-foreground',
-        success:     'bg-success/10   text-success',
-        warning:     'bg-warning/10   text-warning-foreground',
+        default: 'bg-secondary    text-secondary-foreground',
+        primary: 'bg-accent       text-accent-foreground',
+        success: 'bg-success/10   text-success',
+        warning: 'bg-warning/10   text-warning-foreground',
         destructive: 'bg-destructive/10 text-destructive',
-        outline:     'border border-border bg-transparent text-foreground',
-        muted:       'bg-muted        text-muted-foreground',
+        outline: 'border border-border bg-transparent text-foreground',
+        muted: 'bg-muted        text-muted-foreground',
       },
 
       // ── Size ─────────────────────────────────────────────────────
@@ -24,7 +24,7 @@ export const badgeVariants = cva(
     },
     defaultVariants: {
       variant: 'default',
-      size:    'md',
+      size: 'md',
     },
   },
 );

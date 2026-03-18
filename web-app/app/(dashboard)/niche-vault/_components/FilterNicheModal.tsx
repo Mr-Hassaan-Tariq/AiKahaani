@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Smile, Flame, Video } from 'lucide-react';
+import { Flame, Smile, Video } from 'lucide-react';
 
+import { cn } from 'lib/utils';
 import Button from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
 import { Checkbox } from 'components/shadcn_ui/checkbox';
-import { cn } from 'lib/utils';
 
 interface FilterModalProps {
   trigger: React.ReactNode;
@@ -103,11 +103,7 @@ export default function FilterNicheModal({
             </Button>
           )}
 
-          <Button
-            type="button"
-            onClick={handleApply}
-            disabled={!isAnyFilterSelected}
-          >
+          <Button type="button" onClick={handleApply} disabled={!isAnyFilterSelected}>
             Apply filters
           </Button>
         </div>

@@ -8,17 +8,17 @@ export const cardVariants = cva(
       // ── Visual style ─────────────────────────────────────────────
       variant: {
         default: 'border border-border shadow-sm',
-        flat:    'border border-border',
-        ghost:   '',
-        elevated:'shadow-md',
+        flat: 'border border-border',
+        ghost: '',
+        elevated: 'shadow-md',
       },
 
       // ── Padding ──────────────────────────────────────────────────
       padding: {
         none: '',
-        sm:   'p-4',
-        md:   'p-6',
-        lg:   'p-8',
+        sm: 'p-4',
+        md: 'p-6',
+        lg: 'p-8',
       },
     },
     defaultVariants: {

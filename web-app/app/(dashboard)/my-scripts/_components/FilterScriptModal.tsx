@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Clock, FileText, Video } from 'lucide-react';
 import deepEqual from 'fast-deep-equal';
+import { Clock, FileText, Video } from 'lucide-react';
 
 import { FiltersState } from '../_utils/filterUtils';
 import { Button } from 'components/ui/Button';
@@ -60,21 +60,42 @@ export default function FilterScriptModal({
       description=""
       footer={
         <div className="flex w-full gap-2">
-          <Button variant="outline" className="flex-1" onClick={() => { setFilters({ ...defaultFilters, ...initialFilters }); setOpen(false); }}>
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => {
+              setFilters({ ...defaultFilters, ...initialFilters });
+              setOpen(false);
+            }}
+          >
             Cancel
           </Button>
           {onClearFilters && (
-            <Button variant="outline" onClick={() => { setFilters({ ...defaultFilters }); onClearFilters?.(); setOpen(false); }} disabled={!hasActiveFilters}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFilters({ ...defaultFilters });
+                onClearFilters?.();
+                setOpen(false);
+              }}
+              disabled={!hasActiveFilters}
+            >
               Clear
             </Button>
           )}
-          <Button className="flex-1" onClick={() => { onApplyFilters?.(filters); setOpen(false); }}>
+          <Button
+            className="flex-1"
+            onClick={() => {
+              onApplyFilters?.(filters);
+              setOpen(false);
+            }}
+          >
             Apply
           </Button>
         </div>
       }
     >
-      <div className="flex flex-col gap-5 my-2">
+      <div className="my-2 flex flex-col gap-5">
         {/* Last Edited */}
         <div>
           <p className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
@@ -85,10 +106,15 @@ export default function FilterScriptModal({
             onValueChange={(val) => updateFilter('lastEdited', val)}
             className="flex gap-6"
           >
-            {[{ value: 'most_recent', label: 'Most recent' }, { value: 'oldest', label: 'Oldest' }].map((opt) => (
+            {[
+              { value: 'most_recent', label: 'Most recent' },
+              { value: 'oldest', label: 'Oldest' },
+            ].map((opt) => (
               <div key={opt.value} className="flex items-center gap-2">
                 <RadioGroupItem value={opt.value} id={opt.value} />
-                <label htmlFor={opt.value} className="cursor-pointer text-sm text-foreground">{opt.label}</label>
+                <label htmlFor={opt.value} className="cursor-pointer text-sm text-foreground">
+                  {opt.label}
+                </label>
               </div>
             ))}
           </RadioGroup>
@@ -118,10 +144,15 @@ export default function FilterScriptModal({
           </p>
           <div className="grid grid-cols-2 gap-2">
             {durations.map((d) => (
-              <label key={d.id} className="flex cursor-pointer items-center gap-2 rounded-lg border border-border p-2 transition-colors hover:bg-accent has-[:checked]:border-primary">
+              <label
+                key={d.id}
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-border p-2 transition-colors hover:bg-accent has-[:checked]:border-primary"
+              >
                 <Checkbox
                   checked={filters.videoDuration === d.id}
-                  onCheckedChange={() => updateFilter('videoDuration', filters.videoDuration === d.id ? null : d.id)}
+                  onCheckedChange={() =>
+                    updateFilter('videoDuration', filters.videoDuration === d.id ? null : d.id)
+                  }
                 />
                 <span className="text-sm text-foreground">{d.label}</span>
               </label>

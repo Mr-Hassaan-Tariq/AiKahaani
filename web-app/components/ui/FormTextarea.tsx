@@ -1,4 +1,4 @@
-import { TextareaHTMLAttributes, ReactNode } from 'react';
+import { ReactNode, TextareaHTMLAttributes } from 'react';
 import { RegisterOptions, useFormContext } from 'react-hook-form';
 
 import { cn } from 'lib/utils';
@@ -23,9 +23,7 @@ export default function FormTextarea({
 
   return (
     <div className="flex flex-col gap-1.5">
-      {label && (
-        <label className="text-sm font-medium text-foreground">{label}</label>
-      )}
+      {label && <label className="text-sm font-medium text-foreground">{label}</label>}
       <textarea
         {...props}
         {...register(name, validationSchema)}

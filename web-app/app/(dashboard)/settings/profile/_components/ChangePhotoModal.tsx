@@ -40,16 +40,31 @@ export default function ChangePhotoModal({ trigger }: { trigger: ReactNode }) {
   return (
     <Dialog
       open={open}
-      setOpen={(value) => { if (!value) setImage(undefined); setOpen(value); }}
+      setOpen={(value) => {
+        if (!value) setImage(undefined);
+        setOpen(value);
+      }}
       trigger={trigger}
       title="Change profile photo"
       description="Recommended size: 400×400 px · JPG or PNG · Max 5 MB"
       footer={
         <div className="flex w-full gap-3">
-          <Button variant="outline" className="flex-1" onClick={() => { setImage(undefined); setOpen(false); }}>
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => {
+              setImage(undefined);
+              setOpen(false);
+            }}
+          >
             Cancel
           </Button>
-          <Button className="flex-1" disabled={!image || isPending} loading={isPending} onClick={handleSave}>
+          <Button
+            className="flex-1"
+            disabled={!image || isPending}
+            loading={isPending}
+            onClick={handleSave}
+          >
             Save
           </Button>
         </div>

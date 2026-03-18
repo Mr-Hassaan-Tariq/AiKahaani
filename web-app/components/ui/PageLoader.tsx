@@ -1,6 +1,7 @@
 'use client';
 
 import { createPortal } from 'react-dom';
+
 import { PageSpinner } from './Spinner';
 
 export default function PageLoader() {

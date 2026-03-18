@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { type VariantProps } from 'class-variance-authority';
 
-import { cn } from 'lib/utils';
 import { spinnerVariants } from './spinner.variants';
+import { cn } from 'lib/utils';
 
 export interface SpinnerProps
   extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'color'>,

@@ -1,13 +1,13 @@
-import { Clapperboard } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import DesktopMenu from './_components/DesktopMenu';
-import MobileMenu from './_components/MobileMenu';
 import { MobileDrawer } from './_components/Drawer';
 import { Dropdown } from './_components/DropdownMenu';
-import NavPageTitle from 'components/layout/NavPageTitle';
-import ClientImage from 'components/ui/ClientImage';
+import MobileMenu from './_components/MobileMenu';
 import { getNotifications, getUserProfile } from './actions';
+import ClientImage from 'components/ui/ClientImage';
+import NavPageTitle from 'components/layout/NavPageTitle';
 
 function getInitials(name?: string, username?: string) {
   const base = name || username || '';
@@ -18,14 +18,13 @@ function getInitials(name?: string, username?: string) {
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { data: user }       = await getUserProfile();
-  const { data: notify }     = await getNotifications();
-  const notifications        = Array.isArray(notify) ? notify : notify ? [notify] : [];
-  const initials             = getInitials(user?.fullname, user?.username);
+  const { data: user } = await getUserProfile();
+  const { data: notify } = await getNotifications();
+  const notifications = Array.isArray(notify) ? notify : notify ? [notify] : [];
+  const initials = getInitials(user?.fullname, user?.username);
 
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-background">
-
       {/* ── Desktop sidebar ── */}
       <div className="hidden lg:flex">
         <DesktopMenu />
@@ -33,7 +32,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* ── Main column ── */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-
         {/* ── Mobile top bar ── */}
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 lg:hidden">
           {/* Left: hamburger + logo */}
@@ -41,7 +39,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <MobileMenu />
             <Link href="/" className="flex items-center gap-2">
               <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
-                <Clapperboard className="h-3.5 w-3.5 text-primary-foreground" />
+                <Image
+                  src="/logos/icon.svg"
+                  alt="AiKahani"
+                  width={18}
+                  height={18}
+                  unoptimized
+                  style={{ filter: 'brightness(0) invert(1)' }} // red -> white
+                  className="h-3.5 w-3.5"
+                />
               </div>
               <span className="text-sm font-semibold text-foreground">AiKahani</span>
             </Link>
@@ -91,9 +97,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </header>
 
         {/* ── Page content ── */}
-        <main className="scrollbar flex-1 overflow-y-auto">
-          {children}
-        </main>
+        <main className="scrollbar flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

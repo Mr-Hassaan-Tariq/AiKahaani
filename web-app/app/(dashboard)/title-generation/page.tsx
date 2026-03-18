@@ -1,20 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
 import { RefreshCw, Sparkles, Youtube } from 'lucide-react';
+import { FormProvider, useForm } from 'react-hook-form';
 
+import { LoadingScreen } from './_components/LoadingScreen';
 import OptimizeFormFields from './_components/OptimizeFormFields';
 import PromptInput from './_components/PromptInput';
 import TitleList from './_components/TitleList';
 import ToneSelector from './_components/ToneSelector';
-import { LoadingScreen } from './_components/LoadingScreen';
 import useGenerateTitles from 'lib/hooks/useGenerateTitles';
 import useGetScripts from 'lib/hooks/useGetScripts';
 import useOptimizeTitles from 'lib/hooks/useOptimizeTitles';
+import { cn } from 'lib/utils';
 import useToast from 'lib/utils/useToast';
 import { Button } from 'components/ui/Button';
-import { cn } from 'lib/utils';
 
 // ── Step card wrapper ─────────────────────────────────────────────────────────
 function StepCard({
@@ -31,22 +31,24 @@ function StepCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="relative rounded-xl border border-border bg-card p-7 flex flex-col gap-5 overflow-hidden">
+    <section className="relative flex flex-col gap-5 overflow-hidden rounded-xl border border-border bg-card p-7">
       {/* top accent gradient line */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+      <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-4 min-w-0">
-          <div className="w-9 h-9 shrink-0 rounded-full bg-primary/10 text-primary text-sm font-bold flex items-center justify-center">
+        <div className="flex min-w-0 items-start gap-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
             {number}
           </div>
           <div className="min-w-0">
-            <h2 className="text-[22px] font-semibold text-foreground tracking-tight leading-snug">{title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{description}</p>
+            <h2 className="text-[22px] font-semibold leading-snug tracking-tight text-foreground">
+              {title}
+            </h2>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
           </div>
         </div>
         {badge && (
-          <span className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-muted-foreground text-xs font-medium whitespace-nowrap">
+          <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
             {badge}
           </span>
         )}
@@ -78,17 +80,31 @@ export default function Page() {
       if (!data.prompt) errors.prompt = 'Description is required';
       if (!data.tones || data.tones.length === 0) errors.tones = 'At least one tone is required';
       if (activeTab === 'optimize') {
-        if (data.duration === 'saved' && !data.scriptOption) errors.scriptOption = 'Script selection is required';
-        if (data.duration === 'manual' && !data.manualTitle) errors.manualTitle = 'Manual title is required';
+        if (data.duration === 'saved' && !data.scriptOption)
+          errors.scriptOption = 'Script selection is required';
+        if (data.duration === 'manual' && !data.manualTitle)
+          errors.manualTitle = 'Manual title is required';
       }
       return { values: data, errors };
     },
   });
 
-  const { control, handleSubmit, watch, formState: { isValid }, register, reset, resetField, setValue } = methods;
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { isValid },
+    register,
+    reset,
+    resetField,
+    setValue,
+  } = methods;
 
   useEffect(() => {
-    reset({ prompt: '', tones: [], duration: 'saved', scriptOption: '', manualTitle: '' }, { keepErrors: false });
+    reset(
+      { prompt: '', tones: [], duration: 'saved', scriptOption: '', manualTitle: '' },
+      { keepErrors: false },
+    );
     setShowTitles(false);
     setTitles([]);
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -126,10 +142,19 @@ export default function Page() {
 
       setTitles(response?.titles || []);
       setShowTitles(true);
-      toast.success('Success', `Titles ${activeTab === 'optimize' ? 'optimized' : 'generated'} successfully`);
+      toast.success(
+        'Success',
+        `Titles ${activeTab === 'optimize' ? 'optimized' : 'generated'} successfully`,
+      );
     } catch (err: any) {
-      if (err?.prompt?.[0]) { toast.error('Validation Error', err.prompt[0]); return; }
-      if (err?.detail) { toast.error('Error', err.detail.toString()); return; }
+      if (err?.prompt?.[0]) {
+        toast.error('Validation Error', err.prompt[0]);
+        return;
+      }
+      if (err?.detail) {
+        toast.error('Error', err.detail.toString());
+        return;
+      }
       toast.error('Error', 'Something went wrong while processing your request.');
     } finally {
       setIsGenerating(false);
@@ -145,15 +170,29 @@ export default function Page() {
       if (activeTab === 'optimize') {
         response = await optimizeTitles.mutateAsync(
           lastPayload.duration === 'saved'
-            ? { prompt: lastPayload.prompt, tones: lastPayload.tones, script: lastPayload.scriptOption }
-            : { prompt: lastPayload.prompt, tones: lastPayload.tones, user_title: lastPayload.manualTitle },
+            ? {
+                prompt: lastPayload.prompt,
+                tones: lastPayload.tones,
+                script: lastPayload.scriptOption,
+              }
+            : {
+                prompt: lastPayload.prompt,
+                tones: lastPayload.tones,
+                user_title: lastPayload.manualTitle,
+              },
         );
       } else {
-        response = await generateTitles.mutateAsync({ prompt: lastPayload.prompt, tones: lastPayload.tones });
+        response = await generateTitles.mutateAsync({
+          prompt: lastPayload.prompt,
+          tones: lastPayload.tones,
+        });
       }
       setTitles(response?.titles || []);
       setShowTitles(true);
-      toast.success('Success', `Titles ${activeTab === 'optimize' ? 're-optimized' : 'regenerated'} successfully`);
+      toast.success(
+        'Success',
+        `Titles ${activeTab === 'optimize' ? 're-optimized' : 'regenerated'} successfully`,
+      );
     } catch (err: any) {
       toast.error('Error', err?.detail?.toString() || 'Something went wrong');
     } finally {
@@ -174,22 +213,24 @@ export default function Page() {
 
   return (
     <div className="px-8 py-10">
-      <div className="w-full max-w-[960px] mx-auto flex flex-col gap-6">
-
+      <div className="mx-auto flex w-full max-w-[960px] flex-col gap-6">
         {/* ── Hero ── */}
         <div className="flex flex-col gap-4 pb-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-[13px] font-semibold w-fit">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-[13px] font-semibold text-primary">
             <Youtube className="h-3.5 w-3.5" />
             YouTube title workflow
           </div>
-          <h1 className="text-[42px] font-bold tracking-tight text-foreground leading-[1.1]">
-            Create scroll-stopping YouTube titles<br />from a single topic.
+          <h1 className="text-[42px] font-bold leading-[1.1] tracking-tight text-foreground">
+            Create scroll-stopping YouTube titles
+            <br />
+            from a single topic.
           </h1>
-          <p className="text-base text-muted-foreground max-w-[680px] leading-relaxed">
-            Start with your video idea, tune the title angle, then generate high-performing headline options in a step-by-step flow.
+          <p className="max-w-[680px] text-base leading-relaxed text-muted-foreground">
+            Start with your video idea, tune the title angle, then generate high-performing headline
+            options in a step-by-step flow.
           </p>
           {/* Mode pills */}
-          <div className="flex items-center gap-3 mt-1">
+          <div className="mt-1 flex items-center gap-3">
             {(['generate', 'optimize'] as const).map((tab) => (
               <button
                 key={tab}
@@ -197,7 +238,7 @@ export default function Page() {
                 onClick={() => setActiveTab(tab)}
                 disabled={isGenerating}
                 className={cn(
-                  'px-4 py-2.5 rounded-full text-sm font-medium transition-colors',
+                  'rounded-full px-4 py-2.5 text-sm font-medium transition-colors',
                   activeTab === tab
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
@@ -212,7 +253,6 @@ export default function Page() {
 
         <FormProvider {...methods}>
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-
             {/* ── Optimize: script source (step 1 only when optimize tab) ── */}
             {activeTab === 'optimize' && (
               <StepCard
@@ -265,7 +305,7 @@ export default function Page() {
               {isGenerating ? (
                 <LoadingScreen />
               ) : (
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex flex-wrap items-center gap-3">
                   <Button type="submit" disabled={!isValid || isGenerating} loading={isGenerating}>
                     <Sparkles className="h-4 w-4" />
                     {activeTab === 'optimize' ? 'Optimize Title' : 'Generate 6 Titles'}
@@ -284,20 +324,23 @@ export default function Page() {
                 </div>
               )}
             </StepCard>
-
           </form>
         </FormProvider>
 
         {/* ── Step 4 / 5: Results ── */}
         {showTitles && titles.length > 0 && (
-          <section className="relative rounded-xl border border-border bg-card p-7 flex flex-col gap-5 overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-            <div className="flex items-center justify-between gap-4 flex-wrap">
+          <section className="relative flex flex-col gap-5 overflow-hidden rounded-xl border border-border bg-card p-7">
+            <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-[22px] font-semibold text-foreground tracking-tight">Recommended titles</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Ranked by hook strength, clarity, and YouTube-friendly phrasing.</p>
+                <h2 className="text-[22px] font-semibold tracking-tight text-foreground">
+                  Recommended titles
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Ranked by hook strength, clarity, and YouTube-friendly phrasing.
+                </p>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-muted-foreground text-xs font-medium">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
                 Best match highlighted
               </span>
             </div>
@@ -308,7 +351,6 @@ export default function Page() {
             />
           </section>
         )}
-
       </div>
     </div>
   );

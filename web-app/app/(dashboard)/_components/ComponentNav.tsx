@@ -26,20 +26,13 @@ export default function ComponentNav({
 }: ComponentNavProps) {
   return (
     <div
-      className={cn(
-        'flex flex-col justify-between gap-2 md:flex-row md:items-center',
-        className,
-      )}
+      className={cn('flex flex-col justify-between gap-2 md:flex-row md:items-center', className)}
     >
       <h2 className="text-lg font-semibold text-foreground">{title}</h2>
 
       {typeof _onButtonClick === 'string' ? (
         <Link href={_onButtonClick}>
-          <Button
-            size="sm"
-            className={cn(buttonClassName)}
-            disabled={disabled}
-          >
+          <Button size="sm" className={cn(buttonClassName)} disabled={disabled}>
             {buttonIcon}
             {buttonText}
           </Button>

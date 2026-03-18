@@ -9,17 +9,17 @@ export default async function Page() {
 
   return (
     <div className="flex flex-col gap-6">
-      {isError && (
-        <p className="text-sm text-destructive">{error?.message?.toString()}</p>
-      )}
+      {isError && <p className="text-sm text-destructive">{error?.message?.toString()}</p>}
 
       <ProfilePhotoCard profileImage={data?.profile_picture} fullName={data?.username} />
       <ProfileCardDetail profile={data} />
 
       {/* Footer actions */}
-      <div className="flex items-center justify-end gap-3 pt-2 pb-4">
+      <div className="flex items-center justify-end gap-3 pb-4 pt-2">
         <Button variant="outline">Discard Changes</Button>
-        <Button variant="primary" disabled>Save Profile</Button>
+        <Button variant="primary" disabled>
+          Save Profile
+        </Button>
       </div>
     </div>
   );

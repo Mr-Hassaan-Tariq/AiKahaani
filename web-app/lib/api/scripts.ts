@@ -21,7 +21,8 @@ export class ScriptsService {
     if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
       const { mockScriptGenerations } = await import('lib/mockData');
       let results = mockScriptGenerations;
-      if (search) results = results.filter((s) => s.title.toLowerCase().includes(search.toLowerCase()));
+      if (search)
+        results = results.filter((s) => s.title.toLowerCase().includes(search.toLowerCase()));
       if (type) results = results.filter((s) => s.type === type);
       return results;
     }

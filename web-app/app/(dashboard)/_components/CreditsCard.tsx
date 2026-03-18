@@ -8,18 +8,18 @@ export default function CreditsCard() {
   const planName = data?.plan?.product?.name ?? 'Free';
   const daysLeft = data?.days_until_expiry ?? 0;
   const isActive = data?.is_active ?? false;
-  const isTrial  = data?.is_trial  ?? false;
+  const isTrial = data?.is_trial ?? false;
 
   // Progress: days remaining out of ~30
   const totalDays = 30;
-  const usedDays  = Math.max(0, totalDays - daysLeft);
-  const pct       = Math.min((usedDays / totalDays) * 100, 100);
+  const usedDays = Math.max(0, totalDays - daysLeft);
+  const pct = Math.min((usedDays / totalDays) * 100, 100);
 
   if (isLoading) {
     return (
-      <div className="rounded-lg bg-muted p-3 animate-pulse">
-        <div className="h-2.5 w-24 rounded bg-border mb-2" />
-        <div className="h-1.5 w-full rounded-full bg-border mb-2" />
+      <div className="animate-pulse rounded-lg bg-muted p-3">
+        <div className="mb-2 h-2.5 w-24 rounded bg-border" />
+        <div className="mb-2 h-1.5 w-full rounded-full bg-border" />
         <div className="h-2 w-32 rounded bg-border" />
       </div>
     );
@@ -32,9 +32,7 @@ export default function CreditsCard() {
         <span className="text-xs font-semibold text-foreground">
           {isTrial ? 'Trial period' : planName}
         </span>
-        <span className="text-xs text-muted-foreground">
-          {daysLeft}d left
-        </span>
+        <span className="text-xs text-muted-foreground">{daysLeft}d left</span>
       </div>
 
       {/* Progress bar */}

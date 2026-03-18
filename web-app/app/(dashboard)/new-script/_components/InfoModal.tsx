@@ -7,7 +7,10 @@ export default function InfoModal({ description }: { description: ReactNode }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className="inline-flex text-muted-foreground hover:text-foreground transition-colors">
+        <button
+          type="button"
+          className="inline-flex text-muted-foreground transition-colors hover:text-foreground"
+        >
           <InfoIcon className="h-4 w-4" />
         </button>
       </PopoverTrigger>

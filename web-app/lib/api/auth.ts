@@ -66,9 +66,7 @@ export class AuthService {
    * @param token - Magic link token
    * @param partnerId - Optional partner ID for referral tracking
    */
-  async verifyMagicLink(
-    token: string,
-  ): Promise<{
+  async verifyMagicLink(token: string): Promise<{
     success: boolean;
     message?: string;
     user: VerifiedUser | null;

@@ -10,7 +10,10 @@ async function getPrivacySettings(): Promise<PrivacySettings> {
 }
 
 async function updatePrivacySettings(settings: PrivacySettings): Promise<PrivacySettingsResponse> {
-  return patchClientDataAction<PrivacySettingsResponse, PrivacySettings>('v1/users/privacy', settings);
+  return patchClientDataAction<PrivacySettingsResponse, PrivacySettings>(
+    'v1/users/privacy',
+    settings,
+  );
 }
 
 export function useUpdatePrivacySettings() {

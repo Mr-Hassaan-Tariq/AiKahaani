@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MenuIcon } from 'lucide-react';
 
-import { cn } from 'lib/utils';
 import { mainMenu, subMenu } from './DesktopMenu';
 import LogoutModal from './LogoutModal';
+import { cn } from 'lib/utils';
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from 'components/shadcn_ui/sheet';
 
 export default function MobileMenu() {
@@ -35,7 +35,15 @@ export default function MobileMenu() {
       >
         <div className="flex h-full flex-col px-4 py-5">
           {/* Brand */}
-          <p className="mb-7 px-2 text-sm font-semibold text-sidebar-foreground">AiKahani</p>
+          <div className="mb-7 px-2">
+            <img
+              src="/logos/colored-logo.svg"
+              alt="AiKahani"
+              width={220}
+              height={80}
+              className="h-14 w-auto"
+            />
+          </div>
 
           {/* Main nav */}
           <nav className="flex flex-col gap-0.5">

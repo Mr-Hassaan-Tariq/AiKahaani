@@ -5,20 +5,24 @@ import { useRouter } from 'next/navigation';
 import { Wand2 } from 'lucide-react';
 import * as yup from 'yup';
 
+import GoogleAuthComponent from './_components/GoogleAuthComponent';
 import { authService } from 'lib/api';
 import { Button } from 'components/ui/Button';
 import { Input } from 'components/ui/Input';
-import GoogleAuthComponent from './_components/GoogleAuthComponent';
 
 // ── Validation ───────────────────────────────────────────────────────
 const signupSchema = yup.object({
-  email: yup.string().required('Email is required').email('Please enter a valid email address').trim(),
+  email: yup
+    .string()
+    .required('Email is required')
+    .email('Please enter a valid email address')
+    .trim(),
 });
 // ── Page ─────────────────────────────────────────────────────────────
 export default function Signup() {
   const router = useRouter();
 
-  const [email, setEmail]         = useState('');
+  const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -48,7 +52,6 @@ export default function Signup() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
-
       {/* ── Decorative background orbs ── */}
       <div
         aria-hidden
@@ -61,7 +64,6 @@ export default function Signup() {
 
       {/* ── Auth card ── */}
       <div className="relative z-10 w-full max-w-[480px] rounded-2xl border border-border bg-card px-10 py-14 shadow-sm">
-
         {/* Heading */}
         <h1 className="text-center text-3xl font-semibold tracking-tight text-foreground">
           Let&apos;s get you creating

@@ -24,10 +24,10 @@ import { FormType, GenerationPromptType, ToneType } from '../types';
 import { LoadingScreen } from './components';
 import useGenerateOutline from 'lib/hooks/useGenerateOutline';
 import { logger } from 'lib/logger';
+import { cn } from 'lib/utils';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
 import useToast from 'lib/utils/useToast';
 import { Button } from 'components/ui/Button';
-import { cn } from 'lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from 'components/shadcn_ui/popover';
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -43,10 +43,10 @@ interface NicheDetailsType {
 
 // ── Icon map for template styles ──────────────────────────────────────
 const templateIcons: Record<string, React.ElementType> = {
-  'Short-form':  Zap,
-  'Standard':    Layers,
-  'Long-form':   Film,
-  'Outline':     ListTree,
+  'Short-form': Zap,
+  Standard: Layers,
+  'Long-form': Film,
+  Outline: ListTree,
 };
 
 function getTemplateIcon(name: string) {
@@ -57,9 +57,13 @@ function getTemplateIcon(name: string) {
 }
 
 // ── Main form ─────────────────────────────────────────────────────────
-export default function GenerateScriptForm({ configData }: { configData: GenerationPromptType | null }) {
-  const toast        = useToast();
-  const router       = useRouter();
+export default function GenerateScriptForm({
+  configData,
+}: {
+  configData: GenerationPromptType | null;
+}) {
+  const toast = useToast();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [files, setFiles] = useState<FileType[]>([]);
   const { mutate: generateOutline, isPending } = useGenerateOutline();
@@ -88,15 +92,17 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
 
   const { watch, setValue, register } = methods;
   const selectedTemplateId = watch('template_style');
-  const selectedToneIds    = watch('tones') as number[];
-  const maxLength          = watch('max_length') as number;
+  const selectedToneIds = watch('tones') as number[];
+  const maxLength = watch('max_length') as number;
 
   // Prefill tones from niche
   useEffect(() => {
     if (!niche) return;
     const available = Array.isArray(configData?.tones) ? configData.tones : [];
     const preselected = (niche.tone ?? [])
-      .map((name) => available.find((t: any) => String(t.name).toLowerCase() === name.toLowerCase()))
+      .map((name) =>
+        available.find((t: any) => String(t.name).toLowerCase() === name.toLowerCase()),
+      )
       .filter(Boolean)
       .map((t: any) => Number(t.id))
       .filter((id) => Number.isFinite(id) && id !== 0);
@@ -109,7 +115,8 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
   const fileToDataUrl = (file: File): Promise<{ name: string; type: string; dataUrl: string }> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload  = () => resolve({ name: file.name, type: file.type, dataUrl: String(reader.result) });
+      reader.onload = () =>
+        resolve({ name: file.name, type: file.type, dataUrl: String(reader.result) });
       reader.onerror = (e) => reject(e);
       reader.readAsDataURL(file);
     });
@@ -123,32 +130,45 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
 
   // ── Submit ───────────────────────────────────────────────────────
   const onSubmit = async (_formData: FormType) => {
-    const formValue  = new FormData();
+    const formValue = new FormData();
     const payload: Partial<FormType & { niche_id?: string }> = {};
 
-    const toneIds      = normalizeTones(_formData.tones);
-    const linkItems    = files.filter((f) => f.type === 'link'    && typeof f.value === 'string').map((f) => f.value as string);
-    const articleItems = files.filter((f) => f.type === 'article' && typeof f.value === 'string').map((f) => f.value as string);
-    const imageItems   = files.filter((f) => f.type === 'file'    && f.value instanceof File).map((f) => f.value as File);
+    const toneIds = normalizeTones(_formData.tones);
+    const linkItems = files
+      .filter((f) => f.type === 'link' && typeof f.value === 'string')
+      .map((f) => f.value as string);
+    const articleItems = files
+      .filter((f) => f.type === 'article' && typeof f.value === 'string')
+      .map((f) => f.value as string);
+    const imageItems = files
+      .filter((f) => f.type === 'file' && f.value instanceof File)
+      .map((f) => f.value as File);
     const hasImageFile = imageItems.some((file) => file?.size > 0);
-    const nicheParam   = nicheId ?? undefined;
+    const nicheParam = nicheId ?? undefined;
 
     if (!hasImageFile) {
       payload.description = _formData.description ?? '';
-      payload.tones       = toneIds;
+      payload.tones = toneIds;
       if (_formData.template_style) payload.template_style = _formData.template_style;
-      else { payload.min_length = _formData.min_length; payload.max_length = _formData.max_length; }
+      else {
+        payload.min_length = _formData.min_length;
+        payload.max_length = _formData.max_length;
+      }
       payload.title = _formData.title ?? '';
       if (nicheParam) payload.niche_id = nicheParam;
-      if (linkItems.length === 1)    payload.youtube_url = linkItems[0];
+      if (linkItems.length === 1) payload.youtube_url = linkItems[0];
       else if (linkItems.length > 1) payload.youtube_url = linkItems;
-      if (articleItems.length === 1)    payload.article_url = articleItems[0];
+      if (articleItems.length === 1) payload.article_url = articleItems[0];
       else if (articleItems.length > 1) payload.article_url = articleItems;
     } else {
       formValue.append('description', _formData.description ?? '');
       toneIds.forEach((id) => formValue.append('tones', String(id)));
-      if (_formData.template_style) formValue.append('template_style', String(_formData.template_style));
-      else { formValue.append('min_length', String(_formData.min_length ?? 0)); formValue.append('max_length', String(_formData.max_length ?? 500)); }
+      if (_formData.template_style)
+        formValue.append('template_style', String(_formData.template_style));
+      else {
+        formValue.append('min_length', String(_formData.min_length ?? 0));
+        formValue.append('max_length', String(_formData.max_length ?? 500));
+      }
       formValue.append('title', String(_formData.title ?? ''));
       if (nicheParam) formValue.append('niche_id', nicheParam);
       imageItems.forEach((file) => formValue.append('image', file));
@@ -158,15 +178,35 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
 
     try {
       if (!hasImageFile) {
-        localStorage.setItem('last_outline_payload', JSON.stringify({ hasImageFile: false, timestamp: Date.now(), payload }));
+        localStorage.setItem(
+          'last_outline_payload',
+          JSON.stringify({ hasImageFile: false, timestamp: Date.now(), payload }),
+        );
       } else {
         const imagesData = await Promise.all(imageItems.map(fileToDataUrl));
-        localStorage.setItem('last_outline_payload', JSON.stringify({
-          hasImageFile: true, timestamp: Date.now(),
-          data: { description: _formData.description ?? '', tones: toneIds, template_style: _formData.template_style ?? null, min_length: _formData.min_length ?? 0, max_length: _formData.max_length ?? 500, title: _formData.title ?? '', niche_id: nicheParam ?? null, linkItems, articleItems, images: imagesData },
-        }));
+        localStorage.setItem(
+          'last_outline_payload',
+          JSON.stringify({
+            hasImageFile: true,
+            timestamp: Date.now(),
+            data: {
+              description: _formData.description ?? '',
+              tones: toneIds,
+              template_style: _formData.template_style ?? null,
+              min_length: _formData.min_length ?? 0,
+              max_length: _formData.max_length ?? 500,
+              title: _formData.title ?? '',
+              niche_id: nicheParam ?? null,
+              linkItems,
+              articleItems,
+              images: imagesData,
+            },
+          }),
+        );
       }
-      const descToSave = hasImageFile ? String(formValue.get('description') ?? '') : String(payload.description ?? '');
+      const descToSave = hasImageFile
+        ? String(formValue.get('description') ?? '')
+        : String(payload.description ?? '');
       localStorage.setItem('draft_description', descToSave);
     } catch (e) {
       logger.warn('Could not save to localStorage', e);
@@ -187,14 +227,17 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
   if (isPending) return <LoadingScreen />;
 
   const templates = configData?.template_styles ?? [];
-  const allTones  = configData?.tones ?? [];
-  const range     = configData?.length_range ?? { min: 300, max: 3000, default: 1000 };
+  const allTones = configData?.tones ?? [];
+  const range = configData?.length_range ?? { min: 300, max: 3000, default: 1000 };
 
   // Tones helpers
   const toggleTone = (id: number) => {
     const current = (methods.getValues('tones') as number[]) ?? [];
     if (current.includes(id)) {
-      setValue('tones', current.filter((t) => t !== id));
+      setValue(
+        'tones',
+        current.filter((t) => t !== id),
+      );
     } else if (current.length < 3) {
       setValue('tones', [...current, id]);
     }
@@ -202,17 +245,12 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
 
   return (
     <FormProvider {...methods}>
-      <form
-        onSubmit={methods.handleSubmit(onSubmit)}
-        className="flex flex-1 overflow-hidden"
-      >
-
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="flex flex-1 overflow-hidden">
         {/* ═══ LEFT: Editor pane ═══════════════════════════════════════ */}
-        <div className="flex-1 min-w-0 overflow-y-auto px-10 py-10 flex flex-col gap-8">
-
+        <div className="flex min-w-0 flex-1 flex-col gap-8 overflow-y-auto px-10 py-10">
           {/* Niche badge */}
           {niche && (
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-accent px-3 py-2 self-start">
+            <div className="flex items-center gap-2 self-start rounded-lg border border-border bg-accent px-3 py-2">
               <span className="text-xs text-muted-foreground">Niche template:</span>
               <span className="text-xs font-semibold text-accent-foreground">{niche.title}</span>
             </div>
@@ -222,7 +260,7 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
           <input
             {...register('title')}
             placeholder="Give your script a working title…"
-            className="w-full bg-transparent text-[32px] font-bold tracking-tight text-foreground border-none outline-none placeholder:text-muted-foreground/40 leading-tight"
+            className="w-full border-none bg-transparent text-[32px] font-bold leading-tight tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
           />
 
           {/* Prompt section */}
@@ -232,7 +270,7 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
               Describe the video you want to turn into a script
             </label>
 
-            <div className="rounded-lg bg-secondary border border-border p-6">
+            <div className="rounded-lg border border-border bg-secondary p-6">
               <textarea
                 {...register('description', {
                   required: 'Description is required',
@@ -240,11 +278,11 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
                 })}
                 placeholder="Create a high-retention YouTube script for creators who want to grow with educational content. Start with a curiosity-driven hook, explain 5 practical scripting methods, add pattern interrupts, and finish with a strong subscribe CTA."
                 rows={8}
-                className="w-full bg-transparent text-base leading-relaxed resize-none outline-none text-foreground placeholder:text-muted-foreground"
+                className="w-full resize-none bg-transparent text-base leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
               />
 
               {/* Textarea footer */}
-              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between gap-3">
+              <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
                 <div className="flex items-center gap-1.5">
                   <ContextButton files={files} setFiles={setFiles} />
                 </div>
@@ -270,9 +308,15 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
                   key={index}
                   className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5"
                 >
-                  {file.type === 'link'    && <MonitorPlayIcon className="h-3.5 w-3.5 text-muted-foreground" />}
-                  {file.type === 'article' && <LinkIcon        className="h-3.5 w-3.5 text-muted-foreground" />}
-                  {file.type === 'file'    && <Paperclip       className="h-3.5 w-3.5 text-muted-foreground" />}
+                  {file.type === 'link' && (
+                    <MonitorPlayIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                  {file.type === 'article' && (
+                    <LinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                  {file.type === 'file' && (
+                    <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
                   <span className="max-w-[180px] truncate text-xs text-foreground">
                     {file.value instanceof File ? file.value.name : file.value}
                   </span>
@@ -290,17 +334,15 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
         </div>
 
         {/* ═══ RIGHT: Inspector pane ═══════════════════════════════════ */}
-        <div className="w-[440px] shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
-
+        <div className="flex w-[440px] shrink-0 flex-col overflow-hidden border-l border-border bg-card">
           {/* Inspector header */}
-          <div className="px-7 py-5 border-b border-border flex items-center gap-2">
+          <div className="flex items-center gap-2 border-b border-border px-7 py-5">
             <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
             <span className="text-[15px] font-semibold text-foreground">Script Settings</span>
           </div>
 
           {/* Inspector body — scrollable */}
-          <div className="flex-1 overflow-y-auto px-7 py-6 flex flex-col gap-8">
-
+          <div className="flex flex-1 flex-col gap-8 overflow-y-auto px-7 py-6">
             {/* ── Output Format ── */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
@@ -309,15 +351,13 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {templates.map((tmpl) => {
-                  const Icon      = getTemplateIcon(tmpl.name);
+                  const Icon = getTemplateIcon(tmpl.name);
                   const isSelected = selectedTemplateId === tmpl.id;
                   return (
                     <button
                       key={tmpl.id}
                       type="button"
-                      onClick={() =>
-                        setValue('template_style', isSelected ? undefined : tmpl.id)
-                      }
+                      onClick={() => setValue('template_style', isSelected ? undefined : tmpl.id)}
                       className={cn(
                         'flex flex-col gap-2 rounded-lg border p-3 text-left transition-colors',
                         isSelected
@@ -325,14 +365,25 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
                           : 'border-border bg-background hover:bg-secondary',
                       )}
                     >
-                      <div className={cn(
-                        'flex h-8 w-8 items-center justify-center rounded-md',
-                        isSelected ? 'bg-primary' : 'bg-muted',
-                      )}>
-                        <Icon className={cn('h-4 w-4', isSelected ? 'text-primary-foreground' : 'text-muted-foreground')} />
+                      <div
+                        className={cn(
+                          'flex h-8 w-8 items-center justify-center rounded-md',
+                          isSelected ? 'bg-primary' : 'bg-muted',
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            'h-4 w-4',
+                            isSelected ? 'text-primary-foreground' : 'text-muted-foreground',
+                          )}
+                        />
                       </div>
-                      <p className="text-[13px] font-semibold text-foreground leading-tight">{tmpl.name}</p>
-                      <p className="text-[11px] text-muted-foreground leading-tight">{tmpl.description}</p>
+                      <p className="text-[13px] font-semibold leading-tight text-foreground">
+                        {tmpl.name}
+                      </p>
+                      <p className="text-[11px] leading-tight text-muted-foreground">
+                        {tmpl.description}
+                      </p>
                     </button>
                   );
                 })}
@@ -362,9 +413,7 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
                 <span>Long form</span>
               </div>
               {selectedTemplateId !== undefined && (
-                <p className="text-[11px] text-muted-foreground">
-                  Length set by selected format.
-                </p>
+                <p className="text-[11px] text-muted-foreground">Length set by selected format.</p>
               )}
             </div>
 
@@ -406,15 +455,14 @@ export default function GenerateScriptForm({ configData }: { configData: Generat
                 )}
               </div>
             </div>
-
           </div>
 
           {/* Inspector footer — Generate button */}
-          <div className="px-7 py-5 border-t border-border shrink-0">
+          <div className="shrink-0 border-t border-border px-7 py-5">
             <Button
               type="submit"
               loading={isPending}
-              className="w-full h-12 text-[15px] font-semibold shadow-[0_8px_16px_rgba(255,0,0,0.15)]"
+              className="h-12 w-full text-[15px] font-semibold shadow-[0_8px_16px_rgba(255,0,0,0.15)]"
             >
               <Wand2 className="h-[18px] w-[18px]" />
               Generate YouTube Script
@@ -449,7 +497,7 @@ function LengthSlider({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-1.5 appearance-none rounded-full bg-secondary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
         style={{
           background: disabled
             ? undefined
@@ -475,7 +523,7 @@ function AddTonePopover({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+          className="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
         >
           <Plus className="h-3 w-3" />
           Add style
@@ -490,7 +538,7 @@ function AddTonePopover({
                 key={tone.id}
                 type="button"
                 onClick={() => onToggle(tone.id)}
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-secondary text-left"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-foreground hover:bg-secondary"
               >
                 {tone.name}
               </button>
@@ -513,15 +561,17 @@ function ContextButton({
   setFiles: Dispatch<SetStateAction<FileType[]>>;
 }) {
   const toast = useToast();
-  const [link,    setLink]    = useState('');
+  const [link, setLink] = useState('');
   const [article, setArticle] = useState('');
-  const [file,    setFile]    = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAdd = (type: 'link' | 'article' | 'file', value: string | File) => {
     if (files.length >= 3) return toast.error('You can only add up to 3 context items');
     setFiles([...files, { type, value }]);
-    setLink(''); setArticle(''); setFile(null);
+    setLink('');
+    setArticle('');
+    setFile(null);
   };
 
   return (
@@ -538,7 +588,11 @@ function ContextButton({
         </button>
       </PopoverTrigger>
 
-      <PopoverContent side="top" align="start" className="w-80 rounded-xl border border-border bg-card p-0 shadow-md">
+      <PopoverContent
+        side="top"
+        align="start"
+        className="w-80 rounded-xl border border-border bg-card p-0 shadow-md"
+      >
         <div className="divide-y divide-border">
           {/* YouTube link */}
           <div className="flex items-center gap-2 p-3">
@@ -584,7 +638,11 @@ function ContextButton({
           <div className="flex items-center gap-2 p-3">
             <Upload className="h-4 w-4 shrink-0 text-muted-foreground" />
             <label className="flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-md border border-border bg-input px-2 text-xs text-muted-foreground hover:bg-muted">
-              {file ? <span className="truncate text-foreground">{file.name}</span> : 'Upload image'}
+              {file ? (
+                <span className="truncate text-foreground">{file.name}</span>
+              ) : (
+                'Upload image'
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -605,7 +663,9 @@ function ContextButton({
         </div>
 
         {files.length >= 3 && (
-          <p className="px-3 py-2 text-xs text-muted-foreground">Maximum 3 context items reached.</p>
+          <p className="px-3 py-2 text-xs text-muted-foreground">
+            Maximum 3 context items reached.
+          </p>
         )}
       </PopoverContent>
     </Popover>

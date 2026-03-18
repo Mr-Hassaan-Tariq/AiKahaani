@@ -41,7 +41,12 @@ export default function DeletePhotoModal({ trigger }: { trigger: React.ReactNode
           <Button variant="outline" className="flex-1" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button variant="destructive" className="flex-1" loading={isPending} onClick={handleDelete}>
+          <Button
+            variant="destructive"
+            className="flex-1"
+            loading={isPending}
+            onClick={handleDelete}
+          >
             Remove photo
           </Button>
         </div>

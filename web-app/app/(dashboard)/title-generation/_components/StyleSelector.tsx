@@ -1,5 +1,5 @@
-import { cn } from 'lib/utils';
 import useGetTitleStyles from 'lib/hooks/useGetTitleStyles';
+import { cn } from 'lib/utils';
 
 export default function StyleSelector({
   value,

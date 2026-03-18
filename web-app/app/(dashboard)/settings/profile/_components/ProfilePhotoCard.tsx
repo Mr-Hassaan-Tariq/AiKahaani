@@ -23,7 +23,7 @@ export default function ProfilePhotoCard({
 
   return (
     <div className="rounded-xl border border-border bg-card p-8">
-      <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">
+      <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
         Personal Information
       </h3>
 
@@ -56,16 +56,18 @@ export default function ProfilePhotoCard({
             {profileImage && (
               <DeletePhotoModal
                 trigger={
-                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                  >
                     <Trash2 className="h-4 w-4" /> Remove
                   </Button>
                 }
               />
             )}
           </div>
-          <p className="text-[13px] text-muted-foreground">
-            JPG, GIF or PNG. Max size of 5MB.
-          </p>
+          <p className="text-[13px] text-muted-foreground">JPG, GIF or PNG. Max size of 5MB.</p>
         </div>
       </div>
     </div>

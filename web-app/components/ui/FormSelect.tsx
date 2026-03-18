@@ -35,7 +35,7 @@ export default function FormSelect({
   } = useFormContext();
 
   return (
-    <div className="mt-[-15px] flex w-full flex-col items-start gap-2 font-figtree">
+    <div className="font-figtree mt-[-15px] flex w-full flex-col items-start gap-2">
       {label && (
         <Text variant="sm" className="text-white">
           {label}

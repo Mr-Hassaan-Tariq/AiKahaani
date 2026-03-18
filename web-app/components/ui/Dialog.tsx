@@ -36,9 +36,7 @@ export default function Dialog({
         onInteractOutside={(event) => !outsideInteract && event.preventDefault()}
       >
         <div className="flex flex-col gap-3">
-          {title && (
-            <h2 className="text-center text-lg font-semibold text-foreground">{title}</h2>
-          )}
+          {title && <h2 className="text-center text-lg font-semibold text-foreground">{title}</h2>}
           {description && (
             <p
               className="text-center text-sm leading-relaxed text-muted-foreground"

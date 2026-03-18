@@ -6,8 +6,8 @@ import { Filter, Search, X } from 'lucide-react';
 import { SEARCH_PLACEHOLDER, TABS_CONFIG } from '../_constants';
 import { FiltersState } from '../_utils/filterUtils';
 import FilterScriptModal from './FilterScriptModal';
-import { Button } from 'components/ui/Button';
 import { cn } from 'lib/utils';
+import { Button } from 'components/ui/Button';
 
 type TabKey = 'all' | 'outlines' | 'scripts';
 
@@ -39,8 +39,12 @@ export default function ScriptsTab({
   const [localInput, setLocalInput] = React.useState<string>(searchValue);
   const [filters, setFilters] = React.useState<FiltersState>({ ...DEFAULT_FILTERS });
 
-  React.useEffect(() => { setLocalInput(searchValue); }, [searchValue]);
-  React.useEffect(() => { onSearch?.(localInput); }, [localInput]); // eslint-disable-line react-hooks/exhaustive-deps
+  React.useEffect(() => {
+    setLocalInput(searchValue);
+  }, [searchValue]);
+  React.useEffect(() => {
+    onSearch?.(localInput);
+  }, [localInput]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleApplyFiltersFromModal = (applied: FiltersState) => {
     setFilters(applied);
@@ -77,19 +81,33 @@ export default function ScriptsTab({
 
   const renderFilterLabel = (key: keyof FiltersState, value: any) => {
     if (key === 'lastEdited') return value === 'most_recent' ? 'Most recent' : 'Oldest';
-    if (key === 'wordCount') return `${value[0].toLocaleString()}–${value[1].toLocaleString()} words`;
-    if (key === 'videoDuration') return value ? (value === '<20' ? '< 20 min' : value === '>60' ? '> 60 min' : `${value} min`) : null;
+    if (key === 'wordCount')
+      return `${value[0].toLocaleString()}–${value[1].toLocaleString()} words`;
+    if (key === 'videoDuration')
+      return value
+        ? value === '<20'
+          ? '< 20 min'
+          : value === '>60'
+            ? '> 60 min'
+            : `${value} min`
+        : null;
     return String(value);
   };
 
   const isFilterActive = (key: keyof FiltersState) => {
-    if (key === 'wordCount') return !(filters.wordCount[0] === DEFAULT_FILTERS.wordCount[0] && filters.wordCount[1] === DEFAULT_FILTERS.wordCount[1]);
+    if (key === 'wordCount')
+      return !(
+        filters.wordCount[0] === DEFAULT_FILTERS.wordCount[0] &&
+        filters.wordCount[1] === DEFAULT_FILTERS.wordCount[1]
+      );
     if (key === 'lastEdited') return filters.lastEdited !== DEFAULT_FILTERS.lastEdited;
     if (key === 'videoDuration') return filters.videoDuration !== null;
     return false;
   };
 
-  const activeFilterKeys = (['lastEdited', 'wordCount', 'videoDuration'] as (keyof FiltersState)[]).filter(isFilterActive);
+  const activeFilterKeys = (
+    ['lastEdited', 'wordCount', 'videoDuration'] as (keyof FiltersState)[]
+  ).filter(isFilterActive);
 
   return (
     <div className="flex flex-col gap-4">
@@ -129,9 +147,11 @@ export default function ScriptsTab({
           <div className="flex items-center rounded-lg border border-border bg-muted p-0.5">
             {TABS_CONFIG.map((tab) => {
               const isActive =
-                tab.query === 'outlines' ? activeTab === 'outlines'
-                : tab.query === 'scripts' ? activeTab === 'scripts'
-                : activeTab === 'all';
+                tab.query === 'outlines'
+                  ? activeTab === 'outlines'
+                  : tab.query === 'scripts'
+                    ? activeTab === 'scripts'
+                    : activeTab === 'all';
               return (
                 <button
                   key={tab.label}

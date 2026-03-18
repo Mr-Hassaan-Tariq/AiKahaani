@@ -30,7 +30,9 @@ export default function MyScriptsList({
 
   const emptyState = searchQuery ? (
     <div className="py-12 text-center">
-      <p className="text-sm font-medium text-foreground">No results for &quot;{searchQuery}&quot;</p>
+      <p className="text-sm font-medium text-foreground">
+        No results for &quot;{searchQuery}&quot;
+      </p>
       <p className="mt-1 text-xs text-muted-foreground">Try adjusting your search terms.</p>
     </div>
   ) : undefined;

@@ -25,10 +25,9 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
   return (
     <FormProvider {...methods}>
       <form onSubmit={methods.handleSubmit(onSubmit)} className="contents">
-
         {/* Personal Details card */}
         <div className="rounded-xl border border-border bg-card p-8">
-          <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">
+          <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
             Personal Details
           </h3>
           <div className="flex flex-col gap-6">
@@ -76,7 +75,7 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
 
         {/* Channel Details card */}
         <div className="rounded-xl border border-border bg-card p-8">
-          <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">
+          <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
             Channel Details
           </h3>
           <div className="flex flex-col gap-6">
@@ -85,7 +84,7 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
               <input
                 disabled
                 placeholder="Your channel name…"
-                className="h-10 w-full rounded-md border border-border bg-input px-3 text-sm text-foreground placeholder:text-muted-foreground opacity-60 cursor-not-allowed focus:outline-none"
+                className="h-10 w-full cursor-not-allowed rounded-md border border-border bg-input px-3 text-sm text-foreground opacity-60 placeholder:text-muted-foreground focus:outline-none"
               />
             </div>
             <div className="grid gap-6 sm:grid-cols-2">
@@ -94,21 +93,22 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
                 <input
                   disabled
                   placeholder="e.g. Education / Productivity"
-                  className="h-10 w-full rounded-md border border-border bg-input px-3 text-sm text-foreground placeholder:text-muted-foreground opacity-60 cursor-not-allowed focus:outline-none"
+                  className="h-10 w-full cursor-not-allowed rounded-md border border-border bg-input px-3 text-sm text-foreground opacity-60 placeholder:text-muted-foreground focus:outline-none"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-foreground">Target Audience Language</label>
+                <label className="text-sm font-semibold text-foreground">
+                  Target Audience Language
+                </label>
                 <input
                   disabled
                   placeholder="e.g. English (US)"
-                  className="h-10 w-full rounded-md border border-border bg-input px-3 text-sm text-foreground placeholder:text-muted-foreground opacity-60 cursor-not-allowed focus:outline-none"
+                  className="h-10 w-full cursor-not-allowed rounded-md border border-border bg-input px-3 text-sm text-foreground opacity-60 placeholder:text-muted-foreground focus:outline-none"
                 />
               </div>
             </div>
           </div>
         </div>
-
       </form>
     </FormProvider>
   );

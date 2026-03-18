@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { type VariantProps } from 'class-variance-authority';
 
-import { cn } from 'lib/utils';
 import { inputVariants } from './input.variants';
+import { cn } from 'lib/utils';
 
 export interface InputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
@@ -25,12 +25,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const resolvedState = error ? 'error' : state;
 
     return (
-      <div className="flex flex-col gap-1.5 w-full">
+      <div className="flex w-full flex-col gap-1.5">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="text-sm font-medium text-foreground"
-          >
+          <label htmlFor={inputId} className="text-sm font-medium text-foreground">
             {label}
           </label>
         )}
@@ -47,7 +44,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             className={cn(
               inputVariants({ size, state: resolvedState }),
-              leftSlot  && 'pl-9',
+              leftSlot && 'pl-9',
               rightSlot && 'pr-9',
               className,
             )}
@@ -61,12 +58,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
 
-        {error && (
-          <p className="text-xs text-destructive">{error}</p>
-        )}
-        {!error && hint && (
-          <p className="text-xs text-muted-foreground">{hint}</p>
-        )}
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        {!error && hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
     );
   },

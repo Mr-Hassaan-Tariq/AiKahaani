@@ -17,8 +17,12 @@ export function ManageSubscriptionButton() {
       disabled={mutation.status === 'pending'}
       onClick={() =>
         mutation.mutate(undefined, {
-          onSuccess: (url) => { router.push(url); },
-          onError: (error: any) => { alert(error.message || 'Something went wrong.'); },
+          onSuccess: (url) => {
+            router.push(url);
+          },
+          onError: (error: any) => {
+            alert(error.message || 'Something went wrong.');
+          },
         })
       }
     >

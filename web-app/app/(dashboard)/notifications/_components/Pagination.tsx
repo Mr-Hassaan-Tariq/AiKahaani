@@ -11,7 +11,12 @@ type PaginationProps = {
   onPageChange?: (page: number) => void;
 };
 
-export default function Pagination({ totalItems, itemsPerPage, currentPage, onPageChange }: PaginationProps) {
+export default function Pagination({
+  totalItems,
+  itemsPerPage,
+  currentPage,
+  onPageChange,
+}: PaginationProps) {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const handlePageChange = (page: number) => {

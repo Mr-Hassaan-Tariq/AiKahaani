@@ -5,17 +5,25 @@ import { Download } from 'lucide-react';
 
 import { ScriptData } from '../_types';
 import useExportScript from 'lib/hooks/useExportScript';
+import { logger } from 'lib/logger';
 import { Button } from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
 import { Checkbox } from 'components/shadcn_ui/checkbox';
-import { logger } from 'lib/logger';
 
 type ExportFormat = 'docx' | 'pdf' | 'txt';
 
 const exportOptions = [
-  { value: 'docx' as ExportFormat, label: '.docx', description: 'Best for editing in Word or Google Docs' },
+  {
+    value: 'docx' as ExportFormat,
+    label: '.docx',
+    description: 'Best for editing in Word or Google Docs',
+  },
   { value: 'pdf' as ExportFormat, label: '.pdf', description: 'Great for sharing or printing' },
-  { value: 'txt' as ExportFormat, label: '.txt', description: 'Simple text file for quick copy-paste' },
+  {
+    value: 'txt' as ExportFormat,
+    label: '.txt',
+    description: 'Simple text file for quick copy-paste',
+  },
 ];
 
 export default function ExportScriptModal({
@@ -48,7 +56,9 @@ export default function ExportScriptModal({
           }
           setOpen(false);
         },
-        onError: (err) => { logger.error('Export error:', err); },
+        onError: (err) => {
+          logger.error('Export error:', err);
+        },
       },
     );
   };
@@ -56,13 +66,23 @@ export default function ExportScriptModal({
   return (
     <Dialog
       open={open}
-      setOpen={(v) => { setOpen(v); if (!v) setSelectedFormat(null); }}
+      setOpen={(v) => {
+        setOpen(v);
+        if (!v) setSelectedFormat(null);
+      }}
       trigger={trigger}
       title="Export script"
       description="Choose a file format for your script."
       footer={
         <div className="flex w-full gap-3">
-          <Button variant="outline" className="flex-1" onClick={() => { setOpen(false); setSelectedFormat(null); }}>
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => {
+              setOpen(false);
+              setSelectedFormat(null);
+            }}
+          >
             Cancel
           </Button>
           <Button
@@ -76,9 +96,12 @@ export default function ExportScriptModal({
         </div>
       }
     >
-      <div className="flex flex-col gap-3 my-2">
+      <div className="my-2 flex flex-col gap-3">
         {exportOptions.map((option) => (
-          <label key={option.value} className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-accent">
+          <label
+            key={option.value}
+            className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-accent"
+          >
             <Checkbox
               checked={selectedFormat === option.value}
               onCheckedChange={(checked) => setSelectedFormat(checked ? option.value : null)}

@@ -391,7 +391,7 @@ function TrailWidget({ data, handleUpgrade, isTrial = false, onOpenAllPlans }: T
                           <Text variant="3xl" className="text-lg text-white lg:text-2xl">
                             ${e?.price} /
                           </Text>
-                          <Text variant="sm" className="mb-1 text-brand-secondary">
+                          <Text variant="sm" className="text-brand-secondary mb-1">
                             {e?.billing_cycle}
                           </Text>
                         </Row>

@@ -42,7 +42,7 @@ export default function SliderWidget({
   const maxMins = Math.round(wordCount[1] / 150);
 
   return (
-    <div className={`flex flex-col gap-4 ${disabled ? 'opacity-40 pointer-events-none' : ''}`}>
+    <div className={`flex flex-col gap-4 ${disabled ? 'pointer-events-none opacity-40' : ''}`}>
       {/* Label */}
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-foreground">Script length</span>

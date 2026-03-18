@@ -29,7 +29,7 @@ export default function FormTextArea(props: TextareaProps) {
   } = useFormContext();
 
   return (
-    <div className="flex w-full flex-col items-start gap-2 self-stretch font-figtree">
+    <div className="font-figtree flex w-full flex-col items-start gap-2 self-stretch">
       {label && (
         <Text variant="base" className="font-medium text-white">
           {label}

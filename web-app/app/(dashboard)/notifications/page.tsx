@@ -61,14 +61,12 @@ export default function NotificationsPage() {
     }
   }, []);
 
-  useEffect(() => { fetchNotifications(currentPage); }, [fetchNotifications, currentPage]);
+  useEffect(() => {
+    fetchNotifications(currentPage);
+  }, [fetchNotifications, currentPage]);
 
   if (query && components[query]) {
-    return (
-      <NotificationTabs>
-        {components[query]}
-      </NotificationTabs>
-    );
+    return <NotificationTabs>{components[query]}</NotificationTabs>;
   }
 
   return (
@@ -93,7 +91,11 @@ export default function NotificationsPage() {
                 isNew={!item.read}
                 actionText={link ? 'View' : undefined}
                 actionLink={link}
-                onRead={(id) => setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n))}
+                onRead={(id) =>
+                  setNotifications((prev) =>
+                    prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+                  )
+                }
               />
             );
           })}

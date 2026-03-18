@@ -6,6 +6,12 @@ export async function middleware(request: NextRequest) {
   if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') return NextResponse.next();
 
   const path = request.nextUrl.pathname;
+  // Public static assets should not be gated by auth middleware.
+  // Otherwise, requests for favicon/logo/image URLs can get redirected to `/signup`.
+  if (path.startsWith('/logos/') || path.startsWith('/images/')) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get('access_token')?.value; // Read token from cookies
 
   // Pages that don't need authentication (e.g., signup, login)

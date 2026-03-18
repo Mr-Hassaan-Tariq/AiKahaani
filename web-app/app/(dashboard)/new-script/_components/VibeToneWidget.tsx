@@ -33,7 +33,7 @@ export default function VibeToneWidget({ tones, name }: { tones: ToneType[]; nam
 
   const selectedTones = useMemo(
     () => tones.filter((t) => selectedIds.includes(t.id)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [tones, selectedIds],
   );
 

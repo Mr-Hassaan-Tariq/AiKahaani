@@ -7,11 +7,11 @@ import { CircleCheck } from 'lucide-react';
 
 import useCreateStripeSession from 'lib/hooks/useCreateStripeSession';
 import useGetCurrentPlan from 'lib/hooks/useGetCurrentPlan';
+import { cn } from 'lib/utils';
 import useToast from 'lib/utils/useToast';
 import { Button } from 'components/ui/Button';
 import { ViewAllPlanModal } from 'components/ui/PlanUpgradeModal';
 import { Spinner } from 'components/ui/Spinner';
-import { cn } from 'lib/utils';
 
 const STATUS_COLORS = {
   active: 'bg-success',
@@ -27,8 +27,12 @@ export default function Page() {
 
   const handleUpgrade = async (plan_id: string) => {
     createStripeSession(plan_id as never, {
-      onSuccess: (data) => { window.location.href = data.url; },
-      onError: (error) => { toast.error('Something went wrong', error.message); },
+      onSuccess: (data) => {
+        window.location.href = data.url;
+      },
+      onError: (error) => {
+        toast.error('Something went wrong', error.message);
+      },
     });
   };
 
@@ -59,19 +63,26 @@ export default function Page() {
   })();
   const remainingDays = computedEndDate ? computedEndDate.diff(dayjs(), 'day') : null;
   const statusKey =
-    remainingDays !== null && remainingDays <= 3 ? 'expiring'
-    : data?.end_date ? 'expired'
-    : 'active';
-  const statusLabel = statusKey === 'expiring' ? 'Expiring soon' : statusKey === 'expired' ? 'Expired' : 'Active';
+    remainingDays !== null && remainingDays <= 3
+      ? 'expiring'
+      : data?.end_date
+        ? 'expired'
+        : 'active';
+  const statusLabel =
+    statusKey === 'expiring' ? 'Expiring soon' : statusKey === 'expired' ? 'Expired' : 'Active';
 
   return (
     <div className="flex flex-col gap-5">
       {/* Plan header */}
       <div className="rounded-xl border border-border bg-card p-8">
-        <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">Current Plan</h3>
+        <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
+          Current Plan
+        </h3>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Plan name</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Plan name
+            </p>
             <h3 className="mt-1 text-lg font-semibold capitalize text-foreground">
               {data?.plan?.product?.name}
             </h3>
@@ -90,7 +101,7 @@ export default function Page() {
         </div>
 
         {/* Status row */}
-        <div className="mt-5 grid gap-3 border-t border-border pt-5 sm:grid-cols-3 text-sm">
+        <div className="mt-5 grid gap-3 border-t border-border pt-5 text-sm sm:grid-cols-3">
           <div>
             <p className="text-xs text-muted-foreground">Status</p>
             <div className="mt-1 flex items-center gap-1.5">
@@ -116,7 +127,9 @@ export default function Page() {
       {/* Features */}
       {data?.plan?.product?.metadata?.features && (
         <div className="rounded-xl border border-border bg-card p-8">
-          <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">Plan includes</h3>
+          <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
+            Plan includes
+          </h3>
           <div className="grid gap-2.5 sm:grid-cols-2">
             {Object.keys(JSON.parse(data.plan.product.metadata.features ?? '[]')).map((e) => (
               <div key={e} className="flex items-center gap-2">

@@ -1,5 +1,5 @@
-import Button from 'components/ui/Button';
 import { EmptyStateProps } from '../_types';
+import Button from 'components/ui/Button';
 
 export default function EmptyState({
   icon: Icon,
@@ -16,9 +16,7 @@ export default function EmptyState({
       </div>
       <h3 className="mb-2 text-xl font-semibold text-foreground">{title}</h3>
       <p className="mb-6 text-muted-foreground" dangerouslySetInnerHTML={{ __html: description }} />
-      {actionLabel && onAction && (
-        <Button onClick={onAction}>{actionLabel}</Button>
-      )}
+      {actionLabel && onAction && <Button onClick={onAction}>{actionLabel}</Button>}
     </div>
   );
 }

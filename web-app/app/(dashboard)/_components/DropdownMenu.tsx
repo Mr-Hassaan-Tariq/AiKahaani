@@ -17,7 +17,7 @@ export function Dropdown({ notifications }: { notifications: any[] }) {
 
   const getFinalURL = (link?: string) => {
     if (!link) return '#';
-    if (link.startsWith('/scripts/'))  return `/new-script/script/${link.replace('scripts/', '')}`;
+    if (link.startsWith('/scripts/')) return `/new-script/script/${link.replace('scripts/', '')}`;
     if (link.startsWith('/outlines/')) return `/new-script/${link.replace('/outlines/', '')}`;
     return link;
   };
@@ -107,7 +107,10 @@ export function Dropdown({ notifications }: { notifications: any[] }) {
         <div className="mt-3 border-t border-border pt-3 text-center">
           <button
             className="text-xs font-medium text-primary hover:underline"
-            onClick={() => { router.push('/notifications'); setOpen(false); }}
+            onClick={() => {
+              router.push('/notifications');
+              setOpen(false);
+            }}
           >
             View all notifications
           </button>

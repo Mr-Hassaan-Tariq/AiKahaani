@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { type VariantProps } from 'class-variance-authority';
 
-import { cn } from 'lib/utils';
 import { badgeVariants } from './badge.variants';
+import { cn } from 'lib/utils';
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement>,
@@ -10,11 +10,7 @@ export interface BadgeProps
 
 const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
   ({ className, variant, size, ...props }, ref) => (
-    <span
-      ref={ref}
-      className={cn(badgeVariants({ variant, size }), className)}
-      {...props}
-    />
+    <span ref={ref} className={cn(badgeVariants({ variant, size }), className)} {...props} />
   ),
 );
 

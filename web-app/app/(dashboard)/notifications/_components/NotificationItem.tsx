@@ -1,9 +1,9 @@
 'use client';
 
-import { Bell, ArrowRight } from 'lucide-react';
+import { ArrowRight, Bell } from 'lucide-react';
 
-import { postClientDataAction } from 'lib/utils/clientDataActions';
 import { cn } from 'lib/utils';
+import { postClientDataAction } from 'lib/utils/clientDataActions';
 
 interface NotificationItemProps {
   id: number;
@@ -55,11 +55,13 @@ export default function NotificationItem({
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <div className={cn(
-            'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
-            isNew ? 'bg-primary/10' : 'bg-muted',
-          )}>
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div
+            className={cn(
+              'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
+              isNew ? 'bg-primary/10' : 'bg-muted',
+            )}
+          >
             <Bell className={cn('h-4 w-4', isNew ? 'text-primary' : 'text-muted-foreground')} />
           </div>
 

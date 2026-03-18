@@ -12,7 +12,9 @@ export function LoadingScreen() {
 
       <div className="text-center">
         <p className="text-sm font-semibold text-foreground">Analyzing your topic…</p>
-        <p className="mt-1 text-xs text-muted-foreground">Testing high-CTR variations for your niche</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Testing high-CTR variations for your niche
+        </p>
       </div>
 
       <div className="w-full max-w-sm space-y-2">

@@ -15,7 +15,9 @@ export default function Pagination({ totalItems, itemsPerPage, onPageChange }: P
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  useEffect(() => { onPageChange?.(currentPage); }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    onPageChange?.(currentPage);
+  }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
@@ -25,7 +27,8 @@ export default function Pagination({ totalItems, itemsPerPage, onPageChange }: P
   return (
     <div className="mt-8 flex items-center justify-between">
       <p className="text-xs text-muted-foreground">
-        Page {currentPage} of {totalPages} — {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}
+        Page {currentPage} of {totalPages} — {Math.min(currentPage * itemsPerPage, totalItems)} of{' '}
+        {totalItems}
       </p>
 
       <div className="flex items-center gap-1">

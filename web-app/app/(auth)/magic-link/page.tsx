@@ -2,23 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, XCircle, Loader2 } from 'lucide-react';
 import Cookies from 'js-cookie';
+import { Check, Loader2, XCircle } from 'lucide-react';
 
 import { authService } from 'lib/api';
 
 // ── Page ─────────────────────────────────────────────────────────────
 export default function MagicLinkPage() {
-  const searchParams  = useSearchParams();
-  const router        = useRouter();
-  const email         = searchParams.get('email');
-  const token         = searchParams.get('token');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const email = searchParams.get('email');
+  const token = searchParams.get('token');
 
-  const [isResending, setIsResending]   = useState(false);
-  const [resendMsg, setResendMsg]       = useState<string | null>(null);
-  const [isVerifying, setIsVerifying]   = useState(!!token);
+  const [isResending, setIsResending] = useState(false);
+  const [resendMsg, setResendMsg] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(!!token);
   const [verifyStatus, setVerifyStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [verifyMsg, setVerifyMsg]       = useState('');
+  const [verifyMsg, setVerifyMsg] = useState('');
 
   // ── Token verification ────────────────────────────────────────────
   useEffect(() => {
@@ -69,7 +69,6 @@ export default function MagicLinkPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
-
       {/* ── Decorative background orbs ── */}
       <div
         aria-hidden
@@ -82,7 +81,6 @@ export default function MagicLinkPage() {
 
       {/* ── Card ── */}
       <div className="relative z-10 w-full max-w-[440px] rounded-2xl border border-border bg-card px-10 py-14 text-center shadow-sm">
-
         {/* ── Token verification state ── */}
         {token ? (
           <>
@@ -104,9 +102,11 @@ export default function MagicLinkPage() {
               )}
 
               {verifyMsg && (
-                <p className={`text-sm font-medium ${
-                  verifyStatus === 'error' ? 'text-destructive' : 'text-success'
-                }`}>
+                <p
+                  className={`text-sm font-medium ${
+                    verifyStatus === 'error' ? 'text-destructive' : 'text-success'
+                  }`}
+                >
                   {verifyMsg}
                 </p>
               )}
@@ -121,14 +121,14 @@ export default function MagicLinkPage() {
               </button>
             )}
           </>
-
         ) : (
           /* ── Magic link sent state ── */
           <>
             <h1 className="text-2xl font-semibold text-foreground">Magic link sent!</h1>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               Check your inbox — click the link to
-              <br />enter your workspace.
+              <br />
+              enter your workspace.
             </p>
 
             {/* Check icon */}
@@ -149,9 +149,7 @@ export default function MagicLinkPage() {
               </button>
             </p>
 
-            {resendMsg && (
-              <p className="mt-2 text-xs text-muted-foreground">{resendMsg}</p>
-            )}
+            {resendMsg && <p className="mt-2 text-xs text-muted-foreground">{resendMsg}</p>}
           </>
         )}
       </div>

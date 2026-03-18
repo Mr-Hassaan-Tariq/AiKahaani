@@ -40,7 +40,12 @@ export default function DeleteScriptModal({
           <Button variant="outline" className="flex-1" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button variant="destructive" className="flex-1" onClick={handleDelete} loading={isDeleting}>
+          <Button
+            variant="destructive"
+            className="flex-1"
+            onClick={handleDelete}
+            loading={isDeleting}
+          >
             Delete
           </Button>
         </div>

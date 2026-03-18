@@ -53,32 +53,26 @@ export default function ScriptCard({ script, actions, className = '' }: ScriptCa
   return (
     <div
       className={cn(
-        'flex flex-col justify-between rounded-xl border border-border bg-card p-6 min-h-[232px] cursor-pointer transition-colors hover:shadow-sm',
+        'flex min-h-[232px] cursor-pointer flex-col justify-between rounded-xl border border-border bg-card p-6 transition-colors hover:shadow-sm',
         className,
       )}
       onClick={handleCardClick}
     >
       {/* Top: icon + action buttons */}
-      <div className="flex items-start justify-between mb-5">
+      <div className="mb-5 flex items-start justify-between">
         <div
           className={cn(
-            'w-14 h-14 rounded-lg flex items-center justify-center',
+            'flex h-14 w-14 items-center justify-center rounded-lg',
             isScript ? 'bg-red-50 text-primary' : 'bg-blue-50 text-blue-500',
           )}
         >
-          {isScript
-            ? <FileText className="h-6 w-6" />
-            : <ListTree className="h-6 w-6" />
-          }
+          {isScript ? <FileText className="h-6 w-6" /> : <ListTree className="h-6 w-6" />}
         </div>
 
-        <div
-          className="flex items-center gap-2"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <ExportScriptModal
             trigger={
-              <button className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+              <button className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-secondary text-muted-foreground transition-colors hover:text-foreground">
                 <Download className="h-[18px] w-[18px]" />
               </button>
             }
@@ -86,7 +80,7 @@ export default function ScriptCard({ script, actions, className = '' }: ScriptCa
           />
           <DeleteScriptModal
             trigger={
-              <button className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+              <button className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-secondary text-muted-foreground transition-colors hover:text-foreground">
                 <MoreVertical className="h-[18px] w-[18px]" />
               </button>
             }
@@ -98,16 +92,16 @@ export default function ScriptCard({ script, actions, className = '' }: ScriptCa
 
       {/* Title + meta */}
       <div className="flex-1">
-        <h3 className="text-2xl font-semibold text-foreground tracking-tight leading-snug line-clamp-2">
+        <h3 className="line-clamp-2 text-2xl font-semibold leading-snug tracking-tight text-foreground">
           {script.title}
         </h3>
-        <div className="mt-3 flex items-center gap-2.5 flex-wrap">
-          <span className={cn(
-            'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
-            isScript
-              ? 'bg-red-100 text-red-600'
-              : 'bg-blue-100 text-blue-600',
-          )}>
+        <div className="mt-3 flex flex-wrap items-center gap-2.5">
+          <span
+            className={cn(
+              'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
+              isScript ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600',
+            )}
+          >
             {isScript ? 'Full Script' : 'Outline'}
           </span>
           {relativeDate && (
@@ -119,7 +113,7 @@ export default function ScriptCard({ script, actions, className = '' }: ScriptCa
       {/* Footer meta pill */}
       {metaPill && (
         <div className="mt-6">
-          <span className="inline-flex items-center px-3 py-2 rounded-full bg-secondary text-muted-foreground text-[13px] font-medium">
+          <span className="inline-flex items-center rounded-full bg-secondary px-3 py-2 text-[13px] font-medium text-muted-foreground">
             {metaPill}
           </span>
         </div>

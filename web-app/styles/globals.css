@@ -10,52 +10,52 @@
 @layer base {
   :root {
     /* ── Surfaces ── */
-    --background: 0 0% 98.4%;               /* #FBFBFB */
-    --foreground: 222 47% 11%;              /* #0F172A */
+    --background: 0 0% 98.4%; /* #FBFBFB */
+    --foreground: 222 47% 11%; /* #0F172A */
 
     /* ── Cards & Popovers ── */
-    --card: 0 0% 100%;                      /* #FFFFFF */
-    --card-foreground: 222 47% 11%;         /* #0F172A */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 222 47% 11%; /* #0F172A */
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
     /* ── Brand Primary — YouTube Red ── */
-    --primary: 0 100% 50%;                  /* #FF0000 */
-    --primary-foreground: 0 0% 100%;        /* #FFFFFF */
+    --primary: 0 100% 50%; /* #FF0000 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* ── Secondary ── */
-    --secondary: 220 14% 96%;               /* #F3F4F6 */
-    --secondary-foreground: 222 47% 11%;    /* #0F172A */
+    --secondary: 220 14% 96%; /* #F3F4F6 */
+    --secondary-foreground: 222 47% 11%; /* #0F172A */
 
     /* ── Muted ── */
-    --muted: 220 20% 97%;                   /* #F6F7F9 */
-    --muted-foreground: 220 9% 46%;         /* #6B7280 */
+    --muted: 220 20% 97%; /* #F6F7F9 */
+    --muted-foreground: 220 9% 46%; /* #6B7280 */
 
     /* ── Accent (light red tint) ── */
-    --accent: 0 94% 94%;                    /* #FEE2E2 */
-    --accent-foreground: 0 72% 42%;         /* #B91C1C */
+    --accent: 0 94% 94%; /* #FEE2E2 */
+    --accent-foreground: 0 72% 42%; /* #B91C1C */
 
     /* ── Status ── */
-    --success: 142 71% 45%;                 /* #22C55E */
+    --success: 142 71% 45%; /* #22C55E */
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;                  /* #F59E0B */
+    --warning: 38 92% 50%; /* #F59E0B */
     --warning-foreground: 222 47% 11%;
-    --destructive: 0 72% 51%;               /* #DC2626 */
+    --destructive: 0 72% 51%; /* #DC2626 */
     --destructive-foreground: 0 0% 100%;
 
     /* ── Borders & Inputs ── */
-    --border: 220 13% 91%;                  /* subtle light border */
-    --input: 220 14% 96%;                   /* #F3F4F6 */
-    --ring: 0 100% 50%;                     /* focus ring = primary */
+    --border: 220 13% 91%; /* subtle light border */
+    --input: 220 14% 96%; /* #F3F4F6 */
+    --ring: 0 100% 50%; /* focus ring = primary */
 
     /* ── Sidebar ── */
-    --sidebar: 0 0% 100%;                   /* #FFFFFF */
-    --sidebar-foreground: 222 47% 11%;      /* #0F172A */
-    --sidebar-primary: 0 94% 94%;           /* #FEE2E2 active bg */
+    --sidebar: 0 0% 100%; /* #FFFFFF */
+    --sidebar-foreground: 222 47% 11%; /* #0F172A */
+    --sidebar-primary: 0 94% 94%; /* #FEE2E2 active bg */
     --sidebar-primary-foreground: 0 72% 42%; /* #B91C1C active text */
 
     /* ── Border Radius ── */
-    --radius: 0.5rem;                       /* 8px base */
+    --radius: 0.5rem; /* 8px base */
 
     /* ── Charts ── */
     --chart-1: 0 100% 50%;
@@ -111,8 +111,12 @@
 
   /* ── Animations ── */
   @keyframes slide {
-    from { left: -33%; }
-    to   { left: 100%; }
+    from {
+      left: -33%;
+    }
+    to {
+      left: 100%;
+    }
   }
   .animate-slide {
     animation: slide 1.3s infinite linear;

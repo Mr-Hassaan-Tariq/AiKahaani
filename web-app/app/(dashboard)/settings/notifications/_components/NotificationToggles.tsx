@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { toast } from 'sonner';
-
 import { updateNotificationSettings } from '@/(dashboard)/actions';
 import { NotificationSettingsType } from '@/(dashboard)/types';
+import { toast } from 'sonner';
+
 import { notificationTexts } from 'lib/localdata';
 import Switch from 'components/common/Switch';
 
@@ -39,13 +39,19 @@ export default function NotificationToggles({ initialSettings }: NotificationTog
   const [isPending, startTransition] = useTransition();
 
   const handleDeliveryChannelToggle = async (key: string, checked: boolean) => {
-    const newPreferences = { ...preferences, deliveryChannels: { ...preferences.deliveryChannels, [key]: checked } };
+    const newPreferences = {
+      ...preferences,
+      deliveryChannels: { ...preferences.deliveryChannels, [key]: checked },
+    };
     setPreferences(newPreferences);
     await saveNotificationSettings(newPreferences);
   };
 
   const handleNotificationTypeToggle = async (key: string, checked: boolean) => {
-    const newPreferences = { ...preferences, notificationTypes: { ...preferences.notificationTypes, [key]: checked } };
+    const newPreferences = {
+      ...preferences,
+      notificationTypes: { ...preferences.notificationTypes, [key]: checked },
+    };
     setPreferences(newPreferences);
     await saveNotificationSettings(newPreferences);
   };
@@ -54,16 +60,19 @@ export default function NotificationToggles({ initialSettings }: NotificationTog
     startTransition(async () => {
       try {
         const settings: NotificationSettingsType = {
-          in_app_notifications:       newPreferences.deliveryChannels.in_app_notifications       || false,
-          email_notifications:        newPreferences.deliveryChannels.email_notifications        || false,
-          web_push_notifications:     newPreferences.deliveryChannels.web_push_notifications     || false,
-          new_script_generated:       newPreferences.notificationTypes.new_script_generated      || false,
-          account_or_plan_changes:    newPreferences.notificationTypes.account_or_plan_changes   || false,
-          tips_content_inspiration:   newPreferences.notificationTypes.tips_content_inspiration  || false,
-          feature_updates:            newPreferences.notificationTypes.feature_updates           || false,
+          in_app_notifications: newPreferences.deliveryChannels.in_app_notifications || false,
+          email_notifications: newPreferences.deliveryChannels.email_notifications || false,
+          web_push_notifications: newPreferences.deliveryChannels.web_push_notifications || false,
+          new_script_generated: newPreferences.notificationTypes.new_script_generated || false,
+          account_or_plan_changes:
+            newPreferences.notificationTypes.account_or_plan_changes || false,
+          tips_content_inspiration:
+            newPreferences.notificationTypes.tips_content_inspiration || false,
+          feature_updates: newPreferences.notificationTypes.feature_updates || false,
         };
         const result = await updateNotificationSettings(settings);
-        if (result.isError) throw new Error(result.error?.message?.toString() || 'Failed to update');
+        if (result.isError)
+          throw new Error(result.error?.message?.toString() || 'Failed to update');
         toast.success('Notification settings updated');
       } catch {
         toast.error('Failed to save notification settings');
@@ -74,10 +83,9 @@ export default function NotificationToggles({ initialSettings }: NotificationTog
 
   return (
     <div className="flex flex-col gap-4">
-
       {/* Delivery channels */}
       <div className="rounded-xl border border-border bg-card p-8">
-        <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">
+        <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
           {notificationTexts.deliveryChannels.title}
         </h3>
         <div className="flex flex-col divide-y divide-border">
@@ -97,7 +105,7 @@ export default function NotificationToggles({ initialSettings }: NotificationTog
 
       {/* Notification types */}
       <div className="rounded-xl border border-border bg-card p-8">
-        <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">
+        <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
           {notificationTexts.notificationTypes.title}
         </h3>
         <div className="flex flex-col divide-y divide-border">
@@ -114,9 +122,7 @@ export default function NotificationToggles({ initialSettings }: NotificationTog
         </div>
       </div>
 
-      {isPending && (
-        <p className="text-xs text-muted-foreground">Saving…</p>
-      )}
+      {isPending && <p className="text-xs text-muted-foreground">Saving…</p>}
     </div>
   );
 }

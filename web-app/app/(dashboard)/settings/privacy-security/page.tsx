@@ -6,8 +6,8 @@ import { toast } from 'sonner';
 
 import { PrivacySettings, userService } from 'lib/api';
 import { useGetPrivacySettings, useUpdatePrivacySettings } from 'lib/hooks/useprivacySecurity';
-import Switch from 'components/common/Switch';
 import { Button } from 'components/ui/Button';
+import Switch from 'components/common/Switch';
 
 export default function PrivacySecurityPage() {
   const { data: privacySettings, isLoading } = useGetPrivacySettings();
@@ -23,9 +23,12 @@ export default function PrivacySecurityPage() {
 
   const handleDataPreferenceToggle = (key: keyof PrivacySettings, checked: boolean) => {
     if (!privacySettings) return;
-    updatePrivacySettings({ ...privacySettings, [key]: checked }, {
-      onError: () => toast.error('Failed to save privacy settings'),
-    });
+    updatePrivacySettings(
+      { ...privacySettings, [key]: checked },
+      {
+        onError: () => toast.error('Failed to save privacy settings'),
+      },
+    );
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -54,7 +57,7 @@ export default function PrivacySecurityPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-[900px] mx-auto flex items-center justify-center py-16">
+      <div className="mx-auto flex w-full max-w-[900px] items-center justify-center py-16">
         <p className="text-sm text-muted-foreground">Loading…</p>
       </div>
     );
@@ -62,16 +65,19 @@ export default function PrivacySecurityPage() {
 
   return (
     <div className="flex flex-col gap-6">
-
       {/* Change Password */}
       <div className="rounded-xl border border-border bg-card p-8">
-        <div className="flex items-center gap-3 pb-6 mb-6 border-b border-border">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        <div className="mb-6 flex items-center gap-3 border-b border-border pb-6">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
             <KeyRound className="h-[18px] w-[18px] text-primary" />
           </div>
           <div>
-            <h3 className="text-[18px] font-semibold text-foreground leading-snug">Change Password</h3>
-            <p className="text-sm text-muted-foreground">Update your login password to keep your account secure.</p>
+            <h3 className="text-[18px] font-semibold leading-snug text-foreground">
+              Change Password
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Update your login password to keep your account secure.
+            </p>
           </div>
         </div>
 
@@ -144,7 +150,12 @@ export default function PrivacySecurityPage() {
           </div>
 
           <div className="flex justify-end pt-2">
-            <Button type="submit" variant="primary" loading={isChangingPassword} disabled={isChangingPassword}>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isChangingPassword}
+              disabled={isChangingPassword}
+            >
               Update Password
             </Button>
           </div>
@@ -153,13 +164,17 @@ export default function PrivacySecurityPage() {
 
       {/* Data Preferences */}
       <div className="rounded-xl border border-border bg-card p-8">
-        <div className="flex items-center gap-3 pb-6 mb-6 border-b border-border">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        <div className="mb-6 flex items-center gap-3 border-b border-border pb-6">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
             <ShieldCheck className="h-[18px] w-[18px] text-primary" />
           </div>
           <div>
-            <h3 className="text-[18px] font-semibold text-foreground leading-snug">Data Preferences</h3>
-            <p className="text-sm text-muted-foreground">Control how your data is used to improve your experience.</p>
+            <h3 className="text-[18px] font-semibold leading-snug text-foreground">
+              Data Preferences
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Control how your data is used to improve your experience.
+            </p>
           </div>
         </div>
 
@@ -169,7 +184,9 @@ export default function PrivacySecurityPage() {
               label="Allow product update emails"
               description="Receive emails about new features and updates"
               defaultChecked={privacySettings?.allow_product_update_emails}
-              onToggle={(checked) => handleDataPreferenceToggle('allow_product_update_emails', checked)}
+              onToggle={(checked) =>
+                handleDataPreferenceToggle('allow_product_update_emails', checked)
+              }
               disabled={isUpdating}
             />
           </div>
@@ -178,13 +195,14 @@ export default function PrivacySecurityPage() {
               label="Allow anonymized data usage"
               description="Help us improve by sharing anonymous usage data"
               defaultChecked={privacySettings?.allow_anonymized_data_usage}
-              onToggle={(checked) => handleDataPreferenceToggle('allow_anonymized_data_usage', checked)}
+              onToggle={(checked) =>
+                handleDataPreferenceToggle('allow_anonymized_data_usage', checked)
+              }
               disabled={isUpdating}
             />
           </div>
         </div>
       </div>
-
     </div>
   );
 }

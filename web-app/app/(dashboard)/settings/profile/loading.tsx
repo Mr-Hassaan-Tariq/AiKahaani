@@ -2,7 +2,7 @@ import { Skeleton } from 'components/shadcn_ui/skeleton';
 
 export default function Loading() {
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex max-w-2xl flex-col gap-6">
       {/* Photo card skeleton */}
       <div className="rounded-xl border border-border bg-card p-6">
         <Skeleton className="mb-5 h-4 w-28" />

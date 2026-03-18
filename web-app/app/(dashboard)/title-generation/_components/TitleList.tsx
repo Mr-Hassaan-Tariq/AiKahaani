@@ -1,7 +1,7 @@
 import { Copy } from 'lucide-react';
 
-import { Button } from 'components/ui/Button';
 import { cn } from 'lib/utils';
+import { Button } from 'components/ui/Button';
 
 export default function TitleList({
   titles,
@@ -23,31 +23,31 @@ export default function TitleList({
           <div
             key={i}
             className={cn(
-              'rounded-xl border border-border p-5 flex flex-col gap-4',
+              'flex flex-col gap-4 rounded-xl border border-border p-5',
               isFeatured
-                ? 'bg-gradient-to-b from-primary/[0.04] to-card border-primary/20'
+                ? 'border-primary/20 bg-gradient-to-b from-primary/[0.04] to-card'
                 : 'bg-card',
             )}
           >
             {/* Top: badges */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               {isFeatured && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
                   Top pick
                 </span>
               )}
               {tone && (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-secondary text-muted-foreground text-xs font-medium">
+                <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground">
                   {tone}
                 </span>
               )}
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-secondary text-muted-foreground text-xs font-medium">
+              <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground">
                 {charCount} chars
               </span>
             </div>
 
             {/* Title text */}
-            <h3 className="text-[22px] font-bold text-foreground leading-snug tracking-tight">
+            <h3 className="text-[22px] font-bold leading-snug tracking-tight text-foreground">
               {title}
             </h3>
 

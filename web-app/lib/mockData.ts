@@ -324,7 +324,7 @@ export const mockNiches = {
       tone: ['Inspirational', 'Empathetic'],
       pacing: ['Reflective', 'Motivational peaks'],
       top_channels: [
-        { name: 'Matt D\'Avella', link: 'https://youtube.com' },
+        { name: "Matt D'Avella", link: 'https://youtube.com' },
         { name: 'Thomas Frank', link: 'https://youtube.com' },
       ],
       best_for: ['Life coaches', 'Minimalism creators', 'Wellness educators'],
@@ -382,7 +382,7 @@ export const mockNiches = {
       id: 7,
       admin: 1,
       title: 'Travel & Experiences',
-      tagline: 'Take viewers to places they\'ve never been — without leaving home.',
+      tagline: "Take viewers to places they've never been — without leaving home.",
       thumbnail_url: null,
       thumbnail: null,
       script_structure: {
@@ -454,8 +454,12 @@ export const mockNiches = {
 export const mockOutline = {
   uuid: 'mock-outline-1',
   title: 'Top 10 Productivity Hacks for Creators',
-  description: 'A fast-paced, actionable guide covering the top productivity habits that actually work for YouTube creators who struggle with focus and consistency.',
-  tones: [{ id: 4, name: 'Fast-paced' }, { id: 1, name: 'Casual' }],
+  description:
+    'A fast-paced, actionable guide covering the top productivity habits that actually work for YouTube creators who struggle with focus and consistency.',
+  tones: [
+    { id: 4, name: 'Fast-paced' },
+    { id: 1, name: 'Casual' },
+  ],
   template_style: undefined,
   min_length: 800,
   max_length: 1500,
@@ -465,49 +469,56 @@ export const mockOutline = {
     sections: [
       {
         title: 'Intro Hook',
-        description: 'Open with a relatable frustration about wasted hours and tease a simple framework viewers can use immediately.',
+        description:
+          'Open with a relatable frustration about wasted hours and tease a simple framework viewers can use immediately.',
         key_points: ['Relatable pain point', 'Bold promise', 'Tease the list'],
         timing: '0:00 – 0:45',
         transition: 'Cut to the first hack with energy.',
       },
       {
         title: 'Hack #1 — The 2-Minute Rule',
-        description: 'Show how completing tiny tasks instantly creates momentum and reduces mental clutter early in the day.',
+        description:
+          'Show how completing tiny tasks instantly creates momentum and reduces mental clutter early in the day.',
         key_points: ['Define the rule', 'Real creator examples', 'Quick win'],
         timing: '0:45 – 2:00',
         transition: 'Bridge to time blocking with a contrast.',
       },
       {
         title: 'Hack #2 — Time Blocking',
-        description: 'Explain how assigning focused time windows stops constant task switching and protects deep work sessions.',
+        description:
+          'Explain how assigning focused time windows stops constant task switching and protects deep work sessions.',
         key_points: ['Calendar blocking demo', 'Avoid context switching', 'Deep work zones'],
         timing: '2:00 – 3:30',
         transition: 'Lead into "eating the frog" concept.',
       },
       {
         title: 'Hack #3 — Eat the Frog',
-        description: 'Frame the hardest task as the highest-leverage move of the day and connect it to confidence and consistency.',
+        description:
+          'Frame the hardest task as the highest-leverage move of the day and connect it to confidence and consistency.',
         key_points: ['What is the frog?', 'First thing every morning', 'Confidence loop'],
         timing: '3:30 – 5:00',
         transition: 'Shift to batching for efficiency.',
       },
       {
         title: 'Hack #4 — Batch Similar Tasks',
-        description: 'Group repetitive work together so the viewer sees a practical way to cut context switching and regain momentum.',
+        description:
+          'Group repetitive work together so the viewer sees a practical way to cut context switching and regain momentum.',
         key_points: ['Editing batches', 'Thumbnail day', 'Email sprints'],
         timing: '5:00 – 6:30',
         transition: 'Introduce Pomodoro as the time tool.',
       },
       {
         title: 'Hack #5 — Pomodoro Focus Sprint',
-        description: 'Introduce work sprints with intentional breaks to help creators maintain intensity without burning out.',
+        description:
+          'Introduce work sprints with intentional breaks to help creators maintain intensity without burning out.',
         key_points: ['25/5 rule', 'Apps to try', 'Energy management'],
         timing: '6:30 – 8:00',
         transition: 'Wind down into the recap.',
       },
       {
         title: 'Recap & CTA',
-        description: 'End with a quick summary, challenge viewers to try one habit today, and invite them to comment their favorite hack.',
+        description:
+          'End with a quick summary, challenge viewers to try one habit today, and invite them to comment their favorite hack.',
         key_points: ['Summarize all 5 hacks', 'One-action challenge', 'Subscribe CTA'],
         timing: '8:00 – 9:00',
         transition: '',
@@ -538,37 +549,44 @@ export const mockScript = {
     {
       title: 'Intro Hook',
       timeRange: '0:00 \u2013 0:45',
-      content: "Hey everyone, welcome back. If you're watching this, you've probably had at least one day where you sat down to work and somehow ended up doing nothing meaningful for hours. I've been there.\n\nToday I'm breaking down five productivity hacks that actually work for creators. No fluff. No productivity-guru jargon. Just the stuff that moved the needle.",
+      content:
+        "Hey everyone, welcome back. If you're watching this, you've probably had at least one day where you sat down to work and somehow ended up doing nothing meaningful for hours. I've been there.\n\nToday I'm breaking down five productivity hacks that actually work for creators. No fluff. No productivity-guru jargon. Just the stuff that moved the needle.",
     },
     {
       title: 'Hack #1 \u2014 The 2-Minute Rule',
       timeRange: '0:45 \u2013 2:00',
-      content: "Here's the deal: if a task takes less than two minutes, do it right now. Don't add it to a list. Don't schedule it. Just do it.\n\nReply to that DM. Rename that clip. Send that follow-up email. The backlog of tiny tasks is a silent productivity killer.\n\nClear the clutter, and your brain suddenly has space to go deep.",
+      content:
+        "Here's the deal: if a task takes less than two minutes, do it right now. Don't add it to a list. Don't schedule it. Just do it.\n\nReply to that DM. Rename that clip. Send that follow-up email. The backlog of tiny tasks is a silent productivity killer.\n\nClear the clutter, and your brain suddenly has space to go deep.",
     },
     {
       title: 'Hack #2 \u2014 Time Blocking',
       timeRange: '2:00 \u2013 3:30',
-      content: 'Stop using a to-do list as your only system. A list tells you what to do but not when. Time blocking fixes that.\n\nBlock actual calendar time for deep work. When editing is on the calendar from 9 to 11, that slot is sacred. Context switching is the enemy of output.\n\nTime blocking is the shield that protects your deep work.',
+      content:
+        'Stop using a to-do list as your only system. A list tells you what to do but not when. Time blocking fixes that.\n\nBlock actual calendar time for deep work. When editing is on the calendar from 9 to 11, that slot is sacred. Context switching is the enemy of output.\n\nTime blocking is the shield that protects your deep work.',
     },
     {
       title: 'Hack #3 \u2014 Eat the Frog',
       timeRange: '3:30 \u2013 5:00',
-      content: "Your frog is the task you've been dreading. The script you've been procrastinating. The thumbnail redesign you keep pushing back. Do it first.\n\nThe confidence you build by crushing the hardest thing before 10am is addictive. It proves to yourself that you're capable, and it resets the energy of your entire day.",
+      content:
+        "Your frog is the task you've been dreading. The script you've been procrastinating. The thumbnail redesign you keep pushing back. Do it first.\n\nThe confidence you build by crushing the hardest thing before 10am is addictive. It proves to yourself that you're capable, and it resets the energy of your entire day.",
     },
     {
       title: 'Hack #4 \u2014 Batch Similar Tasks',
       timeRange: '5:00 \u2013 6:30',
-      content: "Film all your B-roll in one session. Create all your thumbnails on Thursday. Answer all your comments in one 20-minute block.\n\nBatching works because every time you switch task types, you pay a cognitive tax.\n\nGroup similar work together and you'll get into a flow state faster, stay there longer, and produce higher quality output in less time.",
+      content:
+        "Film all your B-roll in one session. Create all your thumbnails on Thursday. Answer all your comments in one 20-minute block.\n\nBatching works because every time you switch task types, you pay a cognitive tax.\n\nGroup similar work together and you'll get into a flow state faster, stay there longer, and produce higher quality output in less time.",
     },
     {
       title: 'Hack #5 \u2014 Pomodoro Focus Sprints',
       timeRange: '6:30 \u2013 8:00',
-      content: "Work for 25 minutes. Break for 5. Repeat four times, then take a longer 20-minute break.\n\nIt sounds almost too simple, but the timer creates urgency, and urgency creates output. You're not sitting down to work on the script for hours. You're sitting down for exactly 25 minutes. That specificity is powerful.",
+      content:
+        "Work for 25 minutes. Break for 5. Repeat four times, then take a longer 20-minute break.\n\nIt sounds almost too simple, but the timer creates urgency, and urgency creates output. You're not sitting down to work on the script for hours. You're sitting down for exactly 25 minutes. That specificity is powerful.",
     },
     {
       title: 'Recap & CTA',
       timeRange: '8:00 \u2013 9:00',
-      content: "That's five hacks. The 2-Minute Rule to clear mental clutter. Time Blocking to protect deep work. Eat the Frog to build morning momentum. Task Batching to stay in flow. And Pomodoro Sprints to create urgency.\n\nPick one. Try it this week. Drop a comment below telling me which one you're going to test.\n\nIf this helped, hit subscribe. I post practical creator systems every week. See you in the next one.",
+      content:
+        "That's five hacks. The 2-Minute Rule to clear mental clutter. Time Blocking to protect deep work. Eat the Frog to build morning momentum. Task Batching to stay in flow. And Pomodoro Sprints to create urgency.\n\nPick one. Try it this week. Drop a comment below telling me which one you're going to test.\n\nIf this helped, hit subscribe. I post practical creator systems every week. See you in the next one.",
     },
   ],
   word_count: 320,
@@ -592,20 +610,36 @@ export function getMockDataForEndpoint(endpoint: string): unknown {
   if (endpoint.includes('users/details')) return mockUser;
   if (endpoint.includes('users/notifications')) return mockNotificationSettings;
   if (endpoint.includes('notifications/all-notifications')) {
-    return { results: mockNotifications, count: mockNotifications.length, next: null, previous: null };
+    return {
+      results: mockNotifications,
+      count: mockNotifications.length,
+      next: null,
+      previous: null,
+    };
   }
   if (endpoint.includes('privacy')) return mockPrivacySettings;
   if (endpoint.includes('scripts/config')) return mockScriptConfig;
   if (endpoint.includes('scripts/titles/tones')) return mockTitleStyles;
-  if (endpoint.includes('scripts/outlines/') && endpoint.includes('/script/')) return mockGenerateScriptResponse;
+  if (endpoint.includes('scripts/outlines/') && endpoint.includes('/script/'))
+    return mockGenerateScriptResponse;
   if (endpoint.includes('scripts/outlines/')) return mockOutline;
   // Script generations list: v1/scripts/generations/
   if (endpoint.includes('scripts/generations')) {
-    return { count: mockScriptGenerations.length, results: mockScriptGenerations, next: null, previous: null };
+    return {
+      count: mockScriptGenerations.length,
+      results: mockScriptGenerations,
+      next: null,
+      previous: null,
+    };
   }
   // Single script fetch by any mock uuid
-  if (endpoint.includes('scripts/mock-script-gen-1') || endpoint.includes('scripts/mock-gen-')) return mockScript;
-  if (endpoint.includes('scripts/') && !endpoint.includes('config') && !endpoint.includes('titles')) {
+  if (endpoint.includes('scripts/mock-script-gen-1') || endpoint.includes('scripts/mock-gen-'))
+    return mockScript;
+  if (
+    endpoint.includes('scripts/') &&
+    !endpoint.includes('config') &&
+    !endpoint.includes('titles')
+  ) {
     return mockScripts;
   }
   if (endpoint.includes('niches')) return mockNiches;
@@ -619,7 +653,7 @@ export const mockGeneratedTitles = {
     '7 Focus Habits That Made Me Finish Work Twice as Fast',
     "Can't Focus? These 7 Habits Fix Your Study Sessions",
     '7 Focus Habits Every Student Should Start This Week',
-    'I Tried 7 Focus Habits for 30 Days — Here\'s What Worked',
+    "I Tried 7 Focus Habits for 30 Days — Here's What Worked",
     'Stop Wasting Time: 7 Focus Habits That Actually Stick',
     'The 7-Habit Focus System That Killed My Procrastination',
   ],

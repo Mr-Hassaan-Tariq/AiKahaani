@@ -10,7 +10,7 @@ export default function TitleGeneratorLoading() {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-2xl px-6 py-8 flex flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-8">
         {/* Tabs */}
         <Skeleton className="h-10 w-full rounded-lg" />
 

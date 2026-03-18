@@ -22,17 +22,30 @@ export default function MyScriptsPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<any>(null);
 
-  const apiFilters = useMemo<ScriptFilters>(() => ({
-    search: searchValue || undefined,
-    type: activeTab === 'outlines' ? 'outline' : activeTab === 'scripts' ? 'script' : undefined,
-    ordering,
-    word_count_min: wordCountMin,
-    word_count_max: wordCountMax,
-    duration_min: durationMin,
-    duration_max: durationMax,
-    limit: pageSize,
-    offset: (currentPage - 1) * pageSize,
-  }), [activeTab, searchValue, ordering, wordCountMin, wordCountMax, durationMin, durationMax, pageSize, currentPage]);
+  const apiFilters = useMemo<ScriptFilters>(
+    () => ({
+      search: searchValue || undefined,
+      type: activeTab === 'outlines' ? 'outline' : activeTab === 'scripts' ? 'script' : undefined,
+      ordering,
+      word_count_min: wordCountMin,
+      word_count_max: wordCountMax,
+      duration_min: durationMin,
+      duration_max: durationMax,
+      limit: pageSize,
+      offset: (currentPage - 1) * pageSize,
+    }),
+    [
+      activeTab,
+      searchValue,
+      ordering,
+      wordCountMin,
+      wordCountMax,
+      durationMin,
+      durationMax,
+      pageSize,
+      currentPage,
+    ],
+  );
 
   const fetchScripts = useCallback(async (filters: ScriptFilters) => {
     setLoading(true);
@@ -56,21 +69,26 @@ export default function MyScriptsPage() {
     }
   }, []);
 
-  useEffect(() => { fetchScripts(apiFilters); }, [apiFilters, fetchScripts]);
+  useEffect(() => {
+    fetchScripts(apiFilters);
+  }, [apiFilters, fetchScripts]);
 
-  const handleApplyFilters = useCallback((filters: {
-    ordering?: 'created' | 'modified';
-    wordCountMin?: number;
-    wordCountMax?: number;
-    durationMin?: number;
-    durationMax?: number;
-  }) => {
-    if (filters.ordering !== undefined) setOrdering(filters.ordering);
-    if (filters.wordCountMin !== undefined) setWordCountMin(filters.wordCountMin);
-    if (filters.wordCountMax !== undefined) setWordCountMax(filters.wordCountMax);
-    if (filters.durationMin !== undefined) setDurationMin(filters.durationMin);
-    if (filters.durationMax !== undefined) setDurationMax(filters.durationMax);
-  }, []);
+  const handleApplyFilters = useCallback(
+    (filters: {
+      ordering?: 'created' | 'modified';
+      wordCountMin?: number;
+      wordCountMax?: number;
+      durationMin?: number;
+      durationMax?: number;
+    }) => {
+      if (filters.ordering !== undefined) setOrdering(filters.ordering);
+      if (filters.wordCountMin !== undefined) setWordCountMin(filters.wordCountMin);
+      if (filters.wordCountMax !== undefined) setWordCountMax(filters.wordCountMax);
+      if (filters.durationMin !== undefined) setDurationMin(filters.durationMin);
+      if (filters.durationMax !== undefined) setDurationMax(filters.durationMax);
+    },
+    [],
+  );
 
   const handleClearFilters = useCallback(() => {
     setOrdering(undefined);

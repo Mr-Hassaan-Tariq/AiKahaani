@@ -52,15 +52,29 @@ export default function TemplatesWidget({
               )}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className={cn('text-sm font-semibold', active ? 'text-accent-foreground' : 'text-foreground')}>
+                <span
+                  className={cn(
+                    'text-sm font-semibold',
+                    active ? 'text-accent-foreground' : 'text-foreground',
+                  )}
+                >
                   {template.name}
                 </span>
-                <span className={cn('flex items-center gap-1 whitespace-nowrap text-xs', active ? 'text-accent-foreground/70' : 'text-muted-foreground')}>
-                  <Clock className="h-3 w-3" />
-                  ~{template.duration}m · {template.word_range}
+                <span
+                  className={cn(
+                    'flex items-center gap-1 whitespace-nowrap text-xs',
+                    active ? 'text-accent-foreground/70' : 'text-muted-foreground',
+                  )}
+                >
+                  <Clock className="h-3 w-3" />~{template.duration}m · {template.word_range}
                 </span>
               </div>
-              <p className={cn('text-xs leading-relaxed', active ? 'text-accent-foreground/80' : 'text-muted-foreground')}>
+              <p
+                className={cn(
+                  'text-xs leading-relaxed',
+                  active ? 'text-accent-foreground/80' : 'text-muted-foreground',
+                )}
+              >
                 {template.description}
               </p>
             </button>
