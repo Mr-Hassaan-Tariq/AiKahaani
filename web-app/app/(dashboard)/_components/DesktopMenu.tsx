@@ -37,7 +37,14 @@ export default function DesktopMenu() {
           alt="AiKahani"
           width={220}
           height={80}
-          className="h-14 w-auto"
+          className="h-14 w-auto dark:hidden"
+        />
+        <img
+          src="/logos/logo-dark.svg"
+          alt="AiKahani"
+          width={220}
+          height={80}
+          className="hidden h-14 w-auto dark:block"
         />
       </Link>
 
