@@ -78,7 +78,9 @@ class GenerateTitlesResponse(BaseModel):
 
 class GenerateOutlineRequest(BaseModel):
     description: str = Field(..., min_length=5, max_length=5000)
-    tones: Optional[List[int]] = Field(None, description="Tone IDs (from /v1/scripts/tones)")
+    tones: Optional[List[int]] = Field(
+        None, description="Tone IDs (from /v1/scripts/tones)"
+    )
     template_style_id: Optional[int] = Field(None, description="TemplateStyle ID")
     min_length: Optional[int] = Field(None, ge=100)
     max_length: Optional[int] = Field(None, ge=100)
@@ -132,6 +134,7 @@ class GenerateOutlineResponse(BaseModel):
 
 class GenerateScriptRequest(BaseModel):
     """Body is optional — all parameters are read from the stored outline."""
+
     template_style_id: Optional[int] = Field(
         None, description="Override the template style stored in the outline"
     )
@@ -178,6 +181,38 @@ class TonesListResponse(BaseModel):
 
 class TemplateStylesListResponse(BaseModel):
     template_styles: List[TemplateStyleOut]
+
+
+# ── Script config (new-script UI) ────────────────────────────────────────────
+
+
+class LengthRangeOut(BaseModel):
+    min: int
+    max: int
+    default: int
+
+
+class TemplateStyleConfigOut(BaseModel):
+    """
+    Template style shape expected by the web-app's `GenerationPromptType`.
+
+    Backend DB model does not store `word_range`, so the config endpoint computes
+    it from `min_length` and `max_length`.
+    """
+
+    id: int
+    name: str
+    min_length: int
+    max_length: int
+    duration: int
+    description: str
+    word_range: str
+
+
+class ScriptConfigOut(BaseModel):
+    tones: List[ToneOut]
+    template_styles: List[TemplateStyleConfigOut]
+    length_range: LengthRangeOut
 
 
 # ── Outline/Script list/detail ─────────────────────────────────────────────────

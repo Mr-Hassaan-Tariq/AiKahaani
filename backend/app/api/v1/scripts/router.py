@@ -34,12 +34,10 @@ from app.models.script import (
     FullScript,
     OutlineTone,
     ScriptOutline,
-    ScriptStatus,
     TemplateStyle,
     TitleGeneration,
     TitleGenerationType,
     Tone,
-    ToneScope,
 )
 from app.models.user import User
 from app.schemas.common import ApiResponse
@@ -54,6 +52,7 @@ from app.schemas.script import (
     OutlineListResponse,
     ScriptListResponse,
     ScriptOutlineOut,
+    ScriptConfigOut,
     TemplateStyleOut,
     TemplateStylesListResponse,
     TitleGenerationOut,
@@ -65,7 +64,7 @@ from app.schemas.script import (
 )
 from app.services.scripts import article_scraper, openai_service, youtube_transcript
 from app.services.scripts.niche_context import build_niche_context
-from app.services.scripts.word_count_strategy import TemplateStyleConfig, WordCountStrategy
+from app.services.scripts.word_count_strategy import TemplateStyleConfig
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +76,9 @@ scripts_router = APIRouter(tags=["Scripts"])
 
 @scripts_router.get("/tones", response_model=ApiResponse[TonesListResponse])
 async def list_tones(
-    scope: Optional[str] = Query(None, description="Filter by scope: script, title, both"),
+    scope: Optional[str] = Query(
+        None, description="Filter by scope: script, title, both"
+    ),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
 ) -> ApiResponse[TonesListResponse]:
@@ -93,7 +94,9 @@ async def list_tones(
     )
 
 
-@scripts_router.get("/template-styles", response_model=ApiResponse[TemplateStylesListResponse])
+@scripts_router.get(
+    "/template-styles", response_model=ApiResponse[TemplateStylesListResponse]
+)
 async def list_template_styles(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
@@ -106,6 +109,51 @@ async def list_template_styles(
             template_styles=[TemplateStyleOut.model_validate(s) for s in styles]
         ),
         message="Template styles retrieved",
+    )
+
+
+# ── Script config (new-script UI) ────────────────────────────────────────────
+
+
+@scripts_router.get("/config", response_model=ScriptConfigOut)
+@scripts_router.get("/config/", response_model=ScriptConfigOut, include_in_schema=False)
+async def get_script_config(
+    db: AsyncSession = Depends(get_db),
+) -> ScriptConfigOut:
+    """
+    Return the exact config shape the web-app's new-script page expects.
+
+    This endpoint is intentionally "raw" (not wrapped in ApiResponse) because
+    the web-app fetches it via `getServerDataAction`, which directly parses JSON
+    into `GenerationPromptType`.
+    """
+
+    tones_result = await db.execute(select(Tone).order_by(Tone.name))
+    tones = tones_result.scalars().all()
+
+    styles_result = await db.execute(select(TemplateStyle).order_by(TemplateStyle.id))
+    styles = styles_result.scalars().all()
+
+    styles_min = min((s.min_length for s in styles), default=300)
+    styles_max = max((s.max_length for s in styles), default=3000)
+    default_words = 1000
+    if default_words < styles_min:
+        default_words = styles_min
+    if default_words > styles_max:
+        default_words = styles_max
+
+    return ScriptConfigOut(
+        tones=[ToneOut.model_validate(t) for t in tones],
+        template_styles=[
+            {
+                **TemplateStyleOut.model_validate(s).model_dump(
+                    exclude={"outline_sections"}
+                ),
+                "word_range": f"{s.min_length}-{s.max_length} words",
+            }
+            for s in styles
+        ],
+        length_range={"min": styles_min, "max": styles_max, "default": default_words},
     )
 
 
@@ -136,7 +184,9 @@ async def generate_titles(
         )
     except Exception as exc:
         logger.error("[TITLES] Generation failed for user %s: %s", current_user.id, exc)
-        raise HTTPException(status_code=500, detail="Title generation failed. Please try again.")
+        raise HTTPException(
+            status_code=500, detail="Title generation failed. Please try again."
+        )
 
     # Persist to TitleGeneration table
     tg = TitleGeneration(
@@ -235,14 +285,22 @@ async def generate_outline(
 
     if body.youtube_url:
         try:
-            v_title, transcript = await youtube_transcript.fetch_transcript(body.youtube_url)
-            additional_contexts.append(f"[YOUTUBE TRANSCRIPT - {v_title}]: {transcript}")
+            v_title, transcript = await youtube_transcript.fetch_transcript(
+                body.youtube_url
+            )
+            additional_contexts.append(
+                f"[YOUTUBE TRANSCRIPT - {v_title}]: {transcript}"
+            )
             logger.info("[OUTLINE] YouTube context added from: %s", body.youtube_url)
         except Exception as exc:
             logger.warning("[OUTLINE] YouTube transcript failed, continuing: %s", exc)
 
     if additional_contexts:
-        description = description.strip() + "\n\n" + "\n\n".join(c.strip() for c in additional_contexts)
+        description = (
+            description.strip()
+            + "\n\n"
+            + "\n\n".join(c.strip() for c in additional_contexts)
+        )
 
     # --- Niche context ---
     niche_context = await build_niche_context(db, body.niche_id)
@@ -258,12 +316,18 @@ async def generate_outline(
             niche_context=niche_context or None,
         )
     except Exception as exc:
-        logger.error("[OUTLINE] Generation failed for user %s: %s", current_user.id, exc)
-        raise HTTPException(status_code=500, detail="Outline generation failed. Please try again.")
+        logger.error(
+            "[OUTLINE] Generation failed for user %s: %s", current_user.id, exc
+        )
+        raise HTTPException(
+            status_code=500, detail="Outline generation failed. Please try again."
+        )
 
     sections = outline_data.get("sections", [])
     if not sections:
-        raise HTTPException(status_code=500, detail="Outline generation returned no sections")
+        raise HTTPException(
+            status_code=500, detail="Outline generation returned no sections"
+        )
 
     # --- Auto-generate title if not provided ---
     if body.title and body.title.strip():
@@ -275,7 +339,11 @@ async def generate_outline(
                 title_count=1,
                 tones=tone_names,
             )
-            outline_title = gen_titles[0]["title"] if gen_titles else f"Outline: {body.description[:50]}"
+            outline_title = (
+                gen_titles[0]["title"]
+                if gen_titles
+                else f"Outline: {body.description[:50]}"
+            )
         except Exception:
             outline_title = f"Outline: {body.description[:50]}"
 
@@ -319,7 +387,9 @@ async def generate_outline(
     result = await db.execute(
         select(ScriptOutline)
         .where(ScriptOutline.id == outline.id)
-        .options(selectinload(ScriptOutline.outline_tones).selectinload(OutlineTone.tone))
+        .options(
+            selectinload(ScriptOutline.outline_tones).selectinload(OutlineTone.tone)
+        )
     )
     outline = result.scalar_one()
     tones_out = [ToneOut.model_validate(ot.tone) for ot in outline.outline_tones]
@@ -372,7 +442,9 @@ async def list_outlines(
     result = await db.execute(
         select(ScriptOutline)
         .where(ScriptOutline.user_id == current_user.id)
-        .options(selectinload(ScriptOutline.outline_tones).selectinload(OutlineTone.tone))
+        .options(
+            selectinload(ScriptOutline.outline_tones).selectinload(OutlineTone.tone)
+        )
         .order_by(ScriptOutline.created_at.desc())
         .offset(skip)
         .limit(limit)
@@ -391,7 +463,9 @@ async def list_outlines(
     )
 
 
-@scripts_router.get("/outlines/{outline_id}", response_model=ApiResponse[ScriptOutlineOut])
+@scripts_router.get(
+    "/outlines/{outline_id}", response_model=ApiResponse[ScriptOutlineOut]
+)
 async def get_outline(
     outline_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
@@ -442,7 +516,9 @@ async def generate_script(
             ScriptOutline.id == outline_id,
             ScriptOutline.user_id == current_user.id,
         )
-        .options(selectinload(ScriptOutline.outline_tones).selectinload(OutlineTone.tone))
+        .options(
+            selectinload(ScriptOutline.outline_tones).selectinload(OutlineTone.tone)
+        )
     )
     outline = result.scalar_one_or_none()
     if not outline:
@@ -466,11 +542,13 @@ async def generate_script(
 
     # Build structured outline JSON for the service
     if outline.outline_data.get("sections"):
-        outline_for_script = json.dumps({
-            "sections": outline.outline_data.get("sections", []),
-            "section_order": outline.outline_data.get("section_order", []),
-            "outline_text": outline.outline_text,
-        })
+        outline_for_script = json.dumps(
+            {
+                "sections": outline.outline_data.get("sections", []),
+                "section_order": outline.outline_data.get("section_order", []),
+                "outline_text": outline.outline_text,
+            }
+        )
     else:
         outline_for_script = outline.outline_text
 
@@ -485,14 +563,18 @@ async def generate_script(
         )
     except Exception as exc:
         logger.error("[SCRIPT] Generation failed for user %s: %s", current_user.id, exc)
-        raise HTTPException(status_code=500, detail="Script generation failed. Please try again.")
+        raise HTTPException(
+            status_code=500, detail="Script generation failed. Please try again."
+        )
 
     script_content = script_response["full_text"]
     sections = script_response["sections"]
     metadata = script_response["metadata"]
 
     if not script_content or not script_content.strip():
-        raise HTTPException(status_code=500, detail="Empty script returned from generation")
+        raise HTTPException(
+            status_code=500, detail="Empty script returned from generation"
+        )
 
     # Clean doc references
     script_content = re.sub(r"■[^■]*?■", "", script_content)
@@ -592,7 +674,9 @@ async def get_script(
 ) -> ApiResponse[FullScriptOut]:
     """Get a single full script by ID."""
     script = await _get_script_or_404(db, script_id, current_user.id)
-    return responses.ok(data=FullScriptOut.model_validate(script), message="Script retrieved")
+    return responses.ok(
+        data=FullScriptOut.model_validate(script), message="Script retrieved"
+    )
 
 
 @scripts_router.delete("/scripts/{script_id}", response_model=ApiResponse[None])
@@ -611,7 +695,9 @@ async def delete_script(
 # ── Status updates ─────────────────────────────────────────────────────────────
 
 
-@scripts_router.patch("/outlines/{outline_id}/status", response_model=ApiResponse[ScriptOutlineOut])
+@scripts_router.patch(
+    "/outlines/{outline_id}/status", response_model=ApiResponse[ScriptOutlineOut]
+)
 async def update_outline_status(
     outline_id: uuid.UUID,
     body: UpdateOutlineStatusRequest,
@@ -626,7 +712,9 @@ async def update_outline_status(
     return responses.ok(data=_outline_to_out(outline), message="Status updated")
 
 
-@scripts_router.patch("/scripts/{script_id}/status", response_model=ApiResponse[FullScriptOut])
+@scripts_router.patch(
+    "/scripts/{script_id}/status", response_model=ApiResponse[FullScriptOut]
+)
 async def update_script_status(
     script_id: uuid.UUID,
     body: UpdateScriptStatusRequest,
@@ -638,7 +726,9 @@ async def update_script_status(
     script.status = body.status
     await db.commit()
     await db.refresh(script)
-    return responses.ok(data=FullScriptOut.model_validate(script), message="Status updated")
+    return responses.ok(
+        data=FullScriptOut.model_validate(script), message="Status updated"
+    )
 
 
 # ── Internal helpers ───────────────────────────────────────────────────────────
@@ -652,7 +742,9 @@ async def _get_outline_or_404(
     result = await db.execute(
         select(ScriptOutline)
         .where(ScriptOutline.id == outline_id, ScriptOutline.user_id == user_id)
-        .options(selectinload(ScriptOutline.outline_tones).selectinload(OutlineTone.tone))
+        .options(
+            selectinload(ScriptOutline.outline_tones).selectinload(OutlineTone.tone)
+        )
     )
     outline = result.scalar_one_or_none()
     if not outline:

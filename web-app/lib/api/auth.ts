@@ -44,7 +44,7 @@ export class AuthService {
    */
   async sendMagicLink(email: string): Promise<{ message: string }> {
     try {
-      const response = await this.apiClient.post<{ message: string }>('/auth/magic-link/', {
+      const response = await this.apiClient.post<{ message: string }>('/auth/magic-link', {
         email,
       });
 
@@ -76,20 +76,32 @@ export class AuthService {
     try {
       const payload = { token };
 
+      // Backend returns ApiResponse<MagicLinkVerifyOut>:
+      // { success: boolean, message: string, data: { access, refresh, user } }
       const response = await this.apiClient.post<{
         success: boolean;
         message?: string;
-        user: VerifiedUser | null;
-      }>('/auth/magic-link/verify/', payload);
+        data?: {
+          access: string;
+          refresh: string;
+          user: VerifiedUser;
+        };
+      }>('/auth/magic-link/verify', payload);
 
-      // Ensure we always return user
-      return (
-        response.data ?? {
-          success: false,
-          message: 'Verification failed',
-          user: null,
-        }
-      );
+      const apiResp = response.data;
+      const verifyData = apiResp?.data;
+
+      if (!apiResp?.success || !verifyData) {
+        return { success: false, message: apiResp?.message ?? 'Verification failed', user: null };
+      }
+
+      return {
+        success: true,
+        message: apiResp.message,
+        user: verifyData.user,
+        access: verifyData.access,
+        refresh: verifyData.refresh,
+      };
     } catch {
       return { success: false, message: 'Verification failed', user: null };
     }

@@ -16,7 +16,7 @@ export default function MagicLinkPage() {
 
   const [isResending, setIsResending] = useState(false);
   const [resendMsg, setResendMsg] = useState<string | null>(null);
-  const [isVerifying, setIsVerifying] = useState(!!token);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [verifyStatus, setVerifyStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [verifyMsg, setVerifyMsg] = useState('');
 
@@ -24,29 +24,49 @@ export default function MagicLinkPage() {
   useEffect(() => {
     if (!token) return;
 
+    const key = `magic_link_verify_${token}`;
+    const existing = sessionStorage.getItem(key);
+    if (existing === 'in_progress' || existing === 'success') return;
+
+    sessionStorage.setItem(key, 'in_progress');
+    setIsVerifying(true);
+
+    let cancelled = false;
+    let timer: number | undefined;
+
     const verify = async () => {
       try {
         const response = await authService.verifyMagicLink(token);
 
         if (response.user && response.access && response.refresh) {
+          sessionStorage.setItem(key, 'success');
           Cookies.set('access_token', response.access, { expires: 7 });
           localStorage.setItem('refresh_token', response.refresh);
           setVerifyStatus('success');
           setVerifyMsg('Verified successfully! Redirecting…');
-          setTimeout(() => router.push('/'), 1800);
+          timer = window.setTimeout(() => {
+            if (!cancelled) router.push('/');
+          }, 1800);
         } else {
+          sessionStorage.setItem(key, 'failed');
           setVerifyStatus('error');
           setVerifyMsg('Invalid or expired magic link.');
         }
       } catch {
+        sessionStorage.setItem(key, 'failed');
         setVerifyStatus('error');
         setVerifyMsg('Failed to verify the magic link. Please try again.');
       } finally {
-        setIsVerifying(false);
+        if (!cancelled) setIsVerifying(false);
       }
     };
 
     verify();
+
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
   }, [token, router]);
 
   // ── Resend ────────────────────────────────────────────────────────
