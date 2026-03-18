@@ -3,6 +3,7 @@ import '../styles/globals.css';
 import { Inter } from 'next/font/google';
 import { GoogleOAuthProvider as OriginalGoogleOAuthProvider } from '@react-oauth/google';
 import { env } from 'env.mjs';
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
 
 import { AutoRefreshProvider } from 'lib/hooks/useAutoRefresh';
 import ReactQueryProvider from 'lib/reactQuery/ReactQueryProvider';
@@ -50,29 +51,37 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${INTER.variable} bg-background font-inter antialiased`}>
-        <OriginalGoogleOAuthProvider clientId={env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
-          <ReactQueryProvider>
-            <AutoRefreshProvider>{children}</AutoRefreshProvider>
-          </ReactQueryProvider>
-          <Toaster
-            toastOptions={{
-              classNames: {
-                toast: 'rounded-xl border border-border bg-card shadow-md',
-                title: 'text-card-foreground text-sm font-semibold',
-                description: 'text-muted-foreground text-sm',
-                actionButton:
-                  'bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-xs font-medium',
-                cancelButton:
-                  'bg-secondary text-secondary-foreground px-3 py-1.5 rounded-md text-xs font-medium',
-                closeButton: 'text-muted-foreground hover:text-foreground',
-                icon: 'text-primary',
-              },
-            }}
-            position="top-right"
-          />
-        </OriginalGoogleOAuthProvider>
+        <NextThemesProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          storageKey="aikahaani-theme"
+          disableTransitionOnChange
+        >
+          <OriginalGoogleOAuthProvider clientId={env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
+            <ReactQueryProvider>
+              <AutoRefreshProvider>{children}</AutoRefreshProvider>
+            </ReactQueryProvider>
+            <Toaster
+              toastOptions={{
+                classNames: {
+                  toast: 'rounded-xl border border-border bg-card shadow-md',
+                  title: 'text-card-foreground text-sm font-semibold',
+                  description: 'text-muted-foreground text-sm',
+                  actionButton:
+                    'bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-xs font-medium',
+                  cancelButton:
+                    'bg-secondary text-secondary-foreground px-3 py-1.5 rounded-md text-xs font-medium',
+                  closeButton: 'text-muted-foreground hover:text-foreground',
+                  icon: 'text-primary',
+                },
+              }}
+              position="top-right"
+            />
+          </OriginalGoogleOAuthProvider>
+        </NextThemesProvider>
       </body>
     </html>
   );

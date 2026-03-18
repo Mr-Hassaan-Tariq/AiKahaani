@@ -8,6 +8,7 @@ import MobileMenu from './_components/MobileMenu';
 import { getNotifications, getUserProfile } from './actions';
 import ClientImage from 'components/ui/ClientImage';
 import NavPageTitle from 'components/layout/NavPageTitle';
+import { ThemeToggle } from 'components/ThemeToggle';
 
 function getInitials(name?: string, username?: string) {
   const base = name || username || '';
@@ -55,6 +56,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
           {/* Right: notifications + avatar */}
           <div className="flex items-center gap-2">
+            <ThemeToggle className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground" />
             <MobileDrawer />
             {user?.profile_picture ? (
               <ClientImage
@@ -76,6 +78,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <header className="hidden h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6 lg:flex">
           <NavPageTitle />
           <div className="flex items-center gap-3">
+            <ThemeToggle className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground" />
             <Dropdown notifications={notifications} />
             {user?.profile_picture ? (
               <ClientImage
