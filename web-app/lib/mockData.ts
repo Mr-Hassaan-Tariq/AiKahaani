@@ -150,53 +150,85 @@ export const mockScripts = {
 export const mockScriptGenerations = [
   {
     uuid: 'mock-gen-1',
-    title: 'Top 10 Productivity Hacks for Creators',
+    title: 'Top 5 Productivity Hacks That Actually Work',
     type: 'script' as const,
     status: 'generated' as const,
     status_display: 'Generated',
-    word_count: 1200,
-    estimated_duration: 8,
-    created: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    modified: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    word_count: 1400,
+    estimated_duration: 5,
+    section_count: null,
+    created: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    modified: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     is_published: false,
     version: 1,
   },
   {
     uuid: 'mock-gen-2',
-    title: 'How to Build a Morning Routine That Sticks',
-    type: 'script' as const,
-    status: 'draft' as const,
-    status_display: 'Draft',
-    word_count: 900,
-    estimated_duration: 6,
-    created: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-    modified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-    is_published: false,
-    version: 2,
+    title: 'How AI is Changing Web Design in 2025',
+    type: 'outline' as const,
+    status: 'generated' as const,
+    status_display: 'Generated',
+    word_count: null,
+    estimated_duration: null,
+    section_count: 8,
+    created: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString(),
+    modified: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString(),
+    is_published: null,
+    version: 1,
   },
   {
     uuid: 'mock-gen-3',
-    title: 'Why Most YouTubers Fail in Their First Year',
+    title: 'My Morning Routine as a Tech Creator',
+    type: 'script' as const,
+    status: 'generated' as const,
+    status_display: 'Generated',
+    word_count: 2800,
+    estimated_duration: 10,
+    section_count: null,
+    created: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+    modified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+    is_published: false,
+    version: 1,
+  },
+  {
+    uuid: 'mock-gen-4',
+    title: "Beginner's Guide to Starting a YouTube Channel",
     type: 'outline' as const,
-    status: 'saved' as const,
-    status_display: 'Saved',
+    status: 'generated' as const,
+    status_display: 'Generated',
     word_count: null,
     estimated_duration: null,
-    created: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
+    section_count: 12,
+    created: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(),
     modified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(),
     is_published: null,
     version: 1,
   },
   {
-    uuid: 'mock-gen-4',
+    uuid: 'mock-gen-5',
+    title: 'Why Most YouTubers Quit After 6 Months',
+    type: 'script' as const,
+    status: 'generated' as const,
+    status_display: 'Generated',
+    word_count: 1950,
+    estimated_duration: 7,
+    section_count: null,
+    created: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
+    modified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
+    is_published: false,
+    version: 2,
+  },
+  {
+    uuid: 'mock-gen-6',
     title: 'The Ultimate Guide to YouTube SEO in 2025',
     type: 'outline' as const,
     status: 'generated' as const,
     status_display: 'Generated',
     word_count: null,
     estimated_duration: null,
-    created: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
-    modified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(),
+    section_count: 10,
+    created: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(),
+    modified: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(),
     is_published: null,
     version: 1,
   },
@@ -567,8 +599,12 @@ export function getMockDataForEndpoint(endpoint: string): unknown {
   if (endpoint.includes('scripts/titles/tones')) return mockTitleStyles;
   if (endpoint.includes('scripts/outlines/') && endpoint.includes('/script/')) return mockGenerateScriptResponse;
   if (endpoint.includes('scripts/outlines/')) return mockOutline;
-  // Single script fetch: v1/scripts/<uuid>/ — must come before the list catch-all
-  if (endpoint.includes('scripts/mock-script-gen-1')) return mockScript;
+  // Script generations list: v1/scripts/generations/
+  if (endpoint.includes('scripts/generations')) {
+    return { count: mockScriptGenerations.length, results: mockScriptGenerations, next: null, previous: null };
+  }
+  // Single script fetch by any mock uuid
+  if (endpoint.includes('scripts/mock-script-gen-1') || endpoint.includes('scripts/mock-gen-')) return mockScript;
   if (endpoint.includes('scripts/') && !endpoint.includes('config') && !endpoint.includes('titles')) {
     return mockScripts;
   }
@@ -577,12 +613,27 @@ export function getMockDataForEndpoint(endpoint: string): unknown {
   return null;
 }
 
+// ── Mock generated titles ─────────────────────────────────────────────────────
+export const mockGeneratedTitles = {
+  titles: [
+    '7 Focus Habits That Made Me Finish Work Twice as Fast',
+    "Can't Focus? These 7 Habits Fix Your Study Sessions",
+    '7 Focus Habits Every Student Should Start This Week',
+    'I Tried 7 Focus Habits for 30 Days — Here\'s What Worked',
+    'Stop Wasting Time: 7 Focus Habits That Actually Stick',
+    'The 7-Habit Focus System That Killed My Procrastination',
+  ],
+};
+
 // ── POST endpoint → mock data map ─────────────────────────────────────────────
 export function getMockPostDataForEndpoint(endpoint: string): unknown {
   if (endpoint.includes('scripts/outline/') && endpoint.includes('/script/')) {
     return mockGenerateScriptResponse;
   }
   if (endpoint.includes('scripts/outline/')) return mockOutlineResponse;
+  if (endpoint.includes('titles/generate') || endpoint.includes('titles/optimize')) {
+    return mockGeneratedTitles;
+  }
   // For update/patch endpoints just return a success
   return { status: 'ok', message: 'Success' };
 }

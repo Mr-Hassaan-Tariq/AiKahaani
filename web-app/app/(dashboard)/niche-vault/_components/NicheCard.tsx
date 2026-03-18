@@ -1,12 +1,9 @@
 'use client';
 
-import { FC, useState } from 'react';
-import Image from 'next/image';
+import { FC } from 'react';
+import { ArrowRight } from 'lucide-react';
 
-import ThumbnailImage from '../../../../public/images/no-niche.png';
 import NicheStyleModal from './NicheStyleModal';
-import VedioModal from './VedioModal';
-import { Button } from 'components/ui/Button';
 
 interface NicheCardProps {
   id: number;
@@ -18,101 +15,64 @@ interface NicheCardProps {
   thumbnailUrl?: string | null;
 }
 
-const NicheCard: FC<NicheCardProps> = ({
-  id,
-  title,
-  description,
-  tone,
-  pacing,
-  topChannels,
-  thumbnailUrl,
-}) => {
-  const [imagePresent, setImagePresent] = useState(!!thumbnailUrl);
-  const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+const CARD_GRADIENTS = [
+  'from-violet-800 to-purple-600',
+  'from-blue-800 to-sky-600',
+  'from-emerald-800 to-teal-600',
+  'from-rose-800 to-red-600',
+  'from-amber-800 to-orange-600',
+  'from-indigo-800 to-blue-600',
+  'from-pink-800 to-rose-600',
+  'from-cyan-800 to-blue-600',
+  'from-slate-700 to-slate-500',
+];
 
-  const tags = [...(tone || []), ...(pacing || [])].slice(0, 4);
-  const examples = topChannels?.map((c) => c.name) || [];
-  const videoUrl = topChannels[0]?.link || '';
-  const displayExamples = examples.join(', ');
-  const truncatedExamples =
-    displayExamples.length > 40 ? displayExamples.substring(0, 40) + '…' : displayExamples;
-
-  const handleImageLoad = () => { setImageLoaded(true); setImageError(false); };
-  const handleImageError = () => { if (!imageLoaded) { setImageError(true); setImagePresent(false); } };
+const NicheCard: FC<NicheCardProps> = ({ id, title, description, tone, topChannels, thumbnailUrl }) => {
+  const badge = tone?.[0] || null;
+  const author = topChannels?.[0]?.name || null;
+  const gradient = CARD_GRADIENTS[id % CARD_GRADIENTS.length];
 
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
       {/* Thumbnail */}
-      <div className="relative h-40 bg-muted">
-        {imagePresent && !imageError ? (
-          <VedioModal
-            trigger={
-              <Image
-                src={thumbnailUrl || ''}
-                alt={title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 33vw"
-                unoptimized
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-              />
-            }
-            title={title}
-            videoId="videoId"
-            subtitle={description}
-            youtubeUrl={videoUrl}
-            thumbnailUrl={thumbnailUrl || ''}
-          />
+      <div className="relative w-full aspect-[16/10] overflow-hidden bg-muted">
+        {thumbnailUrl ? (
+          <img src={thumbnailUrl} alt={title} className="w-full h-full object-cover" />
         ) : (
-          <Image
-            src={ThumbnailImage}
-            alt="placeholder"
-            fill
-            className="object-cover opacity-60"
-            sizes="(max-width: 768px) 100vw, 33vw"
-          />
+          <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+            <span className="text-white/20 text-6xl font-black select-none">{title[0]}</span>
+          </div>
+        )}
+        {badge && (
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[#0F172A] text-xs font-semibold shadow-sm">
+            {badge}
+          </span>
         )}
       </div>
 
-      {/* Body */}
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        {/* Tags */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {tags.map((tag, i) => (
-              <span
-                key={i}
-                className="rounded-md border border-border bg-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+      {/* Content */}
+      <div className="flex flex-1 flex-col gap-3 p-6">
+        <h3 className="text-[18px] font-bold text-foreground leading-snug">{title}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">
+          {description}
+        </p>
 
-        {/* Title + description */}
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {description.length > 80 ? description.slice(0, 80) + '…' : description}
-          </p>
-        </div>
-
-        {/* Examples */}
-        {examples.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            Examples: <span className="text-foreground">{truncatedExamples}</span>
-          </p>
-        )}
-
-        {/* CTA */}
+        {/* Footer */}
         <NicheStyleModal
           trigger={
-            <Button size="sm" className="mt-auto w-full">
-              Use this style
-            </Button>
+            <button className="flex items-center justify-between w-full pt-4 mt-2 border-t border-border hover:opacity-80 transition-opacity">
+              {author ? (
+                <span className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
+                  <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {author[0]}
+                  </span>
+                  {author}
+                </span>
+              ) : (
+                <span />
+              )}
+              <ArrowRight className="h-4 w-4 text-foreground" />
+            </button>
           }
           nicheId={id}
         />

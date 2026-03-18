@@ -82,7 +82,7 @@ export default function MyScriptsPage() {
 
   return (
     <div className="flex flex-col">
-      <div className="px-6 py-6">
+      <div className="px-7 py-7">
         <MyScriptsContent
           activeTab={activeTab}
           setActiveTab={setActiveTab}

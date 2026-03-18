@@ -1,85 +1,129 @@
+'use client';
+
 import { useRouter } from 'next/navigation';
-import { Download, Edit2, FileText, ScrollText, Trash2 } from 'lucide-react';
+import { Download, FileText, ListTree, MoreVertical } from 'lucide-react';
 
 import { ScriptCardProps } from '../_types';
 import DeleteScriptModal from './DeleteScriptModal';
 import ExportScriptModal from './ExportScriptModal';
-import { Button } from 'components/ui/Button';
-import { Badge } from 'components/ui/Badge';
+import { cn } from 'lib/utils';
+
+function formatRelativeDate(dateString?: string | null): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  if (diffDays === 1) return 'yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 export default function ScriptCard({ script, actions, className = '' }: ScriptCardProps) {
   const router = useRouter();
-  const isCompleted = script.type === 'script' && script.status === 'generated';
-  const scriptId = script.uuid;
-  const lastEdited = script.modified
-    ? new Date(script.modified).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : 'Unknown';
-  const duration = script.estimated_duration
-    ? `${Math.round(script.estimated_duration)} min`
-    : null;
-  const wordCount = script.word_count ? `${script.word_count.toLocaleString()} words` : null;
+  const isScript = script.type === 'script';
+  const isCompleted = isScript && script.status === 'generated';
+  const relativeDate = formatRelativeDate((script as any).modified || (script as any).created);
+
+  // Meta pill: scripts show read time, outlines show section count
+  const metaPill = isScript
+    ? script.estimated_duration
+      ? `${Math.round(script.estimated_duration)} min read`
+      : script.word_count
+        ? `${Math.round(script.word_count / 130)} min read`
+        : null
+    : (script as any).section_count
+      ? `${(script as any).section_count} sections`
+      : null;
+
+  const handleCardClick = () => {
+    if (isCompleted) {
+      router.push(`/new-script/script/${script.uuid}`);
+    } else {
+      router.push(`/new-script/${script.uuid}`);
+    }
+  };
 
   return (
-    <div className={`flex flex-col justify-between rounded-xl border border-border bg-card p-5 ${className}`}>
-      <div>
-        {/* Type badge */}
-        <div className="mb-3 flex items-center gap-2">
-          {isCompleted ? (
-            <Badge variant="primary" className="gap-1">
-              <ScrollText className="h-3 w-3" /> Script
-            </Badge>
-          ) : (
-            <Badge variant="muted" className="gap-1">
-              <FileText className="h-3 w-3" /> Outline
-            </Badge>
+    <div
+      className={cn(
+        'flex flex-col justify-between rounded-xl border border-border bg-card p-6 min-h-[232px] cursor-pointer transition-colors hover:shadow-sm',
+        className,
+      )}
+      onClick={handleCardClick}
+    >
+      {/* Top: icon + action buttons */}
+      <div className="flex items-start justify-between mb-5">
+        <div
+          className={cn(
+            'w-14 h-14 rounded-lg flex items-center justify-center',
+            isScript ? 'bg-red-50 text-primary' : 'bg-blue-50 text-blue-500',
           )}
-        </div>
-
-        {/* Title */}
-        <h3 className="line-clamp-2 text-sm font-semibold text-foreground">{script.title}</h3>
-
-        {/* Metadata */}
-        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-          <p>Last edited: <span className="font-medium text-foreground">{lastEdited}</span></p>
-          {duration && <p>Duration: <span className="font-medium text-foreground">{duration}</span></p>}
-          {wordCount && <p>Words: <span className="font-medium text-foreground">{wordCount}</span></p>}
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-center gap-2">
-        <DeleteScriptModal
-          trigger={
-            <Button variant="outline" size="sm">
-              <Trash2 className="h-3.5 w-3.5" /> Delete
-            </Button>
+        >
+          {isScript
+            ? <FileText className="h-6 w-6" />
+            : <ListTree className="h-6 w-6" />
           }
-          script={script}
-          actions={actions}
-        />
-        {isCompleted ? (
+        </div>
+
+        <div
+          className="flex items-center gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           <ExportScriptModal
             trigger={
-              <Button size="sm" className="flex-1">
-                <Download className="h-3.5 w-3.5" /> Export
-              </Button>
+              <button className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                <Download className="h-[18px] w-[18px]" />
+              </button>
             }
             script={script}
           />
-        ) : (
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1"
-            onClick={() => router.push(`/new-script/${scriptId}`)}
-          >
-            <Edit2 className="h-3.5 w-3.5" /> Edit
-          </Button>
-        )}
+          <DeleteScriptModal
+            trigger={
+              <button className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                <MoreVertical className="h-[18px] w-[18px]" />
+              </button>
+            }
+            script={script}
+            actions={actions}
+          />
+        </div>
       </div>
+
+      {/* Title + meta */}
+      <div className="flex-1">
+        <h3 className="text-2xl font-semibold text-foreground tracking-tight leading-snug line-clamp-2">
+          {script.title}
+        </h3>
+        <div className="mt-3 flex items-center gap-2.5 flex-wrap">
+          <span className={cn(
+            'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
+            isScript
+              ? 'bg-red-100 text-red-600'
+              : 'bg-blue-100 text-blue-600',
+          )}>
+            {isScript ? 'Full Script' : 'Outline'}
+          </span>
+          {relativeDate && (
+            <span className="text-sm text-muted-foreground">Generated {relativeDate}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Footer meta pill */}
+      {metaPill && (
+        <div className="mt-6">
+          <span className="inline-flex items-center px-3 py-2 rounded-full bg-secondary text-muted-foreground text-[13px] font-medium">
+            {metaPill}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

@@ -113,6 +113,7 @@ export interface ScriptGeneration {
   status_display: string;
   word_count: number | null;
   estimated_duration: number | null;
+  section_count?: number | null;
   created: string;
   modified: string;
   is_published: boolean | null;

@@ -10,9 +10,9 @@ export default function ScriptList({
 }: ScriptListProps) {
   if (loading) {
     return (
-      <div className={`mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 ${className}`}>
+      <div className={`mt-6 grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] ${className}`}>
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-52 animate-pulse rounded-xl bg-muted" />
+          <div key={i} className="h-[232px] animate-pulse rounded-xl bg-muted" />
         ))}
       </div>
     );
@@ -34,7 +34,7 @@ export default function ScriptList({
   }
 
   return (
-    <div className={`mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 ${className}`}>
+    <div className={`mt-6 grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] ${className}`}>
       {scripts.map((script) => (
         <ScriptCard key={script.uuid} script={script} actions={actions} />
       ))}
