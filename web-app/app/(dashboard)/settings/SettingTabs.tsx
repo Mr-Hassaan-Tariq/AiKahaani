@@ -16,15 +16,10 @@ export default async function SettingTabs({ children }: { children: React.ReactN
   const activeTab = tabsPath.find((tab) => pathname?.includes(tab.path));
 
   return (
-    <div className="flex flex-col">
-      {/* Settings topbar */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-background px-6">
-        <h1 className="text-base font-semibold text-foreground">Settings</h1>
-      </header>
-
+    <div className="flex flex-col min-h-full">
       {/* Tab nav */}
-      <div className="border-b border-border bg-background px-6">
-        <nav className="-mb-px flex gap-1 overflow-x-auto">
+      <div className="border-b border-border bg-background px-8">
+        <nav className="-mb-px flex gap-8 overflow-x-auto">
           {tabsPath.map((tab) => {
             const isActive = activeTab?.label === tab.label;
             return (
@@ -32,9 +27,9 @@ export default async function SettingTabs({ children }: { children: React.ReactN
                 key={tab.label}
                 href={tab.path}
                 className={cn(
-                  'whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors',
+                  'whitespace-nowrap border-b-2 py-4 text-[15px] font-medium transition-colors',
                   isActive
-                    ? 'border-primary text-foreground'
+                    ? 'border-primary text-primary'
                     : 'border-transparent text-muted-foreground hover:text-foreground',
                 )}
               >
@@ -45,7 +40,11 @@ export default async function SettingTabs({ children }: { children: React.ReactN
         </nav>
       </div>
 
-      <div className="px-6 py-6">{children}</div>
+      <div className="bg-muted/40 min-h-full px-8 py-8">
+        <div className="w-full max-w-[900px] mx-auto flex flex-col gap-6">
+          {children}
+        </div>
+      </div>
     </div>
   );
 }

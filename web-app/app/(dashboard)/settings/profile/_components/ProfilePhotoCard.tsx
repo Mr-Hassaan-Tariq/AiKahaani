@@ -22,37 +22,34 @@ export default function ProfilePhotoCard({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6">
-      <h3 className="mb-5 text-sm font-semibold text-foreground">Profile Photo</h3>
+    <div className="rounded-xl border border-border bg-card p-8">
+      <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">
+        Personal Information
+      </h3>
 
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+      <div className="flex items-center gap-6">
         {/* Avatar */}
         {profileImage ? (
           <ClientImage
             src={profileImage}
             alt="Profile"
-            width={96}
-            height={96}
+            width={80}
+            height={80}
             priority
-            className="h-24 w-24 shrink-0 rounded-full object-cover ring-2 ring-border"
+            className="h-20 w-20 shrink-0 rounded-full object-cover ring-2 ring-border"
           />
         ) : (
-          <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-accent text-xl font-bold text-accent-foreground ring-2 ring-border">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary ring-2 ring-border">
             {getInitials(fullName)}
           </div>
         )}
 
         <div className="flex flex-col gap-3">
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <p>Recommended size: <span className="font-medium text-foreground">400×400 px</span></p>
-            <p>Accepted formats: <span className="font-medium text-foreground">JPG, PNG · Max 5 MB</span></p>
-          </div>
-
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <ChangePhotoModal
               trigger={
                 <Button variant="outline" size="sm">
-                  <Camera className="h-4 w-4" /> Change photo
+                  <Camera className="h-4 w-4" /> Change Photo
                 </Button>
               }
             />
@@ -66,6 +63,9 @@ export default function ProfilePhotoCard({
               />
             )}
           </div>
+          <p className="text-[13px] text-muted-foreground">
+            JPG, GIF or PNG. Max size of 5MB.
+          </p>
         </div>
       </div>
     </div>

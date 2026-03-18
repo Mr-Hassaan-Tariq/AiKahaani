@@ -76,38 +76,40 @@ export default function NotificationToggles({ initialSettings }: NotificationTog
     <div className="flex flex-col gap-4">
 
       {/* Delivery channels */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h3 className="mb-4 text-sm font-semibold text-foreground">
+      <div className="rounded-xl border border-border bg-card p-8">
+        <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">
           {notificationTexts.deliveryChannels.title}
         </h3>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col divide-y divide-border">
           {notificationTexts.deliveryChannels.options.map((option) => (
-            <Switch
-              key={option.key}
-              label={option.label}
-              description={option.description}
-              defaultChecked={preferences.deliveryChannels[option.key]}
-              onToggle={(checked) => handleDeliveryChannelToggle(option.key, checked)}
-              disabled={isPending}
-            />
+            <div key={option.key} className="py-4 first:pt-0 last:pb-0">
+              <Switch
+                label={option.label}
+                description={option.description}
+                defaultChecked={preferences.deliveryChannels[option.key]}
+                onToggle={(checked) => handleDeliveryChannelToggle(option.key, checked)}
+                disabled={isPending}
+              />
+            </div>
           ))}
         </div>
       </div>
 
       {/* Notification types */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h3 className="mb-4 text-sm font-semibold text-foreground">
+      <div className="rounded-xl border border-border bg-card p-8">
+        <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">
           {notificationTexts.notificationTypes.title}
         </h3>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col divide-y divide-border">
           {notificationTexts.notificationTypes.options.map((option) => (
-            <Switch
-              key={option.key}
-              label={option.label}
-              defaultChecked={preferences.notificationTypes[option.key]}
-              onToggle={(checked) => handleNotificationTypeToggle(option.key, checked)}
-              disabled={isPending}
-            />
+            <div key={option.key} className="py-4 first:pt-0 last:pb-0">
+              <Switch
+                label={option.label}
+                defaultChecked={preferences.notificationTypes[option.key]}
+                onToggle={(checked) => handleNotificationTypeToggle(option.key, checked)}
+                disabled={isPending}
+              />
+            </div>
           ))}
         </div>
       </div>

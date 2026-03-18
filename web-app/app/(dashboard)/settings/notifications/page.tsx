@@ -6,7 +6,7 @@ export default async function NotificationsPage() {
   const { data, error, isError } = await getNotificationSettings();
 
   return (
-    <div className="flex flex-col gap-5 max-w-2xl">
+    <div className="flex flex-col gap-5">
       {isError && (
         <p className="text-sm text-destructive">{error?.message?.toString()}</p>
       )}

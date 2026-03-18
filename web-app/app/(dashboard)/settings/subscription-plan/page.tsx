@@ -65,12 +65,13 @@ export default function Page() {
   const statusLabel = statusKey === 'expiring' ? 'Expiring soon' : statusKey === 'expired' ? 'Expired' : 'Active';
 
   return (
-    <div className="flex flex-col gap-5 max-w-2xl">
+    <div className="flex flex-col gap-5">
       {/* Plan header */}
-      <div className="rounded-xl border border-border bg-card p-6">
+      <div className="rounded-xl border border-border bg-card p-8">
+        <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">Current Plan</h3>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Current plan</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Plan name</p>
             <h3 className="mt-1 text-lg font-semibold capitalize text-foreground">
               {data?.plan?.product?.name}
             </h3>
@@ -114,8 +115,8 @@ export default function Page() {
 
       {/* Features */}
       {data?.plan?.product?.metadata?.features && (
-        <div className="rounded-xl border border-border bg-card p-6">
-          <p className="mb-4 text-sm font-semibold text-foreground">Plan includes</p>
+        <div className="rounded-xl border border-border bg-card p-8">
+          <h3 className="text-[18px] font-semibold text-foreground pb-6 mb-6 border-b border-border">Plan includes</h3>
           <div className="grid gap-2.5 sm:grid-cols-2">
             {Object.keys(JSON.parse(data.plan.product.metadata.features ?? '[]')).map((e) => (
               <div key={e} className="flex items-center gap-2">

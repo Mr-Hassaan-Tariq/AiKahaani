@@ -33,7 +33,7 @@ export default function ScriptSelector({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex h-9 w-full items-center justify-between rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex h-11 w-full items-center justify-between rounded-xl border border-border bg-background px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring hover:bg-muted/50 transition-colors"
           >
             <span className="truncate text-left">
               {selectedScript ? selectedScript.title : 'Select a script…'}
