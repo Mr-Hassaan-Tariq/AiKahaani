@@ -6,7 +6,6 @@ import { cn } from 'lib/utils';
 const tabsPath = [
   { label: 'Profile', path: '/settings/profile' },
   { label: 'Notifications', path: '/settings/notifications' },
-  { label: 'Subscription Plan', path: '/settings/subscription-plan' },
   { label: 'Privacy & Security', path: '/settings/privacy-security' },
 ] as const;
 
