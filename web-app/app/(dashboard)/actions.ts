@@ -3,8 +3,18 @@
 import { NotificationSettingsType, NotificationType, UserProfileType } from './types';
 import { getServerDataAction, updateServerDataAction } from 'lib/utils/getServerDataAction';
 
+export interface UpdateProfilePayload {
+  fullname?: string;
+  username?: string;
+  preferred_language?: string;
+}
+
 export async function getUserProfile() {
   return await getServerDataAction<UserProfileType>('/v1/users/me');
+}
+
+export async function updateUserProfile(payload: UpdateProfilePayload) {
+  return await updateServerDataAction<UserProfileType>('/v1/users/me', payload);
 }
 
 export async function getNotificationSettings() {

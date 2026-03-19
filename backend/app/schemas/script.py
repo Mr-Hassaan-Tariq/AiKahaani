@@ -43,6 +43,15 @@ class GenerateTitlesRequest(BaseModel):
     tones: Optional[List[str]] = None
 
 
+class OptimizeTitlesRequest(BaseModel):
+    prompt: str = Field(..., min_length=5, max_length=2000)
+    title_count: int = Field(6, ge=1, le=20)
+    tones: Optional[List[str]] = None
+    # Either an existing title string or a saved script UUID
+    user_title: Optional[str] = Field(None, max_length=300)
+    script: Optional[str] = None  # script UUID string
+
+
 class TitleItemOut(BaseModel):
     title: str
     angle: Optional[str] = None

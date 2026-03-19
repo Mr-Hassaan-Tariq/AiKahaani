@@ -1,14 +1,19 @@
 'use client';
 
+import { useState } from 'react';
+import { updateUserProfile } from '@/(dashboard)/actions';
 import { UserProfileType } from '@/(dashboard)/types';
 import { FormProvider, useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 import { ProfileDetailFormType } from '../types';
 import { Email_REGEX } from 'lib/constants';
-import { logger } from 'lib/logger';
+import { Button } from 'components/ui/Button';
 import FormInput from 'components/ui/FormInput';
 
 export default function ProfileCardDetail({ profile }: { profile?: UserProfileType }) {
+  const [isSaving, setIsSaving] = useState(false);
+
   const methods = useForm<ProfileDetailFormType>({
     defaultValues: {
       fullName: profile?.fullname || '',
@@ -18,13 +23,42 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
     },
   });
 
+  const {
+    handleSubmit,
+    reset,
+    formState: { isDirty },
+  } = methods;
+
   const onSubmit = async (formData: ProfileDetailFormType) => {
-    logger.info(formData);
+    setIsSaving(true);
+    try {
+      const result = await updateUserProfile({
+        fullname: formData.fullName,
+        username: formData.userName,
+        preferred_language: formData.language,
+      });
+
+      if (result.isError) {
+        toast.error('Failed to save', { description: result.error?.message || 'Unknown error' });
+        return;
+      }
+
+      toast.success('Profile saved');
+      reset(formData);
+    } catch {
+      toast.error('Failed to save', { description: 'Something went wrong' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDiscard = () => {
+    reset();
   };
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className="contents">
+      <form onSubmit={handleSubmit(onSubmit)} className="contents">
         {/* Personal Details card */}
         <div className="rounded-xl border border-border bg-card p-4 sm:p-8">
           <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
@@ -33,7 +67,6 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
           <div className="flex flex-col gap-6">
             <div className="grid gap-6 sm:grid-cols-2">
               <FormInput
-                disabled
                 name="fullName"
                 label="Full Name"
                 placeholder="Enter your full name"
@@ -43,13 +76,13 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
                 }}
               />
               <FormInput
-                disabled
                 name="userName"
                 label="Username"
                 placeholder="Enter your username"
                 validationSchema={{
                   required: 'Username is required',
                   minLength: { value: 3, message: 'Must be at least 3 characters' },
+                  pattern: { value: /^\S+$/, message: 'Username cannot contain spaces' },
                 }}
               />
             </div>
@@ -64,10 +97,9 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
               }}
             />
             <FormInput
-              disabled
               name="language"
               label="Preferred Language"
-              placeholder="Enter your language"
+              placeholder="e.g. en"
               validationSchema={{ required: 'Language is required' }}
             />
           </div>
@@ -108,6 +140,26 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Footer actions */}
+        <div className="flex items-center justify-end gap-3 pb-4 pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleDiscard}
+            disabled={!isDirty || isSaving}
+          >
+            Discard Changes
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={!isDirty || isSaving}
+            isLoading={isSaving}
+          >
+            Save Profile
+          </Button>
         </div>
       </form>
     </FormProvider>

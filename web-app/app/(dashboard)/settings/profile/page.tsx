@@ -2,7 +2,6 @@ import { getUserProfile } from '@/(dashboard)/actions';
 
 import ProfileCardDetail from './_components/ProfileCardDetail';
 import ProfilePhotoCard from './_components/ProfilePhotoCard';
-import { Button } from 'components/ui/Button';
 
 export default async function Page() {
   const { data, error, isError } = await getUserProfile();
@@ -16,14 +15,6 @@ export default async function Page() {
         fullName={data?.username}
       />
       <ProfileCardDetail profile={data} />
-
-      {/* Footer actions */}
-      <div className="flex items-center justify-end gap-3 pb-4 pt-2">
-        <Button variant="outline">Discard Changes</Button>
-        <Button variant="primary" disabled>
-          Save Profile
-        </Button>
-      </div>
     </div>
   );
 }

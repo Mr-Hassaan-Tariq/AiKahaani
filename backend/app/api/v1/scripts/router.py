@@ -5,6 +5,7 @@ Endpoints:
   GET  /tones                          — list all tones
   GET  /template-styles                — list all template styles
   POST /titles/generate                — generate YouTube titles
+  POST /titles/optimize                — optimize an existing title or script title
   POST /outlines/generate              — generate script outline
   GET  /outlines                       — list user's outlines
   GET  /outlines/{outline_id}          — get single outline
@@ -50,6 +51,7 @@ from app.schemas.script import (
     GenerateScriptResponse,
     GenerateTitlesRequest,
     GenerateTitlesResponse,
+    OptimizeTitlesRequest,
     OutlineListResponse,
     ScriptListResponse,
     ScriptOutlineOut,
@@ -217,6 +219,93 @@ async def generate_titles(
             metadata=metadata,
         ),
         message="Titles generated successfully",
+    )
+
+
+@scripts_router.post(
+    "/titles/optimize",
+    response_model=ApiResponse[GenerateTitlesResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+@limiter.limit("10/minute")
+async def optimize_titles(
+    request: Request,
+    body: OptimizeTitlesRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse[GenerateTitlesResponse]:
+    """Optimize an existing title or script title via Chat Completions."""
+    if not body.prompt.strip():
+        raise HTTPException(status_code=400, detail="Prompt cannot be empty")
+
+    # Build enriched prompt with existing title context
+    enriched_prompt = body.prompt
+
+    if body.user_title and body.user_title.strip():
+        enriched_prompt = (
+            f"EXISTING TITLE TO OPTIMIZE: {body.user_title.strip()}\n\n"
+            f"USER CONTEXT: {body.prompt}"
+        )
+    elif body.script:
+        # Fetch script content from DB
+        try:
+            script_id = uuid.UUID(str(body.script))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid script UUID")
+
+        from app.models.script import FullScript
+
+        script_row = await db.get(FullScript, script_id)
+        if not script_row or script_row.user_id != current_user.id:
+            raise HTTPException(status_code=404, detail="Script not found")
+
+        excerpt = (script_row.content or "")[:800].strip()
+        enriched_prompt = (
+            f"SCRIPT TITLE TO OPTIMIZE: {script_row.title}\n\n"
+            f"SCRIPT EXCERPT: {excerpt}\n\n"
+            f"USER CONTEXT: {body.prompt}"
+        )
+
+    try:
+        titles, metadata = await openai_service.generate_titles(
+            prompt=enriched_prompt,
+            title_count=body.title_count,
+            tones=body.tones,
+        )
+    except Exception as exc:
+        logger.error(
+            "[TITLES] Optimization failed for user %s: %s", current_user.id, exc
+        )
+        raise HTTPException(
+            status_code=500, detail="Title optimization failed. Please try again."
+        )
+
+    tg = TitleGeneration(
+        user_id=current_user.id,
+        generation_type=TitleGenerationType.optimized,
+        prompt=enriched_prompt,
+        tones=body.tones or [],
+        titles=titles,
+        titles_count=len(titles),
+    )
+    db.add(tg)
+    await db.commit()
+    await db.refresh(tg)
+
+    return responses.created(
+        data=GenerateTitlesResponse(
+            generation=TitleGenerationOut(
+                id=tg.id,
+                generation_type=tg.generation_type.value,
+                titles=tg.titles,
+                titles_count=tg.titles_count,
+                tones=tg.tones,
+                created_at=tg.created_at,
+            ),
+            titles=[TitleItemOut(**t) for t in titles],
+            metadata=metadata,
+        ),
+        message="Titles optimized successfully",
     )
 
 

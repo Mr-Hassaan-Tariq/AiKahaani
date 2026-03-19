@@ -16,6 +16,25 @@ import { cn } from 'lib/utils';
 import useToast from 'lib/utils/useToast';
 import { Button } from 'components/ui/Button';
 
+export interface TitleItem {
+  title: string;
+  angle?: string;
+  levers?: string[];
+  emotion_target?: string;
+  power_words?: string[];
+  length_chars?: number;
+  word_count?: number;
+  truncation_safe?: boolean;
+  notes?: string;
+  tension_pair?: string[];
+}
+
+function normalizeTitles(raw: any[]): TitleItem[] {
+  return (raw ?? []).map((t) =>
+    typeof t === 'string' ? { title: t } : { ...t, title: t.title ?? '' },
+  );
+}
+
 // ── Step card wrapper ─────────────────────────────────────────────────────────
 function StepCard({
   number,
@@ -69,7 +88,7 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<'generate' | 'optimize'>('generate');
   const [showTitles, setShowTitles] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [titles, setTitles] = useState<string[]>([]);
+  const [titles, setTitles] = useState<TitleItem[]>([]);
   const [lastPayload, setLastPayload] = useState<any>(null);
 
   const { data: script } = useGetScripts();
@@ -145,7 +164,7 @@ export default function Page() {
         response = await generateTitles.mutateAsync({ prompt: data.prompt, tones: data.tones });
       }
 
-      setTitles(response?.titles || []);
+      setTitles(normalizeTitles(response?.titles ?? []));
       setShowTitles(true);
       toast.success(
         'Success',
@@ -192,7 +211,7 @@ export default function Page() {
           tones: lastPayload.tones,
         });
       }
-      setTitles(response?.titles || []);
+      setTitles(normalizeTitles(response?.titles ?? []));
       setShowTitles(true);
       toast.success(
         'Success',
@@ -205,9 +224,10 @@ export default function Page() {
     }
   };
 
-  const handleCopy = async (title: string) => {
+  const handleCopy = async (title: string | TitleItem) => {
+    const text = typeof title === 'string' ? title : title.title;
     try {
-      await navigator.clipboard.writeText(title);
+      await navigator.clipboard.writeText(text);
       toast.success('Copied!', 'Title copied to clipboard');
     } catch {
       toast.error('Error', 'Failed to copy title');
