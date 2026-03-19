@@ -3,10 +3,9 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { env } from 'env.mjs';
-import Cookies from 'js-cookie';
 import { FcGoogle } from 'react-icons/fc';
 
-import { SetAccessToken } from '../actions';
+import { SetAuthTokens } from '../actions';
 import useGoogleSignup from 'lib/hooks/useGoogleSignup';
 import useToast from 'lib/utils/useToast';
 import { Spinner } from 'components/ui/Spinner';
@@ -25,10 +24,8 @@ export default function GoogleAuthComponent() {
           {
             onSuccess: async (response) => {
               toast.success('Success', 'Successfully logged in');
-              Cookies.set('access_token', response.access);
-              Cookies.set('refresh_token', response.refresh);
               localStorage.setItem('refresh_token', response.refresh);
-              SetAccessToken(response.access);
+              await SetAuthTokens(response.access, response.refresh);
               window.location.href = '/';
             },
             onError: (err) => {

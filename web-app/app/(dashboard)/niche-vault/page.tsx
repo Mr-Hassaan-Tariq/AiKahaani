@@ -101,7 +101,10 @@ export default function NicheVault() {
     <div className="px-4 py-6 sm:px-8 sm:py-10">
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 sm:gap-8">
         {/* ── Featured Hero Banner ── */}
-        <div className="relative flex w-full items-end overflow-hidden rounded-xl" style={{ minHeight: 220 }}>
+        <div
+          className="relative flex w-full items-end overflow-hidden rounded-xl"
+          style={{ minHeight: 220 }}
+        >
           <img
             src={FEATURED.imageUrl}
             alt="Featured"
@@ -121,14 +124,19 @@ export default function NicheVault() {
             <h2 className="m-0 text-[22px] font-extrabold leading-tight tracking-tight text-white sm:text-[32px]">
               {FEATURED.title}
             </h2>
-            <p className="m-0 hidden text-base leading-relaxed text-white/80 sm:block">{FEATURED.description}</p>
+            <p className="m-0 hidden text-base leading-relaxed text-white/80 sm:block">
+              {FEATURED.description}
+            </p>
           </div>
         </div>
 
         {/* ── Controls: category pills + search ── */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
           {/* Pills — horizontal scroll on mobile */}
-          <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0" style={{ scrollbarWidth: 'none' }}>
+          <div
+            className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0"
+            style={{ scrollbarWidth: 'none' }}
+          >
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}

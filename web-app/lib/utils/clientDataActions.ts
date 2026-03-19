@@ -18,6 +18,34 @@ function getAuthToken() {
   return Cookies.get('access_token');
 }
 
+async function refreshAccessToken(): Promise<string | null> {
+  try {
+    const refreshToken = Cookies.get('refresh_token') ?? localStorage.getItem('refresh_token');
+    if (!refreshToken) return null;
+
+    const base = baseUrl.replace(/\/$/, '');
+    const res = await fetch(`${base}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!res.ok) return null;
+    const json = await res.json();
+    const data = json.data ?? json;
+    const newAccess: string = data.access_token ?? data.access;
+    const newRefresh: string = data.refresh_token ?? data.refresh ?? refreshToken;
+    if (!newAccess) return null;
+
+    Cookies.set('access_token', newAccess, { expires: 1, path: '/', sameSite: 'lax' });
+    Cookies.set('refresh_token', newRefresh, { expires: 30, path: '/', sameSite: 'lax' });
+    localStorage.setItem('refresh_token', newRefresh);
+    return newAccess;
+  } catch {
+    return null;
+  }
+}
+
 function buildUrl(endpoint: string, customUrl?: string): string {
   if (customUrl) return customUrl;
   const base = baseUrl.replace(/\/$/, ''); // strip any trailing slash
@@ -43,20 +71,41 @@ function unwrapApiEnvelope<T>(json: unknown): T {
   return json as T;
 }
 
+async function fetchWithTokenRefresh(
+  url: string,
+  options: RequestInit,
+  token: string | undefined,
+): Promise<Response> {
+  const headers = new Headers(options.headers);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  let res = await fetch(url, { ...options, headers });
+  if (res.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      headers.set('Authorization', `Bearer ${newToken}`);
+      res = await fetch(url, { ...options, headers });
+    } else {
+      window.location.href = '/signup';
+    }
+  }
+  return res;
+}
+
 export async function getClientDataAction<T>(endpoint: string, schema?: z.ZodSchema<T>) {
   if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
     const { getMockDataForEndpoint } = await import('lib/mockData');
     return getMockDataForEndpoint(endpoint) as T;
   }
   const token = getAuthToken();
-  const res = await fetch(buildUrl(endpoint), {
-    method: 'GET',
-    cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+  const res = await fetchWithTokenRefresh(
+    buildUrl(endpoint),
+    {
+      method: 'GET',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     },
-  });
+    token,
+  );
   if (!res.ok) {
     const error = await processError(res);
     logger.error(error);
@@ -90,11 +139,11 @@ export async function postClientDataAction<T, P>(endpoint: string, body?: P, cus
   }
   headers.set('Authorization', `Bearer ${token}`);
 
-  const res = await fetch(buildUrl(endpoint, customUrl), {
-    method: 'POST',
-    headers: headers,
-    body: body instanceof FormData ? body : JSON.stringify(body ?? {}),
-  });
+  const res = await fetchWithTokenRefresh(
+    buildUrl(endpoint, customUrl),
+    { method: 'POST', headers, body: body instanceof FormData ? body : JSON.stringify(body ?? {}) },
+    token,
+  );
 
   if (!res.ok) {
     const error = await processError(res);
@@ -108,16 +157,16 @@ export async function postClientDataAction<T, P>(endpoint: string, body?: P, cus
 
 export async function patchClientDataAction<T, P>(endpoint: string, body?: P) {
   const token = getAuthToken();
-  const res = await fetch(buildUrl(endpoint), {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+  const res = await fetchWithTokenRefresh(
+    buildUrl(endpoint),
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    token,
+  );
   if (!res.ok) {
-    if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
     const error = await processError(res);
     logger.error(error);
     throw error;
@@ -128,13 +177,14 @@ export async function patchClientDataAction<T, P>(endpoint: string, body?: P) {
 
 export async function deleteClientDataAction<T>(endpoint: string) {
   const token = getAuthToken();
-  const res = await fetch(buildUrl(endpoint), {
-    method: method.delete,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+  const res = await fetchWithTokenRefresh(
+    buildUrl(endpoint),
+    {
+      method: method.delete,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     },
-  });
+    token,
+  );
 
   if (!res.ok) {
     const error = await processError(res);
@@ -151,16 +201,16 @@ export async function deleteClientDataAction<T>(endpoint: string) {
 
 export async function putClientDataAction<T, P>(endpoint: string, body?: P) {
   const token = getAuthToken();
-  const res = await fetch(buildUrl(endpoint), {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+  const res = await fetchWithTokenRefresh(
+    buildUrl(endpoint),
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    token,
+  );
   if (!res.ok) {
-    if (res.status === 401 && typeof window !== 'undefined') window.location.href = '/signout';
     const error = await processError(res);
     logger.error(error);
     throw error;

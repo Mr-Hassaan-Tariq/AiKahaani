@@ -245,7 +245,10 @@ export default function GenerateScriptForm({
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className="flex flex-1 flex-col overflow-y-auto sm:flex-row sm:overflow-hidden">
+      <form
+        onSubmit={methods.handleSubmit(onSubmit)}
+        className="flex flex-1 flex-col overflow-y-auto sm:flex-row sm:overflow-hidden"
+      >
         {/* ═══ LEFT: Editor pane ═══════════════════════════════════════ */}
         <div className="flex min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:overflow-y-auto sm:px-10 sm:py-10">
           {/* Niche badge */}

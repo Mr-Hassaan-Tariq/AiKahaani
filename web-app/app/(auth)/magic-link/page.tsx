@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Cookies from 'js-cookie';
 import { Check, Loader2, XCircle } from 'lucide-react';
 
+import { SetAuthTokens } from '../signup/actions';
 import { authService } from 'lib/api';
 
 // ── Page ─────────────────────────────────────────────────────────────
@@ -40,8 +40,8 @@ export default function MagicLinkPage() {
 
         if (response.user && response.access && response.refresh) {
           sessionStorage.setItem(key, 'success');
-          Cookies.set('access_token', response.access, { expires: 7 });
           localStorage.setItem('refresh_token', response.refresh);
+          await SetAuthTokens(response.access, response.refresh);
           setVerifyStatus('success');
           setVerifyMsg('Verified successfully! Redirecting…');
           timer = window.setTimeout(() => {

@@ -5,6 +5,44 @@ import { redirect } from 'next/navigation';
 
 import { baseUrl } from 'lib/api/index';
 
+/**
+ * Try to refresh the access token using the refresh_token cookie.
+ * Updates the access_token cookie on success.
+ * Returns the new access token string, or null on failure.
+ */
+async function tryRefreshToken(): Promise<string | null> {
+  try {
+    const cookieStore = await cookies();
+    const refreshToken = cookieStore.get('refresh_token')?.value;
+    if (!refreshToken) return null;
+
+    const base = baseUrl.replace(/\/$/, '');
+    const res = await fetch(`${base}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    const data = json.data ?? json;
+    const newAccess: string = data.access_token ?? data.access;
+    const newRefresh: string = data.refresh_token ?? data.refresh ?? refreshToken;
+
+    if (!newAccess) return null;
+
+    const DAY = 60 * 60 * 24;
+    cookieStore.set('access_token', newAccess, { path: '/', maxAge: DAY, sameSite: 'lax' });
+    cookieStore.set('refresh_token', newRefresh, { path: '/', maxAge: DAY * 30, sameSite: 'lax' });
+
+    return newAccess;
+  } catch {
+    return null;
+  }
+}
+
 async function processError(resp: Response) {
   const contentType = resp.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
@@ -53,28 +91,46 @@ function unwrapApiEnvelope<T>(json: unknown): T {
 export async function getServerDataAction<T>(
   endpoint: string,
 ): Promise<GetServerDataActionReturnType<T>> {
+  if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
+    const { getMockDataForEndpoint } = await import('lib/mockData');
+    return { isError: false, error: undefined, data: getMockDataForEndpoint(endpoint) as T };
+  }
+
+  const cookieStore = await cookies();
+  const userCookie = cookieStore.get('access_token');
+
+  // No cookie at all → redirect immediately (outside try/catch so it propagates)
+  if (!userCookie?.value) {
+    return redirect('/signup');
+  }
+
   try {
-    if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
-      const { getMockDataForEndpoint } = await import('lib/mockData');
-      return { isError: false, error: undefined, data: getMockDataForEndpoint(endpoint) as T };
-    }
-
-    const cookieStore = await cookies();
-    const userCookie = cookieStore.get('access_token');
-    if (!userCookie?.value) {
-      return redirect('/signup');
-    }
-
     const base = baseUrl.replace(/\/$/, '');
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const res = await fetch(`${base}${path}`, {
+    const url = `${base}${path}`;
+
+    let token = userCookie.value;
+    let res = await fetch(url, {
       method: 'GET',
       cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${userCookie.value}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     });
+
+    // Auto-refresh on 401 (expired access token)
+    if (res.status === 401) {
+      const newToken = await tryRefreshToken();
+      if (!newToken) {
+        // Refresh failed — redirect outside the catch so it isn't swallowed
+        return { isError: true, error: new Error('Session expired'), data: undefined };
+      }
+      token = newToken;
+      res = await fetch(url, {
+        method: 'GET',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+    }
+
     if (!res.ok) {
       return { isError: true, error: await processError(res), data: undefined };
     }
@@ -129,7 +185,21 @@ export async function updateServerDataAction<T>(
 
     const base = baseUrl.replace(/\/$/, '');
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const res = await fetch(`${base}${path}`, fetchOptions);
+    const url = `${base}${path}`;
+    let res = await fetch(url, fetchOptions);
+
+    // Auto-refresh on 401
+    if (res.status === 401) {
+      const newToken = await tryRefreshToken();
+      if (newToken) {
+        fetchOptions.headers = {
+          ...(fetchOptions.headers as Record<string, string>),
+          Authorization: `Bearer ${newToken}`,
+        };
+        res = await fetch(url, fetchOptions);
+      }
+    }
+
     if (!res.ok) {
       return { isError: true, error: await processError(res), data: undefined };
     }
