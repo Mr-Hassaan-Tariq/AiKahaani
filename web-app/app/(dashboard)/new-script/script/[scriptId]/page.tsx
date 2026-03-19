@@ -34,11 +34,11 @@ export default async function Page({ params }: { params: Promise<{ scriptId: str
     data?.title + '\n\n' + sections.map((e: any) => `${e.title}\n\n${e.content}`).join('\n\n');
 
   return (
-    <div className="flex justify-center px-8 pb-24 pt-12">
+    <div className="flex justify-center px-4 pb-16 pt-6 sm:px-8 sm:pb-24 sm:pt-12">
       <div className="w-full max-w-[800px]">
         {/* ── Script header ── */}
-        <div className="mb-12">
-          <h1 className="mb-6 text-[42px] font-bold leading-[1.2] tracking-tight text-foreground">
+        <div className="mb-6 sm:mb-12">
+          <h1 className="mb-4 text-[26px] font-bold leading-[1.2] tracking-tight text-foreground sm:mb-6 sm:text-[42px]">
             {data?.title}
           </h1>
           <ScriptActionBar text={allContent} script={data as ScriptData} />

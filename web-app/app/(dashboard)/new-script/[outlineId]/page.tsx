@@ -16,7 +16,7 @@ export default async function Page({ params }: { params: Promise<{ outlineId: st
   }
 
   return (
-    <div className="p-7">
+    <div className="p-4 sm:p-7">
       <OutlineComponent outline={data} />
     </div>
   );

@@ -278,27 +278,27 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
 
       {/* ── Status row ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-5">
+        <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4 sm:p-5">
           <p className="text-[13px] font-medium text-muted-foreground">Topic</p>
-          <p className="line-clamp-1 text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+          <p className="line-clamp-1 text-[18px] font-semibold leading-tight tracking-tight text-foreground sm:text-[22px]">
             {outline.title || 'Untitled'}
           </p>
           <p className="line-clamp-2 text-[13px] font-medium leading-relaxed text-muted-foreground">
             {outline.description || 'No description provided.'}
           </p>
         </div>
-        <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-5">
+        <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4 sm:p-5">
           <p className="text-[13px] font-medium text-muted-foreground">Tone</p>
-          <p className="line-clamp-1 text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+          <p className="line-clamp-1 text-[18px] font-semibold leading-tight tracking-tight text-foreground sm:text-[22px]">
             {toneNames || 'Default'}
           </p>
           <p className="text-[13px] font-medium leading-relaxed text-muted-foreground">
             A creator-friendly structure with crisp transitions and practical examples.
           </p>
         </div>
-        <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-5">
+        <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4 sm:p-5">
           <p className="text-[13px] font-medium text-muted-foreground">Estimated runtime</p>
-          <p className="text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+          <p className="text-[18px] font-semibold leading-tight tracking-tight text-foreground sm:text-[22px]">
             {Math.round((outline.min_length || outline.max_length || 1000) / 130)}–
             {Math.round((outline.max_length || 1000) / 100)} min
           </p>
@@ -311,21 +311,23 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
       {/* ── Main 2-column grid ── */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.8fr)]">
         {/* ── Outline panel ── */}
-        <div className="flex flex-col gap-6 rounded-lg border border-border bg-card p-6">
+        <div className="flex flex-col gap-6 rounded-lg border border-border bg-card p-4 sm:p-6">
           {/* Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col gap-1.5">
-              <h2 className="text-[20px] font-semibold tracking-tight text-foreground">
-                Generated outline
-              </h2>
-              <p className="text-sm font-medium text-muted-foreground">
+          <div className="flex items-start gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <h2 className="text-[18px] font-semibold tracking-tight text-foreground sm:text-[20px]">
+                  Generated outline
+                </h2>
+                <span className="shrink-0 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground">
+                  {cards.length} sections
+                </span>
+              </div>
+              <p className="mt-1 text-sm font-medium text-muted-foreground">
                 Each section is optimized for YouTube flow, watch time, and creator-friendly
                 delivery.
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground">
-              {cards.length} sections
-            </span>
           </div>
 
           {/* Sections list */}
@@ -417,19 +419,19 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
         </div>
 
         {/* ── Insights panel ── */}
-        <div className="flex flex-col gap-5 rounded-lg border border-border bg-card p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col gap-1.5">
-              <h2 className="text-[20px] font-semibold tracking-tight text-foreground">
+        <div className="flex flex-col gap-5 rounded-lg border border-border bg-card p-4 sm:p-6">
+          <div>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h2 className="text-[18px] font-semibold tracking-tight text-foreground sm:text-[20px]">
                 Outline insights
               </h2>
-              <p className="text-sm font-medium text-muted-foreground">
-                Quick checks before you move into the long-form draft.
-              </p>
+              <span className="shrink-0 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground">
+                Ready
+              </span>
             </div>
-            <span className="shrink-0 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground">
-              Ready
-            </span>
+            <p className="mt-1 text-sm font-medium text-muted-foreground">
+              Quick checks before you move into the long-form draft.
+            </p>
           </div>
 
           <div className="flex flex-col gap-4">

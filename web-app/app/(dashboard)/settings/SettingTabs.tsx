@@ -17,8 +17,8 @@ export default async function SettingTabs({ children }: { children: React.ReactN
   return (
     <div className="flex min-h-full flex-col">
       {/* Tab nav */}
-      <div className="border-b border-border bg-background px-8">
-        <nav className="-mb-px flex gap-8 overflow-x-auto">
+      <div className="border-b border-border bg-background px-4 sm:px-8">
+        <nav className="-mb-px flex gap-6 overflow-x-auto sm:gap-8">
           {tabsPath.map((tab) => {
             const isActive = activeTab?.label === tab.label;
             return (
@@ -39,7 +39,7 @@ export default async function SettingTabs({ children }: { children: React.ReactN
         </nav>
       </div>
 
-      <div className="min-h-full bg-muted/40 px-8 py-8">
+      <div className="min-h-full bg-muted/40 px-4 py-6 sm:px-8 sm:py-8">
         <div className="mx-auto flex w-full max-w-[900px] flex-col gap-6">{children}</div>
       </div>
     </div>

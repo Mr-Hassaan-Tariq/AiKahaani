@@ -53,7 +53,7 @@ export default function ScriptCard({ script, actions, className = '' }: ScriptCa
   return (
     <div
       className={cn(
-        'flex min-h-[232px] cursor-pointer flex-col justify-between rounded-xl border border-border bg-card p-6 transition-colors hover:shadow-sm',
+        'flex min-h-[200px] cursor-pointer flex-col justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:shadow-sm sm:min-h-[232px] sm:p-6',
         className,
       )}
       onClick={handleCardClick}
@@ -92,7 +92,7 @@ export default function ScriptCard({ script, actions, className = '' }: ScriptCa
 
       {/* Title + meta */}
       <div className="flex-1">
-        <h3 className="line-clamp-2 text-2xl font-semibold leading-snug tracking-tight text-foreground">
+        <h3 className="line-clamp-2 text-xl font-semibold leading-snug tracking-tight text-foreground sm:text-2xl">
           {script.title}
         </h3>
         <div className="mt-3 flex flex-wrap items-center gap-2.5">

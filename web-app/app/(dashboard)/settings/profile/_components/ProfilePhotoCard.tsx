@@ -22,12 +22,12 @@ export default function ProfilePhotoCard({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-8">
+    <div className="rounded-xl border border-border bg-card p-4 sm:p-8">
       <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
         Personal Information
       </h3>
 
-      <div className="flex items-center gap-6">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
         {/* Avatar */}
         {profileImage ? (
           <ClientImage

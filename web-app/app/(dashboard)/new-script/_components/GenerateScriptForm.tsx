@@ -245,9 +245,9 @@ export default function GenerateScriptForm({
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className="flex flex-1 overflow-hidden">
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="flex flex-1 flex-col overflow-y-auto sm:flex-row sm:overflow-hidden">
         {/* ═══ LEFT: Editor pane ═══════════════════════════════════════ */}
-        <div className="flex min-w-0 flex-1 flex-col gap-8 overflow-y-auto px-10 py-10">
+        <div className="flex min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:overflow-y-auto sm:px-10 sm:py-10">
           {/* Niche badge */}
           {niche && (
             <div className="flex items-center gap-2 self-start rounded-lg border border-border bg-accent px-3 py-2">
@@ -260,7 +260,7 @@ export default function GenerateScriptForm({
           <input
             {...register('title')}
             placeholder="Give your script a working title…"
-            className="w-full border-none bg-transparent text-[32px] font-bold leading-tight tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
+            className="w-full border-none bg-transparent text-[22px] font-bold leading-tight tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40 sm:text-[32px]"
           />
 
           {/* Prompt section */}
@@ -334,15 +334,15 @@ export default function GenerateScriptForm({
         </div>
 
         {/* ═══ RIGHT: Inspector pane ═══════════════════════════════════ */}
-        <div className="flex w-[440px] shrink-0 flex-col overflow-hidden border-l border-border bg-card">
+        <div className="flex shrink-0 flex-col border-t border-border bg-card sm:w-[440px] sm:overflow-hidden sm:border-l sm:border-t-0">
           {/* Inspector header */}
-          <div className="flex items-center gap-2 border-b border-border px-7 py-5">
+          <div className="flex items-center gap-2 border-b border-border px-5 py-4 sm:px-7 sm:py-5">
             <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
             <span className="text-[15px] font-semibold text-foreground">Script Settings</span>
           </div>
 
           {/* Inspector body — scrollable */}
-          <div className="flex flex-1 flex-col gap-8 overflow-y-auto px-7 py-6">
+          <div className="flex flex-1 flex-col gap-6 px-5 py-5 sm:gap-8 sm:overflow-y-auto sm:px-7 sm:py-6">
             {/* ── Output Format ── */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
@@ -458,7 +458,7 @@ export default function GenerateScriptForm({
           </div>
 
           {/* Inspector footer — Generate button */}
-          <div className="shrink-0 border-t border-border px-7 py-5">
+          <div className="shrink-0 border-t border-border px-5 py-4 sm:px-7 sm:py-5">
             <Button
               type="submit"
               loading={isPending}

@@ -26,7 +26,7 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
     <FormProvider {...methods}>
       <form onSubmit={methods.handleSubmit(onSubmit)} className="contents">
         {/* Personal Details card */}
-        <div className="rounded-xl border border-border bg-card p-8">
+        <div className="rounded-xl border border-border bg-card p-4 sm:p-8">
           <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
             Personal Details
           </h3>
@@ -74,7 +74,7 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
         </div>
 
         {/* Channel Details card */}
-        <div className="rounded-xl border border-border bg-card p-8">
+        <div className="rounded-xl border border-border bg-card p-4 sm:p-8">
           <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
             Channel Details
           </h3>

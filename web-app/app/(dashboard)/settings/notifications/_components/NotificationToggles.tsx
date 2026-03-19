@@ -84,7 +84,7 @@ export default function NotificationToggles({ initialSettings }: NotificationTog
   return (
     <div className="flex flex-col gap-4">
       {/* Delivery channels */}
-      <div className="rounded-xl border border-border bg-card p-8">
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-8">
         <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
           {notificationTexts.deliveryChannels.title}
         </h3>
@@ -104,7 +104,7 @@ export default function NotificationToggles({ initialSettings }: NotificationTog
       </div>
 
       {/* Notification types */}
-      <div className="rounded-xl border border-border bg-card p-8">
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-8">
         <h3 className="mb-6 border-b border-border pb-6 text-[18px] font-semibold text-foreground">
           {notificationTexts.notificationTypes.title}
         </h3>

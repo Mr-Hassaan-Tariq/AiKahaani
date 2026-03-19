@@ -63,7 +63,7 @@ export default function Signup() {
       />
 
       {/* ── Auth card ── */}
-      <div className="relative z-10 w-full max-w-[480px] rounded-2xl border border-border bg-card px-10 py-14 shadow-sm">
+      <div className="relative z-10 w-full max-w-[480px] rounded-2xl border border-border bg-card px-5 py-8 shadow-sm sm:px-10 sm:py-14">
         {/* Heading */}
         <h1 className="text-center text-3xl font-semibold tracking-tight text-foreground">
           Let&apos;s get you creating

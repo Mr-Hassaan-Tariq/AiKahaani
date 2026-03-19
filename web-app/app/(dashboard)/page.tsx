@@ -121,7 +121,7 @@ export default async function DashboardPage() {
   const recentItems = recentData?.results ?? [];
 
   return (
-    <div className="space-y-6 p-7">
+    <div className="space-y-6 px-4 py-6 sm:px-7">
       {/* ── Stats grid ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
@@ -181,7 +181,7 @@ export default async function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(300px,1fr)]">
         {/* Recent scripts */}
         <div className="flex flex-col rounded-lg border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-6 py-5">
+          <div className="flex items-center justify-between border-b border-border px-4 py-5 sm:px-6">
             <h2 className="text-[18px] font-semibold text-foreground">Recent Projects</h2>
             <Link href="/my-scripts" className="text-sm font-medium text-primary hover:underline">
               View all
@@ -197,7 +197,7 @@ export default async function DashboardPage() {
                         ? `/new-script/script/${item.uuid}`
                         : `/new-script/${item.uuid}`
                     }
-                    className="flex items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-muted/50"
+                    className="flex items-center justify-between gap-4 px-4 py-4 transition-colors hover:bg-muted/50 sm:px-6"
                   >
                     <div className="flex min-w-0 items-center gap-4">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
@@ -231,7 +231,7 @@ export default async function DashboardPage() {
               ))}
             </ul>
           ) : (
-            <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+            <div className="flex flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
               <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                 <FileText className="h-5 w-5 text-muted-foreground" />
               </div>
@@ -251,13 +251,13 @@ export default async function DashboardPage() {
 
         {/* Top Templates */}
         <div className="flex flex-col rounded-lg border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-6 py-5">
+          <div className="flex items-center justify-between border-b border-border px-4 py-5 sm:px-6">
             <h2 className="text-[18px] font-semibold text-foreground">Top Templates</h2>
             <Link href="/niche-vault" className="text-sm font-medium text-primary hover:underline">
               Explore
             </Link>
           </div>
-          <div className="flex flex-col gap-4 p-6">
+          <div className="flex flex-col gap-4 p-4 sm:p-6">
             {[
               {
                 icon: ListOrdered,

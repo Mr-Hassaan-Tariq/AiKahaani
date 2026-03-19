@@ -661,10 +661,12 @@ export const mockGeneratedTitles = {
 
 // ── POST endpoint → mock data map ─────────────────────────────────────────────
 export function getMockPostDataForEndpoint(endpoint: string): unknown {
-  if (endpoint.includes('scripts/outline/') && endpoint.includes('/script/')) {
+  if (endpoint.includes('scripts/outline') && endpoint.includes('/script/')) {
     return mockGenerateScriptResponse;
   }
-  if (endpoint.includes('scripts/outline/')) return mockOutlineResponse;
+  if (endpoint.includes('scripts/outline') || endpoint.includes('scripts/outlines')) {
+    return mockOutlineResponse;
+  }
   if (endpoint.includes('titles/generate') || endpoint.includes('titles/optimize')) {
     return mockGeneratedTitles;
   }

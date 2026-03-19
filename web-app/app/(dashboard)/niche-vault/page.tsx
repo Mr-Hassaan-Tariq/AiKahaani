@@ -95,13 +95,10 @@ export default function NicheVault() {
   }, [niches, activeCategory]);
 
   return (
-    <div className="px-8 py-10">
-      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8">
+    <div className="px-4 py-6 sm:px-8 sm:py-10">
+      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 sm:gap-8">
         {/* ── Featured Hero Banner ── */}
-        <div
-          className="relative flex w-full items-end overflow-hidden rounded-xl"
-          style={{ height: 280 }}
-        >
+        <div className="relative flex w-full items-end overflow-hidden rounded-xl" style={{ minHeight: 220 }}>
           <img
             src={FEATURED.imageUrl}
             alt="Featured"
@@ -113,28 +110,29 @@ export default function NicheVault() {
               background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.18) 100%)',
             }}
           />
-          <div className="relative z-10 flex max-w-[600px] flex-col gap-3 p-10">
+          <div className="relative z-10 flex max-w-[600px] flex-col gap-2 p-5 sm:gap-3 sm:p-10">
             <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-[#0F172A] backdrop-blur-sm">
               <Sparkles className="h-3 w-3" />
               Featured Blueprint
             </span>
-            <h2 className="m-0 text-[32px] font-extrabold leading-tight tracking-tight text-white">
+            <h2 className="m-0 text-[22px] font-extrabold leading-tight tracking-tight text-white sm:text-[32px]">
               {FEATURED.title}
             </h2>
-            <p className="m-0 text-base leading-relaxed text-white/80">{FEATURED.description}</p>
+            <p className="m-0 hidden text-base leading-relaxed text-white/80 sm:block">{FEATURED.description}</p>
           </div>
         </div>
 
         {/* ── Controls: category pills + search ── */}
-        <div className="flex items-center justify-between gap-6">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          {/* Pills — horizontal scroll on mobile */}
+          <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0" style={{ scrollbarWidth: 'none' }}>
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setActiveCategory(cat)}
                 className={cn(
-                  'whitespace-nowrap rounded-full border border-transparent px-4 py-2 text-sm font-medium transition-colors',
+                  'shrink-0 whitespace-nowrap rounded-full border border-transparent px-4 py-2 text-sm font-medium transition-colors',
                   activeCategory === cat
                     ? 'bg-foreground text-background'
                     : 'bg-secondary text-muted-foreground hover:bg-secondary/70',
@@ -145,7 +143,7 @@ export default function NicheVault() {
             ))}
           </div>
 
-          <div className="flex h-11 w-[280px] shrink-0 items-center gap-3 rounded-full bg-secondary px-4">
+          <div className="flex h-11 w-full items-center gap-3 rounded-full bg-secondary px-4 sm:w-[280px] sm:shrink-0">
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <input
               className="w-full border-none bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
@@ -161,20 +159,14 @@ export default function NicheVault() {
 
         {/* ── Template Grid ── */}
         {isLoading ? (
-          <div
-            className="grid gap-6"
-            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}
-          >
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="animate-pulse rounded-xl bg-muted" style={{ height: 320 }} />
             ))}
           </div>
         ) : filteredNiches.length > 0 ? (
           <>
-            <div
-              className="grid gap-6"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}
-            >
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filteredNiches.map((niche) => (
                 <NicheCard
                   key={niche.id}

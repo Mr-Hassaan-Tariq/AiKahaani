@@ -66,7 +66,7 @@ export default function PrivacySecurityPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Change Password */}
-      <div className="rounded-xl border border-border bg-card p-8">
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-8">
         <div className="mb-6 flex items-center gap-3 border-b border-border pb-6">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
             <KeyRound className="h-[18px] w-[18px] text-primary" />
@@ -163,7 +163,7 @@ export default function PrivacySecurityPage() {
       </div>
 
       {/* Data Preferences */}
-      <div className="rounded-xl border border-border bg-card p-8">
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-8">
         <div className="mb-6 flex items-center gap-3 border-b border-border pb-6">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
             <ShieldCheck className="h-[18px] w-[18px] text-primary" />

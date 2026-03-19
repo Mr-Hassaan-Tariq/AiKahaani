@@ -22,7 +22,7 @@ export default function NotificationTabs({ children }: { children: React.ReactNo
   return (
     <div className="flex flex-col">
       {/* ── Tab bar ── */}
-      <div className="border-b border-border bg-background px-7">
+      <div className="border-b border-border bg-background px-4 sm:px-7">
         <nav className="-mb-px flex gap-0 overflow-x-auto">
           {tabsPath.map((tab) => {
             const isActive = activeTab.label === tab.label;
@@ -45,7 +45,7 @@ export default function NotificationTabs({ children }: { children: React.ReactNo
       </div>
 
       {/* ── Content ── */}
-      <div className="p-7">
+      <div className="p-4 sm:p-7">
         <div className="mx-auto max-w-2xl">{children}</div>
       </div>
     </div>

@@ -23,7 +23,7 @@ export default function TitleList({
           <div
             key={i}
             className={cn(
-              'flex flex-col gap-4 rounded-xl border border-border p-5',
+              'flex flex-col gap-4 rounded-xl border border-border p-4 sm:p-5',
               isFeatured
                 ? 'border-primary/20 bg-gradient-to-b from-primary/[0.04] to-card'
                 : 'bg-card',
@@ -47,7 +47,7 @@ export default function TitleList({
             </div>
 
             {/* Title text */}
-            <h3 className="text-[22px] font-bold leading-snug tracking-tight text-foreground">
+            <h3 className="text-[18px] font-bold leading-snug tracking-tight text-foreground sm:text-[22px]">
               {title}
             </h3>
 

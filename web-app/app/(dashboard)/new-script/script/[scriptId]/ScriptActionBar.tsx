@@ -23,28 +23,28 @@ export default function ScriptActionBar({ text, script }: Props) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
       <button
         onClick={handleCopy}
-        className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 sm:px-5 sm:py-2.5"
       >
         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
         {copied ? 'Copied!' : 'Copy Script'}
       </button>
 
-      <button className="inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80">
+      <button className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80 sm:px-5 sm:py-2.5">
         <PenLine className="h-4 w-4" />
         Edit
       </button>
 
-      <button className="inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80">
+      <button className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80 sm:px-5 sm:py-2.5">
         <RefreshCw className="h-4 w-4" />
         Regenerate
       </button>
 
       <ExportScriptModal
         trigger={
-          <button className="inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80">
+          <button className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80 sm:px-5 sm:py-2.5">
             <Download className="h-4 w-4" />
             Export
           </button>

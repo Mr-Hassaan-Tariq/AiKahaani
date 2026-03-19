@@ -11,7 +11,7 @@ export default function ScriptList({
   if (loading) {
     return (
       <div
-        className={`mt-6 grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] ${className}`}
+        className={`mt-6 grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${className}`}
       >
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="h-[232px] animate-pulse rounded-xl bg-muted" />
@@ -37,7 +37,7 @@ export default function ScriptList({
 
   return (
     <div
-      className={`mt-6 grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] ${className}`}
+      className={`mt-6 grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${className}`}
     >
       {scripts.map((script) => (
         <ScriptCard key={script.uuid} script={script} actions={actions} />

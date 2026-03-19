@@ -31,27 +31,32 @@ function StepCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="relative flex flex-col gap-5 overflow-hidden rounded-xl border border-border bg-card p-7">
+    <section className="relative flex flex-col gap-5 overflow-hidden rounded-xl border border-border bg-card p-4 sm:p-7">
       {/* top accent gradient line */}
       <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-            {number}
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-[22px] font-semibold leading-snug tracking-tight text-foreground">
+      <div className="flex items-start gap-4">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+          {number}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-[18px] font-semibold leading-snug tracking-tight text-foreground sm:text-[22px]">
               {title}
             </h2>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+            {badge && (
+              <span className="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground sm:inline-flex">
+                {badge}
+              </span>
+            )}
           </div>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+          {badge && (
+            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground sm:hidden">
+              {badge}
+            </span>
+          )}
         </div>
-        {badge && (
-          <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
-            {badge}
-          </span>
-        )}
       </div>
 
       {children}
@@ -212,7 +217,7 @@ export default function Page() {
   const stepOffset = activeTab === 'optimize' ? 1 : 0;
 
   return (
-    <div className="px-8 py-10">
+    <div className="px-4 py-6 sm:px-8 sm:py-10">
       <div className="mx-auto flex w-full max-w-[960px] flex-col gap-6">
         {/* ── Hero ── */}
         <div className="flex flex-col gap-4 pb-2">
@@ -220,12 +225,10 @@ export default function Page() {
             <Youtube className="h-3.5 w-3.5" />
             YouTube title workflow
           </div>
-          <h1 className="text-[42px] font-bold leading-[1.1] tracking-tight text-foreground">
-            Create scroll-stopping YouTube titles
-            <br />
-            from a single topic.
+          <h1 className="text-[28px] font-bold leading-[1.15] tracking-tight text-foreground sm:text-[42px] sm:leading-[1.1]">
+            Create scroll-stopping YouTube titles from a single topic.
           </h1>
-          <p className="max-w-[680px] text-base leading-relaxed text-muted-foreground">
+          <p className="max-w-[680px] text-sm leading-relaxed text-muted-foreground sm:text-base">
             Start with your video idea, tune the title angle, then generate high-performing headline
             options in a step-by-step flow.
           </p>
@@ -238,7 +241,7 @@ export default function Page() {
                 onClick={() => setActiveTab(tab)}
                 disabled={isGenerating}
                 className={cn(
-                  'rounded-full px-4 py-2.5 text-sm font-medium transition-colors',
+                  'whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-colors',
                   activeTab === tab
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
@@ -329,20 +332,20 @@ export default function Page() {
 
         {/* ── Step 4 / 5: Results ── */}
         {showTitles && titles.length > 0 && (
-          <section className="relative flex flex-col gap-5 overflow-hidden rounded-xl border border-border bg-card p-7">
+          <section className="relative flex flex-col gap-5 overflow-hidden rounded-xl border border-border bg-card p-4 sm:p-7">
             <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h2 className="text-[22px] font-semibold tracking-tight text-foreground">
+            <div>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <h2 className="text-[18px] font-semibold tracking-tight text-foreground sm:text-[22px]">
                   Recommended titles
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Ranked by hook strength, clarity, and YouTube-friendly phrasing.
-                </p>
+                <span className="hidden items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground sm:inline-flex">
+                  Best match highlighted
+                </span>
               </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                Best match highlighted
-              </span>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Ranked by hook strength, clarity, and YouTube-friendly phrasing.
+              </p>
             </div>
             <TitleList
               titles={titles}

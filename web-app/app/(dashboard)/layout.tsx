@@ -100,7 +100,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </header>
 
         {/* ── Page content ── */}
-        <main className="scrollbar flex-1 overflow-y-auto">{children}</main>
+        <main className="scrollbar-hide flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

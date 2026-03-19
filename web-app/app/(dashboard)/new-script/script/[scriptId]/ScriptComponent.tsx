@@ -19,7 +19,7 @@ export default function ScriptComponent({
       {sections.map((section, i) => (
         <div
           key={`${section.title}-${i}`}
-          className="flex flex-col gap-4 rounded-xl border border-border bg-card p-8"
+          className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 sm:p-8"
         >
           {/* Time badge */}
           {section.timeRange && section.timeRange !== ' – ' && section.timeRange !== '-' && (
