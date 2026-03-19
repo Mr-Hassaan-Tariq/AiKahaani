@@ -4,27 +4,46 @@ export interface UserProfileType {
   username: string;
   fullname: string;
   preferred_language: string;
-  profile_picture: string;
+  /** Backend field name is profile_picture_url */
+  profile_picture_url: string | null;
+  /** Alias for profile_picture_url kept for layout compatibility */
+  profile_picture?: string | null;
   is_email_verified: boolean;
+  is_active: boolean;
+  role: string;
+  plan: string;
+  plan_expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotificationPreferencesType {
+  in_app_notifications?: boolean;
+  email_notifications?: boolean;
+  web_push_notifications?: boolean;
+  new_script_generated?: boolean;
+  account_or_plan_changes?: boolean;
+  tips_content_inspiration?: boolean;
+  feature_updates?: boolean;
+  [key: string]: boolean | undefined;
 }
 
 export interface NotificationSettingsType {
-  in_app_notifications: boolean;
-  email_notifications: boolean;
-  web_push_notifications: boolean;
-  new_script_generated: boolean;
-  account_or_plan_changes: boolean;
-  tips_content_inspiration: boolean;
-  feature_updates: boolean;
+  notification_preferences: NotificationPreferencesType;
+  privacy_preferences: Record<string, unknown>;
 }
 
 export interface NotificationType {
   id: number;
+  notification_type: string;
   title: string;
   message: string;
-  read: boolean;
+  /** Backend field name is is_read */
+  is_read: boolean;
+  /** Alias kept for component compatibility */
+  read?: boolean;
+  extra_data: Record<string, any>;
   created_at: string;
-  metadata: Record<string, any>;
 }
 
 export type NicheChannel = {

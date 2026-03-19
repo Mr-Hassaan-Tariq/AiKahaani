@@ -73,8 +73,8 @@ export default function GenerateScriptForm({
   // ── Fetch niche if present ───────────────────────────────────────
   useEffect(() => {
     if (!nicheId) return;
-    getClientDataAction<{ data: NicheDetailsType }>(`auth/niches/${nicheId}/`)
-      .then((res) => setNiche(res.data))
+    getClientDataAction<NicheDetailsType>(`/v1/niches/${nicheId}`)
+      .then((res) => setNiche(res))
       .catch(() => setNiche(null));
   }, [nicheId]);
 
@@ -215,7 +215,7 @@ export default function GenerateScriptForm({
     generateOutline(hasImageFile ? formValue : payload, {
       onSuccess: (data) => {
         toast.success('Success', 'Script outline generated successfully');
-        router.push(`/new-script/${data.outline.uuid}`);
+        router.push(`/new-script/${data.outline.id}`);
       },
       onError: (error) => {
         logger.error('Generate outline error:', error);

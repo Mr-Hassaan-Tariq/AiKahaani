@@ -57,8 +57,8 @@ export default function MyScriptsPage() {
         setScripts([]);
         setTotalCount(0);
       } else {
-        setScripts(data?.results ?? []);
-        setTotalCount(data?.count ?? 0);
+        setScripts(data?.data ?? []);
+        setTotalCount(data?.meta?.total ?? 0);
       }
     } catch (err) {
       setError(err);

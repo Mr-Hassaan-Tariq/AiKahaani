@@ -13,6 +13,43 @@ async function processError(resp: Response) {
   return new Error('Failed to fetch data');
 }
 
+/**
+ * Standard paginated response envelope from the backend.
+ * Use this as the generic type T when calling a paginated endpoint.
+ */
+export interface PaginatedApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T[];
+  meta: {
+    total: number;
+    limit: number;
+    offset: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
+}
+
+/**
+ * Auto-unwrap the standard { success, message, data } envelope.
+ * Paginated responses (has "meta" key) are returned as-is so callers
+ * can access both .data[] and .meta.total.
+ * Raw endpoints (no "success" key, e.g. /scripts/config) are also returned as-is.
+ */
+function unwrapApiEnvelope<T>(json: unknown): T {
+  if (
+    json !== null &&
+    typeof json === 'object' &&
+    'success' in json &&
+    (json as Record<string, unknown>).success === true &&
+    'data' in json &&
+    !('meta' in json)
+  ) {
+    return (json as Record<string, unknown>).data as T;
+  }
+  return json as T;
+}
+
 export async function getServerDataAction<T>(
   endpoint: string,
 ): Promise<GetServerDataActionReturnType<T>> {
@@ -28,7 +65,9 @@ export async function getServerDataAction<T>(
       return redirect('/signup');
     }
 
-    const res = await fetch(`${baseUrl}${endpoint}`, {
+    const base = baseUrl.replace(/\/$/, '');
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const res = await fetch(`${base}${path}`, {
       method: 'GET',
       cache: 'no-store',
       headers: {
@@ -39,7 +78,8 @@ export async function getServerDataAction<T>(
     if (!res.ok) {
       return { isError: true, error: await processError(res), data: undefined };
     }
-    const data = (await res.json()) as T;
+    const json = await res.json();
+    const data = unwrapApiEnvelope<T>(json);
     return { isError: false, error: undefined, data };
   } catch (error) {
     return { isError: true, error: error as Error, data: undefined };
@@ -83,22 +123,23 @@ export async function updateServerDataAction<T>(
       },
     };
 
-    // Only add body for non-DELETE requests
     if (method !== 'DELETE' && data !== null) {
       fetchOptions.body = JSON.stringify(data);
     }
 
-    const res = await fetch(`${baseUrl}${endpoint}`, fetchOptions);
+    const base = baseUrl.replace(/\/$/, '');
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const res = await fetch(`${base}${path}`, fetchOptions);
     if (!res.ok) {
       return { isError: true, error: await processError(res), data: undefined };
     }
 
-    // Handle DELETE requests that might not return JSON
     if (method === 'DELETE' && res.status === 204) {
       return { isError: false, error: undefined, data: { message: 'Deleted successfully' } as T };
     }
 
-    const responseData = (await res.json()) as T;
+    const json = await res.json();
+    const responseData = unwrapApiEnvelope<T>(json);
     return { isError: false, error: undefined, data: responseData };
   } catch (error) {
     return { isError: true, error: error as Error, data: undefined };

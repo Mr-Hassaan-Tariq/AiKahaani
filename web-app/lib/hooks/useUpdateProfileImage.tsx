@@ -11,12 +11,15 @@ async function updateProfileImage(formData: FormData) {
 
   if (!token) return (window.location.href = '/signup');
 
-  const res = await fetch(`${baseUrl}v1/users/profile-picture`, {
+  const res = await fetch(`${baseUrl.replace(/\/$/, '')}/v1/users/me`, {
     method: method.patch,
     headers: {
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: formData,
+    body: JSON.stringify({
+      profile_picture_url: formData.get('profile_picture_url') ?? formData.get('profile_picture'),
+    }),
   });
   if (!res.ok) throw await processError(res);
   return res.json();

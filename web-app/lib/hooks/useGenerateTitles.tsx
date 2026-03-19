@@ -11,7 +11,7 @@ interface GenerateTitlesPayload {
 
 async function generateTitles(payload: GenerateTitlesPayload) {
   const response = await postClientDataAction<any, GenerateTitlesPayload>(
-    'v1/scripts/titles/generate/',
+    '/v1/scripts/titles/generate',
     payload,
   );
 

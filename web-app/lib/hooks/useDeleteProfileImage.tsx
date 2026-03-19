@@ -2,10 +2,11 @@
 
 import { useMutation } from '@tanstack/react-query';
 
-import { deleteClientDataAction } from 'lib/utils/clientDataActions';
+import { patchClientDataAction } from 'lib/utils/clientDataActions';
 
 async function deleteProfileImage() {
-  return await deleteClientDataAction('v1/users/profile-picture');
+  // Clear profile picture by patching profile with null URL
+  return await patchClientDataAction('/v1/users/me', { profile_picture_url: null });
 }
 
 export default function useDeleteProfileImage() {

@@ -9,7 +9,7 @@ interface GoogleSignupParams {
 }
 
 async function googleSignup({ id_token }: GoogleSignupParams) {
-  return await postClientDataAction<ResponseType, { id_token: string }>('auth/google/', {
+  return await postClientDataAction<ResponseType, { id_token: string }>('/auth/google', {
     id_token,
   });
 }

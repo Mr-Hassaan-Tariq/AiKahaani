@@ -18,18 +18,20 @@ interface NotificationPreferences {
 }
 
 export default function NotificationToggles({ initialSettings }: NotificationTogglesProps) {
+  const prefs = initialSettings?.notification_preferences ?? (initialSettings as any);
+
   const [preferences, setPreferences] = useState<NotificationPreferences>(() => {
     const deliveryChannels = notificationTexts.deliveryChannels.options.reduce(
       (acc, option) => ({
         ...acc,
-        [option.key]: initialSettings[option.key as keyof NotificationSettingsType] || false,
+        [option.key]: prefs?.[option.key] ?? false,
       }),
       {},
     );
     const notificationTypes = notificationTexts.notificationTypes.options.reduce(
       (acc, option) => ({
         ...acc,
-        [option.key]: initialSettings[option.key as keyof NotificationSettingsType] || false,
+        [option.key]: prefs?.[option.key] ?? false,
       }),
       {},
     );
@@ -59,16 +61,20 @@ export default function NotificationToggles({ initialSettings }: NotificationTog
   const saveNotificationSettings = async (newPreferences: NotificationPreferences) => {
     startTransition(async () => {
       try {
+        // Backend PATCH /v1/users/me/settings/notification expects flat fields
         const settings: NotificationSettingsType = {
-          in_app_notifications: newPreferences.deliveryChannels.in_app_notifications || false,
-          email_notifications: newPreferences.deliveryChannels.email_notifications || false,
-          web_push_notifications: newPreferences.deliveryChannels.web_push_notifications || false,
-          new_script_generated: newPreferences.notificationTypes.new_script_generated || false,
-          account_or_plan_changes:
-            newPreferences.notificationTypes.account_or_plan_changes || false,
-          tips_content_inspiration:
-            newPreferences.notificationTypes.tips_content_inspiration || false,
-          feature_updates: newPreferences.notificationTypes.feature_updates || false,
+          notification_preferences: {
+            in_app_notifications: newPreferences.deliveryChannels.in_app_notifications || false,
+            email_notifications: newPreferences.deliveryChannels.email_notifications || false,
+            web_push_notifications: newPreferences.deliveryChannels.web_push_notifications || false,
+            new_script_generated: newPreferences.notificationTypes.new_script_generated || false,
+            account_or_plan_changes:
+              newPreferences.notificationTypes.account_or_plan_changes || false,
+            tips_content_inspiration:
+              newPreferences.notificationTypes.tips_content_inspiration || false,
+            feature_updates: newPreferences.notificationTypes.feature_updates || false,
+          },
+          privacy_preferences: initialSettings?.privacy_preferences ?? {},
         };
         const result = await updateNotificationSettings(settings);
         if (result.isError)

@@ -116,9 +116,9 @@ export default async function DashboardPage() {
     getScriptGenerations({ limit: 4, ordering: 'modified' }),
   ]);
 
-  const totalScripts = scriptsData?.count ?? 0;
-  const totalOutlines = outlinesData?.count ?? 0;
-  const recentItems = recentData?.results ?? [];
+  const totalScripts = scriptsData?.meta?.total ?? 0;
+  const totalOutlines = outlinesData?.meta?.total ?? 0;
+  const recentItems = recentData?.data ?? [];
 
   return (
     <div className="space-y-6 px-4 py-6 sm:px-7">
@@ -189,7 +189,7 @@ export default async function DashboardPage() {
           </div>
           {recentItems.length > 0 ? (
             <ul className="flex flex-col divide-y divide-border">
-              {recentItems.map((item) => (
+              {recentItems.map((item: any) => (
                 <li key={item.uuid}>
                   <Link
                     href={

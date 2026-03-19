@@ -5,23 +5,22 @@ export interface ScriptSectionType {
 }
 
 export interface ScriptType {
-  uuid: string;
+  id: string;
   title: string;
   content: string;
-  sections: ScriptSectionType[];
+  sections: Record<string, any>[];
   word_count: number;
   estimated_duration: number;
   status: string;
-  version: number;
-  is_published: boolean;
+  openai_model?: string;
   tokens_used: number;
   generation_time: number;
-  outline_title: string;
-  created: string;
-  modified: string;
+  outline_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface GenerateScriptType {
   script: ScriptType;
-  message: string;
+  metadata: Record<string, any>;
 }

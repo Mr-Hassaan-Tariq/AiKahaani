@@ -8,6 +8,7 @@ Endpoints:
   POST /outlines/generate              — generate script outline
   GET  /outlines                       — list user's outlines
   GET  /outlines/{outline_id}          — get single outline
+  PATCH /outlines/{outline_id}         — update outline fields
   DELETE /outlines/{outline_id}        — delete outline
   POST /outlines/{outline_id}/script   — generate full script from outline
   GET  /scripts                        — list user's full scripts
@@ -59,6 +60,7 @@ from app.schemas.script import (
     TitleItemOut,
     ToneOut,
     TonesListResponse,
+    UpdateOutlineRequest,
     UpdateOutlineStatusRequest,
     UpdateScriptStatusRequest,
 )
@@ -490,6 +492,32 @@ async def delete_outline(
     await db.delete(outline)
     await db.commit()
     return responses.no_data(message="Outline deleted")
+
+
+@scripts_router.patch(
+    "/outlines/{outline_id}", response_model=ApiResponse[ScriptOutlineOut]
+)
+async def update_outline(
+    outline_id: uuid.UUID,
+    body: UpdateOutlineRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse[ScriptOutlineOut]:
+    """Update outline fields (title, outline_data, section_order, etc.)."""
+    outline = await _get_outline_or_404(db, outline_id, current_user.id)
+    if body.title is not None:
+        outline.title = body.title
+    if body.outline_text is not None:
+        outline.outline_text = body.outline_text
+    if body.outline_data is not None:
+        outline.outline_data = body.outline_data
+    if body.section_order is not None:
+        outline.section_order = body.section_order
+    if body.status is not None:
+        outline.status = body.status
+    await db.commit()
+    await db.refresh(outline)
+    return responses.ok(data=_outline_to_out(outline), message="Outline updated")
 
 
 # ── Script Generation ──────────────────────────────────────────────────────────

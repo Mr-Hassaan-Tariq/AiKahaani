@@ -4,8 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import { getClientDataAction } from 'lib/utils/clientDataActions';
 
+// NOTE: Payment endpoints are not yet implemented in the backend.
 async function getCurrentPlan() {
-  return await getClientDataAction<CurrentPlanType>('v1/payments/subscription/');
+  return await getClientDataAction<CurrentPlanType>('/v1/payments/subscription');
 }
 
 const BYPASS_PAYMENT = process.env.NEXT_PUBLIC_BYPASS_PAYMENT_CHECKS === 'true';

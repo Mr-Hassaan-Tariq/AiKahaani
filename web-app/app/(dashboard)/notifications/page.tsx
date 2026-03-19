@@ -11,22 +11,17 @@ import ProductUpdates from './_components/ProductUpdates';
 import Subscription from './_components/subscription';
 import { formatTimeAgo } from 'lib/utils';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
+import { PaginatedApiResponse } from 'lib/utils/getServerDataAction';
 import { Spinner } from 'components/ui/Spinner';
-
-type NotificationApiResponse = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: NotificationType[];
-};
 
 type NotificationType = {
   id: number;
+  notification_type: string;
   title: string;
   message: string;
-  read: boolean;
+  is_read: boolean;
+  extra_data: Record<string, any>;
   created_at: string;
-  metadata: Record<string, any>;
 };
 
 export default function NotificationsPage() {
@@ -48,11 +43,11 @@ export default function NotificationsPage() {
     try {
       setLoading(true);
       const offset = (page - 1) * itemsPerPage;
-      const url = `v1/notifications/all-notifications/?limit=${itemsPerPage}&offset=${offset}`;
-      const data = await getClientDataAction<NotificationApiResponse>(url);
-      if (data?.results) {
-        setNotifications(data.results);
-        setTotalItems(data.count);
+      const url = `/v1/notifications?limit=${itemsPerPage}&offset=${offset}`;
+      const data = await getClientDataAction<PaginatedApiResponse<NotificationType>>(url);
+      if (data?.data) {
+        setNotifications(data.data);
+        setTotalItems(data.meta?.total ?? 0);
       }
     } catch {
       // silently fail
@@ -78,8 +73,8 @@ export default function NotificationsPage() {
       ) : notifications.length > 0 ? (
         <div className="flex flex-col gap-2">
           {notifications.map((item) => {
-            const scriptLink = item.metadata?.script?.link;
-            const outlineLink = item.metadata?.outline?.link;
+            const scriptLink = item.extra_data?.script?.link;
+            const outlineLink = item.extra_data?.outline?.link;
             const link = scriptLink || outlineLink;
             return (
               <NotificationItem
@@ -88,12 +83,12 @@ export default function NotificationsPage() {
                 title={item.title}
                 description={item.message}
                 time={formatTimeAgo(item.created_at)}
-                isNew={!item.read}
+                isNew={!item.is_read}
                 actionText={link ? 'View' : undefined}
                 actionLink={link}
                 onRead={(id) =>
                   setNotifications((prev) =>
-                    prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+                    prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
                   )
                 }
               />

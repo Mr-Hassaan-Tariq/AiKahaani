@@ -11,7 +11,10 @@ export default async function Page() {
     <div className="flex flex-col gap-6">
       {isError && <p className="text-sm text-destructive">{error?.message?.toString()}</p>}
 
-      <ProfilePhotoCard profileImage={data?.profile_picture} fullName={data?.username} />
+      <ProfilePhotoCard
+        profileImage={data?.profile_picture_url ?? undefined}
+        fullName={data?.username}
+      />
       <ProfileCardDetail profile={data} />
 
       {/* Footer actions */}

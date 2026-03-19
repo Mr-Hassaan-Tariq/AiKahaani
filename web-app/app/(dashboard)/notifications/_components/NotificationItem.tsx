@@ -30,7 +30,7 @@ export default function NotificationItem({
   const handleMarkAsRead = async () => {
     if (!isNew) return;
     try {
-      await postClientDataAction(`v1/notifications/${id}/read/`, {});
+      await postClientDataAction(`/v1/notifications/${id}/read`, {});
       onRead?.(id);
     } catch {
       // silently fail

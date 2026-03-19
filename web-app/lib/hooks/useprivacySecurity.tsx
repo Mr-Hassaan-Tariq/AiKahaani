@@ -6,12 +6,12 @@ import { PrivacySettings, PrivacySettingsResponse } from 'lib/api/types';
 import { getClientDataAction, patchClientDataAction } from 'lib/utils/clientDataActions';
 
 async function getPrivacySettings(): Promise<PrivacySettings> {
-  return getClientDataAction<PrivacySettings>('v1/users/privacy');
+  return getClientDataAction<PrivacySettings>('/v1/users/me/settings/privacy');
 }
 
 async function updatePrivacySettings(settings: PrivacySettings): Promise<PrivacySettingsResponse> {
   return patchClientDataAction<PrivacySettingsResponse, PrivacySettings>(
-    'v1/users/privacy',
+    '/v1/users/me/settings/privacy',
     settings,
   );
 }

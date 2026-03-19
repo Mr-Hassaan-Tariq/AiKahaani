@@ -265,7 +265,7 @@ export default function Page() {
               >
                 <OptimizeFormFields
                   watch={watch}
-                  scripts={script?.results}
+                  scripts={script?.data ?? (script as any)?.results}
                   register={register}
                   resetField={resetField}
                   setValue={setValue}

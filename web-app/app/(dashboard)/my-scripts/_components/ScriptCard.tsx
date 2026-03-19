@@ -28,7 +28,6 @@ function formatRelativeDate(dateString?: string | null): string {
 export default function ScriptCard({ script, actions, className = '' }: ScriptCardProps) {
   const router = useRouter();
   const isScript = script.type === 'script';
-  const isCompleted = isScript && script.status === 'generated';
   const relativeDate = formatRelativeDate((script as any).modified || (script as any).created);
 
   // Meta pill: scripts show read time, outlines show section count
@@ -43,12 +42,13 @@ export default function ScriptCard({ script, actions, className = '' }: ScriptCa
       : null;
 
   const handleCardClick = () => {
-    if (isCompleted) {
+    if (isScript) {
       router.push(`/new-script/script/${script.uuid}`);
     } else {
       router.push(`/new-script/${script.uuid}`);
     }
   };
+  console.log(script);
 
   return (
     <div
@@ -70,14 +70,16 @@ export default function ScriptCard({ script, actions, className = '' }: ScriptCa
         </div>
 
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-          <ExportScriptModal
-            trigger={
-              <button className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-secondary text-muted-foreground transition-colors hover:text-foreground">
-                <Download className="h-[18px] w-[18px]" />
-              </button>
-            }
-            script={script}
-          />
+          {isScript && (
+            <ExportScriptModal
+              trigger={
+                <button className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-secondary text-muted-foreground transition-colors hover:text-foreground">
+                  <Download className="h-[18px] w-[18px]" />
+                </button>
+              }
+              script={script}
+            />
+          )}
           <DeleteScriptModal
             trigger={
               <button className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-secondary text-muted-foreground transition-colors hover:text-foreground">

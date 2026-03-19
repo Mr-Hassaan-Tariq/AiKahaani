@@ -53,10 +53,8 @@ export default function NicheStyleModal({ trigger, nicheId }: FilterModalProps) 
       if (!open || !nicheId) return;
       setLoading(true);
       try {
-        const res = await getClientDataAction<{ data: NicheDetailsType }>(
-          `auth/niches/${nicheId}/`,
-        );
-        setNiche(res.data);
+        const res = await getClientDataAction<NicheDetailsType>(`/v1/niches/${nicheId}`);
+        setNiche(res);
       } catch (err: any) {
         console.error('Error fetching niche details:', err?.response || err);
         setNiche(null);

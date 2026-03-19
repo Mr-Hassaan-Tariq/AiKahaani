@@ -6,7 +6,8 @@ import { ApiError, User } from './types';
 export interface UpdateUserRequest {
   fullname?: string;
   username?: string;
-  email?: string;
+  preferred_language?: string;
+  profile_picture_url?: string | null;
 }
 
 export interface UpdateUserResponse {
@@ -19,6 +20,7 @@ export interface UserDetailsResponse extends User {
 }
 
 function getCookie(name: string): string | null {
+  if (typeof window === 'undefined') return null;
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
   return match ? decodeURIComponent(match[2]) : null;
 }
@@ -31,16 +33,15 @@ export class UserService {
   }
 
   /**
-   * Get current user profile
-   * @returns Promise with user data
+   * Get current user profile — GET /api/v1/users/me
    */
   async getProfile(): Promise<User> {
     try {
-      const response = await this.apiClient.get<User>('/api/users/profile/');
+      const response = await this.apiClient.get<{ success: boolean; data: User }>('/v1/users/me');
       if (!response.data) {
         throw new Error('No user data received');
       }
-      return response.data;
+      return response.data?.data ?? (response.data as unknown as User);
     } catch (error) {
       const apiError = error as { data: ApiError; status: number };
       throw {
@@ -52,66 +53,49 @@ export class UserService {
   }
 
   /**
-   * Get user details
-   * @returns Promise with user details
+   * Get user details — alias for getProfile
    */
   async getUserDetails(): Promise<User> {
-    const token = getCookie('access_token'); // get token from cookies
-
-    const response = await this.apiClient.get<UserDetailsResponse>('/v1/users/details/', {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : '',
-      },
-    });
-
-    if (response.status !== 200) {
-      throw new Error('No user details received from API');
-    }
-
-    return response.data as User;
+    return this.getProfile();
   }
 
   /**
-   * Update user profile
-   * @param userData - User data to update
-   * @returns Promise with updated user data
+   * Update user profile — PATCH /api/v1/users/me
    */
-  async updateUserDetails(data: {
-    fullname?: string;
-    username?: string;
-    email?: string;
-    preferred_language?: string;
-  }): Promise<any> {
+  async updateUserDetails(data: UpdateUserRequest): Promise<any> {
     const token = getCookie('access_token');
 
-    const response = await this.apiClient.put('/v1/users/details/', data, {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : '',
+    const response = await this.apiClient.patch<{ success: boolean; data: User }>(
+      '/v1/users/me',
+      data,
+      {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
       },
-    });
+    );
 
     if (response.status !== 200) {
       throw new Error('Failed to update user details');
     }
 
-    return response.data;
+    return response.data?.data ?? response.data;
   }
 
   /**
-   * Update user profile
-   * @param userData - User data to update
-   * @returns Promise with updated user data
+   * Update user profile — same as updateUserDetails
    */
   async updateProfile(userData: UpdateUserRequest): Promise<UpdateUserResponse> {
     try {
-      const response = await this.apiClient.patch<UpdateUserResponse>(
-        '/api/users/profile/',
+      const response = await this.apiClient.patch<{ success: boolean; data: User }>(
+        '/v1/users/me',
         userData,
       );
       if (!response.data) {
         throw new Error('No data received from update request');
       }
-      return response.data;
+      const user = response.data?.data ?? (response.data as unknown as User);
+      return { user, message: 'Profile updated' };
     } catch (error) {
       const apiError = error as { data: ApiError; status: number };
       throw {
@@ -122,19 +106,21 @@ export class UserService {
     }
   }
 
-  async updateProfilePicture(file: File): Promise<{ message: string; profile_picture: string }> {
+  /**
+   * Update profile picture URL — PATCH /api/v1/users/me with profile_picture_url
+   * Note: Backend does not support file upload; pass a URL string directly.
+   */
+  async updateProfilePicture(
+    profilePictureUrl: string,
+  ): Promise<{ message: string; profile_picture_url: string }> {
     const token = getCookie('access_token');
 
-    const formData = new FormData();
-    formData.append('profile_picture', file);
-
-    const response = await this.apiClient.patch<{ message: string; profile_picture: string }>(
-      '/v1/users/profile-picture/',
-      formData,
+    const response = await this.apiClient.patch<{ success: boolean; data: User }>(
+      '/v1/users/me',
+      { profile_picture_url: profilePictureUrl },
       {
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
-          'Content-Type': 'multipart/form-data',
         },
       },
     );
@@ -143,64 +129,28 @@ export class UserService {
       throw new Error('No response received from API');
     }
 
-    return response.data;
+    const user = response.data?.data ?? (response.data as unknown as User);
+    return {
+      message: 'Profile picture updated',
+      profile_picture_url: (user as any).profile_picture_url ?? profilePictureUrl,
+    };
   }
 
   /**
-   * Delete user account
-   * @returns Promise indicating success
+   * Delete user account — not supported by current backend.
    */
   async deleteAccount(): Promise<{ message: string }> {
-    try {
-      const response = await this.apiClient.delete<{ message: string }>('/api/users/profile/');
-      if (!response.data) {
-        throw new Error('No data received from delete request');
-      }
-      return response.data;
-    } catch (error) {
-      const apiError = error as { data: ApiError; status: number };
-      throw {
-        message: apiError.data?.detail || 'Failed to delete user account',
-        errors: apiError.data?.errors,
-        status: apiError.status,
-      };
-    }
+    throw new Error('Delete account is not supported by the current backend.');
   }
 
   /**
-   * Change user password
-   * @param currentPassword - Current password
-   * @param newPassword - New password
-   * @param confirmPassword - Password confirmation
-   * @returns Promise indicating success
+   * Change user password — not supported by current backend.
    */
   async changePassword(
-    currentPassword: string,
-    newPassword: string,
-    confirmPassword: string,
+    _currentPassword: string,
+    _newPassword: string,
+    _confirmPassword: string,
   ): Promise<{ message: string }> {
-    try {
-      const passwordData = {
-        current_password: currentPassword,
-        new_password: newPassword,
-        confirm_password: confirmPassword,
-      };
-
-      const response = await this.apiClient.post<{ message: string }>(
-        '/api/users/change-password/',
-        passwordData,
-      );
-      if (!response.data) {
-        throw new Error('No data received from password change request');
-      }
-      return response.data;
-    } catch (error) {
-      const apiError = error as { data: ApiError; status: number };
-      throw {
-        message: apiError.data?.detail || 'Failed to change password',
-        errors: apiError.data?.errors,
-        status: apiError.status,
-      };
-    }
+    throw new Error('Change password is not supported by the current backend.');
   }
 }

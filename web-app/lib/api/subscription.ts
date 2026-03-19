@@ -3,6 +3,7 @@ import { ApiClient } from './client';
 import { ApiError } from './types';
 
 function getCookie(name: string): string | null {
+  if (typeof window === 'undefined') return null;
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
   return match ? decodeURIComponent(match[2]) : null;
 }
@@ -25,8 +26,9 @@ export class SubscriptionService {
     const token = getCookie('access_token');
 
     try {
+      // NOTE: Payment endpoints are not yet implemented in the backend.
       const response = await this.apiClient.post<BillingPortalResponse>(
-        '/v1/payments/billing-portal/',
+        '/v1/payments/billing-portal',
         {},
         {
           headers: {

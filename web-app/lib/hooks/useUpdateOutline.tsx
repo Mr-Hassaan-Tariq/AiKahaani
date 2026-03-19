@@ -7,7 +7,7 @@ import { patchClientDataAction } from 'lib/utils/clientDataActions';
 
 async function updateOutline(params: Partial<OutlineType>) {
   return await patchClientDataAction<Partial<OutlineType>, Partial<OutlineType>>(
-    `v1/scripts/outlines/${params?.uuid}/`,
+    `/v1/scripts/outlines/${params?.id}`,
     params,
   );
 }

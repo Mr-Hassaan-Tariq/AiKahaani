@@ -12,7 +12,7 @@ interface UpdateOutlineOrderParams {
 
 async function updateOutlineOrder(params: UpdateOutlineOrderParams) {
   return await patchClientDataAction<UpdateOutlineOrderParams, any>(
-    `v1/scripts/outlines/${params.uuid}/`,
+    `/v1/scripts/outlines/${params.uuid}`,
     {
       section_order: params.sectionOrder,
       outline_data: params.outlineData,

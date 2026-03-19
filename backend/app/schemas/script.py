@@ -228,6 +228,14 @@ class ScriptListResponse(BaseModel):
     total: int
 
 
+class UpdateOutlineRequest(BaseModel):
+    title: Optional[str] = None
+    outline_text: Optional[str] = None
+    outline_data: Optional[Dict[str, Any]] = None
+    section_order: Optional[List[int]] = None
+    status: Optional[str] = None
+
+
 class UpdateOutlineStatusRequest(BaseModel):
     status: str = Field(..., pattern="^(draft|generated|saved)$")
 

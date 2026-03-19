@@ -21,7 +21,7 @@ function getInitials(name?: string, username?: string) {
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: user } = await getUserProfile();
   const { data: notify } = await getNotifications();
-  const notifications = Array.isArray(notify) ? notify : notify ? [notify] : [];
+  const notificationItems = notify?.data ?? [];
   const initials = getInitials(user?.fullname, user?.username);
 
   return (
@@ -58,9 +58,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div className="flex items-center gap-2">
             <ThemeToggle className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground" />
             <MobileDrawer />
-            {user?.profile_picture ? (
+            {user?.profile_picture_url ? (
               <ClientImage
-                src={user.profile_picture}
+                src={user.profile_picture_url}
                 alt="Profile"
                 width={32}
                 height={32}
@@ -79,10 +79,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <NavPageTitle />
           <div className="flex items-center gap-3">
             <ThemeToggle className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground" />
-            <Dropdown notifications={notifications} />
-            {user?.profile_picture ? (
+            <Dropdown notifications={notificationItems} />
+            {user?.profile_picture_url ? (
               <ClientImage
-                src={user.profile_picture}
+                src={user.profile_picture_url}
                 alt="Profile"
                 width={32}
                 height={32}

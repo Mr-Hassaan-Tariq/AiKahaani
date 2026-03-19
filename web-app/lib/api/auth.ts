@@ -24,11 +24,16 @@ export class AuthService {
    */
   async signup(userData: SignupRequest): Promise<SignupResponse> {
     try {
-      const response = await this.apiClient.post<SignupResponse>('/api/auth/signup/', userData);
-      if (!response.data) {
+      // Backend: { success, data: { user: UserOut } }
+      const response = await this.apiClient.post<{
+        success: boolean;
+        data: SignupResponse;
+      }>('/auth/signup', userData);
+      const data = response.data?.data ?? (response.data as unknown as SignupResponse);
+      if (!data) {
         throw new Error('No data received from signup request');
       }
-      return response.data;
+      return data;
     } catch (error) {
       const apiError = error as { data: ApiError; status: number };
       throw {
@@ -115,19 +120,21 @@ export class AuthService {
   async googleAuth(idToken: string): Promise<GoogleAuthResponse> {
     try {
       const requestData: GoogleAuthRequest = { id_token: idToken };
-      const response = await this.apiClient.post<GoogleAuthResponse>(
-        '/api/auth/google/',
-        requestData,
-      );
+      // Backend returns { success, message, data: { access, refresh, user, created } }
+      const response = await this.apiClient.post<{
+        success: boolean;
+        data: GoogleAuthResponse;
+      }>('/auth/google', requestData);
 
-      if (!response.data) {
+      const authData = response.data?.data ?? (response.data as unknown as GoogleAuthResponse);
+
+      if (!authData?.access) {
         throw new Error('No data received from Google authentication request');
       }
 
-      // Store tokens in localStorage
-      this.apiClient.setTokens(response.data.access, response.data.refresh);
+      this.apiClient.setTokens(authData.access, authData.refresh);
 
-      return response.data;
+      return authData;
     } catch (error) {
       const apiError = error as { data: ApiError; status: number };
       throw {
@@ -198,25 +205,32 @@ export class AuthService {
       if (!refreshToken) {
         throw new Error('No refresh token available');
       }
+      // Backend: { success, data: { access_token, refresh_token, message } }
       const response = await this.apiClient.post<{
-        access_token: string;
-        refresh_token: string;
-        message: string;
-      }>('/auth/refresh/', {
+        success: boolean;
+        data: { access_token: string; refresh_token: string; message: string };
+      }>('/auth/refresh', {
         refresh_token: refreshToken,
       });
 
-      if (!response.data) {
+      const tokenData =
+        response.data?.data ??
+        (response.data as unknown as {
+          access_token: string;
+          refresh_token: string;
+          message: string;
+        });
+
+      if (!tokenData?.access_token) {
         throw new Error('No data received from refresh token request');
       }
 
-      // Update tokens in storage
-      this.apiClient.setTokens(response.data.access_token, response.data.refresh_token);
+      this.apiClient.setTokens(tokenData.access_token, tokenData.refresh_token);
 
       return {
-        access: response.data.access_token,
-        refresh: response.data.refresh_token,
-        message: response.data.message,
+        access: tokenData.access_token,
+        refresh: tokenData.refresh_token,
+        message: tokenData.message,
       };
     } catch (error) {
       const apiError = error as { data: ApiError; status: number };

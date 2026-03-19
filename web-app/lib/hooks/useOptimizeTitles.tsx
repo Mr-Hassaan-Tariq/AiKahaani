@@ -12,8 +12,9 @@ interface OptimizePayload {
 }
 
 async function optimizeTitles(payload: OptimizePayload) {
+  // NOTE: Title optimization endpoint is not yet implemented in the backend.
   const response = await postClientDataAction<any, OptimizePayload>(
-    'v1/scripts/titles/optimize/',
+    '/v1/scripts/titles/optimize',
     payload,
   );
 

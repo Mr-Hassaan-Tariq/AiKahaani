@@ -4,19 +4,24 @@ import { NotificationSettingsType, NotificationType, UserProfileType } from './t
 import { getServerDataAction, updateServerDataAction } from 'lib/utils/getServerDataAction';
 
 export async function getUserProfile() {
-  return await getServerDataAction<UserProfileType>('v1/users/details/');
+  return await getServerDataAction<UserProfileType>('/v1/users/me');
 }
 
 export async function getNotificationSettings() {
-  return await getServerDataAction<NotificationSettingsType>('v1/users/notifications');
+  return await getServerDataAction<NotificationSettingsType>('/v1/users/me/settings/notification');
 }
 
 export async function updateNotificationSettings(settings: NotificationSettingsType) {
-  return await updateServerDataAction<NotificationSettingsType>('v1/users/notifications', settings);
+  // Backend PATCH expects flat fields from notification_preferences
+  const payload = settings.notification_preferences ?? (settings as any);
+  return await updateServerDataAction<NotificationSettingsType>(
+    '/v1/users/me/settings/notification',
+    payload,
+  );
 }
 
 export async function getNotifications() {
-  return await getServerDataAction<NotificationType>(
-    'v1/notifications/all-notifications/?limit=4&offset=0',
+  return await getServerDataAction<{ data: NotificationType[]; meta: { total: number } }>(
+    '/v1/notifications?limit=4&offset=0',
   );
 }

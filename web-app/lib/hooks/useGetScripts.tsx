@@ -11,14 +11,12 @@ export interface Script {
 }
 
 export interface ScriptsResponse {
-  results: Script[];
-  count: number;
-  next: string;
-  previous: string;
+  data: Script[];
+  meta: { total: number; limit: number; offset: number };
 }
 
 async function getScripts() {
-  return await getClientDataAction<ScriptsResponse>('v1/scripts/');
+  return await getClientDataAction<ScriptsResponse>('/v1/scripts/scripts');
 }
 
 export default function useGetScripts() {

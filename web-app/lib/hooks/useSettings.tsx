@@ -12,12 +12,15 @@ async function updateProfileImage(formData: FormData) {
 
   if (!token) return (window.location.href = '/signup');
 
-  const res = await fetch(`${baseUrl}v1/users/profile-picture`, {
+  const res = await fetch(`${baseUrl.replace(/\/$/, '')}/v1/users/me`, {
     method: method.patch,
     headers: {
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: formData,
+    body: JSON.stringify({
+      profile_picture_url: formData.get('profile_picture_url') ?? formData.get('profile_picture'),
+    }),
   });
   if (!res.ok) throw await processError(res);
   return res.json();
@@ -26,15 +29,19 @@ async function updateProfileImage(formData: FormData) {
 async function getNotificationSettings(): Promise<NotificationSettings> {
   const token = Cookies.get('access_token');
   try {
-    const response = await fetch(`${baseUrl}v1/users/notifications`, {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : '',
+    const response = await fetch(
+      `${baseUrl.replace(/\/$/, '')}/v1/users/me/settings/notification`,
+      {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
       },
-    });
+    );
     if (!response.ok) {
       throw new Error('No notification settings received');
     }
-    return response.json();
+    const json = await response.json();
+    return json?.data ?? json;
   } catch (error) {
     const apiError = error as { data: ApiError; status: number };
     throw {
@@ -50,16 +57,20 @@ async function updateNotificationSettings(
 ): Promise<NotificationSettingsResponse> {
   const token = Cookies.get('access_token');
   try {
-    const response = await fetch(`${baseUrl}v1/users/notifications`, {
-      method: method.patch,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: token ? `Bearer ${token}` : '',
+    const response = await fetch(
+      `${baseUrl.replace(/\/$/, '')}/v1/users/me/settings/notification`,
+      {
+        method: method.patch,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(settings),
       },
-      body: JSON.stringify(settings),
-    });
+    );
     if (!response.ok) throw await processError(response);
-    return response.json();
+    const json = await response.json();
+    return json?.data ?? json;
   } catch (error) {
     const apiError = error as { data: ApiError; status: number };
     throw {

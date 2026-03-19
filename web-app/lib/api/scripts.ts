@@ -37,7 +37,8 @@ export class ScriptsService {
         params.push(`type=${encodeURIComponent(type)}`);
       }
 
-      let url = '/v1/scripts/generations/';
+      // Backend: /v1/scripts/outlines (no combined "generations" endpoint)
+      let url = '/v1/scripts/outlines';
       if (params.length > 0) {
         url += `?${params.join('&')}`;
       }
@@ -81,14 +82,11 @@ export class ScriptsService {
   async getScriptGeneration(uuid: string): Promise<ScriptGeneration> {
     try {
       const token = this.getCookie('access_token');
-      const response = await this.apiClient.get<ScriptGeneration>(
-        `/v1/scripts/generations/${uuid}/`,
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : '',
-          },
+      const response = await this.apiClient.get<ScriptGeneration>(`/v1/scripts/outlines/${uuid}`, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
         },
-      );
+      });
       if (!response.data) {
         throw new Error('No script generation data received');
       }
@@ -112,7 +110,7 @@ export class ScriptsService {
     try {
       const token = this.getCookie('access_token');
       const response = await this.apiClient.delete<{ status: number }>(
-        `v1/scripts/outlines/${uuid}/`,
+        `/v1/scripts/outlines/${uuid}`,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : '',
@@ -146,7 +144,7 @@ export class ScriptsService {
     try {
       const token = this.getCookie('access_token');
       const response = await this.apiClient.patch<ScriptGeneration>(
-        `/v1/scripts/generations/${uuid}/`,
+        `/v1/scripts/outlines/${uuid}`,
         updates,
         {
           headers: {
@@ -183,7 +181,7 @@ export class ScriptsService {
     try {
       const token = this.getCookie('access_token');
       const response = await this.apiClient.patch<any>(
-        `v1/scripts/outlines/${uuid}/`,
+        `/v1/scripts/outlines/${uuid}`,
         {
           section_order: sectionOrder,
           outline_data: outlineData,

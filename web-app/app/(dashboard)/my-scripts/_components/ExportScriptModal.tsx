@@ -5,7 +5,6 @@ import { Download } from 'lucide-react';
 
 import { ScriptData } from '../_types';
 import useExportScript from 'lib/hooks/useExportScript';
-import { logger } from 'lib/logger';
 import { Button } from 'components/ui/Button';
 import Dialog from 'components/ui/Dialog';
 import { Checkbox } from 'components/shadcn_ui/checkbox';
@@ -38,29 +37,9 @@ export default function ExportScriptModal({
   const { mutate: exportScript, isPending } = useExportScript();
 
   const handleDownload = () => {
-    if (!selectedFormat || !script?.uuid) return;
-    exportScript(
-      { uuid: script.uuid, format: selectedFormat },
-      {
-        onSuccess: (data) => {
-          if (data.format === 'docx') {
-            const a = document.createElement('a');
-            a.href = data.file_url;
-            a.download = `${script.title || 'script'}-${script.uuid}.${data.format}`;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          } else {
-            window.open(data.file_url, '_blank');
-          }
-          setOpen(false);
-        },
-        onError: (err) => {
-          logger.error('Export error:', err);
-        },
-      },
-    );
+    const id = (script as any)?.uuid ?? (script as any)?.id;
+    if (!selectedFormat || !id) return;
+    exportScript({ uuid: id, format: selectedFormat }, { onSuccess: () => setOpen(false) });
   };
 
   return (

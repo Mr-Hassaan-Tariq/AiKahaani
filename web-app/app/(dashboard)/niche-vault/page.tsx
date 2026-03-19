@@ -3,11 +3,12 @@
 import { SetStateAction, useEffect, useMemo, useState } from 'react';
 import { Search, Sparkles } from 'lucide-react';
 
-import { NichePaginatedResponse } from '../types';
+import { Niche } from '../types';
 import NicheCard from './_components/NicheCard';
 import Pagination from './_components/Pagination';
 import { cn } from 'lib/utils';
 import { getClientDataAction } from 'lib/utils/clientDataActions';
+import { PaginatedApiResponse } from 'lib/utils/getServerDataAction';
 
 const FEATURED = {
   imageUrl:
@@ -46,26 +47,28 @@ export default function NicheVault() {
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All Niches');
-  const [niches, setNiches] = useState<NichePaginatedResponse['results']>([]);
+  const [niches, setNiches] = useState<Niche[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const itemsPerPage = 12;
 
   const buildQuery = (page = 1, search = '') => {
+    const offset = (page - 1) * itemsPerPage;
     const params = new URLSearchParams();
-    params.append('page', String(page));
+    params.append('limit', String(itemsPerPage));
+    params.append('offset', String(offset));
     if (search) params.append('search', search);
-    return `auth/niches/?${params.toString()}`;
+    return `/v1/niches?${params.toString()}`;
   };
 
   const fetchNiches = async (page = 1) => {
     setIsLoading(true);
     try {
       const url = buildQuery(page, debouncedSearch);
-      const data = await getClientDataAction<NichePaginatedResponse>(url);
-      setNiches(data.results || []);
-      setTotalItems(data.count || 0);
+      const data = await getClientDataAction<PaginatedApiResponse<Niche>>(url);
+      setNiches(data?.data || []);
+      setTotalItems(data?.meta?.total || 0);
     } catch {
       setNiches([]);
       setTotalItems(0);

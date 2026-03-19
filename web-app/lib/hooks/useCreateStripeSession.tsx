@@ -30,21 +30,16 @@ interface ResponseType {
   url: string;
 }
 
+// NOTE: Payment endpoints are not yet implemented in the backend.
+// These will 404 until the payment integration is added.
+
 async function createStripeSession(plan_id: string) {
   return await postClientDataAction<ResponseType, { plan_id: string }>(
-    'v1/payments/checkout/session/',
+    '/v1/payments/checkout/session',
     { plan_id },
-  );
-}
-
-async function createBillingPortal() {
-  return await postClientDataAction<ResponseType, undefined>(
-    'v1/payments/billing-portal',
-    undefined,
   );
 }
 
 export default function useCreateStripeSession() {
   return useMutation({ mutationFn: createStripeSession });
-  return useMutation({ mutationFn: createBillingPortal });
 }

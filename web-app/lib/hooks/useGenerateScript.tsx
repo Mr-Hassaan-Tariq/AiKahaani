@@ -9,7 +9,7 @@ async function generateScript(outlineId: string) {
   if (!outlineId) throw new Error('outlineId not found');
 
   return await postClientDataAction<GenerateScriptType, unknown>(
-    `v1/scripts/outline/${outlineId}/script/`,
+    `/v1/scripts/outlines/${outlineId}/script`,
   );
 }
 

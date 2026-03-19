@@ -8,7 +8,7 @@ import { deleteClientDataAction } from 'lib/utils/clientDataActions';
 import useToast from 'lib/utils/useToast';
 
 async function deleteScriptGeneration(uuid: string) {
-  const res = await deleteClientDataAction<{ status: number }>(`v1/scripts/outlines/${uuid}/`);
+  const res = await deleteClientDataAction<{ status: number }>(`/v1/scripts/outlines/${uuid}`);
 
   if (res.status === 204 || res.status === 200) {
     // Debug: Script deleted successfully
@@ -28,7 +28,7 @@ async function deleteScriptGeneration(uuid: string) {
 }
 
 async function deleteOutlineGeneration(uuid: string) {
-  const res = await deleteClientDataAction<{ status: number }>(`v1/scripts/${uuid}/`);
+  const res = await deleteClientDataAction<{ status: number }>(`/v1/scripts/scripts/${uuid}`);
 
   if (res.status === 204 || res.status === 200) {
     // Debug: Script deleted successfully

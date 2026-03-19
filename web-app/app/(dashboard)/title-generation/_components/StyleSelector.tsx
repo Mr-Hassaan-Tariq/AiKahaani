@@ -24,7 +24,7 @@ export default function StyleSelector({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
-        {data?.results?.map((tone: { id: number; name: string }) => {
+        {(data?.tones ?? (data as any)?.results)?.map((tone: { id: number; name: string }) => {
           const isSelected = value.includes(tone.name);
           return (
             <button

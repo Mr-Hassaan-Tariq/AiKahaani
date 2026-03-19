@@ -4,8 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import { getClientDataAction } from 'lib/utils/clientDataActions';
 
+// NOTE: Payment endpoints are not yet implemented in the backend.
 async function getAllPlan() {
-  return await getClientDataAction<PlanType[]>('v1/payments/plans/');
+  return await getClientDataAction<PlanType[]>('/v1/payments/plans');
 }
 
 export default function useGetAllPlan({ enabled }: { enabled: boolean }) {

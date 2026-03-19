@@ -26,13 +26,14 @@ export interface LengthRange {
 }
 
 export interface TitleStylesResponse {
-  results: Tone[];
+  /** Backend returns "tones" (not "results") */
+  tones: Tone[];
   template_styles: TemplateStyle[];
   length_range: LengthRange;
 }
 
 async function getTitleStyles() {
-  return await getClientDataAction<TitleStylesResponse>('v1/scripts/titles/tones/');
+  return await getClientDataAction<TitleStylesResponse>('/v1/scripts/config');
 }
 
 export default function useGetTitleStyles() {

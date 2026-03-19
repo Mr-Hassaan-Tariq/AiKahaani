@@ -89,7 +89,7 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
 
     updateOutlineOrder(
       {
-        uuid: outline.uuid,
+        uuid: outline.id,
         sectionOrder: newSectionOrder,
         outlineData: convertCardsToOutline(newCards, outline).outline_data,
       },
@@ -227,7 +227,7 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
     generateOutline(payloadToSend, {
       onSuccess: (data) => {
         toast.success('Success', 'Outline regenerated');
-        router.replace(`/new-script/${data.outline.uuid}`);
+        router.replace(`/new-script/${data.outline.id}`);
       },
       onError: (error) => {
         logger.error(error);
@@ -239,10 +239,10 @@ export default function OutlineComponent({ outline }: { outline: OutlineType }) 
   // ── Generate script ───────────────────────────────────────────────────────
   const handleGenerateScript = () => {
     if (!outline) return;
-    generateScript(outline.uuid, {
+    generateScript(outline.id, {
       onSuccess: (data) => {
         toast.success('Success', 'Script generated');
-        router.replace(`/new-script/script/${data.script.uuid}`);
+        router.replace(`/new-script/script/${data.script.id}`);
       },
       onError: (error) => {
         logger.error(error);

@@ -22,15 +22,15 @@ export function Dropdown({ notifications }: { notifications: any[] }) {
     return link;
   };
 
-  const handleNotificationClick = (metadata: Record<string, any>) => {
-    const metaValue = metadata?.script || metadata?.outline;
+  const handleNotificationClick = (extraData: Record<string, any>) => {
+    const metaValue = extraData?.script || extraData?.outline;
     if (metaValue?.link) {
       router.push(getFinalURL(metaValue.link));
       setOpen(false);
     }
   };
 
-  const items: any[] = notifications?.[0]?.results ?? [];
+  const items: any[] = Array.isArray(notifications) ? notifications : [];
   const hasItems = items.length > 0;
 
   return (
@@ -79,7 +79,7 @@ export function Dropdown({ notifications }: { notifications: any[] }) {
                   )}
                   <button
                     className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted"
-                    onClick={() => handleNotificationClick(item?.metadata)}
+                    onClick={() => handleNotificationClick(item?.extra_data)}
                   >
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent">
                       <Sparkles className="h-3.5 w-3.5 text-accent-foreground" />
