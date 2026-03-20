@@ -1,13 +1,11 @@
 import Link from 'next/link';
 import {
-  BookOpen,
-  Box,
   Clock,
   FileText,
   FileVideo,
+  FolderOpen,
   LayoutTemplate,
   ListOrdered,
-  Mic,
   Minus,
   Sparkles,
   TrendingUp,
@@ -108,6 +106,26 @@ function ActionCard({
   );
 }
 
+export function CommingSoonCard() {
+  return (
+    <div className="flex flex-col rounded-lg border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border px-4 py-5 sm:px-6">
+        <h2 className="text-[18px] font-semibold text-foreground">Top Templates</h2>
+        <span className="text-sm font-medium text-muted-foreground/50">Explore</span>
+      </div>
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Sparkles className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <p className="text-sm font-semibold text-foreground">Coming Soon</p>
+        <p className="mt-1 max-w-[220px] text-xs leading-relaxed text-muted-foreground">
+          Curated templates for top YouTube formats are on the way.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────
 export default async function DashboardPage() {
   const [{ data: scriptsData }, { data: outlinesData }, { data: recentData }] = await Promise.all([
@@ -155,7 +173,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Quick actions ── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <ActionCard
           title="New Script"
           desc="Start from scratch or prompt"
@@ -172,8 +190,8 @@ export default async function DashboardPage() {
         <ActionCard
           title="Browse Niches"
           desc="Explore niche ideas & styles"
-          icon={Mic}
-          href="/niche-vault"
+          icon={FolderOpen}
+          href="#"
         />
       </div>
 
@@ -250,54 +268,54 @@ export default async function DashboardPage() {
         </div>
 
         {/* Top Templates */}
-        <div className="flex flex-col rounded-lg border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-4 py-5 sm:px-6">
-            <h2 className="text-[18px] font-semibold text-foreground">Top Templates</h2>
-            <Link href="/niche-vault" className="text-sm font-medium text-primary hover:underline">
-              Explore
-            </Link>
-          </div>
-          <div className="flex flex-col gap-4 p-4 sm:p-6">
-            {[
-              {
-                icon: ListOrdered,
-                name: 'Top 10 Listicles',
-                desc: 'High retention format perfect for tech, finance, and productivity niches.',
-              },
-              {
-                icon: Box,
-                name: 'Tech Product Review',
-                desc: 'Structured for unbiased pros/cons, unboxing b-roll, and affiliate CTA.',
-              },
-              {
-                icon: BookOpen,
-                name: 'Storytime / Vlog',
-                desc: 'Narrative arc focused on conflict, realization, and resolution.',
-              },
-            ].map((t) => {
-              const TIcon = t.icon;
-              return (
-                <div key={t.name} className="flex items-start gap-4 rounded-md bg-secondary p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-card text-foreground">
-                    <TIcon className="h-5 w-5" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                    <p className="text-[13px] font-medium leading-relaxed text-muted-foreground">
-                      {t.desc}
-                    </p>
-                    <Link
-                      href="/new-script"
-                      className="mt-1 text-xs font-semibold text-primary hover:underline"
-                    >
-                      Use template →
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <CommingSoonCard />
+
+        {/* <div className="flex items-center justify-between border-b border-border px-4 py-5 sm:px-6">
+          <h2 className="text-[18px] font-semibold text-foreground">Top Templates</h2>
+          <Link href="/niche-vault" className="text-sm font-medium text-primary hover:underline">
+            Explore
+          </Link>
         </div>
+        <div className="flex flex-col gap-4 p-4 sm:p-6">
+          {[
+            {
+              icon: ListOrdered,
+              name: 'Top 10 Listicles',
+              desc: 'High retention format perfect for tech, finance, and productivity niches.',
+            },
+            {
+              icon: Box,
+              name: 'Tech Product Review',
+              desc: 'Structured for unbiased pros/cons, unboxing b-roll, and affiliate CTA.',
+            },
+            {
+              icon: BookOpen,
+              name: 'Storytime / Vlog',
+              desc: 'Narrative arc focused on conflict, realization, and resolution.',
+            },
+          ].map((t) => {
+            const TIcon = t.icon;
+            return (
+              <div key={t.name} className="flex items-start gap-4 rounded-md bg-secondary p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-card text-foreground">
+                  <TIcon className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                  <p className="text-[13px] font-medium leading-relaxed text-muted-foreground">
+                    {t.desc}
+                  </p>
+                  <Link
+                    href="/new-script"
+                    className="mt-1 text-xs font-semibold text-primary hover:underline"
+                  >
+                    Use template →
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div> */}
       </div>
     </div>
   );
