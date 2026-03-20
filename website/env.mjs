@@ -14,6 +14,7 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_WEBSITE_URL: z.string().url('Must include valid URL to website'),
+    NEXT_PUBLIC_SITE_URL: z.string().url('Must include valid URL to the landing site'),
   },
   /*
    * Due to how Next.js bundles environment variables on Edge and Client,
@@ -23,5 +24,6 @@ export const env = createEnv({
    */
   runtimeEnv: {
     NEXT_PUBLIC_WEBSITE_URL: process.env.NEXT_PUBLIC_WEBSITE_URL,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   },
 });

@@ -21,7 +21,12 @@ export const metadata = {
   description:
     'AiKahani is an AI-powered script writing platform designed to help YouTube creators transform video ideas into professionally structured scripts.',
   icons: {
-    icon: '/logos/icon.svg',
+    icon: [
+      { url: '/logos/icon.svg', type: 'image/svg+xml' },
+      { url: '/logos/colored-logo.png', type: 'image/png' },
+    ],
+    apple: '/logos/colored-logo.png',
+    shortcut: '/logos/colored-logo.png',
   },
   openGraph: {
     type: 'website',
@@ -33,9 +38,9 @@ export const metadata = {
       'AiKahani is an AI-powered script writing platform designed to help YouTube creators transform video ideas into professionally structured scripts.',
     images: [
       {
-        url: `${env.NEXT_PUBLIC_WEBSITE_URL}/logos/colored-logo.png`,
-        width: 512,
-        height: 512,
+        url: '/logos/colored-logo.png',
+        width: 4000,
+        height: 4000,
         alt: 'AiKahani',
       },
     ],
@@ -46,6 +51,7 @@ export const metadata = {
     description:
       'AiKahani is an AI-powered script writing platform designed to help YouTube creators transform video ideas into professionally structured scripts.',
     creator: '@aikahaani',
+    images: ['/logos/colored-logo.png'],
   },
 };
 

@@ -1,4 +1,6 @@
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://aikahaani.com';
+import { env } from 'env.mjs';
+
+export const SITE_URL = env.NEXT_PUBLIC_SITE_URL;
 
 /**
  * AIKahaani = AI + Kahaani (story)

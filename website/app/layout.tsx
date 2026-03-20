@@ -19,7 +19,12 @@ const ROBOTO_FLEX = Roboto_Flex({
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   icons: {
-    icon: '/logos/icon.svg',
+    icon: [
+      { url: '/logos/icon.svg', type: 'image/svg+xml' },
+      { url: '/logos/colored-logo.png', type: 'image/png' },
+    ],
+    apple: '/logos/colored-logo.png',
+    shortcut: '/logos/colored-logo.png',
   },
   title: {
     default: SEO.title,
@@ -44,9 +49,9 @@ export const metadata = {
     description: SEO.description,
     images: [
       {
-        url: `${SITE_URL}/logos/colored-logo.png`,
-        width: 512,
-        height: 512,
+        url: '/logos/colored-logo.png',
+        width: 4000,
+        height: 4000,
         alt: 'AIKahaani - AI YouTube Script & Title Generator',
       },
     ],
@@ -56,6 +61,7 @@ export const metadata = {
     title: SEO.title,
     description: SEO.description,
     creator: SEO.twitter.creator,
+    images: ['/logos/colored-logo.png'],
   },
   robots: {
     index: true,
@@ -89,8 +95,11 @@ const jsonLd = {
       operatingSystem: 'Web',
       offers: {
         '@type': 'Offer',
+        name: 'AIKahaani Pro',
         price: '19',
         priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+        url: SITE_URL,
       },
     },
     {
