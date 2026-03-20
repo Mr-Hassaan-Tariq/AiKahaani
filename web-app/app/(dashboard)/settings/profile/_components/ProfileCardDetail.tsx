@@ -156,7 +156,7 @@ export default function ProfileCardDetail({ profile }: { profile?: UserProfileTy
             type="submit"
             variant="primary"
             disabled={!isDirty || isSaving}
-            isLoading={isSaving}
+            loading={isSaving}
           >
             Save Profile
           </Button>
