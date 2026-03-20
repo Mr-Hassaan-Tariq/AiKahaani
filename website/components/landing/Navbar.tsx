@@ -59,7 +59,6 @@ export function Navbar() {
             className="rounded-full bg-red-600 px-6 font-semibold text-white transition-all hover:translate-y-[-2px] hover:bg-red-700 hover:shadow-lg hover:shadow-red-600/30 active:translate-y-0"
           >
             <Link href={`${WEB_APP_URL}/login`}>Try Free</Link>
-            Try Free
           </Button>
         </div>
 
