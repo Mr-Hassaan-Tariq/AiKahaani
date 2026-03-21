@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { History, LayoutDashboard, Settings, Sparkles, Type } from 'lucide-react';
+import { FolderOpen, History, LayoutDashboard, Settings, Sparkles, Type } from 'lucide-react';
 
 import LogoutModal from './LogoutModal';
 import { cn } from 'lib/utils';
@@ -12,7 +12,7 @@ export const mainMenu = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { name: 'Script Generator', icon: Sparkles, path: '/new-script' },
   { name: 'My Scripts', icon: History, path: '/my-scripts' },
-  // { name: 'Niche Vault', icon: FolderOpen, path: '/niche-vault' },
+  { name: 'Niche Vault', icon: FolderOpen, path: '/niche-vault' },
   { name: 'Title Generation', icon: Type, path: '/title-generation' },
 ];
 
