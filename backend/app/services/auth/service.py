@@ -146,7 +146,7 @@ async def _exchange_google_auth_code(auth_code: str) -> str:
                 "client_secret": settings.google_oauth2_client_secret,
                 "code": auth_code,
                 "grant_type": "authorization_code",
-                "redirect_uri": f"{settings.frontend_url.rstrip('/')}/signup",
+                "redirect_uri": f"{settings.frontend_url.rstrip('/')}/",
             },
         )
         resp.raise_for_status()
