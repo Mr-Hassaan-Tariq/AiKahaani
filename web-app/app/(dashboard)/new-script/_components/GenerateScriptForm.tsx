@@ -131,7 +131,7 @@ export default function GenerateScriptForm({
   // ── Submit ───────────────────────────────────────────────────────
   const onSubmit = async (_formData: FormType) => {
     const formValue = new FormData();
-    const payload: Partial<FormType & { niche_id?: string }> = {};
+    const payload: Partial<FormType & { niche_id?: string; template_style_id?: number }> = {};
 
     const toneIds = normalizeTones(_formData.tones);
     const linkItems = files
@@ -149,7 +149,7 @@ export default function GenerateScriptForm({
     if (!hasImageFile) {
       payload.description = _formData.description ?? '';
       payload.tones = toneIds;
-      if (_formData.template_style) payload.template_style = _formData.template_style;
+      if (_formData.template_style) payload.template_style_id = _formData.template_style;
       else {
         payload.min_length = _formData.min_length;
         payload.max_length = _formData.max_length;
@@ -164,7 +164,7 @@ export default function GenerateScriptForm({
       formValue.append('description', _formData.description ?? '');
       toneIds.forEach((id) => formValue.append('tones', String(id)));
       if (_formData.template_style)
-        formValue.append('template_style', String(_formData.template_style));
+        formValue.append('template_style_id', String(_formData.template_style));
       else {
         formValue.append('min_length', String(_formData.min_length ?? 0));
         formValue.append('max_length', String(_formData.max_length ?? 500));
@@ -192,7 +192,7 @@ export default function GenerateScriptForm({
             data: {
               description: _formData.description ?? '',
               tones: toneIds,
-              template_style: _formData.template_style ?? null,
+              template_style_id: _formData.template_style ?? null,
               min_length: _formData.min_length ?? 0,
               max_length: _formData.max_length ?? 500,
               title: _formData.title ?? '',

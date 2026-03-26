@@ -3,7 +3,10 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { baseUrl } from 'lib/api/index';
+import { baseUrl as publicBaseUrl } from 'lib/api/index';
+
+// Inside Docker, server actions must use the internal service name instead of localhost
+const baseUrl = process.env.INTERNAL_API_URL ?? publicBaseUrl;
 
 /**
  * Try to refresh the access token using the refresh_token cookie.

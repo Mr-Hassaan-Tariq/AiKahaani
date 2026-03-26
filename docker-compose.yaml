@@ -70,8 +70,11 @@ services:
     volumes:
       - ./web-app:/app # live source — Next.js HMR watches this
       - web_node_modules:/app/node_modules # preserves installed packages
+      - web_next:/app/.next # keeps .next off the host — prevents root-ownership conflicts
     env_file:
       - ./web-app/.env
+    environment:
+      INTERNAL_API_URL: http://api:8000/api
     depends_on:
       - api
 
@@ -80,3 +83,4 @@ volumes:
   postgres_data: # PostgreSQL data — survives container restarts
   backend_venv: # Python virtual environment — survives source bind-mount
   web_node_modules: # node_modules — survives source bind-mount
+  web_next: # .next build cache — stays inside Docker, never touches host
