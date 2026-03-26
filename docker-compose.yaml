@@ -1,46 +1,82 @@
+name: videoscript
+
+# ── How to use ──────────────────────────────────────────────────────────────
+# 1. cp backend/.env.example backend/.env   # fill in SECRET_KEY etc.
+# 2. cp web-app/.env.example web-app/.env
+# 3. docker compose up --build
+#
+# Hot-reload is built in:
+#   - Backend source changes  → uvicorn --reload picks them up automatically
+#   - Frontend source changes → Next.js HMR picks them up automatically
+#
+# Manual rebuilds when needed:
+#   - requirements.txt change → docker compose up -d --build --no-deps api
+#   - package.json change     → docker compose up -d --build --no-deps web
+#   - .env change             → docker compose restart api   (or web)
+# ────────────────────────────────────────────────────────────────────────────
+
 services:
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
   db:
-    image: postgres
-    expose:
-      - "5432"
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env # provides POSTGRES_USER / PASSWORD / DB
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    volumes:
-      - ./data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_PASSWORD: "change-password"
-      POSTGRES_DB: "db"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 2s
-      timeout: 2s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  # ── FastAPI backend ───────────────────────────────────────────────────────
   api:
-    command: bash -c "uv sync && uv run -- python manage.py migrate && uv run -- python manage.py runserver 0.0.0.0:8000"
     build:
-      context: backend
-    expose:
-      - "8000"
+      context: ./backend
+      dockerfile: Dockerfile
+    # Run migrations + seed on every start (both are idempotent), then
+    # launch uvicorn with --reload so source changes are picked up live.
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        python scripts/seed.py &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
+      - ./backend:/app # live source — uvicorn --reload watches this
+      - backend_venv:/app/.venv # preserves installed packages across rebuilds
     env_file:
-      - .env.backend
+      - ./backend/.env
     depends_on:
       db:
         condition: service_healthy
+
+  # ── Next.js web app ───────────────────────────────────────────────────────
   web:
-    command: bash -c "pnpm install -r && pnpm --filter web dev"
     build:
-      context: frontend
-    volumes:
-      - ./frontend:/app
-    expose:
-      - "3000"
+      context: ./web-app
+      dockerfile: Dockerfile
+    command: pnpm dev
+    restart: unless-stopped
     ports:
       - "3000:3000"
+    volumes:
+      - ./web-app:/app # live source — Next.js HMR watches this
+      - web_node_modules:/app/node_modules # preserves installed packages
     env_file:
-      - .env.frontend
+      - ./web-app/.env
     depends_on:
       - api
+
+# ── Named volumes ─────────────────────────────────────────────────────────
+volumes:
+  postgres_data: # PostgreSQL data — survives container restarts
+  backend_venv: # Python virtual environment — survives source bind-mount
+  web_node_modules: # node_modules — survives source bind-mount
