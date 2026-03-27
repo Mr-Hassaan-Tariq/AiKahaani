@@ -49,7 +49,7 @@ export function Navbar() {
         <div className="hidden items-center justify-end gap-3 md:flex">
           <ThemeToggle className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white" />
           <Link
-            href={`${WEB_APP_URL}/login`}
+            href={`${WEB_APP_URL}/signup`}
             className="text-sm font-medium text-gray-700 transition-colors hover:text-red-500 dark:text-gray-300"
           >
             Login
@@ -58,7 +58,7 @@ export function Navbar() {
             asChild
             className="rounded-full bg-red-600 px-6 font-semibold text-white transition-all hover:translate-y-[-2px] hover:bg-red-700 hover:shadow-lg hover:shadow-red-600/30 active:translate-y-0"
           >
-            <Link href={`${WEB_APP_URL}/login`}>Try Free</Link>
+            <Link href={`${WEB_APP_URL}/signup`}>Try Free</Link>
           </Button>
         </div>
 
