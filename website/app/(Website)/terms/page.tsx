@@ -253,20 +253,8 @@ const sections: LegalSection[] = [
     ),
   },
   {
-    id: 'governing-law',
-    heading: '17. Governing Law',
-    content: (
-      <P>
-        These Terms are governed by the laws of [Governing Jurisdiction], without regard to its
-        conflict-of-law rules. Any disputes shall be subject to the exclusive jurisdiction of the
-        courts located in [Governing Jurisdiction], unless otherwise required by mandatory consumer
-        protection law in your country of residence.
-      </P>
-    ),
-  },
-  {
     id: 'contact',
-    heading: '18. Contact Information',
+    heading: '17. Contact Information',
     content: (
       <>
         <P>Questions about these Terms? Reach us at:</P>
