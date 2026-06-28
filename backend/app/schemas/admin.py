@@ -12,8 +12,6 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
-
-
 # ── User Management ───────────────────────────────────────────────────────────
 
 
