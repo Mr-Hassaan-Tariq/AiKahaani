@@ -15,17 +15,20 @@ export function Footer() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-10 text-[10px] font-bold uppercase tracking-widest text-gray-500">
-            <Link href="#" className="transition-colors hover:text-red-500">
-              Product
+            <Link href="/pricing" className="transition-colors hover:text-red-500">
+              Pricing
             </Link>
-            <Link href="#" className="transition-colors hover:text-red-500">
-              Resources
+            <Link href="/terms" className="transition-colors hover:text-red-500">
+              Terms
             </Link>
-            <Link href="#" className="transition-colors hover:text-red-500">
-              Company
+            <Link href="/privacy" className="transition-colors hover:text-red-500">
+              Privacy
             </Link>
-            <Link href="#" className="transition-colors hover:text-red-500">
-              Social
+            <Link href="/refund" className="transition-colors hover:text-red-500">
+              Refund Policy
+            </Link>
+            <Link href="/contact" className="transition-colors hover:text-red-500">
+              Contact
             </Link>
           </div>
         </div>
@@ -37,13 +40,13 @@ export function Footer() {
 
           <div className="flex gap-8">
             <Link
-              href="#"
+              href="/privacy"
               className="text-sm font-bold text-gray-400 transition-colors hover:text-red-500"
             >
               Privacy Policy
             </Link>
             <Link
-              href="#"
+              href="/terms"
               className="text-sm font-bold text-gray-400 transition-colors hover:text-red-500"
             >
               Terms of Service
